@@ -1,0 +1,25 @@
+{
+  "name": "@gtbuchanan/oxfmt-config",
+  "version": "0.0.0",
+  "description": "Shared oxfmt configuration",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "linkDirectory": false,
+    "exports": {
+      ".": "./index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22.16"
+  },
+  "devDependencies": {
+    "@gtbuchanan/test-utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "oxfmt": ">=0.43.0"
+  }
+}

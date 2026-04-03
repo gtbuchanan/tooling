@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/eslint-config" },
+    { "path": "packages/oxfmt-config" },
+    { "path": "packages/oxlint-config" },
+    { "path": "packages/vitest-config" },
+    { "path": "packages/test-utils" },
+    { "path": "scripts" },
+    { "path": "tsconfig.root.json" }
+  ]
+}

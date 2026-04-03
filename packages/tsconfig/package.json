@@ -1,0 +1,16 @@
+{
+  "name": "@gtbuchanan/tsconfig",
+  "version": "0.0.0",
+  "description": "Shared TypeScript base configuration",
+  "type": "module",
+  "exports": {
+    "./base.json": "./base.json"
+  },
+  "engines": {
+    "node": ">=22.16"
+  },
+  "files": ["base.json"],
+  "dependencies": {
+    "@tsconfig/strictest": "^2.0.8"
+  }
+}

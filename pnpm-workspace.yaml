@@ -1,0 +1,15 @@
+packages:
+  - "packages/*"
+
+catalog:
+  '@stylistic/eslint-plugin': 5.10.0
+  console-fail-test: 0.6.1
+  eslint-plugin-n: 17.24.0
+  eslint-plugin-only-warn: 1.2.1
+  eslint-plugin-oxlint: 1.58.0
+  eslint-plugin-pnpm: 1.6.0
+  typescript-eslint: 8.58.0
+  valibot: 1.3.1
+
+onlyBuiltDependencies:
+  - esbuild

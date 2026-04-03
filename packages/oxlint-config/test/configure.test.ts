@@ -1,0 +1,147 @@
+import { describe, it } from 'vitest';
+import { configure } from '@/index.js';
+
+describe('oxlint configure', () => {
+  it('returns a valid config with defaults', ({ expect }) => {
+    const config = configure();
+
+    expect(config.plugins).toContain('typescript');
+    expect(config.plugins).toContain('import');
+    expect(config.plugins).toContain('node');
+    expect(config.jsPlugins).toContain('@stylistic/eslint-plugin');
+    expect(config.categories).toBeDefined();
+    expect(config.options?.typeAware).toBe(true);
+    expect(config.options?.denyWarnings).toBe(true);
+  });
+
+  it('sets all categories to warn', ({ expect }) => {
+    const config = configure();
+
+    expect(config.categories?.correctness).toBe('warn');
+    expect(config.categories?.suspicious).toBe('warn');
+    expect(config.categories?.pedantic).toBe('warn');
+    expect(config.categories?.style).toBe('warn');
+    expect(config.categories?.perf).toBe('warn');
+  });
+
+  it('allows overriding categories', ({ expect }) => {
+    const config = configure({ categories: { correctness: 'error' } });
+
+    expect(config.categories?.correctness).toBe('error');
+    expect(config.categories?.suspicious).toBe('warn');
+  });
+
+  it('allows overriding ignorePatterns', ({ expect }) => {
+    const config = configure({ ignorePatterns: ['vendor/**'] });
+
+    expect(config.ignorePatterns).toEqual(['vendor/**']);
+  });
+
+  it('defaults ignorePatterns to dist', ({ expect }) => {
+    const config = configure();
+
+    expect(config.ignorePatterns).toEqual(['**/dist/**']);
+  });
+
+  it('allows overriding options', ({ expect }) => {
+    const config = configure({ options: { typeAware: false } });
+
+    expect(config.options?.typeAware).toBe(false);
+    expect(config.options?.denyWarnings).toBe(true);
+  });
+
+  it('includes vitest override for test files', ({ expect }) => {
+    const config = configure();
+    const vitestOverride = config.overrides?.find(
+      override => override.plugins?.includes('vitest') === true,
+    );
+
+    expect(vitestOverride).toBeDefined();
+    expect(vitestOverride?.files).toEqual(['**/test/**/*.ts', '**/e2e/**/*.ts']);
+    expect(vitestOverride?.rules?.['typescript/unbound-method']).toBe('off');
+  });
+
+  it('appends custom overrides after vitest', ({ expect }) => {
+    const custom = {
+      files: ['src/**/*.ts'],
+      rules: { 'typescript/no-explicit-any': 'off' as const },
+    };
+    const config = configure({ overrides: [custom] });
+    const last = config.overrides?.at(-1);
+
+    expect(last).toEqual(custom);
+  });
+
+  it('includes stylistic rules', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['@stylistic/semi']).toBeDefined();
+  });
+
+  it('allows customizing stylistic options', ({ expect }) => {
+    const withSemi = configure({ stylistic: { semi: true } });
+    const withoutSemi = configure({ stylistic: { semi: false } });
+
+    expect(withSemi.rules?.['@stylistic/semi']).toBeDefined();
+    expect(withoutSemi.rules?.['@stylistic/semi']).toBeDefined();
+    expect(withSemi.rules?.['@stylistic/semi']).not.toEqual(
+      withoutSemi.rules?.['@stylistic/semi'],
+    );
+  });
+
+  it('disables conflicting import rules', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['import/consistent-type-specifier-style']).toBe('off');
+    expect(config.rules?.['import/exports-last']).toBe('off');
+    expect(config.rules?.['import/group-exports']).toBe('off');
+    expect(config.rules?.['import/no-named-export']).toBe('off');
+    expect(config.rules?.['import/prefer-default-export']).toBe('off');
+  });
+
+  it('disables no-continue', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['no-continue']).toBe('off');
+  });
+
+  it('sets max-len to 100', ({ expect }) => {
+    const config = configure();
+    const maxLen = config.rules?.['@stylistic/max-len'];
+
+    expect(maxLen).toEqual(['warn', { code: 100, ignoreUrls: true }]);
+  });
+
+  it('enforces single quotes', ({ expect }) => {
+    const config = configure();
+    const quotes = config.rules?.['@stylistic/quotes'];
+
+    expect(quotes).toEqual([
+      'warn',
+      'single',
+      { allowTemplateLiterals: 'avoidEscape', avoidEscape: true },
+    ]);
+  });
+
+  it('allows common sentinel values in no-magic-numbers', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['no-magic-numbers']).toEqual([
+      'warn',
+      {
+        ignore: [-1, 0, 1, 100],
+        ignoreDefaultValues: true,
+        ignoreEnums: true,
+        ignoreNumericLiteralTypes: true,
+        ignoreTypeIndexes: true,
+      },
+    ]);
+  });
+
+  it('explicitly disables nursery and restriction categories', ({ expect }) => {
+    const config = configure();
+
+    expect(config.categories?.nursery).toBe('off');
+    expect(config.categories?.restriction).toBe('off');
+  });
+});

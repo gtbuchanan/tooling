@@ -1,0 +1,32 @@
+{
+  "name": "@gtbuchanan/eslint-config",
+  "version": "0.0.0",
+  "description": "Shared ESLint configuration",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "linkDirectory": false,
+    "exports": {
+      ".": "./index.js"
+    }
+  },
+  "dependencies": {
+    "eslint-plugin-n": "catalog:",
+    "eslint-plugin-only-warn": "catalog:",
+    "eslint-plugin-oxlint": "catalog:",
+    "eslint-plugin-pnpm": "catalog:",
+    "typescript-eslint": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.16"
+  },
+  "devDependencies": {
+    "@gtbuchanan/test-utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "eslint": "^10.0.0"
+  }
+}

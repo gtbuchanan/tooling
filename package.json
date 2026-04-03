@@ -1,0 +1,45 @@
+{
+  "name": "tooling-root",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.16"
+  },
+  "scripts": {
+    "build": "pnpm compile && concurrently -g pnpm:lint pnpm:test pnpm:prepare-publish && pnpm run pack && pnpm test:e2e",
+    "changeset": "changeset",
+    "check": "pnpm compile && concurrently -g pnpm:lint pnpm:test",
+    "compile": "tsc -b",
+    "lint": "concurrently -g pnpm:lint:oxlint pnpm:lint:eslint",
+    "lint:eslint": "eslint --max-warnings=0",
+    "lint:oxlint": "oxlint",
+    "pack": "node --experimental-strip-types scripts/pack-all.ts",
+    "prepare-publish": "node --experimental-strip-types scripts/prepare-publish.ts",
+    "release": "pnpm build && changeset publish",
+    "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "version": "changeset version"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.4",
+    "@tsconfig/strictest": "^2.0.8",
+    "@gtbuchanan/eslint-config": "workspace:*",
+    "@gtbuchanan/oxfmt-config": "workspace:*",
+    "@gtbuchanan/oxlint-config": "workspace:*",
+    "@gtbuchanan/tsconfig": "workspace:*",
+    "@gtbuchanan/vitest-config": "workspace:*",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^25.5.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "concurrently": "^9.2.1",
+    "cross-spawn": "^7.0.6",
+    "eslint": "^10.0.0",
+    "find-up-simple": "^1.0.1",
+    "jiti": "^2.6.1",
+    "oxfmt": ">=0.43.0",
+    "oxlint": "^1.58.0",
+    "typescript": "^5.9.3",
+    "valibot": "catalog:",
+    "vitest": "^4.1.2"
+  }
+}

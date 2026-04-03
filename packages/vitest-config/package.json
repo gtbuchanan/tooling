@@ -1,0 +1,34 @@
+{
+  "name": "@gtbuchanan/vitest-config",
+  "version": "0.0.0",
+  "description": "Shared Vitest configuration",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./configure": "./src/configure.ts",
+    "./setup": "./src/setup.ts",
+    "./console-fail-test": "./src/console-fail-test.ts"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "linkDirectory": false,
+    "exports": {
+      ".": "./index.js",
+      "./configure": "./configure.js",
+      "./setup": "./setup.js",
+      "./console-fail-test": "./console-fail-test.js"
+    }
+  },
+  "engines": {
+    "node": ">=22.16"
+  },
+  "dependencies": {
+    "console-fail-test": "catalog:"
+  },
+  "devDependencies": {
+    "@gtbuchanan/test-utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "vitest": "^4.0.0"
+  }
+}
