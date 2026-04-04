@@ -91,7 +91,7 @@ importers:
         version: link:packages/oxlint-config
       '@gtbuchanan/tsconfig':
         specifier: workspace:*
-        version: link:packages/tsconfig/dist/source
+        version: link:packages/tsconfig
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:packages/vitest-config

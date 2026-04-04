@@ -115,6 +115,11 @@ interface IsolatedFixtureOptions {
   readonly depsPackages?: readonly string[];
   readonly hookPackages: readonly string[];
   readonly packageName: string;
+  /**
+   * Additional workspace package names whose tarballs should be installed
+   * alongside the primary package (e.g. unpublished workspace dependencies).
+   */
+  readonly workspaceDeps?: readonly string[];
 }
 
 /**
@@ -146,6 +151,7 @@ const createSubdir = (parent: string, name: string): string => {
  */
 export const createIsolatedFixture = (options: IsolatedFixtureOptions): IsolatedFixture => {
   const tgz = locateTarball(options.packageName);
+  const workspaceTarballs = (options.workspaceDeps ?? []).map(locateTarball);
   const baseDir = mkdtempSync(join(tmpdir(), 'e2e-isolated-'));
   const projectDir = mkdtempSync(join(tmpdir(), 'e2e-project-'));
 
@@ -153,7 +159,7 @@ export const createIsolatedFixture = (options: IsolatedFixtureOptions): Isolated
   const depsDir = createSubdir(baseDir, 'deps');
 
   npmInit(hookDir, options.hookPackages.map(pinned));
-  npmInit(depsDir, [tgz, ...(options.depsPackages ?? []).map(pinned)]);
+  npmInit(depsDir, [tgz, ...workspaceTarballs, ...(options.depsPackages ?? []).map(pinned)]);
 
   const nodePath = [
     join(hookDir, 'node_modules'),
@@ -177,6 +183,11 @@ export const createIsolatedFixture = (options: IsolatedFixtureOptions): Isolated
 interface ProjectFixtureOptions {
   readonly packages?: readonly string[];
   readonly packageName: string;
+  /**
+   * Additional workspace package names whose tarballs should be installed
+   * alongside the primary package (e.g. unpublished workspace dependencies).
+   */
+  readonly workspaceDeps?: readonly string[];
 }
 
 /**
@@ -198,10 +209,12 @@ export const createProjectFixture = (
   options: ProjectFixtureOptions,
 ): ProjectFixture => {
   const tgz = locateTarball(options.packageName);
+  const workspaceTarballs = (options.workspaceDeps ?? []).map(locateTarball);
   const projectDir = mkdtempSync(join(tmpdir(), 'e2e-build-'));
 
   exec('npm', ['init', '-y', '--init-type', 'module'], { cwd: projectDir });
-  exec('npm', ['install', tgz, ...(options.packages ?? []).map(pinned)], { cwd: projectDir });
+  const pinnedPkgs = (options.packages ?? []).map(pinned);
+  exec('npm', ['install', tgz, ...workspaceTarballs, ...pinnedPkgs], { cwd: projectDir });
 
   const writeFile = (name: string, content: string): string => {
     const filePath = join(projectDir, name);
