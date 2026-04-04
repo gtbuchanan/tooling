@@ -11,7 +11,7 @@ export {
   resolveSetupFiles,
   type VitestConfigureGlobalOptions,
   type VitestConfigureOptions,
-} from './configure.js';
+} from './configure.ts';
 
 export {
   configureEndToEnd,
@@ -19,4 +19,4 @@ export {
   configureEndToEndProject,
   type VitestEndToEndConfigureGlobalOptions,
   type VitestEndToEndConfigureOptions,
-} from './configure-e2e.js';
+} from './configure-e2e.ts';

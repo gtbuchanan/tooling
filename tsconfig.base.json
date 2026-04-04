@@ -1,4 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": ["@gtbuchanan/tsconfig/base.json"]
+  "extends": ["@gtbuchanan/tsconfig/base.json"],
+  "compilerOptions": {
+    "rewriteRelativeImportExtensions": true
+  }
 }

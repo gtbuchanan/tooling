@@ -11,7 +11,7 @@ import {
   buildProjectConfig,
   buildWorkspaceEntry,
   resolveProjectDirs,
-} from './configure.js';
+} from './configure.ts';
 
 export interface VitestEndToEndConfigureOptions extends VitestConfigureOptions {
   readonly testTimeout?: number;
@@ -34,10 +34,12 @@ export const configureEndToEndProject = (root?: string): UserWorkspaceConfig =>
 
 const resolveEndToEndProjects = (
   patterns: readonly string[],
+  testTimeout: number,
 ): UserWorkspaceConfig[] =>
-  resolveProjectDirs(patterns).map(dir =>
-    buildWorkspaceEntry(dir, configureEndToEndProject),
-  );
+  resolveProjectDirs(patterns).map((dir) => {
+    const entry = buildWorkspaceEntry(dir, configureEndToEndProject);
+    return { ...entry, test: { ...entry.test, testTimeout } };
+  });
 
 /**
  * Global e2e configuration for use in a root vitest.config.e2e.ts of a monorepo.
@@ -53,7 +55,7 @@ export const configureEndToEndGlobal = (
   const { projects: projectPatterns, testTimeout = 300_000, ...setupOptions } = options;
   const resolved = projectPatterns === undefined
     ? undefined
-    : resolveEndToEndProjects(projectPatterns);
+    : resolveEndToEndProjects(projectPatterns, testTimeout);
   return buildGlobalConfig(
     { testTimeout },
     setupOptions,
