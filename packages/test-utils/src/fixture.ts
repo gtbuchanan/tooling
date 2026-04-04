@@ -65,6 +65,7 @@ const locateTarball = (packageName: string): string => {
   return join(packagesDir, matchTarball(readdirSync(packagesDir), packageName));
 };
 
+/** Result of a synchronous child process execution. */
 export interface CommandResult {
   readonly exitCode: number;
   readonly stderr: string;
@@ -87,6 +88,7 @@ export const createGitEnv = (identity?: { email: string; name: string }) => ({
   }),
 });
 
+/** Spawns a command synchronously, captures stdout/stderr, and returns the result. */
 export const runCommand = (
   command: string,
   args: readonly string[],
@@ -115,6 +117,10 @@ interface IsolatedFixtureOptions {
   readonly packageName: string;
 }
 
+/**
+ * Disposable fixture with separate hook, deps, and project directories
+ * joined via `NODE_PATH`. Used for e2e tests that need split dependency contexts.
+ */
 export interface IsolatedFixture {
   readonly depsDir: string;
   readonly hookDir: string;
@@ -134,6 +140,10 @@ const createSubdir = (parent: string, name: string): string => {
   return dir;
 };
 
+/**
+ * Creates an {@link IsolatedFixture} from a tarball. Installs hook and deps
+ * packages into separate directories so `NODE_PATH` controls resolution order.
+ */
 export const createIsolatedFixture = (options: IsolatedFixtureOptions): IsolatedFixture => {
   const tgz = locateTarball(options.packageName);
   const baseDir = mkdtempSync(join(tmpdir(), 'e2e-isolated-'));
@@ -169,6 +179,10 @@ interface ProjectFixtureOptions {
   readonly packageName: string;
 }
 
+/**
+ * Disposable fixture with a single npm project directory.
+ * Provides helpers to write files and run local binaries.
+ */
 export interface ProjectFixture {
   readonly projectDir: string;
   readonly run: (command: string, args: readonly string[]) => CommandResult;
@@ -176,6 +190,10 @@ export interface ProjectFixture {
   readonly [Symbol.dispose]: () => void;
 }
 
+/**
+ * Creates a {@link ProjectFixture} from a tarball. Initializes an ESM
+ * project and installs the package under test plus optional dependencies.
+ */
 export const createProjectFixture = (
   options: ProjectFixtureOptions,
 ): ProjectFixture => {
@@ -207,6 +225,11 @@ export const createProjectFixture = (
   };
 };
 
+/**
+ * Extends the base `it` with a file-scoped {@link ProjectFixture} via
+ * Vitest's fixture API. The fixture is created once per test file and
+ * disposed automatically.
+ */
 export const extendWithFixture = (
   create: () => ProjectFixture,
 ) => base.extend<{ fixture: ProjectFixture }>({

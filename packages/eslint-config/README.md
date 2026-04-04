@@ -20,17 +20,6 @@ export default configure({
 });
 ```
 
-## Options
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `tsconfigRootDir` | `string` | — | Root directory for TypeScript project service |
-| `ignores` | `string[]` | `['**/dist/**']` | Global ignore patterns |
-| `entryPoints` | `string[]` | `['**/bin/**/*.ts', '**/main.ts']` | Files where `process.exit` is allowed |
-| `onlyWarn` | `boolean` | `true` | Downgrade all errors to warnings |
-| `pnpm` | `boolean` | `false` | Enable pnpm workspace lint rules |
-| `extraConfigs` | `Linter.Config[]` | `[]` | Additional ESLint configs to merge |
-
 ## Included plugins
 
 - `eslint-plugin-n` — Node.js best practices

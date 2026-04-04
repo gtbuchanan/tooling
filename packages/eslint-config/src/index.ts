@@ -5,9 +5,19 @@ import oxlint from 'eslint-plugin-oxlint';
 import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
 import tseslint from 'typescript-eslint';
 
+/** Options for the shared ESLint configuration. */
 export interface ESLintConfigureOptions {
+  /** Root directory for TypeScript project service. */
   readonly tsconfigRootDir?: string;
+  /**
+   * Global ignore patterns.
+   * @defaultValue Dist output directories
+   */
   readonly ignores?: string[];
+  /**
+   * File patterns where `process.exit` and hashbang are allowed.
+   * @defaultValue Bin directories and main entry points
+   */
   readonly entryPoints?: string[];
   /**
    * Irreversible within a process — uses a side-effect import that
@@ -15,6 +25,10 @@ export interface ESLintConfigureOptions {
    * @defaultValue true
    */
   readonly onlyWarn?: boolean;
+  /**
+   * Enable pnpm workspace lint rules (JSON + YAML).
+   * @defaultValue false
+   */
   readonly pnpm?: boolean;
   /**
    * Applied before the global ignores and oxlint overlay. Consumer configs
@@ -37,6 +51,11 @@ const resolveParserOptions = (options: ESLintConfigureOptions): Linter.ParserOpt
   }),
 });
 
+/**
+ * Creates an ESLint flat config for TypeScript projects.
+ * Supplementary to oxlint — covers `eslint-plugin-pnpm` and `eslint-plugin-n`.
+ * `eslint-plugin-oxlint` is applied last to disable overlapping rules.
+ */
 export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {
   const {
     entryPoints = ['**/bin/**/*.ts', '**/main.ts'],

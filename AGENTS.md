@@ -33,39 +33,13 @@ following the same pattern with `configureEndToEndProject()`.
 
 ### Vitest config API
 
-Three-layer API in `@gtbuchanan/vitest-config` for unit tests:
+Three-layer API in `@gtbuchanan/vitest-config` with parallel unit and e2e
+variants. Per-project sets alias and includes. Global sets coverage,
+setupFiles, and mock reset. Combined composes both for single-project
+consumers. See JSDoc on each export for details and options.
 
-- `configureProject(root?)` — Per-project settings (alias, includes, excludes).
-- `configureGlobal(options?)` — Global-only settings (coverage, setupFiles,
-  mockReset). When `projects` is provided, generates inline project entries.
-- `configure(options?)` — Combined config for single-project consumers.
-
-Parallel three-layer API for end-to-end tests:
-
-- `configureEndToEndProject(root?)` — Per-project e2e settings (alias, `e2e/**` includes).
-- `configureEndToEndGlobal(options?)` — Global e2e settings (coverage to
-  `dist/coverage-e2e`, testTimeout). When `projects` is provided, generates
-  inline project entries.
-- `configureEndToEnd(options?)` — Combined e2e config for single-project consumers.
-
-Shared options:
-
-- `consoleFailTest?: boolean` (default `true`) — Include console-fail-test setup.
-- `coverageDirs?: string[]` (default `['bin', 'scripts', 'src']`) — Directories
-  to include in coverage. When `projects` is provided, patterns are generated
-  for both per-project and root-level directories.
-- `hasAssertions?: boolean` (default `true`) — Include hasAssertions setup.
-
-Global options add: `{ projects?: string[] }` — glob patterns (e.g.,
-`['packages/*']`) for auto-discovering project directories.
-
-End-to-end options add: `{ testTimeout?: number }` (default `300_000`).
-
-Shared utilities: `buildWorkspaceEntry(dir, configureFn)` builds an inline
-project entry with `test.name` and `test.root` from a directory and config
-factory. `resolveProjectDirs(patterns)` resolves glob patterns to directory
-paths. `resolveCoverageInclude(projectPatterns?, dirs?)` builds coverage
-include globs, scoping to project patterns when provided.
+- Unit: `configureProject` / `configureGlobal` / `configure`
+- E2E: `configureEndToEndProject` / `configureEndToEndGlobal` / `configureEndToEnd`
 
 ### Linters
 
@@ -89,6 +63,7 @@ Dual-linter setup:
   diagnostics stand out. CI enforces via `denyWarnings` (oxlint) and
   `--max-warnings=0` (ESLint).
 - Inline suppressions require a `--` reason suffix.
+- All exported functions, types, interfaces, and constants must have JSDoc comments.
 
 ## Build
 

@@ -13,11 +13,21 @@ import {
   resolveProjectDirs,
 } from './configure.ts';
 
+/** Options for combined e2e configuration ({@link configureEndToEnd}). */
 export interface VitestEndToEndConfigureOptions extends VitestConfigureOptions {
+  /**
+   * Test timeout in milliseconds.
+   * @defaultValue 300_000
+   */
   readonly testTimeout?: number;
 }
 
+/** Options for global e2e configuration ({@link configureEndToEndGlobal}). */
 export interface VitestEndToEndConfigureGlobalOptions extends VitestConfigureGlobalOptions {
+  /**
+   * Test timeout in milliseconds.
+   * @defaultValue 300_000
+   */
   readonly testTimeout?: number;
 }
 

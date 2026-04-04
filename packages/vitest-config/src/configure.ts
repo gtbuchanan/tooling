@@ -8,16 +8,32 @@ import {
 import { basename, join, resolve as resolvePath } from 'node:path';
 import { existsSync, readdirSync } from 'node:fs';
 
+/** Shared options for all Vitest configuration layers. */
 export interface VitestConfigureOptions {
+  /**
+   * Include `console-fail-test` setup file.
+   * @defaultValue true
+   */
   readonly consoleFailTest?: boolean;
+  /**
+   * Directories to include in coverage.
+   * @defaultValue ['bin', 'scripts', 'src']
+   */
   readonly coverageDirs?: readonly string[];
+  /**
+   * Include `hasAssertions` setup file.
+   * @defaultValue true
+   */
   readonly hasAssertions?: boolean;
 }
 
+/** Options for global Vitest configuration ({@link configureGlobal}). */
 export interface VitestConfigureGlobalOptions extends VitestConfigureOptions {
+  /** Glob patterns for auto-discovering project directories. */
   readonly projects?: readonly string[];
 }
 
+/** Default test exclude patterns, extending Vitest's built-in excludes with `dist`. */
 export const excludeDefault = [
   ...defaultExclude,
   '**/dist/**',
@@ -27,16 +43,23 @@ const PACKAGE_NAME = '@gtbuchanan/vitest-config';
 
 const COVERAGE_EXTENSIONS = '*.{cjs,cts,js,mjs,mts,ts,tsx}';
 
+/** Default directories included in coverage reports. */
 export const defaultCoverageDirs = [
   'bin',
   'scripts',
   'src',
 ] as const;
 
+/** Default coverage include globs derived from {@link defaultCoverageDirs}. */
 export const coverageInclude = defaultCoverageDirs.map(
   dir => `${dir}/**/${COVERAGE_EXTENSIONS}`,
 );
 
+/**
+ * Builds coverage include globs, scoping to project patterns when provided.
+ * @param projectPatterns - When set, generates both per-project and root-level patterns.
+ * @param dirs - Directories to include. Defaults to {@link defaultCoverageDirs}.
+ */
 export const resolveCoverageInclude = (
   projectPatterns?: readonly string[],
   dirs: readonly string[] = defaultCoverageDirs,
@@ -55,6 +78,7 @@ export const resolveCoverageInclude = (
   ];
 };
 
+/** Resolves the list of Vitest setup files based on feature flags. */
 export const resolveSetupFiles = (options: VitestConfigureOptions): string[] => {
   const { consoleFailTest = true, hasAssertions = true } = options;
   const setupFiles: string[] = [];
@@ -79,6 +103,10 @@ const hasVitestConfig = (dir: string): boolean =>
 
 const GLOB_SUFFIX = '/*';
 
+/**
+ * Resolves glob patterns (e.g. `['packages/*']`) to absolute directory paths.
+ * Patterns ending in `/*` are expanded; others are resolved as-is.
+ */
 export const resolveProjectDirs = (
   patterns: readonly string[],
 ): string[] =>
@@ -133,6 +161,10 @@ const resolveProjects = (
     buildProjectEntry(dir, configureFn),
   );
 
+/**
+ * Builds per-project Vitest settings: `@` alias to `src/`, test includes,
+ * and default excludes.
+ */
 export const buildProjectConfig = (
   include: readonly string[],
   root?: string,
@@ -154,6 +186,10 @@ interface GlobalConfigSpec {
   readonly testTimeout?: number;
 }
 
+/**
+ * Builds global Vitest settings: coverage, setupFiles, mockReset, unstubEnvs,
+ * and optional projects list.
+ */
 export const buildGlobalConfig = (
   spec: GlobalConfigSpec,
   setupOptions: VitestConfigureOptions,

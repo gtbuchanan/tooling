@@ -1,11 +1,32 @@
 import { type DummyRuleMap, type OxlintConfig, type OxlintOverride, defineConfig } from 'oxlint';
 import stylistic, { type StylisticCustomizeOptions } from '@stylistic/eslint-plugin';
 
+/** Options for the shared oxlint configuration. */
 export interface OxlintConfigureOptions {
+  /**
+   * Override category severities.
+   * @defaultValue All 'warn' except nursery and restriction ('off')
+   */
   readonly categories?: Partial<OxlintConfig['categories']>;
+  /**
+   * File patterns to ignore.
+   * @defaultValue Dist output directories
+   */
   readonly ignorePatterns?: string[];
+  /**
+   * Oxlint options.
+   * @defaultValue `{ denyWarnings: true, typeAware: true }`
+   */
   readonly options?: Partial<OxlintConfig['options']>;
+  /**
+   * Additional rule overrides appended after the built-in vitest overrides.
+   * @defaultValue []
+   */
   readonly overrides?: OxlintOverride[];
+  /**
+   * `@stylistic/eslint-plugin` customization options.
+   * @defaultValue `{ semi: true, severity: 'warn' }`
+   */
   readonly stylistic?: StylisticCustomizeOptions;
 }
 
@@ -92,6 +113,11 @@ const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMa
   ...ruleOverrides,
 });
 
+/**
+ * Creates an oxlint configuration. Primary linter with all categories at
+ * `warn` severity and `denyWarnings` for CI enforcement. Includes
+ * `@stylistic/eslint-plugin` via jsPlugin for syntax-aware formatting.
+ */
 export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
   const {
     categories: categoryOverrides,

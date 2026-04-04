@@ -105,49 +105,6 @@ import { defineProject } from 'vitest/config';
 export default defineProject(configureEndToEndProject(import.meta.dirname));
 ```
 
-## API
-
-### Unit test configuration (`configure`)
-
-- `configure(options?)` — Combined config for single-project consumers.
-  Includes alias, coverage, setupFiles, and test settings.
-- `configureGlobal(options?)` — Global-only settings for monorepo root:
-  coverage, setupFiles, mockReset, unstubEnvs. Pass `projects` to
-  auto-discover packages.
-- `configureProject(root?)` — Per-project settings: `@` alias to `src/`,
-  test includes (`test/**/*.test.ts`). Only needed when a package overrides
-  the auto-generated config.
-
-### End-to-end configuration (`configure-e2e`)
-
-- `configureEndToEnd(options?)` — Combined e2e config for single-project
-  consumers. Includes alias, coverage (to `dist/coverage-e2e`), testTimeout,
-  and test settings.
-- `configureEndToEndGlobal(options?)` — Global e2e settings for monorepo
-  root. Pass `projects` to auto-discover packages.
-- `configureEndToEndProject(root?)` — Per-project e2e settings: `@` alias
-  to `src/`, e2e includes (`e2e/**/*.test.ts`).
-
-### Shared utilities
-
-- `buildWorkspaceEntry(dir, configureFn)` — Builds an inline project entry
-  from a directory and config factory. Adds `test.name` and `test.root`.
-- `resolveCoverageInclude(projectPatterns?, dirs?)` — Builds coverage include
-  globs from `dirs` (default `['bin', 'scripts', 'src']`). When
-  `projectPatterns` is provided, returns both per-project and root-level
-  patterns.
-- `resolveProjectDirs(patterns)` — Resolves glob patterns to directory paths.
-
-## Options
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `consoleFailTest` | `boolean` | `true` | Fail tests that call `console.*` methods |
-| `coverageDirs` | `string[]` | `['bin', 'scripts', 'src']` | Directories to include in coverage |
-| `hasAssertions` | `boolean` | `true` | Require every test to have at least one assertion |
-| `projects` | `string[]` | — | Glob patterns for auto-discovering project directories (global configs only) |
-| `testTimeout` | `number` | `300000` | Test timeout in milliseconds (e2e configs only) |
-
 ## Setup files
 
 Two opt-in setup files (enabled by default):

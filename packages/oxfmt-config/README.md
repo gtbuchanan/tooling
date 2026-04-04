@@ -18,11 +18,6 @@ import { configure } from '@gtbuchanan/oxfmt-config';
 export default configure();
 ```
 
-## Defaults
-
-- `singleQuote: true`
-- Ignores all JS/TS file extensions
-
 ## Customization
 
 Pass a transform function to override defaults:
