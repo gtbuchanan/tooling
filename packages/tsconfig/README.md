@@ -31,3 +31,4 @@ Includes all `@tsconfig/strictest` options plus:
 - `lib`: ES2024
 - `module`: nodenext
 - `moduleResolution`: nodenext
+- `types`: node
