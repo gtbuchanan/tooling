@@ -26,8 +26,9 @@ export interface ESLintConfigureOptions {
    */
   readonly onlyWarn?: boolean;
   /**
-   * Enable pnpm workspace lint rules (JSON + YAML).
-   * @defaultValue false
+   * Enable eslint-plugin-pnpm rules for package.json and
+   * pnpm-workspace.yaml files.
+   * @defaultValue true
    */
   readonly pnpm?: boolean;
   /**
@@ -38,7 +39,7 @@ export interface ESLintConfigureOptions {
 }
 
 const resolvePnpmConfigs = (options: ESLintConfigureOptions) => {
-  if (options.pnpm !== true) {
+  if (options.pnpm === false) {
     return [];
   }
   return [...pnpmPluginConfigs.json, ...pnpmPluginConfigs.yaml];

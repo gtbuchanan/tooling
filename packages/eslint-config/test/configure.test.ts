@@ -26,7 +26,13 @@ describe('ESLint configure', () => {
     expect(onlyWarnImport).not.toHaveBeenCalled();
   });
 
-  it('includes more configs when pnpm is enabled', async ({ expect }) => {
+  it('includes pnpm configs by default', async ({ expect }) => {
+    const configs = await configure({ onlyWarn: false });
+
+    expect(configs.some(cfg => cfg.name?.includes('pnpm') === true)).toBe(true);
+  });
+
+  it('excludes pnpm configs when pnpm is false', async ({ expect }) => {
     const withPnpm = await configure({ onlyWarn: false, pnpm: true });
     const withoutPnpm = await configure({ onlyWarn: false, pnpm: false });
 

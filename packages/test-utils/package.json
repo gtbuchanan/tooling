@@ -10,11 +10,11 @@
     "node": ">=22.16"
   },
   "dependencies": {
-    "cross-spawn": "^7.0.6",
-    "find-up-simple": "^1.0.1",
+    "cross-spawn": "catalog:",
+    "find-up-simple": "catalog:",
     "valibot": "catalog:"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.6"
+    "@types/cross-spawn": "catalog:"
   }
 }

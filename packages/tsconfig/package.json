@@ -11,6 +11,6 @@
   },
   "files": ["base.json"],
   "dependencies": {
-    "@tsconfig/strictest": "^2.0.8"
+    "@tsconfig/strictest": "catalog:"
   }
 }
