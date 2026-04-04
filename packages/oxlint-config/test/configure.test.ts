@@ -53,7 +53,7 @@ describe('oxlint configure', () => {
   it('includes vitest override for test files', ({ expect }) => {
     const config = configure();
     const vitestOverride = config.overrides?.find(
-      override => override.plugins?.includes('vitest') === true,
+      override => override.plugins?.includes('vitest'),
     );
 
     expect(vitestOverride).toBeDefined();

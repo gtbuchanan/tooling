@@ -198,7 +198,7 @@ export const buildGlobalConfig = (
 ): ViteUserConfig =>
   defineConfig({
     test: {
-      ...(spec.reportsDirectory !== undefined && {
+      ...(spec.reportsDirectory && {
         coverage: {
           cleanOnRerun: false,
           exclude: [...excludeDefault],
@@ -212,11 +212,11 @@ export const buildGlobalConfig = (
       }),
       mockReset: true,
       setupFiles: resolveSetupFiles(setupOptions),
-      ...(spec.testTimeout !== undefined && {
+      ...(spec.testTimeout && {
         testTimeout: spec.testTimeout,
       }),
       unstubEnvs: true,
-      ...(resolvedProjects !== undefined && {
+      ...(resolvedProjects && {
         projects: [...resolvedProjects],
       }),
     },

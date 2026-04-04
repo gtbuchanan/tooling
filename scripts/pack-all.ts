@@ -17,7 +17,7 @@ for (const name of readdirSync(packagesDir)) {
   const pkgDir = join(packagesDir, name);
   const raw = readFileSync(join(pkgDir, 'package.json'), 'utf-8');
   const manifest = v.parse(ManifestSchema, JSON.parse(raw));
-  if (manifest.private === true) {
+  if (manifest.private) {
     continue;
   }
   const result = crossSpawn.sync('pnpm', ['pack', '--pack-destination', destination], {

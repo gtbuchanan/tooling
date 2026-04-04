@@ -44,11 +44,11 @@ export const buildRepoFields = (
   root: RootManifest,
   directory: string,
 ) => ({
-  ...(root.bugs !== undefined && { bugs: root.bugs }),
-  ...(root.homepage !== undefined && {
+  ...(root.bugs && { bugs: root.bugs }),
+  ...(root.homepage && {
     homepage: `${root.homepage}/tree/main/${directory}`,
   }),
-  ...(root.repository !== undefined && {
+  ...(root.repository && {
     repository: { ...root.repository, directory },
   }),
 });
@@ -67,10 +67,10 @@ export const buildOutput = (manifest: Manifest): Manifest => {
 
   return {
     ...rest,
-    ...(publishConfig?.exports !== undefined && {
+    ...(publishConfig?.exports && {
       exports: publishConfig.exports,
     }),
-    ...(publishConfig?.scripts !== undefined && {
+    ...(publishConfig?.scripts && {
       scripts: publishConfig.scripts,
     }),
   };

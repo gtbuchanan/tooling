@@ -47,7 +47,7 @@ const resolvePnpmConfigs = (options: ESLintConfigureOptions) => {
 
 const resolveParserOptions = (options: ESLintConfigureOptions): Linter.ParserOptions => ({
   projectService: true,
-  ...(options.tsconfigRootDir !== undefined && {
+  ...(options.tsconfigRootDir && {
     tsconfigRootDir: options.tsconfigRootDir,
   }),
 });

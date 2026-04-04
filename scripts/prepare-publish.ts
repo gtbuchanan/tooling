@@ -22,7 +22,7 @@ const preparePackage = (pkgDir: string): void => {
   const raw = readFileSync(join(pkgDir, 'package.json'), 'utf-8');
   const manifest = v.parse(ManifestSchema, JSON.parse(raw));
   const dir = manifest.publishConfig?.directory;
-  if (manifest.private === true || dir === undefined) {
+  if (manifest.private || dir === undefined) {
     return;
   }
 

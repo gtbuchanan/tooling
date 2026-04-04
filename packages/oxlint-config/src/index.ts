@@ -37,7 +37,7 @@ const resolveStylisticRules = (opts?: StylisticCustomizeOptions): DummyRuleMap =
     severity: 'warn',
     ...opts,
   }).rules ?? {})) {
-    if (value !== undefined) {
+    if (value) {
       rules[key] = value;
     }
   }
@@ -79,6 +79,10 @@ const ruleOverrides: DummyRuleMap = {
   }],
   // Justification: Ternaries are readable for simple conditional assignments
   'no-ternary': 'off',
+  // Justification: Falsy coalescing with || is idiomatic for strings and numbers
+  'typescript/prefer-nullish-coalescing': 'off',
+  // Justification: Explicit nullish checks are often clearer than optional chaining
+  'typescript/strict-boolean-expressions': 'off',
 };
 
 const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMap => ({

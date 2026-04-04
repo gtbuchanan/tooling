@@ -29,7 +29,7 @@ describe('ESLint configure', () => {
   it('includes pnpm configs by default', async ({ expect }) => {
     const configs = await configure({ onlyWarn: false });
 
-    expect(configs.some(cfg => cfg.name?.includes('pnpm') === true)).toBe(true);
+    expect(configs.some(cfg => cfg.name?.includes('pnpm'))).toBe(true);
   });
 
   it('excludes pnpm configs when pnpm is false', async ({ expect }) => {
