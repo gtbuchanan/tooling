@@ -1,10 +1,3 @@
-import { defineConfig } from 'vitest/config';
+import { configureEndToEndGlobal } from '@gtbuchanan/vitest-config/configure-e2e';
 
-const testTimeout = 300_000;
-
-export default defineConfig({
-  test: {
-    include: ['packages/*/e2e/**/*.test.ts'],
-    testTimeout,
-  },
-});
+export default configureEndToEndGlobal({ projects: ['packages/*'] });

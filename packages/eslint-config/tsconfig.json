@@ -3,7 +3,6 @@
   "references": [
     { "path": "src" },
     { "path": "test" },
-    { "path": "e2e" },
-    { "path": "tsconfig.root.json" }
+    { "path": "e2e" }
   ]
 }

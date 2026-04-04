@@ -1,4 +1,10 @@
-import { configure, configureGlobal, configureProject, excludeDefault } from '@/index.js';
+import {
+  buildWorkspaceEntry,
+  configure,
+  configureGlobal,
+  configureProject,
+  excludeDefault,
+} from '@/index.js';
 import { describe, it } from 'vitest';
 import { join } from 'node:path';
 
@@ -122,6 +128,44 @@ describe('vitest configureGlobal', () => {
     expect(setupFiles).not.toContainEqual(
       expect.stringContaining('setup'),
     );
+  });
+
+  it('does not include workspace without projects', ({ expect }) => {
+    const config = configureGlobal();
+
+    expect(config.test).not.toHaveProperty('projects');
+  });
+});
+
+describe('buildWorkspaceEntry', () => {
+  it('adds name from directory basename', ({ expect }) => {
+    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+
+    expect(entry.test?.name).toBe('my-package');
+  });
+
+  it('adds root from directory path', ({ expect }) => {
+    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+
+    expect(entry.test?.root).toBe('/path/to/my-package');
+  });
+
+  it('preserves alias from configure function', ({ expect }) => {
+    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+
+    expect(entry.resolve?.alias).toHaveProperty('@', join('/path/to/my-package', 'src'));
+  });
+
+  it('preserves includes from configure function', ({ expect }) => {
+    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+
+    expect(entry.test?.include).toEqual(['test/**/*.test.ts']);
+  });
+
+  it('preserves excludes from configure function', ({ expect }) => {
+    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+
+    expect(entry.test?.exclude).toEqual([...excludeDefault]);
   });
 });
 

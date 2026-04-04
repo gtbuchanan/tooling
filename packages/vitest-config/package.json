@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./configure": "./src/configure.ts",
+    "./configure-e2e": "./src/configure-e2e.ts",
     "./setup": "./src/setup.ts",
     "./console-fail-test": "./src/console-fail-test.ts"
   },
@@ -15,6 +16,7 @@
     "exports": {
       ".": "./index.js",
       "./configure": "./configure.js",
+      "./configure-e2e": "./configure-e2e.js",
       "./setup": "./setup.js",
       "./console-fail-test": "./console-fail-test.js"
     }

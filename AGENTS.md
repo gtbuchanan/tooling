@@ -11,7 +11,7 @@ packages/
   oxfmt-config/    — @gtbuchanan/oxfmt-config (oxfmt configure())
   oxlint-config/   — @gtbuchanan/oxlint-config (oxlint configure())
   tsconfig/        — @gtbuchanan/tsconfig (shared base tsconfig.json)
-  vitest-config/   — @gtbuchanan/vitest-config (configure, configureGlobal, configureProject)
+  vitest-config/   — @gtbuchanan/vitest-config (configure, configureGlobal, configureProject, + e2e variants)
   test-utils/      — private shared E2E fixture utilities
 scripts/
   prepare-publish.ts — Prepares clean package.json for each package
@@ -20,23 +20,45 @@ scripts/
 
 ## Architecture
 
-### Per-package vitest projects
+### Vitest projects
 
-Each package has its own `vitest.config.ts` using `defineProject(configureProject())`.
-The root `vitest.config.ts` uses `configureGlobal()` with `projects: ['packages/*']`.
+The root `vitest.config.ts` uses `configureGlobal({ projects: ['packages/*'] })`
+to auto-discover packages. Per-package `vitest.config.ts` files are not needed
+unless a package requires custom settings — the global config generates inline
+project entries via `configureProject()` for each directory. Directories with
+their own `vitest.config.ts` are included as-is.
+
+The root `vitest.config.e2e.ts` uses `configureEndToEndGlobal({ projects: ['packages/*'] })`
+following the same pattern with `configureEndToEndProject()`.
 
 ### Vitest config API
 
-Three-layer API in `@gtbuchanan/vitest-config`:
+Three-layer API in `@gtbuchanan/vitest-config` for unit tests:
 
-- `configureProject(root?)` — Per-project settings (alias, includes). Used in
-  monorepo per-package vitest configs via `defineProject()`.
+- `configureProject(root?)` — Per-project settings (alias, includes, excludes).
 - `configureGlobal(options?)` — Global-only settings (coverage, setupFiles,
-  mockReset). Used in root `vitest.config.ts` via `defineConfig()`.
+  mockReset). When `projects` is provided, generates inline project entries.
 - `configure(options?)` — Combined config for single-project consumers.
 
-Options: `{ consoleFailTest?: boolean, hasAssertions?: boolean }` (both default
-`true`). Controls which setup files are included.
+Parallel three-layer API for end-to-end tests:
+
+- `configureEndToEndProject(root?)` — Per-project e2e settings (alias, `e2e/**` includes).
+- `configureEndToEndGlobal(options?)` — Global e2e settings (coverage to
+  `dist/coverage-e2e`, testTimeout). When `projects` is provided, generates
+  inline project entries.
+- `configureEndToEnd(options?)` — Combined e2e config for single-project consumers.
+
+Shared options: `{ consoleFailTest?: boolean, hasAssertions?: boolean }` (both
+default `true`). Controls which setup files are included.
+
+Global options add: `{ projects?: string[] }` — glob patterns (e.g.,
+`['packages/*']`) for auto-discovering project directories.
+
+End-to-end options add: `{ testTimeout?: number }` (default `300_000`).
+
+Shared utilities: `buildWorkspaceEntry(dir, configureFn)` builds an inline
+project entry with `test.name` and `test.root` from a directory and config
+factory. `resolveProjectDirs(patterns)` resolves glob patterns to directory paths.
 
 ### Linters
 
@@ -60,8 +82,6 @@ Dual-linter setup:
   diagnostics stand out. CI enforces via `denyWarnings` (oxlint) and
   `--max-warnings=0` (ESLint).
 - Inline suppressions require a `--` reason suffix.
-- Per-package `vitest.config.ts` files are type-checked via
-  `tsconfig.root.json` in each package, referenced from the solution tsconfig.
 
 ## Build
 
