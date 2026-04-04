@@ -52,6 +52,8 @@ const ruleOverrides: DummyRuleMap = {
     ignoreNumericLiteralTypes: true,
     ignoreTypeIndexes: true,
   }],
+  // Justification: Ternaries are readable for simple conditional assignments
+  'no-ternary': 'off',
 };
 
 const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMap => ({
