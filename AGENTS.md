@@ -48,8 +48,13 @@ Parallel three-layer API for end-to-end tests:
   inline project entries.
 - `configureEndToEnd(options?)` — Combined e2e config for single-project consumers.
 
-Shared options: `{ consoleFailTest?: boolean, hasAssertions?: boolean }` (both
-default `true`). Controls which setup files are included.
+Shared options:
+
+- `consoleFailTest?: boolean` (default `true`) — Include console-fail-test setup.
+- `coverageDirs?: string[]` (default `['bin', 'scripts', 'src']`) — Directories
+  to include in coverage. When `projects` is provided, patterns are generated
+  for both per-project and root-level directories.
+- `hasAssertions?: boolean` (default `true`) — Include hasAssertions setup.
 
 Global options add: `{ projects?: string[] }` — glob patterns (e.g.,
 `['packages/*']`) for auto-discovering project directories.
@@ -58,7 +63,9 @@ End-to-end options add: `{ testTimeout?: number }` (default `300_000`).
 
 Shared utilities: `buildWorkspaceEntry(dir, configureFn)` builds an inline
 project entry with `test.name` and `test.root` from a directory and config
-factory. `resolveProjectDirs(patterns)` resolves glob patterns to directory paths.
+factory. `resolveProjectDirs(patterns)` resolves glob patterns to directory
+paths. `resolveCoverageInclude(projectPatterns?, dirs?)` builds coverage
+include globs, scoping to project patterns when provided.
 
 ### Linters
 

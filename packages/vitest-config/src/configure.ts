@@ -10,6 +10,7 @@ import { existsSync, readdirSync } from 'node:fs';
 
 export interface VitestConfigureOptions {
   readonly consoleFailTest?: boolean;
+  readonly coverageDirs?: readonly string[];
   readonly hasAssertions?: boolean;
 }
 
@@ -24,9 +25,35 @@ export const excludeDefault = [
 
 const PACKAGE_NAME = '@gtbuchanan/vitest-config';
 
-export const coverageInclude = [
-  'src/**/*.{cjs,cts,js,mjs,mts,ts,tsx}',
+const COVERAGE_EXTENSIONS = '*.{cjs,cts,js,mjs,mts,ts,tsx}';
+
+export const defaultCoverageDirs = [
+  'bin',
+  'scripts',
+  'src',
 ] as const;
+
+export const coverageInclude = defaultCoverageDirs.map(
+  dir => `${dir}/**/${COVERAGE_EXTENSIONS}`,
+);
+
+export const resolveCoverageInclude = (
+  projectPatterns?: readonly string[],
+  dirs: readonly string[] = defaultCoverageDirs,
+): readonly string[] => {
+  const patterns = dirs.map(
+    dir => `${dir}/**/${COVERAGE_EXTENSIONS}`,
+  );
+  if (projectPatterns === undefined) {
+    return patterns;
+  }
+  return [
+    ...projectPatterns.flatMap(project =>
+      patterns.map(pattern => `${project}/${pattern}`),
+    ),
+    ...patterns,
+  ];
+};
 
 export const resolveSetupFiles = (options: VitestConfigureOptions): string[] => {
   const { consoleFailTest = true, hasAssertions = true } = options;
@@ -122,6 +149,7 @@ export const buildProjectConfig = (
 });
 
 interface GlobalConfigSpec {
+  readonly coverageInclude?: readonly string[];
   readonly reportsDirectory?: string;
   readonly testTimeout?: number;
 }
@@ -137,7 +165,7 @@ export const buildGlobalConfig = (
         coverage: {
           cleanOnRerun: false,
           exclude: [...excludeDefault],
-          include: [...coverageInclude],
+          include: [...(spec.coverageInclude ?? coverageInclude)],
           provider: 'v8',
           reportsDirectory: join(
             process.cwd(),
@@ -178,12 +206,18 @@ export const configureProject = (root?: string): UserWorkspaceConfig =>
 export const configureGlobal = (
   options: VitestConfigureGlobalOptions = {},
 ): ViteUserConfig => {
-  const { projects: projectPatterns, ...setupOptions } = options;
+  const { coverageDirs, projects: projectPatterns, ...setupOptions } = options;
   const resolved = projectPatterns === undefined
     ? undefined
     : resolveProjects(projectPatterns, configureProject);
   return buildGlobalConfig(
-    { reportsDirectory: 'dist/coverage' },
+    {
+      coverageInclude: resolveCoverageInclude(
+        projectPatterns,
+        coverageDirs,
+      ),
+      reportsDirectory: 'dist/coverage',
+    },
     setupOptions,
     resolved,
   );

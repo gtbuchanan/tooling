@@ -132,6 +132,10 @@ export default defineProject(configureEndToEndProject(import.meta.dirname));
 
 - `buildWorkspaceEntry(dir, configureFn)` — Builds an inline project entry
   from a directory and config factory. Adds `test.name` and `test.root`.
+- `resolveCoverageInclude(projectPatterns?, dirs?)` — Builds coverage include
+  globs from `dirs` (default `['bin', 'scripts', 'src']`). When
+  `projectPatterns` is provided, returns both per-project and root-level
+  patterns.
 - `resolveProjectDirs(patterns)` — Resolves glob patterns to directory paths.
 
 ## Options
@@ -139,6 +143,7 @@ export default defineProject(configureEndToEndProject(import.meta.dirname));
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `consoleFailTest` | `boolean` | `true` | Fail tests that call `console.*` methods |
+| `coverageDirs` | `string[]` | `['bin', 'scripts', 'src']` | Directories to include in coverage |
 | `hasAssertions` | `boolean` | `true` | Require every test to have at least one assertion |
 | `projects` | `string[]` | — | Glob patterns for auto-discovering project directories (global configs only) |
 | `testTimeout` | `number` | `300000` | Test timeout in milliseconds (e2e configs only) |

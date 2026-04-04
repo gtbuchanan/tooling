@@ -3,7 +3,10 @@ import {
   configure,
   configureGlobal,
   configureProject,
+  coverageInclude,
+  defaultCoverageDirs,
   excludeDefault,
+  resolveCoverageInclude,
 } from '@/index.js';
 import { describe, it } from 'vitest';
 import { join } from 'node:path';
@@ -134,6 +137,41 @@ describe('vitest configureGlobal', () => {
     const config = configureGlobal();
 
     expect(config.test).not.toHaveProperty('projects');
+  });
+});
+
+describe(resolveCoverageInclude, () => {
+  it('returns default patterns without projects', ({ expect }) => {
+    expect(resolveCoverageInclude()).toEqual([...coverageInclude]);
+  });
+
+  it('includes per-project and root-level patterns', ({ expect }) => {
+    const result = resolveCoverageInclude(['packages/*']);
+
+    expect(result).toEqual([
+      ...coverageInclude.map(pattern => `packages/*/${pattern}`),
+      ...coverageInclude,
+    ]);
+  });
+
+  it('handles multiple project patterns', ({ expect }) => {
+    const result = resolveCoverageInclude(['apps/*', 'libs/*']);
+
+    expect(result).toEqual([
+      ...coverageInclude.map(pattern => `apps/*/${pattern}`),
+      ...coverageInclude.map(pattern => `libs/*/${pattern}`),
+      ...coverageInclude,
+    ]);
+  });
+
+  it('respects custom coverage dirs', ({ expect }) => {
+    const result = resolveCoverageInclude(undefined, ['src']);
+
+    expect(result).toStrictEqual(['src/**/*.{cjs,cts,js,mjs,mts,ts,tsx}']);
+  });
+
+  it('includes all default dirs', ({ expect }) => {
+    expect(defaultCoverageDirs).toEqual(['bin', 'scripts', 'src']);
   });
 });
 
