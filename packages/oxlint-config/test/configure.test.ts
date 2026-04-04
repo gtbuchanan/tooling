@@ -1,14 +1,27 @@
 import { describe, it } from 'vitest';
 import { configure } from '@/index.js';
 
+const isAndroid = process.platform === 'android';
+
 describe('oxlint configure', () => {
+  it.runIf(!isAndroid)('includes jsPlugins with defaults', ({ expect }) => {
+    const config = configure();
+
+    expect(config.jsPlugins).toContain('@stylistic/eslint-plugin');
+  });
+
+  it.runIf(isAndroid)('omits jsPlugins on Android', ({ expect }) => {
+    const config = configure();
+
+    expect(config.jsPlugins).toBeUndefined();
+  });
+
   it('returns a valid config with defaults', ({ expect }) => {
     const config = configure();
 
     expect(config.plugins).toContain('typescript');
     expect(config.plugins).toContain('import');
     expect(config.plugins).toContain('node');
-    expect(config.jsPlugins).toContain('@stylistic/eslint-plugin');
     expect(config.categories).toBeDefined();
     expect(config.options?.typeAware).toBe(true);
     expect(config.options?.denyWarnings).toBe(true);
@@ -72,13 +85,20 @@ describe('oxlint configure', () => {
     expect(last).toEqual(custom);
   });
 
-  it('includes stylistic rules', ({ expect }) => {
+  it.runIf(!isAndroid)('includes stylistic rules', ({ expect }) => {
     const config = configure();
 
     expect(config.rules?.['@stylistic/semi']).toBeDefined();
   });
 
-  it('allows customizing stylistic options', ({ expect }) => {
+  it.runIf(isAndroid)('omits stylistic rules on Android', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['@stylistic/semi']).toBeUndefined();
+    expect(config.rules?.['@stylistic/max-len']).toBeUndefined();
+  });
+
+  it.runIf(!isAndroid)('allows customizing stylistic options', ({ expect }) => {
     const withSemi = configure({ stylistic: { semi: true } });
     const withoutSemi = configure({ stylistic: { semi: false } });
 
@@ -105,14 +125,14 @@ describe('oxlint configure', () => {
     expect(config.rules?.['no-continue']).toBe('off');
   });
 
-  it('sets max-len to 100', ({ expect }) => {
+  it.runIf(!isAndroid)('sets max-len to 100', ({ expect }) => {
     const config = configure();
     const maxLen = config.rules?.['@stylistic/max-len'];
 
     expect(maxLen).toEqual(['warn', { code: 100, ignoreUrls: true }]);
   });
 
-  it('enforces single quotes', ({ expect }) => {
+  it.runIf(!isAndroid)('enforces single quotes', ({ expect }) => {
     const config = configure();
     const quotes = config.rules?.['@stylistic/quotes'];
 

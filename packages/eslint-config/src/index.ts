@@ -1,8 +1,14 @@
+import {
+  isAndroid,
+  stylisticCustomizeDefaults,
+  stylisticRuleOverrides,
+} from '@gtbuchanan/oxlint-config';
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import nodePlugin from 'eslint-plugin-n';
 import oxlint from 'eslint-plugin-oxlint';
 import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
+import stylistic from '@stylistic/eslint-plugin';
 import tseslint from 'typescript-eslint';
 
 /** Options for the shared ESLint configuration. */
@@ -52,9 +58,40 @@ const resolveParserOptions = (options: ESLintConfigureOptions): Linter.ParserOpt
   }),
 });
 
+const resolveNodeConfig = (options: ESLintConfigureOptions) => ({
+  /*
+   * HACK: eslint-plugin-n belongs in oxlint-config as a jsPlugin, but
+   * oxlint jsPlugins don't support type-awareness yet. Move it there
+   * when oxlint jsPlugins exit alpha.
+   */
+  extends: [nodePlugin.configs['flat/recommended-module']],
+  files: ['**/*.ts', '**/*.mts', '**/*.cts'],
+  languageOptions: {
+    parser: tseslint.parser,
+    parserOptions: resolveParserOptions(options),
+  },
+  rules: {
+    // Justification: Redundant with oxlint native import plugin
+    'n/no-extraneous-import': 'off' as const,
+    // Justification: Redundant with oxlint native import plugin
+    'n/no-missing-import': 'off' as const,
+    // Justification: Redundant with oxlint native import plugin
+    'n/no-unpublished-import': 'off' as const,
+  },
+});
+
+const resolveStylisticFallback = (): Linter.Config[] =>
+  isAndroid
+    ? [
+        { ...stylistic.configs.customize(stylisticCustomizeDefaults), files: ['**/*.ts'] },
+        { files: ['**/*.ts'], rules: stylisticRuleOverrides },
+      ]
+    : [];
+
 /**
  * Creates an ESLint flat config for TypeScript projects.
  * Supplementary to oxlint — covers `eslint-plugin-pnpm` and `eslint-plugin-n`.
+ * On Android, also runs `@stylistic/eslint-plugin` as a fallback for oxlint jsPlugins.
  * `eslint-plugin-oxlint` is applied last to disable overlapping rules.
  */
 export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {
@@ -71,27 +108,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
 
   return defineConfig(
     ...resolvePnpmConfigs(options),
-    {
-      /*
-       * HACK: eslint-plugin-n belongs in oxlint-config as a jsPlugin, but
-       * oxlint jsPlugins don't support type-awareness yet. Move it there
-       * when oxlint jsPlugins exit alpha.
-       */
-      extends: [nodePlugin.configs['flat/recommended-module']],
-      files: ['**/*.ts', '**/*.mts', '**/*.cts'],
-      languageOptions: {
-        parser: tseslint.parser,
-        parserOptions: resolveParserOptions(options),
-      },
-      rules: {
-        // Justification: Redundant with oxlint native import plugin
-        'n/no-extraneous-import': 'off',
-        // Justification: Redundant with oxlint native import plugin
-        'n/no-missing-import': 'off',
-        // Justification: Redundant with oxlint native import plugin
-        'n/no-unpublished-import': 'off',
-      },
-    },
+    resolveNodeConfig(options),
     {
       files: entryPoints,
       rules: {
@@ -102,6 +119,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
       },
     },
     ...extraConfigs,
+    ...resolveStylisticFallback(),
     { ignores },
     // Must be last — disables ESLint rules already covered by oxlint
     ...oxlint.configs['flat/all'],

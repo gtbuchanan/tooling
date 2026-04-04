@@ -14,6 +14,8 @@
     }
   },
   "dependencies": {
+    "@gtbuchanan/oxlint-config": "workspace:*",
+    "@stylistic/eslint-plugin": "catalog:",
     "eslint-plugin-n": "catalog:",
     "eslint-plugin-only-warn": "catalog:",
     "eslint-plugin-oxlint": "catalog:",

@@ -1,10 +1,10 @@
 {
   "name": "@gtbuchanan/tsconfig",
   "version": "0.0.0",
-  "description": "Shared TypeScript base configuration",
+  "description": "Shared TypeScript configuration",
   "type": "module",
   "exports": {
-    "./base.json": "./base.json"
+    "./node.json": "./node.json"
   },
   "engines": {
     "node": ">=22.16"

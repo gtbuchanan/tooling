@@ -3,7 +3,9 @@ import {
   createProjectFixture,
   extendWithFixture,
 } from '@gtbuchanan/test-utils';
-import { describe } from 'vitest';
+import { it as baseIt, describe } from 'vitest';
+
+const isAndroid = process.platform === 'android';
 
 const oxlintConfig = [
   "import { configure } from '@gtbuchanan/oxlint-config';",
@@ -47,13 +49,18 @@ describe('oxlint CLI', () => {
     expect(result.stdout).toContain('debugger');
   });
 
-  it('includes stylistic rules via @stylistic/eslint-plugin', ({ fixture, expect }) => {
-    fixture.writeFile('style.js', 'const _unused = 42\n');
+  // JsPlugins crash on Android/Termux; stylistic rules require the plugin
+  baseIt.runIf(!isAndroid)(
+    'includes stylistic rules via @stylistic/eslint-plugin',
+    ({ expect }) => {
+      const fixture = createFixture();
+      fixture.writeFile('style.js', 'const _unused = 42\n');
 
-    const result = fixture.run('oxlint', ['style.js']);
+      const result = fixture.run('oxlint', ['style.js']);
 
-    expect(result.stdout).toContain('semi');
-  });
+      expect(result.stdout).toContain('semi');
+    },
+  );
 
   it('relaxes no-magic-numbers in test files', ({ fixture, expect }) => {
     fixture.writeFile('test/example.test.ts', 'export const answer = 42;\n');

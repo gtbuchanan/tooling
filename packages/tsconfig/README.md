@@ -1,6 +1,6 @@
 # @gtbuchanan/tsconfig
 
-Shared TypeScript base configuration extending
+Shared TypeScript configuration extending
 [@tsconfig/strictest](https://github.com/tsconfig/bases).
 
 ## Install
@@ -13,18 +13,19 @@ pnpm add -D @gtbuchanan/tsconfig
 
 ```json
 {
-  "extends": ["@gtbuchanan/tsconfig/base.json"],
+  "extends": ["@gtbuchanan/tsconfig/node.json"],
   "compilerOptions": {
     "outDir": "dist"
   }
 }
 ```
 
-## Base config
+## Node config
 
 Extends `@tsconfig/strictest` with:
 
-- `target`: ES2022
-- `lib`: ES2022
+- `target`: ES2024
+- `lib`: ES2024
 - `module`: nodenext
 - `moduleResolution`: nodenext
+- `types`: node

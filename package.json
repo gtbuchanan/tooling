@@ -28,12 +28,12 @@
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
-    "@tsconfig/strictest": "catalog:",
     "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/oxfmt-config": "workspace:*",
     "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/tsconfig": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
+    "@tsconfig/strictest": "catalog:",
     "@types/cross-spawn": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",

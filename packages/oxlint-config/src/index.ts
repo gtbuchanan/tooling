@@ -32,11 +32,9 @@ export interface OxlintConfigureOptions {
 
 const resolveStylisticRules = (opts?: StylisticCustomizeOptions): DummyRuleMap => {
   const rules: DummyRuleMap = {};
-  for (const [key, value] of Object.entries(stylistic.configs.customize({
-    semi: true,
-    severity: 'warn',
-    ...opts,
-  }).rules ?? {})) {
+  for (const [key, value] of Object.entries(
+    stylistic.configs.customize({ ...stylisticCustomizeDefaults, ...opts }).rules ?? {},
+  )) {
     if (value) {
       rules[key] = value;
     }
@@ -85,8 +83,26 @@ const ruleOverrides: DummyRuleMap = {
   'typescript/strict-boolean-expressions': 'off',
 };
 
-const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMap => ({
-  ...resolveStylisticRules(stylisticOptions),
+// Oxlint jsPlugins crash on Android/Termux (oxc_allocator thread-local pool panic).
+// Stylistic rules require the jsPlugin so they must be omitted together.
+// https://github.com/oxc-project/oxc/issues/21045
+/** Whether the current platform is Android (Termux). */
+export const isAndroid = process.platform === 'android';
+
+/** Default stylistic customize options for `@stylistic/eslint-plugin`. */
+export const stylisticCustomizeDefaults: StylisticCustomizeOptions = {
+  semi: true,
+  severity: 'warn',
+};
+
+/** Stylistic rule type compatible with both oxlint and ESLint configs. */
+export type StylisticRule = 'warn' | ['warn', ...unknown[]];
+
+/**
+ * Stylistic rule overrides applied on top of `customize()` defaults.
+ * Use with ESLint as a fallback when oxlint jsPlugins are unavailable.
+ */
+export const stylisticRuleOverrides: Record<string, StylisticRule> = {
   /*
    * Justification: 80 is the historical recommendation due to punch cards but also
    * has some basis in "reading ergonomics" (e.g. typography). 100 is chosen as a
@@ -97,23 +113,19 @@ const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMa
   '@stylistic/no-extra-semi': 'warn',
   // Justification: Matches C# style; ternary/union/intersection before, rest after
   '@stylistic/operator-linebreak': [
-    'warn',
-    'after',
-    {
-      overrides: {
-        '&': 'before',
-        ':': 'before',
-        '?': 'before',
-        '|': 'before',
-      },
-    },
+    'warn', 'after',
+    { overrides: { '&': 'before', ':': 'before', '?': 'before', '|': 'before' } },
   ],
   // Justification: Prefer escape-free strings; avoid unnecessary template literals
   '@stylistic/quotes': [
-    'warn',
-    'single',
+    'warn', 'single',
     { allowTemplateLiterals: 'avoidEscape', avoidEscape: true },
   ],
+};
+
+const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMap => ({
+  ...resolveStylisticRules(stylisticOptions),
+  ...stylisticRuleOverrides,
   ...ruleOverrides,
 });
 
@@ -143,7 +155,7 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
       ...categoryOverrides,
     },
     ignorePatterns,
-    jsPlugins: ['@stylistic/eslint-plugin'],
+    ...(!isAndroid && { jsPlugins: ['@stylistic/eslint-plugin'] }),
     options: { denyWarnings: true, typeAware: true, ...optionOverrides },
     overrides: [
       {
@@ -166,6 +178,6 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
       ...overrides,
     ],
     plugins: ['typescript', 'import', 'node'],
-    rules: resolveRules(stylisticOptions),
+    rules: isAndroid ? ruleOverrides : resolveRules(stylisticOptions),
   });
 };
