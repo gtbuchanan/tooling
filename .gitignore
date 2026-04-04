@@ -1,3 +1,4 @@
 *.tsbuildinfo
+.claude/worktrees/
 dist/
 node_modules/

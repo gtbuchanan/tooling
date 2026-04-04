@@ -32,7 +32,8 @@ describe('vitest configure', () => {
     expect(config.test?.coverage?.provider).toBe('v8');
   });
 
-  it('excludes dist from test and coverage', ({ expect }) => {
+  it('excludes .claude and dist from test and coverage', ({ expect }) => {
+    expect(excludeDefault).toContain('.claude/worktrees/**');
     expect(excludeDefault).toContain('**/dist/**');
   });
 

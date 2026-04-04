@@ -33,9 +33,10 @@ export interface VitestConfigureGlobalOptions extends VitestConfigureOptions {
   readonly projects?: readonly string[];
 }
 
-/** Default test exclude patterns, extending Vitest's built-in excludes with `dist`. */
+/** Default test exclude patterns, extending Vitest's built-in excludes. */
 export const excludeDefault = [
   ...defaultExclude,
+  '.claude/worktrees/**',
   '**/dist/**',
 ] as const;
 

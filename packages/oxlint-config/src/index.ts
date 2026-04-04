@@ -10,7 +10,7 @@ export interface OxlintConfigureOptions {
   readonly categories?: Partial<OxlintConfig['categories']>;
   /**
    * File patterns to ignore.
-   * @defaultValue Dist output directories
+   * @defaultValue Claude Code worktrees and dist output directories
    */
   readonly ignorePatterns?: string[];
   /**
@@ -121,7 +121,7 @@ const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMa
 export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
   const {
     categories: categoryOverrides,
-    ignorePatterns = ['**/dist/**'],
+    ignorePatterns = ['.claude/worktrees/**', '**/dist/**'],
     options: optionOverrides,
     overrides = [],
     stylistic: stylisticOptions,

@@ -37,10 +37,10 @@ describe('oxlint configure', () => {
     expect(config.ignorePatterns).toEqual(['vendor/**']);
   });
 
-  it('defaults ignorePatterns to dist', ({ expect }) => {
+  it('defaults ignorePatterns to .claude and dist', ({ expect }) => {
     const config = configure();
 
-    expect(config.ignorePatterns).toEqual(['**/dist/**']);
+    expect(config.ignorePatterns).toEqual(['.claude/worktrees/**', '**/dist/**']);
   });
 
   it('allows overriding options', ({ expect }) => {

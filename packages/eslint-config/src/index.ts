@@ -11,7 +11,7 @@ export interface ESLintConfigureOptions {
   readonly tsconfigRootDir?: string;
   /**
    * Global ignore patterns.
-   * @defaultValue Dist output directories
+   * @defaultValue Claude Code worktrees and dist output directories
    */
   readonly ignores?: string[];
   /**
@@ -60,7 +60,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
   const {
     entryPoints = ['**/bin/**/*.ts', '**/main.ts'],
     extraConfigs = [],
-    ignores = ['**/dist/**'],
+    ignores = ['.claude/worktrees/**', '**/dist/**'],
     onlyWarn = true,
   } = options;
 

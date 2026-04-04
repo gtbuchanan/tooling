@@ -5,6 +5,7 @@ const id = <T>(x: T): T => x;
 
 const config: Readonly<OxfmtConfig> = Object.freeze({
   ignorePatterns: [
+    '.claude/worktrees/**',
     '*.cjs',
     '*.cts',
     '*.js',

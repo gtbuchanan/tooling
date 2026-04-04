@@ -12,6 +12,7 @@ describe('oxfmt configure', () => {
     const config = configure();
 
     expect(config.ignorePatterns).toEqual([
+      '.claude/worktrees/**',
       '*.cjs',
       '*.cts',
       '*.js',
