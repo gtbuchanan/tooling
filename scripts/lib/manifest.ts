@@ -1,28 +1,20 @@
-import {
-  type InferOutput,
-  boolean,
-  looseObject,
-  object,
-  optional,
-  record,
-  string,
-} from 'valibot';
+import * as v from 'valibot';
 
-export const PublishConfigSchema = object({
-  directory: optional(string()),
-  exports: optional(record(string(), string())),
-  linkDirectory: optional(boolean()),
-  scripts: optional(record(string(), string())),
+export const PublishConfigSchema = v.object({
+  directory: v.optional(v.string()),
+  exports: v.optional(v.record(v.string(), v.string())),
+  linkDirectory: v.optional(v.boolean()),
+  scripts: v.optional(v.record(v.string(), v.string())),
 });
 
-export const ManifestSchema = looseObject({
-  devDependencies: optional(record(string(), string())),
-  private: optional(boolean()),
-  publishConfig: optional(PublishConfigSchema),
-  scripts: optional(record(string(), string())),
+export const ManifestSchema = v.looseObject({
+  devDependencies: v.optional(v.record(v.string(), v.string())),
+  private: v.optional(v.boolean()),
+  publishConfig: v.optional(PublishConfigSchema),
+  scripts: v.optional(v.record(v.string(), v.string())),
 });
 
-export type Manifest = InferOutput<typeof ManifestSchema>;
+export type Manifest = v.InferOutput<typeof ManifestSchema>;
 
 export const buildOutput = (manifest: Manifest): Manifest => {
   const {

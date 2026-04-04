@@ -1,7 +1,7 @@
+import * as v from 'valibot';
 import { ManifestSchema, buildOutput } from './lib/manifest.ts';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'valibot';
 
 const JSON_INDENT = 2;
 
@@ -11,7 +11,7 @@ const packagesDir = join(import.meta.dirname, '..', 'packages');
 
 const preparePackage = (pkgDir: string): void => {
   const raw = readFileSync(join(pkgDir, 'package.json'), 'utf-8');
-  const manifest = parse(ManifestSchema, JSON.parse(raw));
+  const manifest = v.parse(ManifestSchema, JSON.parse(raw));
   const dir = manifest.publishConfig?.directory;
   if (manifest.private === true || dir === undefined) {
     return;

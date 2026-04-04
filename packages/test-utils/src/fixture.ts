@@ -1,7 +1,7 @@
+import * as v from 'valibot';
 import { delimiter, dirname, join } from 'node:path';
 import { devNull, tmpdir } from 'node:os';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { object, parse, string } from 'valibot';
 import type { SpawnSyncOptions } from 'node:child_process';
 import { it as base } from 'vitest';
 import { createRequire } from 'node:module';
@@ -20,7 +20,7 @@ const exec = (command: string, args: readonly string[], options: SpawnSyncOption
   }
 };
 
-const PackageJson = object({ version: string() });
+const PackageJson = v.object({ version: v.string() });
 
 /**
  * Resolves a package name to `name@version` using the version currently
@@ -33,7 +33,7 @@ export const pinned = (name: string): string => {
   if (pkgPath === undefined) {
     throw new Error(`Could not find package.json for ${name}`);
   }
-  const { version } = parse(PackageJson, JSON.parse(readFileSync(pkgPath, 'utf-8')));
+  const { version } = v.parse(PackageJson, JSON.parse(readFileSync(pkgPath, 'utf-8')));
   return `${name}@${version}`;
 };
 

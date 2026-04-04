@@ -26,6 +26,8 @@ const resolveStylisticRules = (opts?: StylisticCustomizeOptions): DummyRuleMap =
 const MAX_LINE_LENGTH = 100;
 
 const ruleOverrides: DummyRuleMap = {
+  // Justification: Single-letter namespace aliases are idiomatic for schema libraries
+  'id-length': ['warn', { exceptions: ['v'] }],
   /*
    * Justification: Both options conflict with other rules or emit unnecessary
    * runtime code. prefer-top-level conflicts with no-duplicate-imports for mixed
@@ -40,6 +42,8 @@ const ruleOverrides: DummyRuleMap = {
   'import/group-exports': 'off',
   // Justification: Named exports are the standard pattern for libraries
   'import/no-named-export': 'off',
+  // Justification: Namespace imports are idiomatic for schema libraries (e.g. valibot)
+  'import/no-namespace': 'off',
   // Justification: Named exports are the standard pattern for libraries
   'import/prefer-default-export': 'off',
   // Justification: continue is idiomatic for early guard clauses in loops
