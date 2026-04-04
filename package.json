@@ -2,6 +2,12 @@
   "name": "tooling-root",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gtbuchanan/tooling.git"
+  },
+  "bugs": "https://github.com/gtbuchanan/tooling/issues",
+  "homepage": "https://github.com/gtbuchanan/tooling",
   "engines": {
     "node": ">=22.16"
   },

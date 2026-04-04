@@ -7,6 +7,20 @@ export const PublishConfigSchema = v.object({
   scripts: v.optional(v.record(v.string(), v.string())),
 });
 
+export const RepositorySchema = v.object({
+  directory: v.optional(v.string()),
+  type: v.string(),
+  url: v.string(),
+});
+
+export const RootManifestSchema = v.object({
+  bugs: v.optional(v.string()),
+  homepage: v.optional(v.string()),
+  repository: v.optional(RepositorySchema),
+});
+
+export type RootManifest = v.InferOutput<typeof RootManifestSchema>;
+
 export const ManifestSchema = v.looseObject({
   devDependencies: v.optional(v.record(v.string(), v.string())),
   private: v.optional(v.boolean()),
@@ -15,6 +29,19 @@ export const ManifestSchema = v.looseObject({
 });
 
 export type Manifest = v.InferOutput<typeof ManifestSchema>;
+
+export const buildRepoFields = (
+  root: RootManifest,
+  directory: string,
+) => ({
+  ...(root.bugs !== undefined && { bugs: root.bugs }),
+  ...(root.homepage !== undefined && {
+    homepage: `${root.homepage}/tree/main/${directory}`,
+  }),
+  ...(root.repository !== undefined && {
+    repository: { ...root.repository, directory },
+  }),
+});
 
 export const buildOutput = (manifest: Manifest): Manifest => {
   const {

@@ -1,6 +1,6 @@
+import { buildOutput, buildRepoFields } from '../../../scripts/lib/manifest.js';
 import { createGitEnv, matchTarball, pinned, runCommand } from '@/fixture.js';
 import { describe, it } from 'vitest';
-import { buildOutput } from '../../../scripts/lib/manifest.js';
 
 describe('matchTarball', () => {
   it('matches a scoped package tarball', ({ expect }) => {
@@ -170,5 +170,42 @@ describe('buildOutput', () => {
     expect(result).toHaveProperty('name', '@test/pkg');
     expect(result).toHaveProperty('version', '1.0.0');
     expect(result).toHaveProperty('dependencies');
+  });
+});
+
+describe(buildRepoFields, () => {
+  it('builds all fields from root manifest', ({ expect }) => {
+    const result = buildRepoFields({
+      bugs: 'https://github.com/test/repo/issues',
+      homepage: 'https://github.com/test/repo',
+      repository: {
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
+    }, 'packages/foo');
+
+    expect(result).toEqual({
+      bugs: 'https://github.com/test/repo/issues',
+      homepage: 'https://github.com/test/repo/tree/main/packages/foo',
+      repository: {
+        directory: 'packages/foo',
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
+    });
+  });
+
+  it('returns empty object when root has no fields', ({ expect }) => {
+    expect(buildRepoFields({}, 'packages/foo')).toEqual({});
+  });
+
+  it('includes only fields present in root', ({ expect }) => {
+    const result = buildRepoFields({
+      homepage: 'https://github.com/test/repo',
+    }, 'packages/bar');
+
+    expect(result).toEqual({
+      homepage: 'https://github.com/test/repo/tree/main/packages/bar',
+    });
   });
 });
