@@ -91,7 +91,7 @@ importers:
         version: link:packages/oxlint-config
       '@gtbuchanan/tsconfig':
         specifier: workspace:*
-        version: link:packages/tsconfig
+        version: link:packages/tsconfig/dist/source
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:packages/vitest-config
@@ -215,10 +215,14 @@ importers:
         version: 6.0.6
 
   packages/tsconfig:
-    dependencies:
+    devDependencies:
+      '@gtbuchanan/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
       '@tsconfig/strictest':
         specifier: 'catalog:'
         version: 2.0.8
+    publishDirectory: dist/source
 
   packages/vitest-config:
     dependencies:

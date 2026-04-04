@@ -1,7 +1,10 @@
 # @gtbuchanan/tsconfig
 
-Shared TypeScript configuration extending
+Shared TypeScript configuration based on
 [@tsconfig/strictest](https://github.com/tsconfig/bases).
+
+The `@tsconfig/strictest` options are inlined at build time, so consumers
+do not need it installed.
 
 ## Install
 
@@ -22,10 +25,9 @@ pnpm add -D @gtbuchanan/tsconfig
 
 ## Node config
 
-Extends `@tsconfig/strictest` with:
+Includes all `@tsconfig/strictest` options plus:
 
 - `target`: ES2024
 - `lib`: ES2024
 - `module`: nodenext
 - `moduleResolution`: nodenext
-- `types`: node

@@ -4,6 +4,7 @@
     { "path": "packages/eslint-config" },
     { "path": "packages/oxfmt-config" },
     { "path": "packages/oxlint-config" },
+    { "path": "packages/tsconfig" },
     { "path": "packages/vitest-config" },
     { "path": "packages/test-utils" },
     { "path": "scripts" },
