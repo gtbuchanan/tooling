@@ -137,7 +137,7 @@ describe('vitest configureGlobal', () => {
   });
 });
 
-describe('buildWorkspaceEntry', () => {
+describe(buildWorkspaceEntry, () => {
   it('adds name from directory basename', ({ expect }) => {
     const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
 

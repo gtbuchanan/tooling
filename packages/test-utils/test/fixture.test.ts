@@ -2,7 +2,7 @@ import { buildOutput, buildRepoFields } from '../../../scripts/lib/manifest.js';
 import { createGitEnv, matchTarball, pinned, runCommand } from '@/fixture.js';
 import { describe, it } from 'vitest';
 
-describe('matchTarball', () => {
+describe(matchTarball, () => {
   it('matches a scoped package tarball', ({ expect }) => {
     const files = ['gtbuchanan-eslint-config-0.0.0.tgz'];
 
@@ -54,7 +54,7 @@ describe('matchTarball', () => {
   });
 });
 
-describe('createGitEnv', () => {
+describe(createGitEnv, () => {
   it('isolates from global git config', ({ expect }) => {
     const env = createGitEnv();
 
@@ -79,7 +79,7 @@ describe('createGitEnv', () => {
   });
 });
 
-describe('runCommand', () => {
+describe(runCommand, () => {
   it('captures stdout', ({ expect }) => {
     const result = runCommand('node', ['-e', 'console.log("hello")'], {});
 
@@ -102,7 +102,7 @@ describe('runCommand', () => {
   });
 });
 
-describe('pinned', () => {
+describe(pinned, () => {
   it('resolves installed package to name@version', ({ expect }) => {
     const result = pinned('valibot');
 
@@ -114,7 +114,7 @@ describe('pinned', () => {
   });
 });
 
-describe('buildOutput', () => {
+describe(buildOutput, () => {
   it('strips devDependencies and scripts', ({ expect }) => {
     const result = buildOutput({
       devDependencies: { vitest: '^4.0.0' },

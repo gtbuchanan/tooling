@@ -131,9 +131,6 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
           // Justification: Not using globals; false positives for local expect
           // https://github.com/vitest-dev/eslint-plugin-vitest/issues/724
           'vitest/no-importing-vitest-globals': 'off',
-          // Justification: Bug with false positives
-          // https://github.com/vitest-dev/eslint-plugin-vitest/issues/692
-          'vitest/prefer-describe-function-title': 'off',
         },
       },
       ...overrides,
