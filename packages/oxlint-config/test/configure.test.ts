@@ -121,6 +121,26 @@ describe('oxlint configure', () => {
     );
   });
 
+  it('enables no-param-reassign with props', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['no-param-reassign']).toEqual(['warn', { props: true }]);
+  });
+
+  it('includes promise plugin', ({ expect }) => {
+    const config = configure();
+
+    expect(config.plugins).toContain('promise');
+  });
+
+  it('enables promise rules', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['promise/no-multiple-resolved']).toBe('warn');
+    expect(config.rules?.['promise/no-return-wrap']).toBe('warn');
+    expect(config.rules?.['promise/param-names']).toBe('warn');
+  });
+
   it('disables conflicting import rules', ({ expect }) => {
     const config = configure();
 

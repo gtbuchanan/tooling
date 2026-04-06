@@ -115,6 +115,20 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
     ...resolvePnpmConfigs(options),
     resolveNodeConfig(options),
     {
+      // Core ESLint rules not implemented in oxlint
+      files: ['**/*.ts'],
+      rules: {
+        // Justification: Enforces modern JS idiom (x ??= y over x = x ?? y)
+        'logical-assignment-operators': [
+          'warn', 'always', { enforceForIfStatements: true },
+        ],
+        // Justification: Prefer arrow functions for callbacks when `this` is unused
+        'prefer-arrow-callback': [
+          'warn', { allowNamedFunctions: true, allowUnboundThis: true },
+        ],
+      },
+    },
+    {
       files: entryPoints,
       rules: {
         // Justification: Entry points use process.exit() for controlled shutdown

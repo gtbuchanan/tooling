@@ -82,8 +82,16 @@ const ruleOverrides: DummyRuleMap = {
     ignoreNumericLiteralTypes: true,
     ignoreTypeIndexes: true,
   }],
+  // Justification: Pure functions; mutations belong at app boundaries
+  'no-param-reassign': ['warn', { props: true }],
   // Justification: Ternaries are readable for simple conditional assignments
   'no-ternary': 'off',
+  // Justification: Catches resolving/rejecting a Promise more than once
+  'promise/no-multiple-resolved': 'warn',
+  // Justification: Catches wrapping resolved values in Promise.resolve()
+  'promise/no-return-wrap': 'warn',
+  // Justification: Enforces standard resolve/reject parameter names
+  'promise/param-names': 'warn',
   // Justification: Falsy coalescing with || is idiomatic for strings and numbers
   'typescript/prefer-nullish-coalescing': 'off',
   // Justification: Explicit nullish checks are often clearer than optional chaining
@@ -213,7 +221,7 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
     ...(!isAndroid && { jsPlugins: resolveJsPlugins() }),
     options: { denyWarnings: true, typeAware: true, ...optionOverrides },
     overrides: [testOverride, ...overrides],
-    plugins: ['typescript', 'import', 'node'],
+    plugins: ['typescript', 'import', 'node', 'promise'],
     rules: isAndroid ? ruleOverrides : resolveRules(stylisticOptions),
   });
 };
