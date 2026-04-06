@@ -126,6 +126,8 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
         'prefer-arrow-callback': [
           'warn', { allowNamedFunctions: true, allowUnboundThis: true },
         ],
+        // Justification: Catches race conditions from async mutations in loops
+        'require-atomic-updates': 'warn',
       },
     },
     {

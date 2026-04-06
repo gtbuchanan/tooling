@@ -96,6 +96,8 @@ const ruleOverrides: DummyRuleMap = {
   'typescript/prefer-nullish-coalescing': 'off',
   // Justification: Explicit nullish checks are often clearer than optional chaining
   'typescript/strict-boolean-expressions': 'off',
+  // Justification: Catches returning values in void-typed callbacks
+  'typescript/strict-void-return': 'warn',
 };
 
 const eslintCommentsRecommendedRules: DummyRuleMap = {
