@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import { describe, it } from 'vitest';
 import {
   buildWorkspaceEntry,
@@ -9,7 +8,7 @@ import {
   defaultCoverageDirs,
   excludeDefault,
   resolveCoverageInclude,
-} from '@/index.js';
+} from '#src/index.js';
 
 const PACKAGE_NAME = '@gtbuchanan/vitest-config';
 
@@ -76,10 +75,10 @@ describe('vitest configure', () => {
     expect(config.test?.setupFiles).toEqual([]);
   });
 
-  it('sets @ alias to cwd/src', ({ expect }) => {
+  it('does not include resolve alias', ({ expect }) => {
     const config = configure();
 
-    expect(config.resolve?.alias).toHaveProperty('@', join(process.cwd(), 'src'));
+    expect(config.resolve?.alias).toBeUndefined();
   });
 
   it('preserves all expected properties after merge', ({ expect }) => {
@@ -90,7 +89,6 @@ describe('vitest configure', () => {
     expect(config.test?.mockReset).toBe(true);
     expect(config.test?.unstubEnvs).toBe(true);
     expect(config.test?.exclude).toBeDefined();
-    expect(config.resolve?.alias).toHaveProperty('@');
   });
 
   it('uses default include (no monorepo-specific pattern)', ({ expect }) => {
@@ -189,10 +187,10 @@ describe(buildWorkspaceEntry, () => {
     expect(entry.test?.root).toBe('/path/to/my-package');
   });
 
-  it('preserves alias from configure function', ({ expect }) => {
+  it('does not include resolve alias', ({ expect }) => {
     const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
 
-    expect(entry.resolve?.alias).toHaveProperty('@', join('/path/to/my-package', 'src'));
+    expect(entry.resolve).toBeUndefined();
   });
 
   it('preserves includes from configure function', ({ expect }) => {
@@ -209,16 +207,10 @@ describe(buildWorkspaceEntry, () => {
 });
 
 describe('vitest configureProject', () => {
-  it('sets @ alias to cwd/src by default', ({ expect }) => {
+  it('does not include resolve alias', ({ expect }) => {
     const config = configureProject();
 
-    expect(config.resolve?.alias).toHaveProperty('@', join(process.cwd(), 'src'));
-  });
-
-  it('sets @ alias relative to custom root', ({ expect }) => {
-    const config = configureProject('/custom/root');
-
-    expect(config.resolve?.alias).toHaveProperty('@', join('/custom/root', 'src'));
+    expect(config.resolve).toBeUndefined();
   });
 
   it('does not include setup files', ({ expect }) => {

@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "description": "Shared ESLint configuration",
   "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
   "exports": {
     ".": "./src/index.ts"
   },

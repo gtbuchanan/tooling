@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { configure } from '@/index.js';
+import { configure } from '#src/index.js';
 
 const isAndroid = process.platform === 'android';
 

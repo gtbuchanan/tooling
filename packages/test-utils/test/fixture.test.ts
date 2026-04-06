@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { createGitEnv, matchTarball, pinned, runCommand } from '@/fixture.js';
+import { createGitEnv, matchTarball, pinned, runCommand } from '#src/fixture.js';
 import { buildOutput, buildRepoFields } from '../../../scripts/lib/manifest.js';
 
 describe(matchTarball, () => {

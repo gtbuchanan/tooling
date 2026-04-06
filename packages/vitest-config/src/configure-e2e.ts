@@ -35,12 +35,10 @@ const E2E_TEST_INCLUDE = ['e2e/**/*.test.ts'] as const;
 
 /**
  * Per-project e2e configuration for use with vitest projects.
- * Sets alias, excludes, and e2e include pattern. Does not include global-only settings.
- * @param root - The project root directory (typically `import.meta.dirname`).
- *               Defaults to `process.cwd()`.
+ * Sets excludes and e2e include pattern. Does not include global-only settings.
  */
-export const configureEndToEndProject = (root?: string): UserWorkspaceConfig =>
-  buildProjectConfig(E2E_TEST_INCLUDE, root);
+export const configureEndToEndProject = (): UserWorkspaceConfig =>
+  buildProjectConfig(E2E_TEST_INCLUDE);
 
 const resolveEndToEndProjects = (
   patterns: readonly string[],
@@ -75,7 +73,7 @@ export const configureEndToEndGlobal = (
 
 /**
  * Combined e2e configuration for single-project consumers.
- * Composes global e2e settings with project-level alias and excludes.
+ * Composes global e2e settings with project-level excludes.
  * Omits the monorepo-specific `test.include` from `configureEndToEndProject`.
  */
 export const configureEndToEnd = (
@@ -85,7 +83,6 @@ export const configureEndToEnd = (
   return mergeConfig(
     configureEndToEndGlobal(options),
     defineConfig({
-      ...(project.resolve && { resolve: project.resolve }),
       ...(project.test?.exclude && {
         test: { exclude: project.test.exclude },
       }),

@@ -1,6 +1,6 @@
 import type { Linter } from 'eslint';
 import { describe, it, vi } from 'vitest';
-import { configure } from '@/index.js';
+import { configure } from '#src/index.js';
 
 const onlyWarnImport = vi.fn<() => void>();
 

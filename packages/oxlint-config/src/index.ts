@@ -139,7 +139,10 @@ export const importOrderRules = {
     'warn' as const, {
       'alphabetize': { caseInsensitive: true, order: 'asc' as const },
       'newlines-between': 'never' as const,
-      'pathGroups': [{ group: 'parent' as const, pattern: '@/**', position: 'before' as const }],
+      'pathGroups': [
+        { group: 'parent' as const, pattern: '#src/**', position: 'before' as const },
+        { group: 'parent' as const, pattern: '#test/**', position: 'before' as const },
+      ],
       'pathGroupsExcludedImportTypes': ['builtin' as const],
     },
   ] satisfies DummyRule,

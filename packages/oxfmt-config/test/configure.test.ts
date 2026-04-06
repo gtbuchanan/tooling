@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { configure } from '@/index.js';
+import { configure } from '#src/index.js';
 
 describe('oxfmt configure', () => {
   it('enables singleQuote by default', ({ expect }) => {

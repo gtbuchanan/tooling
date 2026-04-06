@@ -1,25 +1,18 @@
-import { join } from 'node:path';
 import { describe, it } from 'vitest';
 import {
   configureEndToEnd,
   configureEndToEndGlobal,
   configureEndToEndProject,
-} from '@/configure-e2e.js';
-import { excludeDefault } from '@/configure.js';
+} from '#src/configure-e2e.js';
+import { excludeDefault } from '#src/configure.js';
 
 const PACKAGE_NAME = '@gtbuchanan/vitest-config';
 
 describe('vitest configureEndToEndProject', () => {
-  it('sets @ alias to cwd/src by default', ({ expect }) => {
+  it('does not include resolve alias', ({ expect }) => {
     const config = configureEndToEndProject();
 
-    expect(config.resolve?.alias).toHaveProperty('@', join(process.cwd(), 'src'));
-  });
-
-  it('sets @ alias relative to custom root', ({ expect }) => {
-    const config = configureEndToEndProject('/custom/root');
-
-    expect(config.resolve?.alias).toHaveProperty('@', join('/custom/root', 'src'));
+    expect(config.resolve).toBeUndefined();
   });
 
   it('includes e2e test pattern', ({ expect }) => {
@@ -126,7 +119,6 @@ describe('vitest configureEndToEnd', () => {
     expect(config.test?.mockReset).toBe(true);
     expect(config.test?.unstubEnvs).toBe(true);
     expect(config.test?.exclude).toBeDefined();
-    expect(config.resolve?.alias).toHaveProperty('@');
   });
 
   it('does not include coverage', ({ expect }) => {

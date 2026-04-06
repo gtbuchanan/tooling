@@ -131,9 +131,9 @@ export const resolveProjectDirs = (
  */
 export const buildWorkspaceEntry = (
   dir: string,
-  configureFn: (root: string) => UserWorkspaceConfig,
+  configureFn: () => UserWorkspaceConfig,
 ): UserWorkspaceConfig => {
-  const config = configureFn(dir);
+  const config = configureFn();
   return {
     ...config,
     test: {
@@ -146,7 +146,7 @@ export const buildWorkspaceEntry = (
 
 const buildProjectEntry = (
   dir: string,
-  configureFn: (root: string) => UserWorkspaceConfig,
+  configureFn: () => UserWorkspaceConfig,
 ): string | UserWorkspaceConfig => {
   if (hasVitestConfig(dir)) {
     return dir;
@@ -156,25 +156,19 @@ const buildProjectEntry = (
 
 const resolveProjects = (
   patterns: readonly string[],
-  configureFn: (root: string) => UserWorkspaceConfig,
+  configureFn: () => UserWorkspaceConfig,
 ): (string | UserWorkspaceConfig)[] =>
   resolveProjectDirs(patterns).map(dir =>
     buildProjectEntry(dir, configureFn),
   );
 
 /**
- * Builds per-project Vitest settings: `@` alias to `src/`, test includes,
- * and default excludes.
+ * Builds per-project Vitest settings: test includes and default excludes.
+ * Use Node.js subpath imports (`#src/*`, `#test/*`) for path aliases.
  */
 export const buildProjectConfig = (
   include: readonly string[],
-  root?: string,
 ): UserWorkspaceConfig => ({
-  resolve: {
-    alias: {
-      '@': join(root ?? process.cwd(), 'src'),
-    },
-  },
   test: {
     exclude: [...excludeDefault],
     include: [...include],
@@ -226,12 +220,10 @@ const UNIT_TEST_INCLUDE = ['test/**/*.test.ts'] as const;
 
 /**
  * Per-project configuration for use with vitest projects.
- * Sets alias and excludes. Does not include global-only settings.
- * @param root - The project root directory (typically `import.meta.dirname`).
- *               Defaults to `process.cwd()`.
+ * Sets excludes. Does not include global-only settings.
  */
-export const configureProject = (root?: string): UserWorkspaceConfig =>
-  buildProjectConfig(UNIT_TEST_INCLUDE, root);
+export const configureProject = (): UserWorkspaceConfig =>
+  buildProjectConfig(UNIT_TEST_INCLUDE);
 
 /**
  * Global configuration for use in the root vitest.config.ts of a monorepo.
