@@ -100,6 +100,8 @@ const ruleOverrides: DummyRuleMap = {
   'promise/param-names': 'warn',
   // Justification: Declaration sort handled by import-x/order via jsPlugin
   'sort-imports': ['warn', { ignoreDeclarationSort: true }],
+  // Justification: Enforces export type for type-only re-exports
+  'typescript/consistent-type-exports': 'warn',
   // Justification: Stable return types in .d.ts; catches accidental API changes
   'typescript/explicit-function-return-type': ['warn', {
     allowDirectConstAssertionInArrowFunctions: true,
@@ -107,12 +109,24 @@ const ruleOverrides: DummyRuleMap = {
     allowHigherOrderFunctions: true,
     allowTypedFunctionExpressions: true,
   }],
+  // Justification: Prevents runtime imports for type-only specifiers
+  'typescript/no-import-type-side-effects': 'warn',
+  // Justification: Catches always-true/false conditions after type narrowing
+  'typescript/no-unnecessary-condition': ['warn', { allowConstantLoopConditions: true }],
+  // Justification: Catches generic params that don't add type safety
+  'typescript/no-unnecessary-type-parameters': 'warn',
   // Justification: Falsy coalescing with || is idiomatic for strings and numbers
   'typescript/prefer-nullish-coalescing': 'off',
+  // Justification: Enforces a?.b over a && a.b
+  'typescript/prefer-optional-chain': 'warn',
   // Justification: Explicit nullish checks are often clearer than optional chaining
   'typescript/strict-boolean-expressions': 'off',
   // Justification: Catches returning values in void-typed callbacks
   'typescript/strict-void-return': 'warn',
+  // Justification: Enforces unknown over any in .catch() callbacks
+  'typescript/use-unknown-in-catch-callback-variable': 'warn',
+  // Justification: Prevents BOM in source files
+  'unicode-bom': 'warn',
 };
 
 const eslintCommentsRecommendedRules: DummyRuleMap = {
