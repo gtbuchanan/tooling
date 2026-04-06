@@ -14,6 +14,7 @@
     }
   },
   "dependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@stylistic/eslint-plugin": "catalog:"
   },
   "engines": {

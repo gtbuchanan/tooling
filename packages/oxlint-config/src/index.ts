@@ -1,5 +1,12 @@
-import { type DummyRuleMap, type OxlintConfig, type OxlintOverride, defineConfig } from 'oxlint';
+import {
+  type DummyRule,
+  type DummyRuleMap,
+  type OxlintConfig,
+  type OxlintOverride,
+  defineConfig,
+} from 'oxlint';
 import stylistic, { type StylisticCustomizeOptions } from '@stylistic/eslint-plugin';
+import { fileURLToPath } from 'node:url';
 
 /** Options for the shared oxlint configuration. */
 export interface OxlintConfigureOptions {
@@ -83,6 +90,14 @@ const ruleOverrides: DummyRuleMap = {
   'typescript/strict-boolean-expressions': 'off',
 };
 
+const eslintCommentsRecommendedRules: DummyRuleMap = {
+  '@eslint-community/eslint-comments/disable-enable-pair': 'warn',
+  '@eslint-community/eslint-comments/no-aggregating-enable': 'warn',
+  '@eslint-community/eslint-comments/no-duplicate-disable': 'warn',
+  '@eslint-community/eslint-comments/no-unlimited-disable': 'warn',
+  '@eslint-community/eslint-comments/no-unused-enable': 'warn',
+};
+
 // Oxlint jsPlugins crash on Android/Termux (oxc_allocator thread-local pool panic).
 // Stylistic rules require the jsPlugin so they must be omitted together.
 // https://github.com/oxc-project/oxc/issues/21045
@@ -95,44 +110,84 @@ export const stylisticCustomizeDefaults: StylisticCustomizeOptions = {
   severity: 'warn',
 };
 
-/** Stylistic rule type compatible with both oxlint and ESLint configs. */
-export type StylisticRule = 'warn' | ['warn', ...unknown[]];
+/**
+ * Eslint-comments rule overrides applied on top of recommended defaults.
+ * Use with ESLint as a fallback when oxlint jsPlugins are unavailable.
+ */
+export const eslintCommentsRuleOverrides = {
+  // Justification: Enforces the `--` reason suffix convention for inline suppressions
+  '@eslint-community/eslint-comments/require-description': [
+    'warn' as const, { ignore: ['eslint-enable'] },
+  ] satisfies DummyRule,
+};
 
 /**
  * Stylistic rule overrides applied on top of `customize()` defaults.
  * Use with ESLint as a fallback when oxlint jsPlugins are unavailable.
  */
-export const stylisticRuleOverrides: Record<string, StylisticRule> = {
+export const stylisticRuleOverrides = {
   /*
    * Justification: 80 is the historical recommendation due to punch cards but also
    * has some basis in "reading ergonomics" (e.g. typography). 100 is chosen as a
    * compromise between those coding full screen on larger monitors and those that aren't.
    */
-  '@stylistic/max-len': ['warn', { code: MAX_LINE_LENGTH, ignoreUrls: true }],
+  '@stylistic/max-len': [
+    'warn' as const, { code: MAX_LINE_LENGTH, ignoreUrls: true },
+  ] satisfies DummyRule,
   // Justification: Not included by customize(); needed to catch accidental double semicolons
-  '@stylistic/no-extra-semi': 'warn',
+  '@stylistic/no-extra-semi': 'warn' as const,
   // Justification: Matches C# style; ternary/union/intersection before, rest after
   '@stylistic/operator-linebreak': [
-    'warn', 'after',
+    'warn' as const, 'after',
     { overrides: { '&': 'before', ':': 'before', '?': 'before', '|': 'before' } },
-  ],
+  ] satisfies DummyRule,
   // Justification: Prefer escape-free strings; avoid unnecessary template literals
   '@stylistic/quotes': [
-    'warn', 'single',
+    'warn' as const, 'single',
     { allowTemplateLiterals: 'avoidEscape', avoidEscape: true },
-  ],
+  ] satisfies DummyRule,
+};
+
+/** Resolves a package specifier to an absolute path for oxlint jsPlugins. */
+const resolveJsPlugin = (specifier: string): string =>
+  fileURLToPath(import.meta.resolve(specifier));
+
+const resolveJsPlugins = (): string[] => [
+  resolveJsPlugin('@stylistic/eslint-plugin'),
+  resolveJsPlugin('@eslint-community/eslint-plugin-eslint-comments'),
+];
+
+const testOverride: OxlintOverride = {
+  files: ['**/test/**/*.ts', '**/e2e/**/*.ts'],
+  plugins: ['vitest'],
+  rules: {
+    // Justification: Test describe blocks naturally exceed this limit
+    'max-lines-per-function': 'off',
+    // Justification: Test describe blocks naturally have many statements
+    'max-statements': 'off',
+    // Justification: Tests often use arbitrary values that shouldn't need to be constants
+    'no-magic-numbers': 'off',
+    // Justification: Vitest-aware version allows vi.fn() mocks in expect()
+    'typescript/unbound-method': 'off',
+    // Justification: Not using globals; false positives for local expect
+    // https://github.com/vitest-dev/eslint-plugin-vitest/issues/724
+    'vitest/no-importing-vitest-globals': 'off',
+  },
 };
 
 const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMap => ({
   ...resolveStylisticRules(stylisticOptions),
   ...stylisticRuleOverrides,
+  ...eslintCommentsRecommendedRules,
+  ...eslintCommentsRuleOverrides,
   ...ruleOverrides,
 });
 
 /**
  * Creates an oxlint configuration. Primary linter with all categories at
  * `warn` severity and `denyWarnings` for CI enforcement. Includes
- * `@stylistic/eslint-plugin` via jsPlugin for syntax-aware formatting.
+ * `@stylistic/eslint-plugin` and `@eslint-community/eslint-plugin-eslint-comments`
+ * via jsPlugins.
  */
 export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
   const {
@@ -155,28 +210,9 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
       ...categoryOverrides,
     },
     ignorePatterns,
-    ...(!isAndroid && { jsPlugins: ['@stylistic/eslint-plugin'] }),
+    ...(!isAndroid && { jsPlugins: resolveJsPlugins() }),
     options: { denyWarnings: true, typeAware: true, ...optionOverrides },
-    overrides: [
-      {
-        files: ['**/test/**/*.ts', '**/e2e/**/*.ts'],
-        plugins: ['vitest'],
-        rules: {
-          // Justification: Test describe blocks naturally exceed this limit
-          'max-lines-per-function': 'off',
-          // Justification: Test describe blocks naturally have many statements
-          'max-statements': 'off',
-          // Justification: Tests often use arbitrary values that shouldn't need to be constants
-          'no-magic-numbers': 'off',
-          // Justification: Vitest-aware version allows vi.fn() mocks in expect()
-          'typescript/unbound-method': 'off',
-          // Justification: Not using globals; false positives for local expect
-          // https://github.com/vitest-dev/eslint-plugin-vitest/issues/724
-          'vitest/no-importing-vitest-globals': 'off',
-        },
-      },
-      ...overrides,
-    ],
+    overrides: [testOverride, ...overrides],
     plugins: ['typescript', 'import', 'node'],
     rules: isAndroid ? ruleOverrides : resolveRules(stylisticOptions),
   });

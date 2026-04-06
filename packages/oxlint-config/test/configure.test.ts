@@ -7,7 +7,12 @@ describe('oxlint configure', () => {
   it.runIf(!isAndroid)('includes jsPlugins with defaults', ({ expect }) => {
     const config = configure();
 
-    expect(config.jsPlugins).toContain('@stylistic/eslint-plugin');
+    expect(config.jsPlugins).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('stylistic'),
+        expect.stringContaining('eslint-comments'),
+      ]),
+    );
   });
 
   it.runIf(isAndroid)('omits jsPlugins on Android', ({ expect }) => {
@@ -83,6 +88,13 @@ describe('oxlint configure', () => {
     const last = config.overrides?.at(-1);
 
     expect(last).toEqual(custom);
+  });
+
+  it.runIf(!isAndroid)('includes eslint-comments rules', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['@eslint-community/eslint-comments/disable-enable-pair']).toBe('warn');
+    expect(config.rules?.['@eslint-community/eslint-comments/require-description']).toBeDefined();
   });
 
   it.runIf(!isAndroid)('includes stylistic rules', ({ expect }) => {

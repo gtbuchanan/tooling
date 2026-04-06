@@ -2,6 +2,7 @@ packages:
   - "packages/*"
 
 catalog:
+  '@eslint-community/eslint-plugin-eslint-comments': 4.7.1
   '@changesets/cli': ^2.29.4
   '@stylistic/eslint-plugin': 5.10.0
   '@tsconfig/strictest': ^2.0.8

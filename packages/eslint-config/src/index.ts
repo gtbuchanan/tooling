@@ -1,10 +1,12 @@
 import {
+  eslintCommentsRuleOverrides,
   isAndroid,
   stylisticCustomizeDefaults,
   stylisticRuleOverrides,
 } from '@gtbuchanan/oxlint-config';
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
+import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import nodePlugin from 'eslint-plugin-n';
 import oxlint from 'eslint-plugin-oxlint';
 import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
@@ -80,18 +82,21 @@ const resolveNodeConfig = (options: ESLintConfigureOptions) => ({
   },
 });
 
-const resolveStylisticFallback = (): Linter.Config[] =>
+const resolveJsPluginFallbacks = (): Linter.Config[] =>
   isAndroid
     ? [
         { ...stylistic.configs.customize(stylisticCustomizeDefaults), files: ['**/*.ts'] },
         { files: ['**/*.ts'], rules: stylisticRuleOverrides },
+        eslintCommentsConfigs.recommended,
+        { rules: eslintCommentsRuleOverrides },
       ]
     : [];
 
 /**
  * Creates an ESLint flat config for TypeScript projects.
  * Supplementary to oxlint — covers `eslint-plugin-pnpm` and `eslint-plugin-n`.
- * On Android, also runs `@stylistic/eslint-plugin` as a fallback for oxlint jsPlugins.
+ * On Android, also runs `@stylistic/eslint-plugin` and
+ * `@eslint-community/eslint-plugin-eslint-comments` as fallbacks for oxlint jsPlugins.
  * `eslint-plugin-oxlint` is applied last to disable overlapping rules.
  */
 export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {
@@ -119,7 +124,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
       },
     },
     ...extraConfigs,
-    ...resolveStylisticFallback(),
+    ...resolveJsPluginFallbacks(),
     { ignores },
     // Must be last — disables ESLint rules already covered by oxlint
     ...oxlint.configs['flat/all'],
