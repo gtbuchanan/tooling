@@ -5,14 +5,18 @@ import {
   isAndroid,
   stylisticCustomizeDefaults,
   stylisticRuleOverrides,
+  vitestE2eRuleOverrides,
+  vitestRuleOverrides,
 } from '@gtbuchanan/oxlint-config';
 import stylistic from '@stylistic/eslint-plugin';
+import vitestPlugin from '@vitest/eslint-plugin';
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import importPlugin from 'eslint-plugin-import-x';
 import nodePlugin from 'eslint-plugin-n';
 import oxlint from 'eslint-plugin-oxlint';
 import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
+// oxlint-disable-next-line import/max-dependencies -- Config aggregator
 import tseslint from 'typescript-eslint';
 
 /** Options for the shared ESLint configuration. */
@@ -101,11 +105,37 @@ const resolveJsPluginFallbacks = (): Linter.Config[] =>
       ]
     : [];
 
+const TEST_FILES = ['**/test/**/*.ts', '**/e2e/**/*.ts'];
+
+// Core ESLint rules not implemented in oxlint
+const coreRuleConfig: Linter.Config = {
+  files: ['**/*.ts'],
+  rules: {
+    // Justification: Enforces modern JS idiom (x ??= y over x = x ?? y)
+    'logical-assignment-operators': [
+      'warn', 'always', { enforceForIfStatements: true },
+    ],
+    // Justification: Prefer arrow functions for callbacks when `this` is unused
+    'prefer-arrow-callback': [
+      'warn', { allowNamedFunctions: true, allowUnboundThis: true },
+    ],
+    // Justification: Catches race conditions from async mutations in loops
+    'require-atomic-updates': 'warn',
+  },
+};
+
+const vitestConfigs: Linter.Config[] = [
+  { ...vitestPlugin.configs.all, files: TEST_FILES },
+  { files: TEST_FILES, rules: vitestRuleOverrides },
+  { files: ['**/e2e/**/*.ts'], rules: vitestE2eRuleOverrides },
+];
+
 /**
  * Creates an ESLint flat config for TypeScript projects.
- * Supplementary to oxlint — covers `eslint-plugin-pnpm` and `eslint-plugin-n`.
- * On Android, also runs `@stylistic/eslint-plugin` and
- * `@eslint-community/eslint-plugin-eslint-comments` as fallbacks for oxlint jsPlugins.
+ * Supplementary to oxlint — covers `eslint-plugin-pnpm`, `eslint-plugin-n`,
+ * and `@vitest/eslint-plugin`. On Android, also runs `@stylistic/eslint-plugin`,
+ * `@eslint-community/eslint-plugin-eslint-comments`, and `eslint-plugin-import-x`
+ * as fallbacks for oxlint jsPlugins.
  * `eslint-plugin-oxlint` is applied last to disable overlapping rules.
  */
 export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {
@@ -123,22 +153,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
   return defineConfig(
     ...resolvePnpmConfigs(options),
     resolveNodeConfig(options),
-    {
-      // Core ESLint rules not implemented in oxlint
-      files: ['**/*.ts'],
-      rules: {
-        // Justification: Enforces modern JS idiom (x ??= y over x = x ?? y)
-        'logical-assignment-operators': [
-          'warn', 'always', { enforceForIfStatements: true },
-        ],
-        // Justification: Prefer arrow functions for callbacks when `this` is unused
-        'prefer-arrow-callback': [
-          'warn', { allowNamedFunctions: true, allowUnboundThis: true },
-        ],
-        // Justification: Catches race conditions from async mutations in loops
-        'require-atomic-updates': 'warn',
-      },
-    },
+    coreRuleConfig,
     {
       files: entryPoints,
       rules: {
@@ -148,6 +163,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
         'n/no-process-exit': 'off',
       },
     },
+    ...vitestConfigs,
     ...extraConfigs,
     ...resolveJsPluginFallbacks(),
     { ignores },

@@ -72,6 +72,8 @@ const ruleOverrides: DummyRuleMap = {
   'import/no-namespace': 'off',
   // Justification: Named exports are the standard pattern for libraries
   'import/prefer-default-export': 'off',
+  // Justification: Comments and blank lines are documentation, not complexity
+  'max-lines': ['warn', { skipBlankLines: true, skipComments: true }],
   // Justification: continue is idiomatic for early guard clauses in loops
   'no-continue': 'off',
   // Justification: Common sentinel values that are universally understood
@@ -214,10 +216,60 @@ const testOverride: OxlintOverride = {
     'typescript/explicit-function-return-type': 'off',
     // Justification: Vitest-aware version allows vi.fn() mocks in expect()
     'typescript/unbound-method': 'off',
+    // Enable all vitest rules, then disable the ones that don't fit
+    'vitest/consistent-each-for': 'warn',
+    'vitest/consistent-test-filename': 'warn',
+    'vitest/consistent-vitest-vi': 'warn',
+    'vitest/hoisted-apis-on-top': 'warn',
+    'vitest/no-conditional-tests': 'warn',
+    'vitest/no-import-node-test': 'warn',
     // Justification: Not using globals; false positives for local expect
     // https://github.com/vitest-dev/eslint-plugin-vitest/issues/724
     'vitest/no-importing-vitest-globals': 'off',
+    'vitest/prefer-called-exactly-once-with': 'warn',
+    'vitest/prefer-called-once': 'warn',
+    'vitest/prefer-called-times': 'warn',
+    'vitest/prefer-describe-function-title': 'warn',
+    'vitest/prefer-expect-type-of': 'warn',
+    'vitest/prefer-import-in-mock': 'warn',
+    'vitest/prefer-strict-boolean-matchers': 'warn',
+    'vitest/prefer-to-be-falsy': 'warn',
+    'vitest/prefer-to-be-object': 'warn',
+    'vitest/prefer-to-be-truthy': 'warn',
+    'vitest/require-awaited-expect-poll': 'warn',
+    'vitest/require-local-test-context-for-concurrent-snapshots': 'warn',
+    'vitest/require-mock-type-parameters': 'warn',
+    // Justification: Not all tests need explicit timeouts
+    'vitest/require-test-timeout': 'off',
+    'vitest/warn-todo': 'warn',
   },
+};
+
+/**
+ * Vitest ESLint rules to disable from the `all` config.
+ * Applied after `@vitest/eslint-plugin`'s `all` config in ESLint.
+ */
+export const vitestRuleOverrides = {
+  // Justification: Not using globals; false positives for local expect
+  // https://github.com/vitest-dev/eslint-plugin-vitest/issues/724
+  'vitest/no-importing-vitest-globals': 'off' as const,
+  // Justification: Requiring expect.assertions(n) in every test is noisy
+  'vitest/prefer-expect-assertions': 'off' as const,
+  // Justification: Conflicts with no-importing-vitest-globals
+  'vitest/prefer-importing-vitest-globals': 'off' as const,
+  // Justification: Not all tests need explicit timeouts
+  'vitest/require-test-timeout': 'off' as const,
+  // Justification: Top-level it() is valid in vitest
+  'vitest/require-top-level-describe': 'off' as const,
+};
+
+/**
+ * Vitest ESLint rules to disable for e2e tests.
+ * E2e tests legitimately need hooks for fixture lifecycle.
+ */
+export const vitestE2eRuleOverrides = {
+  // Justification: E2e tests need beforeAll/afterAll for fixture setup/teardown
+  'vitest/no-hooks': 'off' as const,
 };
 
 const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMap => ({
