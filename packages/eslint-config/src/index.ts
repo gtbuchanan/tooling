@@ -1,16 +1,18 @@
+import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import {
   eslintCommentsRuleOverrides,
+  importOrderRules,
   isAndroid,
   stylisticCustomizeDefaults,
   stylisticRuleOverrides,
 } from '@gtbuchanan/oxlint-config';
+import stylistic from '@stylistic/eslint-plugin';
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
-import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import importPlugin from 'eslint-plugin-import-x';
 import nodePlugin from 'eslint-plugin-n';
 import oxlint from 'eslint-plugin-oxlint';
 import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
-import stylistic from '@stylistic/eslint-plugin';
 import tseslint from 'typescript-eslint';
 
 /** Options for the shared ESLint configuration. */
@@ -91,6 +93,11 @@ const resolveJsPluginFallbacks = (): Linter.Config[] =>
         { files: ['**/*.ts'], rules: stylisticRuleOverrides },
         eslintCommentsConfigs.recommended,
         { rules: eslintCommentsRuleOverrides },
+        {
+          files: ['**/*.ts'],
+          plugins: { 'import-x': importPlugin },
+          rules: importOrderRules,
+        },
       ]
     : [];
 

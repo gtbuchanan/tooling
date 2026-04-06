@@ -1,7 +1,7 @@
-import * as v from 'valibot';
 import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
-import crossSpawn from 'cross-spawn';
 import { join } from 'node:path';
+import crossSpawn from 'cross-spawn';
+import * as v from 'valibot';
 
 const ManifestSchema = v.looseObject({
   private: v.optional(v.boolean()),

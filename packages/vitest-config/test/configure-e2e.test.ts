@@ -1,11 +1,11 @@
+import { join } from 'node:path';
+import { describe, it } from 'vitest';
 import {
   configureEndToEnd,
   configureEndToEndGlobal,
   configureEndToEndProject,
 } from '@/configure-e2e.js';
-import { describe, it } from 'vitest';
 import { excludeDefault } from '@/configure.js';
-import { join } from 'node:path';
 
 const PACKAGE_NAME = '@gtbuchanan/vitest-config';
 

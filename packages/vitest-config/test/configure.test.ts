@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+import { describe, it } from 'vitest';
 import {
   buildWorkspaceEntry,
   configure,
@@ -8,8 +10,6 @@ import {
   excludeDefault,
   resolveCoverageInclude,
 } from '@/index.js';
-import { describe, it } from 'vitest';
-import { join } from 'node:path';
 
 const PACKAGE_NAME = '@gtbuchanan/vitest-config';
 

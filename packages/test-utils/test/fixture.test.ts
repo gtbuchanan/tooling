@@ -1,6 +1,6 @@
-import { buildOutput, buildRepoFields } from '../../../scripts/lib/manifest.js';
-import { createGitEnv, matchTarball, pinned, runCommand } from '@/fixture.js';
 import { describe, it } from 'vitest';
+import { createGitEnv, matchTarball, pinned, runCommand } from '@/fixture.js';
+import { buildOutput, buildRepoFields } from '../../../scripts/lib/manifest.js';
 
 describe(matchTarball, () => {
   it('matches a scoped package tarball', ({ expect }) => {

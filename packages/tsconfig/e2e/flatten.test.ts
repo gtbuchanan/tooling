@@ -1,12 +1,12 @@
-import * as v from 'valibot';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   type ProjectFixture,
   createProjectFixture,
   extendWithFixture,
 } from '@gtbuchanan/test-utils';
+import * as v from 'valibot';
 import { describe } from 'vitest';
-import { join } from 'node:path';
-import { readFileSync } from 'node:fs';
 
 const createFixture = (): ProjectFixture =>
   createProjectFixture({

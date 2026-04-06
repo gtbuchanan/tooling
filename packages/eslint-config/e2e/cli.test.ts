@@ -1,7 +1,7 @@
-import { it as base, describe } from 'vitest';
-import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
+import { it as base, describe } from 'vitest';
 
 const createRequireConfig = [
   'import { createRequire } from "node:module";',

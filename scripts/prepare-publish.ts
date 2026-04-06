@@ -1,3 +1,5 @@
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import * as v from 'valibot';
 import {
   ManifestSchema,
@@ -5,8 +7,6 @@ import {
   buildOutput,
   buildRepoFields,
 } from './lib/manifest.ts';
-import { join, relative } from 'node:path';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 const JSON_INDENT = 2;
 

@@ -1,7 +1,7 @@
-import * as v from 'valibot';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import * as v from 'valibot';
 
 const { resolve } = createRequire(import.meta.url);
 

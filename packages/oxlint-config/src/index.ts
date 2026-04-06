@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+import stylistic, { type StylisticCustomizeOptions } from '@stylistic/eslint-plugin';
 import {
   type DummyRule,
   type DummyRuleMap,
@@ -5,8 +7,6 @@ import {
   type OxlintOverride,
   defineConfig,
 } from 'oxlint';
-import stylistic, { type StylisticCustomizeOptions } from '@stylistic/eslint-plugin';
-import { fileURLToPath } from 'node:url';
 
 /** Options for the shared oxlint configuration. */
 export interface OxlintConfigureOptions {
@@ -92,6 +92,8 @@ const ruleOverrides: DummyRuleMap = {
   'promise/no-return-wrap': 'warn',
   // Justification: Enforces standard resolve/reject parameter names
   'promise/param-names': 'warn',
+  // Justification: Declaration sort handled by import-x/order via jsPlugin
+  'sort-imports': ['warn', { ignoreDeclarationSort: true }],
   // Justification: Stable return types in .d.ts; catches accidental API changes
   'typescript/explicit-function-return-type': ['warn', {
     allowDirectConstAssertionInArrowFunctions: true,
@@ -125,6 +127,22 @@ export const isAndroid = process.platform === 'android';
 export const stylisticCustomizeDefaults: StylisticCustomizeOptions = {
   semi: true,
   severity: 'warn',
+};
+
+/**
+ * Import ordering rules loaded via jsPlugin.
+ * Use with ESLint as a fallback when oxlint jsPlugins are unavailable.
+ */
+export const importOrderRules = {
+  // Justification: Case-insensitive alphabetical grouping by import type
+  'import-x/order': [
+    'warn' as const, {
+      'alphabetize': { caseInsensitive: true, order: 'asc' as const },
+      'newlines-between': 'never' as const,
+      'pathGroups': [{ group: 'parent' as const, pattern: '@/**', position: 'before' as const }],
+      'pathGroupsExcludedImportTypes': ['builtin' as const],
+    },
+  ] satisfies DummyRule,
 };
 
 /**
@@ -172,6 +190,7 @@ const resolveJsPlugin = (specifier: string): string =>
 const resolveJsPlugins = (): string[] => [
   resolveJsPlugin('@stylistic/eslint-plugin'),
   resolveJsPlugin('@eslint-community/eslint-plugin-eslint-comments'),
+  resolveJsPlugin('eslint-plugin-import-x'),
 ];
 
 const testOverride: OxlintOverride = {
@@ -199,6 +218,7 @@ const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMa
   ...stylisticRuleOverrides,
   ...eslintCommentsRecommendedRules,
   ...eslintCommentsRuleOverrides,
+  ...importOrderRules,
   ...ruleOverrides,
 });
 

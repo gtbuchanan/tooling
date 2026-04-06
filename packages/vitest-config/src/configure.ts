@@ -1,3 +1,5 @@
+import { existsSync, readdirSync } from 'node:fs';
+import { basename, join, resolve as resolvePath } from 'node:path';
 import {
   type UserWorkspaceConfig,
   type ViteUserConfig,
@@ -5,8 +7,6 @@ import {
   defineConfig,
   mergeConfig,
 } from 'vitest/config';
-import { basename, join, resolve as resolvePath } from 'node:path';
-import { existsSync, readdirSync } from 'node:fs';
 
 /** Shared options for all Vitest configuration layers. */
 export interface VitestConfigureOptions {

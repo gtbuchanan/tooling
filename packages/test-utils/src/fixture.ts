@@ -1,12 +1,12 @@
-import * as v from 'valibot';
-import { type TestAPI, it as base } from 'vitest';
-import { delimiter, dirname, join } from 'node:path';
-import { devNull, tmpdir } from 'node:os';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { SpawnSyncOptions } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { devNull, tmpdir } from 'node:os';
+import { delimiter, dirname, join } from 'node:path';
 import crossSpawn from 'cross-spawn';
 import { findUpSync } from 'find-up-simple';
+import * as v from 'valibot';
+import { type TestAPI, it as base } from 'vitest';
 
 const require = createRequire(import.meta.url);
 

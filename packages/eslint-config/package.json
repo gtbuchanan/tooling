@@ -17,6 +17,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@gtbuchanan/oxlint-config": "workspace:*",
     "@stylistic/eslint-plugin": "catalog:",
+    "eslint-plugin-import-x": "catalog:",
     "eslint-plugin-n": "catalog:",
     "eslint-plugin-only-warn": "catalog:",
     "eslint-plugin-oxlint": "catalog:",
