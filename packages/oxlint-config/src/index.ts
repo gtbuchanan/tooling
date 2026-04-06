@@ -344,12 +344,6 @@ const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMa
   ...ruleOverrides,
 });
 
-/**
- * Creates an oxlint configuration. Primary linter with all categories at
- * `warn` severity and `denyWarnings` for CI enforcement. Includes
- * `@stylistic/eslint-plugin` and `@eslint-community/eslint-plugin-eslint-comments`
- * via jsPlugins.
- */
 const browserOverride: OxlintOverride = {
   files: ['**/*.ts'],
   rules: {
@@ -367,6 +361,12 @@ const browserConsoleExemption: OxlintOverride = {
   },
 };
 
+/**
+ * Creates an oxlint configuration. Primary linter with all categories at
+ * `warn` severity and `denyWarnings` for CI enforcement. Includes
+ * `@stylistic/eslint-plugin` and `@eslint-community/eslint-plugin-eslint-comments`
+ * via jsPlugins.
+ */
 export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
   const {
     categories: categoryOverrides,
