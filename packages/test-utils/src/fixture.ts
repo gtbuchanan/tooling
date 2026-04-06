@@ -44,8 +44,8 @@ export const pinned = (name: string): string => {
 export const matchTarball = (files: readonly string[], packageName: string): string => {
   // Tarball names from pnpm pack: gtbuchanan-eslint-config-0.0.0.tgz
   // Convert @gtbuchanan/eslint-config -> gtbuchanan-eslint-config
-  const needle = packageName.replace(/^@/u, '').replace(/\//u, '-');
-  const pattern = new RegExp(`^${needle}-\\d`);
+  const needle = packageName.replace(/^@/v, '').replace(/\//v, '-');
+  const pattern = new RegExp(`^${needle}-\\d`, 'v');
   const tarballs = files.filter(
     file => file.endsWith('.tgz') && pattern.test(file),
   );

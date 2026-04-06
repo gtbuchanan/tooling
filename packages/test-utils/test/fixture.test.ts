@@ -27,7 +27,7 @@ describe(matchTarball, () => {
     const files = ['unrelated-0.0.0.tgz'];
 
     expect(() => matchTarball(files, '@gtbuchanan/eslint-config')).toThrow(
-      /found 0/iu,
+      /found 0/iv,
     );
   });
 
@@ -38,7 +38,7 @@ describe(matchTarball, () => {
     ];
 
     expect(() => matchTarball(files, '@gtbuchanan/eslint-config')).toThrow(
-      /found 2/iu,
+      /found 2/iv,
     );
   });
 
@@ -106,7 +106,7 @@ describe(pinned, () => {
   it('resolves installed package to name@version', ({ expect }) => {
     const result = pinned('valibot');
 
-    expect(result).toMatch(/^valibot@\d+\.\d+\.\d+$/u);
+    expect(result).toMatch(/^valibot@\d+\.\d+\.\d+$/v);
   });
 
   it('throws for unresolvable package', ({ expect }) => {

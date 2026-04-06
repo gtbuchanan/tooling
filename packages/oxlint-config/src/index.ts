@@ -36,6 +36,12 @@ export interface OxlintConfigureOptions {
    * @defaultValue `{ semi: true, severity: 'warn' }`
    */
   readonly stylistic?: StylisticCustomizeOptions;
+  /**
+   * Target environment. Browser targets enable `no-console` and `no-alert`.
+   * Scripts and bin directories are always exempt from `no-console`.
+   * @defaultValue 'server'
+   */
+  readonly target?: 'browser' | 'server';
 }
 
 const resolveStylisticRules = (opts?: StylisticCustomizeOptions): DummyRuleMap => {
@@ -50,9 +56,23 @@ const resolveStylisticRules = (opts?: StylisticCustomizeOptions): DummyRuleMap =
   return rules;
 };
 
-const MAX_LINE_LENGTH = 100;
+const maxLineLength = 100;
 
+/*
+ * Rules not implemented in oxlint — enabled in ESLint (see eslint-config):
+ * - init-declarations, method-signature-style, naming-convention,
+ *   prefer-named-capture-group, require-unicode-regexp
+ *
+ * Rules deliberately skipped:
+ * - consistent-this: Redundant with no-this-alias (style category)
+ * - explicit-module-boundary-types: Redundant with explicit-function-return-type
+ * - no-plusplus: Banning all uses is disproportionate for rare ambiguity
+ * - no-void: void operator is the standard fire-and-forget pattern
+ * - promise-function-async: Conflicts with overloads, adds microtasks
+ */
 const ruleOverrides: DummyRuleMap = {
+  // Justification: Methods that don't use this should be static or extracted
+  'class-methods-use-this': 'warn',
   // Justification: Penalize nested complexity, not flat dispatch (e.g. switch/case)
   'complexity': ['warn', { max: 10, variant: 'modified' }],
   // Justification: Single-letter namespace aliases are idiomatic for schema libraries
@@ -177,10 +197,10 @@ const importOrderOptions = {
 };
 
 // Oxlint reserves 'import-x' for its native import plugin; alias avoids conflict
-const IMPORT_X_ALIAS = 'import-x-js';
+const importXAlias = 'import-x-js';
 
 const importOrderRulesOxlint: DummyRuleMap = {
-  [`${IMPORT_X_ALIAS}/order`]: ['warn', importOrderOptions],
+  [`${importXAlias}/order`]: ['warn', importOrderOptions],
 };
 
 /**
@@ -216,7 +236,7 @@ export const stylisticRuleOverrides = {
    * compromise between those coding full screen on larger monitors and those that aren't.
    */
   '@stylistic/max-len': [
-    'warn' as const, { code: MAX_LINE_LENGTH, ignoreUrls: true },
+    'warn' as const, { code: maxLineLength, ignoreUrls: true },
   ] satisfies DummyRule,
   // Justification: Not included by customize(); needed to catch accidental double semicolons
   '@stylistic/no-extra-semi': 'warn' as const,
@@ -240,7 +260,7 @@ const resolveJsPlugins = (): ExternalPluginEntry[] => [
   resolveJsPlugin('@stylistic/eslint-plugin'),
   resolveJsPlugin('@eslint-community/eslint-plugin-eslint-comments'),
   {
-    name: IMPORT_X_ALIAS,
+    name: importXAlias,
     specifier: resolveJsPlugin('eslint-plugin-import-x'),
   },
 ];
@@ -330,6 +350,23 @@ const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMa
  * `@stylistic/eslint-plugin` and `@eslint-community/eslint-plugin-eslint-comments`
  * via jsPlugins.
  */
+const browserOverride: OxlintOverride = {
+  files: ['**/*.ts'],
+  rules: {
+    // Justification: Browser code should use a logger, not console
+    'no-alert': 'warn',
+    'no-console': 'warn',
+  },
+};
+
+const browserConsoleExemption: OxlintOverride = {
+  files: ['**/scripts/**/*.ts', '**/bin/**/*.ts'],
+  rules: {
+    // Justification: Scripts and CLIs use console as their interface
+    'no-console': 'off',
+  },
+};
+
 export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
   const {
     categories: categoryOverrides,
@@ -337,7 +374,12 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
     options: optionOverrides,
     overrides = [],
     stylistic: stylisticOptions,
+    target = 'server',
   } = opts;
+
+  const targetOverrides = target === 'browser'
+    ? [browserOverride, browserConsoleExemption]
+    : [];
 
   return defineConfig({
     categories: {
@@ -353,7 +395,7 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
     ignorePatterns,
     ...(!isAndroid && { jsPlugins: resolveJsPlugins() }),
     options: { denyWarnings: true, typeAware: true, ...optionOverrides },
-    overrides: [testOverride, ...overrides],
+    overrides: [testOverride, ...targetOverrides, ...overrides],
     plugins: ['typescript', 'import', 'node', 'promise'],
     rules: isAndroid ? ruleOverrides : resolveRules(stylisticOptions),
   });

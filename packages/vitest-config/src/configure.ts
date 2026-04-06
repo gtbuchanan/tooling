@@ -40,9 +40,9 @@ export const excludeDefault = [
   '**/dist/**',
 ] as const;
 
-const PACKAGE_NAME = '@gtbuchanan/vitest-config';
+const packageName = '@gtbuchanan/vitest-config';
 
-const COVERAGE_EXTENSIONS = '*.{cjs,cts,js,mjs,mts,ts,tsx}';
+const coverageExtensions = '*.{cjs,cts,js,mjs,mts,ts,tsx}';
 
 /** Default directories included in coverage reports. */
 export const defaultCoverageDirs = [
@@ -53,7 +53,7 @@ export const defaultCoverageDirs = [
 
 /** Default coverage include globs derived from {@link defaultCoverageDirs}. */
 export const coverageInclude = defaultCoverageDirs.map(
-  dir => `${dir}/**/${COVERAGE_EXTENSIONS}`,
+  dir => `${dir}/**/${coverageExtensions}`,
 );
 
 /**
@@ -66,7 +66,7 @@ export const resolveCoverageInclude = (
   dirs: readonly string[] = defaultCoverageDirs,
 ): readonly string[] => {
   const patterns = dirs.map(
-    dir => `${dir}/**/${COVERAGE_EXTENSIONS}`,
+    dir => `${dir}/**/${coverageExtensions}`,
   );
   if (projectPatterns === undefined) {
     return patterns;
@@ -84,15 +84,15 @@ export const resolveSetupFiles = (options: VitestConfigureOptions): string[] => 
   const { consoleFailTest = true, hasAssertions = true } = options;
   const setupFiles: string[] = [];
   if (consoleFailTest) {
-    setupFiles.push(`${PACKAGE_NAME}/console-fail-test`);
+    setupFiles.push(`${packageName}/console-fail-test`);
   }
   if (hasAssertions) {
-    setupFiles.push(`${PACKAGE_NAME}/setup`);
+    setupFiles.push(`${packageName}/setup`);
   }
   return setupFiles;
 };
 
-const VITEST_CONFIG_FILES = [
+const vitestConfigFiles = [
   'vitest.config.ts',
   'vitest.config.js',
   'vitest.config.mts',
@@ -100,9 +100,9 @@ const VITEST_CONFIG_FILES = [
 ] as const;
 
 const hasVitestConfig = (dir: string): boolean =>
-  VITEST_CONFIG_FILES.some(file => existsSync(join(dir, file)));
+  vitestConfigFiles.some(file => existsSync(join(dir, file)));
 
-const GLOB_SUFFIX = '/*';
+const globSuffix = '/*';
 
 /**
  * Resolves glob patterns (e.g. `['packages/*']`) to absolute directory paths.
@@ -112,10 +112,10 @@ export const resolveProjectDirs = (
   patterns: readonly string[],
 ): string[] =>
   patterns.flatMap((pattern) => {
-    if (pattern.endsWith(GLOB_SUFFIX)) {
+    if (pattern.endsWith(globSuffix)) {
       const parent = resolvePath(
         process.cwd(),
-        pattern.slice(0, -GLOB_SUFFIX.length),
+        pattern.slice(0, -globSuffix.length),
       );
       return readdirSync(parent, { withFileTypes: true })
         .filter(entry => entry.isDirectory())
@@ -216,14 +216,14 @@ export const buildGlobalConfig = (
     },
   });
 
-const UNIT_TEST_INCLUDE = ['test/**/*.test.ts'] as const;
+const unitTestInclude = ['test/**/*.test.ts'] as const;
 
 /**
  * Per-project configuration for use with vitest projects.
  * Sets excludes. Does not include global-only settings.
  */
 export const configureProject = (): UserWorkspaceConfig =>
-  buildProjectConfig(UNIT_TEST_INCLUDE);
+  buildProjectConfig(unitTestInclude);
 
 /**
  * Global configuration for use in the root vitest.config.ts of a monorepo.

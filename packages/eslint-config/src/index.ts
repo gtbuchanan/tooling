@@ -50,6 +50,12 @@ export interface ESLintConfigureOptions {
    * that re-enable oxlint-covered rules will be silently overridden.
    */
   readonly extraConfigs?: Linter.Config[];
+  /**
+   * Target environment. Matches oxlint-config's target option.
+   * Server targets enable require-unicode-regexp with `/v` flag.
+   * @defaultValue 'server'
+   */
+  readonly target?: 'browser' | 'server';
 }
 
 const resolvePnpmConfigs = (options: ESLintConfigureOptions): Linter.Config[] => {
@@ -80,7 +86,19 @@ const resolveNodeConfig = (options: ESLintConfigureOptions): DefineConfigArg => 
     parser: tseslint.parser,
     parserOptions: resolveParserOptions(options),
   },
+  plugins: { '@typescript-eslint': tseslint.plugin },
   rules: {
+    // Justification: Property syntax is contravariant (safe); method syntax is bivariant (unsafe)
+    '@typescript-eslint/method-signature-style': 'warn',
+    // Justification: Prevents snake_case drift from agents and API boundaries
+    '@typescript-eslint/naming-convention': [
+      'warn', {
+        format: ['camelCase', 'PascalCase'],
+        leadingUnderscore: 'allow',
+        selector: 'variableLike',
+        trailingUnderscore: 'allow',
+      },
+    ],
     // Justification: Redundant with oxlint native import plugin
     'n/no-extraneous-import': 'off' as const,
     // Justification: Redundant with oxlint native import plugin
@@ -105,12 +123,14 @@ const resolveJsPluginFallbacks = (): Linter.Config[] =>
       ]
     : [];
 
-const TEST_FILES = ['**/test/**/*.ts', '**/e2e/**/*.ts'];
+const testFiles = ['**/test/**/*.ts', '**/e2e/**/*.ts'];
 
 // Core ESLint rules not implemented in oxlint
 const coreRuleConfig: Linter.Config = {
   files: ['**/*.ts'],
   rules: {
+    // Justification: Pushes toward const and expressions over statements
+    'init-declarations': 'warn',
     // Justification: Enforces modern JS idiom (x ??= y over x = x ?? y)
     'logical-assignment-operators': [
       'warn', 'always', { enforceForIfStatements: true },
@@ -119,14 +139,16 @@ const coreRuleConfig: Linter.Config = {
     'prefer-arrow-callback': [
       'warn', { allowNamedFunctions: true, allowUnboundThis: true },
     ],
+    // Justification: Self-documenting regex capture groups
+    'prefer-named-capture-group': 'warn',
     // Justification: Catches race conditions from async mutations in loops
     'require-atomic-updates': 'warn',
   },
 };
 
 const vitestConfigs: Linter.Config[] = [
-  { ...vitestPlugin.configs.all, files: TEST_FILES },
-  { files: TEST_FILES, rules: vitestRuleOverrides },
+  { ...vitestPlugin.configs.all, files: testFiles },
+  { files: testFiles, rules: vitestRuleOverrides },
   { files: ['**/e2e/**/*.ts'], rules: vitestE2eRuleOverrides },
 ];
 
@@ -144,16 +166,28 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
     extraConfigs = [],
     ignores = ['.claude/worktrees/**', '**/dist/**'],
     onlyWarn = true,
+    target = 'server',
   } = options;
 
   if (onlyWarn) {
     await import('eslint-plugin-only-warn');
   }
 
+  const unicodeFlag = target === 'server' ? 'v' : 'u';
+
+  const targetRules: Linter.Config = {
+    files: ['**/*.ts'],
+    rules: {
+      // Justification: Prevents subtle unicode bugs; /v for server, /u for browser compat
+      'require-unicode-regexp': ['warn', { requireFlag: unicodeFlag }],
+    },
+  };
+
   return defineConfig(
     ...resolvePnpmConfigs(options),
     resolveNodeConfig(options),
     coreRuleConfig,
+    targetRules,
     {
       files: entryPoints,
       rules: {

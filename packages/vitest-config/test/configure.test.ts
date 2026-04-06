@@ -10,7 +10,7 @@ import {
   resolveCoverageInclude,
 } from '#src/index.js';
 
-const PACKAGE_NAME = '@gtbuchanan/vitest-config';
+const packageName = '@gtbuchanan/vitest-config';
 
 describe('vitest configure', () => {
   it('enables mockReset by default', ({ expect }) => {
@@ -40,8 +40,8 @@ describe('vitest configure', () => {
     const config = configure();
 
     expect(config.test?.setupFiles).toEqual([
-      `${PACKAGE_NAME}/console-fail-test`,
-      `${PACKAGE_NAME}/setup`,
+      `${packageName}/console-fail-test`,
+      `${packageName}/setup`,
     ]);
   });
 
@@ -103,8 +103,8 @@ describe('vitest configureGlobal', () => {
     const config = configureGlobal();
 
     expect(config.test?.setupFiles).toEqual([
-      `${PACKAGE_NAME}/console-fail-test`,
-      `${PACKAGE_NAME}/setup`,
+      `${packageName}/console-fail-test`,
+      `${packageName}/setup`,
     ]);
   });
 

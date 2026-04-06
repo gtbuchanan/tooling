@@ -5,7 +5,7 @@ import * as v from 'valibot';
 
 const { resolve } = createRequire(import.meta.url);
 
-const JSON_INDENT = 2;
+const jsonIndent = 2;
 
 const pkgDir = join(import.meta.dirname, '..');
 const outDir = join(pkgDir, 'dist', 'source');
@@ -50,5 +50,5 @@ const flattened = {
 mkdirSync(outDir, { recursive: true });
 writeFileSync(
   join(outDir, 'node.json'),
-  `${JSON.stringify(flattened, null, JSON_INDENT)}\n`,
+  `${JSON.stringify(flattened, null, jsonIndent)}\n`,
 );

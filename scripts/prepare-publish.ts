@@ -8,7 +8,7 @@ import {
   buildRepoFields,
 } from './lib/manifest.ts';
 
-const JSON_INDENT = 2;
+const jsonIndent = 2;
 
 const NPMIGNORE = '*.tsbuildinfo\n';
 
@@ -31,7 +31,7 @@ const preparePackage = (pkgDir: string): void => {
   const json = JSON.stringify({
     ...buildOutput(manifest),
     ...buildRepoFields(root, relative(rootDir, pkgDir).replaceAll('\\', '/')),
-  }, null, JSON_INDENT);
+  }, null, jsonIndent);
   writeFileSync(join(target, 'package.json'), `${json}\n`);
   writeFileSync(join(target, '.npmignore'), NPMIGNORE);
 };

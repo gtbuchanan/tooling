@@ -196,4 +196,39 @@ describe('oxlint configure', () => {
     expect(config.categories?.nursery).toBe('off');
     expect(config.categories?.restriction).toBe('off');
   });
+
+  it('defaults to server target without no-console', ({ expect }) => {
+    const config = configure();
+    const consoleOverride = config.overrides?.find(
+      override => override.rules?.['no-console'] !== undefined,
+    );
+
+    expect(consoleOverride).toBeUndefined();
+  });
+
+  it('enables no-console and no-alert for browser target', ({ expect }) => {
+    const config = configure({ target: 'browser' });
+    const browserOverride = config.overrides?.find(
+      override => override.rules?.['no-console'] !== undefined,
+    );
+
+    expect(browserOverride?.rules?.['no-console']).toBe('warn');
+    expect(browserOverride?.rules?.['no-alert']).toBe('warn');
+  });
+
+  it('exempts scripts and bin from no-console in browser target', ({ expect }) => {
+    const config = configure({ target: 'browser' });
+    const exemption = config.overrides?.find(
+      override => override.rules?.['no-console'] === 'off',
+    );
+
+    expect(exemption?.files).toContain('**/scripts/**/*.ts');
+    expect(exemption?.files).toContain('**/bin/**/*.ts');
+  });
+
+  it('enables class-methods-use-this', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['class-methods-use-this']).toBe('warn');
+  });
 });

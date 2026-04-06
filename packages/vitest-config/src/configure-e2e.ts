@@ -31,14 +31,14 @@ export interface VitestEndToEndConfigureGlobalOptions extends VitestConfigureGlo
   readonly testTimeout?: number;
 }
 
-const E2E_TEST_INCLUDE = ['e2e/**/*.test.ts'] as const;
+const e2eTestInclude = ['e2e/**/*.test.ts'] as const;
 
 /**
  * Per-project e2e configuration for use with vitest projects.
  * Sets excludes and e2e include pattern. Does not include global-only settings.
  */
 export const configureEndToEndProject = (): UserWorkspaceConfig =>
-  buildProjectConfig(E2E_TEST_INCLUDE);
+  buildProjectConfig(e2eTestInclude);
 
 const resolveEndToEndProjects = (
   patterns: readonly string[],

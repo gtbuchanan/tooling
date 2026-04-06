@@ -6,7 +6,7 @@ import {
 } from '#src/configure-e2e.js';
 import { excludeDefault } from '#src/configure.js';
 
-const PACKAGE_NAME = '@gtbuchanan/vitest-config';
+const packageName = '@gtbuchanan/vitest-config';
 
 describe('vitest configureEndToEndProject', () => {
   it('does not include resolve alias', ({ expect }) => {
@@ -51,8 +51,8 @@ describe('vitest configureEndToEndGlobal', () => {
     const config = configureEndToEndGlobal();
 
     expect(config.test?.setupFiles).toEqual([
-      `${PACKAGE_NAME}/console-fail-test`,
-      `${PACKAGE_NAME}/setup`,
+      `${packageName}/console-fail-test`,
+      `${packageName}/setup`,
     ]);
   });
 

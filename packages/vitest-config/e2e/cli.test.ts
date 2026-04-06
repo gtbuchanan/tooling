@@ -86,7 +86,7 @@ describe('vitest CLI integration', () => {
     });
 
     expect(exitCode).not.toBe(0);
-    expect(stdout).toMatch(/expected .*? assertion/u);
+    expect(stdout).toMatch(/expected .*? assertion/v);
   });
 
   it('enforces console-fail-test via setup file', ({ fixture, expect }) => {
@@ -103,7 +103,7 @@ describe('vitest CLI integration', () => {
     });
 
     expect(exitCode).not.toBe(0);
-    expect(stdout + stderr).toMatch(/console method/u);
+    expect(stdout + stderr).toMatch(/console method/v);
   });
 
   it('resolves #src/ subpath imports', ({ fixture, expect }) => {
