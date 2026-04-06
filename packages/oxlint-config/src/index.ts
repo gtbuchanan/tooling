@@ -52,6 +52,8 @@ const resolveStylisticRules = (opts?: StylisticCustomizeOptions): DummyRuleMap =
 const MAX_LINE_LENGTH = 100;
 
 const ruleOverrides: DummyRuleMap = {
+  // Justification: Penalize nested complexity, not flat dispatch (e.g. switch/case)
+  'complexity': ['warn', { max: 10, variant: 'modified' }],
   // Justification: Single-letter namespace aliases are idiomatic for schema libraries
   'id-length': ['warn', { exceptions: ['v'] }],
   /*
@@ -74,6 +76,8 @@ const ruleOverrides: DummyRuleMap = {
   'import/prefer-default-export': 'off',
   // Justification: Comments and blank lines are documentation, not complexity
   'max-lines': ['warn', { skipBlankLines: true, skipComments: true }],
+  // Justification: 5+ params signals a missing options object
+  'max-params': ['warn', { max: 4 }],
   // Justification: continue is idiomatic for early guard clauses in loops
   'no-continue': 'off',
   // Justification: Common sentinel values that are universally understood
@@ -109,12 +113,24 @@ const ruleOverrides: DummyRuleMap = {
     allowHigherOrderFunctions: true,
     allowTypedFunctionExpressions: true,
   }],
+  // Justification: Use Map/Set instead of dynamic delete on objects
+  'typescript/no-dynamic-delete': 'warn',
+  // Justification: Forces unknown + narrowing over any
+  'typescript/no-explicit-any': 'warn',
   // Justification: Prevents runtime imports for type-only specifiers
   'typescript/no-import-type-side-effects': 'warn',
+  // Justification: Prevents void outside return types and generics
+  'typescript/no-invalid-void-type': 'warn',
+  // Justification: Modern TS uses ES modules; namespaces are legacy
+  'typescript/no-namespace': 'warn',
   // Justification: Catches always-true/false conditions after type narrowing
   'typescript/no-unnecessary-condition': ['warn', { allowConstantLoopConditions: true }],
   // Justification: Catches generic params that don't add type safety
   'typescript/no-unnecessary-type-parameters': 'warn',
+  // Justification: Prefers x! over x as T when only nullability differs
+  'typescript/non-nullable-type-assertion-style': 'warn',
+  // Justification: Prevents computed enum values for predictability
+  'typescript/prefer-literal-enum-member': ['warn', { allowBitwiseExpressions: true }],
   // Justification: Falsy coalescing with || is idiomatic for strings and numbers
   'typescript/prefer-nullish-coalescing': 'off',
   // Justification: Enforces a?.b over a && a.b
