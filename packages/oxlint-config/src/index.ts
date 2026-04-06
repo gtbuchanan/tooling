@@ -84,6 +84,10 @@ const ruleOverrides: DummyRuleMap = {
   }],
   // Justification: Pure functions; mutations belong at app boundaries
   'no-param-reassign': ['warn', { props: true }],
+  // Justification: Use #src/* subpath imports instead of vitest @ aliases
+  'no-restricted-imports': ['warn', {
+    patterns: [{ group: ['@/*'], message: 'Use #src/* subpath imports instead of @/ aliases' }],
+  }],
   // Justification: Ternaries are readable for simple conditional assignments
   'no-ternary': 'off',
   // Justification: Catches resolving/rejecting a Promise more than once

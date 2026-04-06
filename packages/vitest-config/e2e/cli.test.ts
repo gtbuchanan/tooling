@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createProjectFixture, runCommand } from '@gtbuchanan/test-utils';
 import { it as base, describe } from 'vitest';
@@ -17,6 +17,13 @@ const createFixture = () => {
 
   writeFileSync(join(fixture.projectDir, 'vitest.config.ts'), vitestConfig);
   mkdirSync(join(fixture.projectDir, 'src'), { recursive: true });
+
+  // Add subpath imports for #src/* resolution
+  fixture.writeFile(
+    'package.json',
+    readFileSync(join(fixture.projectDir, 'package.json'), 'utf-8')
+      .replace('"type":', '"imports":{"#src/*":"./src/*"},"type":'),
+  );
 
   const vitest = join(fixture.projectDir, 'node_modules/.bin/vitest');
 
@@ -96,12 +103,12 @@ describe('vitest CLI integration', () => {
     expect(stdout + stderr).toMatch(/console method/u);
   });
 
-  it('resolves @ alias to src/', ({ fixture, expect }) => {
+  it('resolves #src/ subpath imports', ({ fixture, expect }) => {
     const { exitCode } = fixture.run({
       files: {
         'alias.test.ts': [
           'import { it } from "vitest";',
-          'import { greet } from "@/greet";',
+          'import { greet } from "#src/greet";',
           'it("greets", ({ expect }) => {',
           '  expect(greet("World")).toBe("Hello, World!");',
           '});',
@@ -123,7 +130,7 @@ describe('vitest CLI integration', () => {
       join(fixture.projectDir, 'cov.test.ts'),
       [
         'import { it } from "vitest";',
-        'import { add } from "@/add";',
+        'import { add } from "#src/add";',
         'it("adds", ({ expect }) => {',
         '  expect(add(1, 2)).toBe(3);',
         '});',
