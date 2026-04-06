@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createProjectFixture, runCommand } from '@gtbuchanan/test-utils';
+import * as v from 'valibot';
 import { it as base, describe } from 'vitest';
 
 const vitestConfig = [
@@ -19,11 +20,13 @@ const createFixture = () => {
   mkdirSync(join(fixture.projectDir, 'src'), { recursive: true });
 
   // Add subpath imports for #src/* resolution
-  fixture.writeFile(
-    'package.json',
-    readFileSync(join(fixture.projectDir, 'package.json'), 'utf-8')
-      .replace('"type":', '"imports":{"#src/*":"./src/*"},"type":'),
+  const pkgJsonPath = join(fixture.projectDir, 'package.json');
+  const pkg = v.parse(
+    v.looseObject({ imports: v.optional(v.record(v.string(), v.string())) }),
+    JSON.parse(readFileSync(pkgJsonPath, 'utf-8')),
   );
+  pkg.imports = { '#src/*': './src/*' };
+  writeFileSync(pkgJsonPath, JSON.stringify(pkg, undefined, 2));
 
   const vitest = join(fixture.projectDir, 'node_modules/.bin/vitest');
 
