@@ -3,6 +3,7 @@ import stylistic, { type StylisticCustomizeOptions } from '@stylistic/eslint-plu
 import {
   type DummyRule,
   type DummyRuleMap,
+  type ExternalPluginEntry,
   type OxlintConfig,
   type OxlintOverride,
   defineConfig,
@@ -102,7 +103,7 @@ const ruleOverrides: DummyRuleMap = {
   'promise/no-return-wrap': 'warn',
   // Justification: Enforces standard resolve/reject parameter names
   'promise/param-names': 'warn',
-  // Justification: Declaration sort handled by import-x/order via jsPlugin
+  // Justification: Declaration sort handled by import-x-js/order via jsPlugin
   'sort-imports': ['warn', { ignoreDeclarationSort: true }],
   // Justification: Enforces export type for type-only re-exports
   'typescript/consistent-type-exports': 'warn',
@@ -165,22 +166,31 @@ export const stylisticCustomizeDefaults: StylisticCustomizeOptions = {
   severity: 'warn',
 };
 
+const importOrderOptions = {
+  'alphabetize': { caseInsensitive: true, order: 'asc' as const },
+  'newlines-between': 'never' as const,
+  'pathGroups': [
+    { group: 'parent' as const, pattern: '#src/**', position: 'before' as const },
+    { group: 'parent' as const, pattern: '#test/**', position: 'before' as const },
+  ],
+  'pathGroupsExcludedImportTypes': ['builtin' as const],
+};
+
+// Oxlint reserves 'import-x' for its native import plugin; alias avoids conflict
+const IMPORT_X_ALIAS = 'import-x-js';
+
+const importOrderRulesOxlint: DummyRuleMap = {
+  [`${IMPORT_X_ALIAS}/order`]: ['warn', importOrderOptions],
+};
+
 /**
- * Import ordering rules loaded via jsPlugin.
+ * Import ordering rules for ESLint fallback (uses real plugin name).
  * Use with ESLint as a fallback when oxlint jsPlugins are unavailable.
  */
 export const importOrderRules = {
   // Justification: Case-insensitive alphabetical grouping by import type
   'import-x/order': [
-    'warn' as const, {
-      'alphabetize': { caseInsensitive: true, order: 'asc' as const },
-      'newlines-between': 'never' as const,
-      'pathGroups': [
-        { group: 'parent' as const, pattern: '#src/**', position: 'before' as const },
-        { group: 'parent' as const, pattern: '#test/**', position: 'before' as const },
-      ],
-      'pathGroupsExcludedImportTypes': ['builtin' as const],
-    },
+    'warn' as const, importOrderOptions,
   ] satisfies DummyRule,
 };
 
@@ -226,10 +236,13 @@ export const stylisticRuleOverrides = {
 const resolveJsPlugin = (specifier: string): string =>
   fileURLToPath(import.meta.resolve(specifier));
 
-const resolveJsPlugins = (): string[] => [
+const resolveJsPlugins = (): ExternalPluginEntry[] => [
   resolveJsPlugin('@stylistic/eslint-plugin'),
   resolveJsPlugin('@eslint-community/eslint-plugin-eslint-comments'),
-  resolveJsPlugin('eslint-plugin-import-x'),
+  {
+    name: IMPORT_X_ALIAS,
+    specifier: resolveJsPlugin('eslint-plugin-import-x'),
+  },
 ];
 
 const testOverride: OxlintOverride = {
@@ -307,7 +320,7 @@ const resolveRules = (stylisticOptions?: StylisticCustomizeOptions): DummyRuleMa
   ...stylisticRuleOverrides,
   ...eslintCommentsRecommendedRules,
   ...eslintCommentsRuleOverrides,
-  ...importOrderRules,
+  ...importOrderRulesOxlint,
   ...ruleOverrides,
 });
 
