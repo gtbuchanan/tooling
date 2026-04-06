@@ -166,6 +166,7 @@ const ruleOverrides: DummyRuleMap = {
   'unicode-bom': 'warn',
 };
 
+// Justification: Catches stale, mismatched, and undocumented ESLint disable comments
 const eslintCommentsRecommendedRules: DummyRuleMap = {
   '@eslint-community/eslint-comments/disable-enable-pair': 'warn',
   '@eslint-community/eslint-comments/no-aggregating-enable': 'warn',
@@ -279,7 +280,7 @@ const testOverride: OxlintOverride = {
     'typescript/explicit-function-return-type': 'off',
     // Justification: Vitest-aware version allows vi.fn() mocks in expect()
     'typescript/unbound-method': 'off',
-    // Enable all vitest rules, then disable the ones that don't fit
+    // Justification: Enable all oxlint-native vitest rules for test quality and consistency
     'vitest/consistent-each-for': 'warn',
     'vitest/consistent-test-filename': 'warn',
     'vitest/consistent-vitest-vi': 'warn',
@@ -384,6 +385,7 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
   return defineConfig({
     categories: {
       correctness: 'warn',
+      // Justification: Nursery rules are unstable; restriction rules are cherry-picked above
       nursery: 'off',
       pedantic: 'warn',
       perf: 'warn',
