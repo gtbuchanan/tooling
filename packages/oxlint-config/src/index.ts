@@ -92,6 +92,13 @@ const ruleOverrides: DummyRuleMap = {
   'promise/no-return-wrap': 'warn',
   // Justification: Enforces standard resolve/reject parameter names
   'promise/param-names': 'warn',
+  // Justification: Stable return types in .d.ts; catches accidental API changes
+  'typescript/explicit-function-return-type': ['warn', {
+    allowDirectConstAssertionInArrowFunctions: true,
+    allowExpressions: true,
+    allowHigherOrderFunctions: true,
+    allowTypedFunctionExpressions: true,
+  }],
   // Justification: Falsy coalescing with || is idiomatic for strings and numbers
   'typescript/prefer-nullish-coalescing': 'off',
   // Justification: Explicit nullish checks are often clearer than optional chaining
@@ -177,6 +184,8 @@ const testOverride: OxlintOverride = {
     'max-statements': 'off',
     // Justification: Tests often use arbitrary values that shouldn't need to be constants
     'no-magic-numbers': 'off',
+    // Justification: Test helpers don't need return type documentation
+    'typescript/explicit-function-return-type': 'off',
     // Justification: Vitest-aware version allows vi.fn() mocks in expect()
     'typescript/unbound-method': 'off',
     // Justification: Not using globals; false positives for local expect

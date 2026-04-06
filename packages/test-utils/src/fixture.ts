@@ -1,9 +1,9 @@
 import * as v from 'valibot';
+import { type TestAPI, it as base } from 'vitest';
 import { delimiter, dirname, join } from 'node:path';
 import { devNull, tmpdir } from 'node:os';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { SpawnSyncOptions } from 'node:child_process';
-import { it as base } from 'vitest';
 import { createRequire } from 'node:module';
 import crossSpawn from 'cross-spawn';
 import { findUpSync } from 'find-up-simple';
@@ -76,7 +76,17 @@ export interface CommandResult {
  * Creates a git environment isolated from user/system config (e.g. GPG signing, hooks).
  * Optionally includes a committer identity for commands that require one.
  */
-export const createGitEnv = (identity?: { email: string; name: string }) => ({
+/** Git environment with isolation properties and optional identity. */
+interface GitEnv extends NodeJS.ProcessEnv {
+  readonly GIT_AUTHOR_EMAIL?: string;
+  readonly GIT_AUTHOR_NAME?: string;
+  readonly GIT_COMMITTER_EMAIL?: string;
+  readonly GIT_COMMITTER_NAME?: string;
+  readonly GIT_CONFIG_GLOBAL: string;
+  readonly GIT_CONFIG_NOSYSTEM: string;
+}
+
+export const createGitEnv = (identity?: { email: string; name: string }): GitEnv => ({
   ...process.env,
   GIT_CONFIG_GLOBAL: devNull,
   GIT_CONFIG_NOSYSTEM: '1',
@@ -245,7 +255,7 @@ export const createProjectFixture = (
  */
 export const extendWithFixture = (
   create: () => ProjectFixture,
-) => base.extend<{ fixture: ProjectFixture }>({
+): TestAPI<{ fixture: ProjectFixture }> => base.extend<{ fixture: ProjectFixture }>({
   // oxlint-disable-next-line no-empty-pattern -- Vitest fixture requires destructuring
   fixture: [async ({}, use) => {
     using fixture = create();

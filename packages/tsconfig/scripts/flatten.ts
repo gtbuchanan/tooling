@@ -15,7 +15,7 @@ const TsconfigSchema = v.looseObject({
   extends: v.optional(v.union([v.string(), v.array(v.string())])),
 });
 
-const readTsconfig = (path: string) =>
+const readTsconfig = (path: string): v.InferOutput<typeof TsconfigSchema> =>
   v.parse(TsconfigSchema, JSON.parse(readFileSync(path, 'utf-8')));
 
 const source = readTsconfig(join(pkgDir, 'node.json'));

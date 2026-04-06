@@ -43,7 +43,7 @@ export type Manifest = v.InferOutput<typeof ManifestSchema>;
 export const buildRepoFields = (
   root: RootManifest,
   directory: string,
-) => ({
+): Pick<Partial<RootManifest>, 'bugs' | 'homepage' | 'repository'> => ({
   ...(root.bugs && { bugs: root.bugs }),
   ...(root.homepage && {
     homepage: `${root.homepage}/tree/main/${directory}`,

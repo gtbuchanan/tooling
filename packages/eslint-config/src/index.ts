@@ -46,7 +46,7 @@ export interface ESLintConfigureOptions {
   readonly extraConfigs?: Linter.Config[];
 }
 
-const resolvePnpmConfigs = (options: ESLintConfigureOptions) => {
+const resolvePnpmConfigs = (options: ESLintConfigureOptions): Linter.Config[] => {
   if (options.pnpm === false) {
     return [];
   }
@@ -60,7 +60,9 @@ const resolveParserOptions = (options: ESLintConfigureOptions): Linter.ParserOpt
   }),
 });
 
-const resolveNodeConfig = (options: ESLintConfigureOptions) => ({
+type DefineConfigArg = Parameters<typeof defineConfig>[number];
+
+const resolveNodeConfig = (options: ESLintConfigureOptions): DefineConfigArg => ({
   /*
    * HACK: eslint-plugin-n belongs in oxlint-config as a jsPlugin, but
    * oxlint jsPlugins don't support type-awareness yet. Move it there
