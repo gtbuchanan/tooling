@@ -24,10 +24,22 @@ repos:
         name: '[Markdown] Lint/Fix'
     repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.22.0
+  # language: system because the config packages aren't published yet.
+  # Consumers should use language: node with additional_dependencies.
   - hooks:
+      - entry: pnpm exec eslint --max-warnings=0
+        files: \.(ts|mts|cts|js|mjs|cjs|json|ya?ml)$
+        id: eslint
+        language: system
+        name: eslint
       - entry: pnpm exec oxfmt --write
         files: \.(json[5c]?|md|ya?ml)$
         id: oxfmt
         language: system
         name: oxfmt
+      - entry: pnpm exec oxlint
+        files: \.(ts|mts|cts|js|mjs|cjs)$
+        id: oxlint
+        language: system
+        name: oxlint
     repo: local
