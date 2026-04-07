@@ -1,3 +1,4 @@
+import json from '@eslint/json';
 import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import {
   eslintCommentsRuleOverrides,
@@ -15,8 +16,8 @@ import { defineConfig } from 'eslint/config';
 import importPlugin from 'eslint-plugin-import-x';
 import nodePlugin from 'eslint-plugin-n';
 import oxlint from 'eslint-plugin-oxlint';
-import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
 // oxlint-disable-next-line import/max-dependencies -- Config aggregator
+import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
 import { configs as ymlConfigs } from 'eslint-plugin-yml';
 import tseslint from 'typescript-eslint';
 
@@ -58,6 +59,28 @@ export interface ESLintConfigureOptions {
    */
   readonly target?: 'browser' | 'server';
 }
+
+const jsonRules: Linter.RulesRecord = {
+  ...json.configs.recommended.rules,
+  // Justification: Alphabetical keys reduce merge conflicts in shared JSON configs
+  'json/sort-keys': 'warn',
+};
+
+const jsonConfigs: Linter.Config[] = [
+  {
+    files: ['**/*.json'],
+    ignores: ['**/package.json', '**/package-lock.json'],
+    language: 'json/json',
+    plugins: { json },
+    rules: jsonRules,
+  },
+  {
+    files: ['**/*.jsonc', '**/tsconfig.json', '**/tsconfig.*.json'],
+    language: 'json/jsonc',
+    plugins: { json },
+    rules: jsonRules,
+  },
+];
 
 const yamlConfigs: Linter.Config[] = [
   ...ymlConfigs['flat/recommended'],
@@ -165,10 +188,10 @@ const vitestConfigs: Linter.Config[] = [
 
 /**
  * Creates an ESLint flat config for TypeScript projects.
- * Supplementary to oxlint — covers `eslint-plugin-pnpm`, `eslint-plugin-n`,
- * and `@vitest/eslint-plugin`. On Android, also runs `@stylistic/eslint-plugin`,
- * `@eslint-community/eslint-plugin-eslint-comments`, and `eslint-plugin-import-x`
- * as fallbacks for oxlint jsPlugins.
+ * Supplementary to oxlint — covers `@eslint/json`, `eslint-plugin-pnpm`,
+ * `eslint-plugin-n`, and `@vitest/eslint-plugin`. On Android, also runs
+ * `@stylistic/eslint-plugin`, `@eslint-community/eslint-plugin-eslint-comments`,
+ * and `eslint-plugin-import-x` as fallbacks for oxlint jsPlugins.
  * `eslint-plugin-oxlint` is applied last to disable overlapping rules.
  */
 export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {
@@ -195,6 +218,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
   };
 
   return defineConfig(
+    ...jsonConfigs,
     ...yamlConfigs,
     ...resolvePnpmConfigs(options),
     resolveNodeConfig(options),

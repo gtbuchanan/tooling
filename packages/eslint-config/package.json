@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
+    "@eslint/json": "catalog:",
     "@gtbuchanan/oxlint-config": "workspace:*",
     "@stylistic/eslint-plugin": "catalog:",
     "@vitest/eslint-plugin": "catalog:",
