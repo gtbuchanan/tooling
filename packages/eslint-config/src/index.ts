@@ -60,17 +60,25 @@ export interface ESLintConfigureOptions {
   readonly target?: 'browser' | 'server';
 }
 
+const jsonRules: Linter.RulesRecord = {
+  ...json.configs.recommended.rules,
+  // Justification: Alphabetical keys reduce merge conflicts in shared JSON configs
+  'json/sort-keys': 'warn',
+};
+
 const jsonConfigs: Linter.Config[] = [
   {
-    ...json.configs.recommended,
     files: ['**/*.json'],
     ignores: ['**/package.json', '**/package-lock.json'],
     language: 'json/json',
+    plugins: { json },
+    rules: jsonRules,
   },
   {
-    ...json.configs.recommended,
     files: ['**/*.jsonc', '**/tsconfig.json', '**/tsconfig.*.json'],
     language: 'json/jsonc',
+    plugins: { json },
+    rules: jsonRules,
   },
 ];
 
