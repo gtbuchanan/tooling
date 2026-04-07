@@ -8,8 +8,6 @@ import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
 import { type TestAPI, it as base } from 'vitest';
 
-const require = createRequire(import.meta.url);
-
 const exec = (command: string, args: readonly string[], options: SpawnSyncOptions): void => {
   const result = crossSpawn.sync(command, [...args], { ...options, stdio: 'ignore' });
   if (result.error) {
@@ -21,6 +19,8 @@ const exec = (command: string, args: readonly string[], options: SpawnSyncOption
 };
 
 const PackageJson = v.object({ version: v.string() });
+
+const require = createRequire(import.meta.url);
 
 /**
  * Resolves a package name to `name@version` using the version currently
@@ -155,13 +155,19 @@ const createSubdir = (parent: string, name: string): string => {
   return dir;
 };
 
+const resolveTarballs = (
+  options: Pick<ProjectFixtureOptions, 'packageName' | 'workspaceDeps'>,
+): readonly string[] => [
+  locateTarball(options.packageName),
+  ...(options.workspaceDeps ?? []).map(locateTarball),
+];
+
 /**
  * Creates an {@link IsolatedFixture} from a tarball. Installs hook and deps
  * packages into separate directories so `NODE_PATH` controls resolution order.
  */
 export const createIsolatedFixture = (options: IsolatedFixtureOptions): IsolatedFixture => {
-  const tgz = locateTarball(options.packageName);
-  const workspaceTarballs = (options.workspaceDeps ?? []).map(locateTarball);
+  const tarballs = resolveTarballs(options);
   const baseDir = mkdtempSync(join(tmpdir(), 'e2e-isolated-'));
   const projectDir = mkdtempSync(join(tmpdir(), 'e2e-project-'));
 
@@ -169,7 +175,7 @@ export const createIsolatedFixture = (options: IsolatedFixtureOptions): Isolated
   const depsDir = createSubdir(baseDir, 'deps');
 
   npmInit(hookDir, options.hookPackages.map(pinned));
-  npmInit(depsDir, [tgz, ...workspaceTarballs, ...(options.depsPackages ?? []).map(pinned)]);
+  npmInit(depsDir, [...tarballs, ...(options.depsPackages ?? []).map(pinned)]);
 
   const nodePath = [
     join(hookDir, 'node_modules'),
@@ -218,13 +224,12 @@ export interface ProjectFixture {
 export const createProjectFixture = (
   options: ProjectFixtureOptions,
 ): ProjectFixture => {
-  const tgz = locateTarball(options.packageName);
-  const workspaceTarballs = (options.workspaceDeps ?? []).map(locateTarball);
+  const tarballs = resolveTarballs(options);
   const projectDir = mkdtempSync(join(tmpdir(), 'e2e-build-'));
 
-  exec('npm', ['init', '-y', '--init-type', 'module'], { cwd: projectDir });
   const pinnedPkgs = (options.packages ?? []).map(pinned);
-  exec('npm', ['install', tgz, ...workspaceTarballs, ...pinnedPkgs], { cwd: projectDir });
+  exec('npm', ['init', '-y', '--init-type', 'module'], { cwd: projectDir });
+  exec('npm', ['install', ...tarballs, ...pinnedPkgs], { cwd: projectDir });
 
   const writeFile = (name: string, content: string): string => {
     const filePath = join(projectDir, name);

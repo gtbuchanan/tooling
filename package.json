@@ -38,6 +38,7 @@
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "concurrently": "catalog:",
+    "console-fail-test": "catalog:",
     "cross-spawn": "catalog:",
     "eslint": "catalog:",
     "find-up-simple": "catalog:",
