@@ -1,9 +1,7 @@
 ---
 exclude: '[-.]lock\.'
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
+  - hooks:
       - id: check-added-large-files
         name: '[*] No Large Files'
       - id: check-illegal-windows-names
@@ -18,16 +16,18 @@ repos:
         name: '[Git] No Commit to Branch'
       - id: trailing-whitespace
         name: '[*] No Trailing Whitespace'
-  - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.22.0
-    hooks:
-      - id: markdownlint-cli2
+    repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+  - hooks:
+      - args: [--fix]
+        id: markdownlint-cli2
         name: '[Markdown] Lint/Fix'
-        args: [--fix]
-  - repo: local
-    hooks:
-      - id: oxfmt
-        name: oxfmt
-        entry: pnpm exec oxfmt --write
-        language: system
+    repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.22.0
+  - hooks:
+      - entry: pnpm exec oxfmt --write
         files: \.(json[5c]?|md|ya?ml)$
+        id: oxfmt
+        language: system
+        name: oxfmt
+    repo: local

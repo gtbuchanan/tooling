@@ -17,6 +17,7 @@ import nodePlugin from 'eslint-plugin-n';
 import oxlint from 'eslint-plugin-oxlint';
 import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
 // oxlint-disable-next-line import/max-dependencies -- Config aggregator
+import { configs as ymlConfigs } from 'eslint-plugin-yml';
 import tseslint from 'typescript-eslint';
 
 /** Options for the shared ESLint configuration. */
@@ -57,6 +58,16 @@ export interface ESLintConfigureOptions {
    */
   readonly target?: 'browser' | 'server';
 }
+
+const yamlConfigs: Linter.Config[] = [
+  ...ymlConfigs['flat/recommended'],
+  ...ymlConfigs['flat/prettier'],
+  {
+    files: ['**/*.yaml', '**/*.yml'],
+    // Justification: Alphabetical keys reduce merge conflicts in shared YAML configs
+    rules: { 'yml/sort-keys': 'warn' },
+  },
+];
 
 const resolvePnpmConfigs = (options: ESLintConfigureOptions): Linter.Config[] => {
   if (options.pnpm === false) {
@@ -164,7 +175,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
   const {
     entryPoints = ['**/bin/**/*.ts', '**/main.ts'],
     extraConfigs = [],
-    ignores = ['.claude/worktrees/**', '**/dist/**'],
+    ignores = ['.claude/worktrees/**', '**/dist/**', '**/pnpm-lock.yaml'],
     onlyWarn = true,
     target = 'server',
   } = options;
@@ -184,6 +195,7 @@ export const configure = async (options: ESLintConfigureOptions = {}): Promise<L
   };
 
   return defineConfig(
+    ...yamlConfigs,
     ...resolvePnpmConfigs(options),
     resolveNodeConfig(options),
     coreRuleConfig,

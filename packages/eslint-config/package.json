@@ -11,10 +11,10 @@
   },
   "publishConfig": {
     "directory": "dist/source",
-    "linkDirectory": false,
     "exports": {
       ".": "./index.js"
-    }
+    },
+    "linkDirectory": false
   },
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
@@ -26,15 +26,16 @@
     "eslint-plugin-only-warn": "catalog:",
     "eslint-plugin-oxlint": "catalog:",
     "eslint-plugin-pnpm": "catalog:",
+    "eslint-plugin-yml": "catalog:",
     "typescript-eslint": "catalog:"
-  },
-  "engines": {
-    "node": ">=22.16"
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*"
   },
   "peerDependencies": {
     "eslint": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }
