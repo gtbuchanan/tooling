@@ -5,7 +5,7 @@ oxlint, TypeScript, and Vitest configuration.
 
 ## Structure
 
-```
+```text
 packages/
   eslint-config/   — @gtbuchanan/eslint-config (ESLint configure())
   oxfmt-config/    — @gtbuchanan/oxfmt-config (oxfmt configure())

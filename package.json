@@ -42,6 +42,7 @@
     "eslint": "catalog:",
     "find-up-simple": "catalog:",
     "jiti": "catalog:",
+    "markdownlint-cli2": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",

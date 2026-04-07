@@ -18,6 +18,12 @@ repos:
         name: '[Git] No Commit to Branch'
       - id: trailing-whitespace
         name: '[*] No Trailing Whitespace'
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.22.0
+    hooks:
+      - id: markdownlint-cli2
+        name: '[Markdown] Lint/Fix'
+        args: [--fix]
   - repo: local
     hooks:
       - id: oxfmt

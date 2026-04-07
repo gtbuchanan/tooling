@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "packages/eslint-config" },
+    { "path": "packages/markdownlint-config" },
     { "path": "packages/oxfmt-config" },
     { "path": "packages/oxlint-config" },
     { "path": "packages/tsconfig" },

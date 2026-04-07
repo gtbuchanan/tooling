@@ -1,0 +1,25 @@
+{
+  "name": "@gtbuchanan/markdownlint-config",
+  "version": "0.0.0",
+  "description": "Shared markdownlint configuration",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "exports": {
+      ".": "./index.mjs"
+    },
+    "linkDirectory": false
+  },
+  "dependencies": {
+    "markdownlint": "catalog:"
+  },
+  "devDependencies": {
+    "@gtbuchanan/test-utils": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22.16"
+  }
+}
