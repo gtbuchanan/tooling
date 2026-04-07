@@ -7,16 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v5
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v5
-        with:
-          cache: pnpm
-
-          node-version: 22
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/pnpm-tasks
 
       - run: pnpm build
 
@@ -24,13 +15,17 @@ jobs:
         with:
           name: dist
           path: dist/packages/*.tgz
+
+  pre-commit:
+    uses: ./.github/workflows/pre-commit.yml
+
 name: CI
 
 on:
   pull_request:
     branches: [main]
-
   push:
     branches: [main]
+
 permissions:
   contents: read

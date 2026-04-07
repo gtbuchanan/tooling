@@ -1,0 +1,52 @@
+description: Install pnpm, restore cache, and install dependencies
+inputs:
+  commands:
+    default: ''
+    description: Newline-delimited pnpm commands to run after install (e.g. compile)
+  node-version:
+    default: '22'
+    description: Node.js version
+  version:
+    default: '10'
+    description: pnpm major version
+name: pnpm Tasks
+runs:
+  steps:
+    - uses: pnpm/action-setup@v5
+      with:
+        version: ${{ inputs.version }}
+
+    - id: setup-node
+      uses: actions/setup-node@v5
+      with:
+        cache: pnpm
+        node-version: ${{ inputs.node-version }}
+
+    # HACK: pnpm has bugs around reporting peer resolution issues, so we
+    # call twice — the second pass catches what the first silently misses.
+    # https://github.com/pnpm/pnpm/issues/7087
+    # https://github.com/pnpm/pnpm/issues/8433
+    - name: Install dependencies
+      run: |
+        pnpm install --frozen-lockfile
+        pnpm install --prefer-frozen-lockfile --resolution-only
+        git checkout -- pnpm-lock.yaml
+      shell: bash
+
+    - env:
+        COMMANDS: ${{ inputs.commands }}
+      if: inputs.commands != ''
+      name: Run pnpm commands
+      run: |
+        while IFS= read -r cmd; do
+          [ -n "$cmd" ] && pnpm $cmd
+        done <<< "$COMMANDS"
+      shell: bash
+
+    # Prune stale packages on inexact cache restore so the re-saved cache
+    # does not grow unbounded
+    - if: steps.setup-node.outputs.cache-hit != 'true'
+      name: Prune pnpm store
+      run: pnpm store prune
+      shell: bash
+  using: composite

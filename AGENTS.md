@@ -6,13 +6,20 @@ oxlint, TypeScript, and Vitest configuration.
 ## Structure
 
 ```text
+.github/
+  actions/
+    pnpm-tasks/      — Composite action: install pnpm, cache, install deps
+  workflows/
+    ci.yml           — Build + pre-commit checks
+    pre-commit.yml   — Reusable prek workflow (seed cache + run hooks)
 packages/
-  eslint-config/   — @gtbuchanan/eslint-config (ESLint configure())
-  oxfmt-config/    — @gtbuchanan/oxfmt-config (oxfmt configure())
-  oxlint-config/   — @gtbuchanan/oxlint-config (oxlint configure())
-  tsconfig/        — @gtbuchanan/tsconfig (shared base tsconfig.json)
-  vitest-config/   — @gtbuchanan/vitest-config (configure, configureGlobal, configureProject, + e2e variants)
-  test-utils/      — private shared E2E fixture utilities
+  eslint-config/       — @gtbuchanan/eslint-config (ESLint configure())
+  markdownlint-config/ — @gtbuchanan/markdownlint-config (markdownlint configure())
+  oxfmt-config/        — @gtbuchanan/oxfmt-config (oxfmt configure())
+  oxlint-config/       — @gtbuchanan/oxlint-config (oxlint configure())
+  tsconfig/            — @gtbuchanan/tsconfig (shared base tsconfig.json)
+  vitest-config/       — @gtbuchanan/vitest-config (configure, configureGlobal, configureProject, + e2e variants)
+  test-utils/          — private shared E2E fixture utilities
 scripts/
   prepare-publish.ts — Prepares clean package.json for each package
   pack-all.ts        — Runs pnpm pack across all packages
@@ -48,14 +55,37 @@ Dual-linter setup:
 - **oxlint** — Primary linter. All categories at `warn` + `denyWarnings`.
   `@stylistic/eslint-plugin` via jsPlugin for syntax-aware formatting.
 - **ESLint** — Supplementary. `eslint-plugin-pnpm` (needs JSON/YAML parsers
-  oxlint can't load) and `eslint-plugin-n` (rules not in oxlint).
-  `eslint-plugin-oxlint` disables overlapping rules. Must be last in config.
+  oxlint can't load), `eslint-plugin-n` (rules not in oxlint), and
+  `eslint-plugin-yml` (YAML linting + key sorting). `eslint-plugin-oxlint`
+  disables overlapping rules. Must be last in config.
 
 ### Formatter
 
 - **oxfmt** — Formats non-JS/TS files (JSON, Markdown, etc.).
   JS/TS files are ignored via `ignorePatterns` because `@stylistic` handles
   formatting through oxlint.
+
+### Markdown linter
+
+- **markdownlint-cli2** — Structural linting for Markdown files.
+  `@gtbuchanan/markdownlint-config` extends `markdownlint/style/prettier` to
+  disable rules that conflict with oxfmt formatting.
+
+### Pre-commit hooks
+
+- **prek** — Rust-based pre-commit hook manager (drop-in replacement for
+  Python pre-commit). Installed automatically via `prepare` script on
+  `pnpm install`. Hooks defined in `.pre-commit-config.yaml`:
+  - `pre-commit-hooks` — file hygiene (large files, EOF newlines, BOM, trailing whitespace, no commit to branch)
+  - `markdownlint-cli2` — Markdown linting with `--fix`
+  - `oxfmt` — JSON/Markdown/YAML formatting (local system hook)
+
+### CI workflows
+
+- **`pre-commit.yml`** — Reusable workflow for prek. Seed job warms the
+  hook cache on push to main. Run job executes hooks on PR changed files.
+- **`pnpm-tasks`** — Composite action: installs pnpm, caches store,
+  installs dependencies, runs optional pnpm commands.
 
 ## Conventions
 

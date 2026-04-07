@@ -1,0 +1,89 @@
+env:
+  # Pin prek cache to a known path for reliable GitHub Actions caching
+  PREK_HOME: ~/.prek-cache
+
+jobs:
+  run:
+    if: github.event_name == 'pull_request'
+    name: Run Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Shallow fetch of all branch tips so prek can diff against the base
+      - name: Fetch branch refs for diff
+        run: git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+
+      - uses: ./.github/actions/pnpm-tasks
+        with:
+          commands: ${{ inputs.pnpm-commands }}
+          node-version: ${{ inputs.node-version }}
+          version: ${{ inputs.pnpm-version }}
+
+      - id: prek-cache
+        uses: actions/cache@v4
+        with:
+          key: prek-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          path: ${{ env.PREK_HOME }}
+          restore-keys: |
+            prek-${{ runner.os }}-
+
+      - name: Run pre-commit hooks
+        run: |
+          pnpm exec prek run \
+            --color=always \
+            --show-diff-on-failure \
+            --verbose \
+            --from-ref=origin/${{ github.base_ref }} \
+            --to-ref=${{ github.event.pull_request.head.sha }}
+
+      - if: steps.prek-cache.outputs.cache-hit != 'true'
+        name: Prune stale environments
+        run: pnpm exec prek cache gc
+
+  # Warm the prek hook environment cache on main so PR builds get cache hits
+  seed:
+    if: github.event_name == 'push'
+    name: Seed Cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/pnpm-tasks
+        with:
+          node-version: ${{ inputs.node-version }}
+          version: ${{ inputs.pnpm-version }}
+
+      - id: prek-cache
+        uses: actions/cache@v4
+        with:
+          key: prek-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          path: ${{ env.PREK_HOME }}
+          restore-keys: |
+            prek-${{ runner.os }}-
+
+      - name: Install hook environments
+        run: pnpm exec prek prepare-hooks
+
+      - if: steps.prek-cache.outputs.cache-hit != 'true'
+        name: Prune stale environments
+        run: pnpm exec prek cache gc
+
+name: Pre-Commit
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        default: '22'
+        required: false
+        type: string
+      pnpm-commands:
+        default: ''
+        description: Newline-delimited pnpm commands to run after install
+        required: false
+        type: string
+      pnpm-version:
+        default: '10'
+        required: false
+        type: string
