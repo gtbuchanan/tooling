@@ -8,10 +8,14 @@ oxlint, TypeScript, and Vitest configuration.
 ```text
 .github/
   actions/
-    pnpm-tasks/      — Composite action: install pnpm, cache, install deps
+    pnpm-resolve-pinned/ — Composite action: resolve locked version without install
+    pnpm-tasks/          — Composite action: install pnpm, cache, install deps
   workflows/
-    ci.yml           — Build + pre-commit checks
-    pre-commit.yml   — Reusable prek workflow (seed cache + run hooks)
+    cd.yml               — Calls CI, then version + publish on main
+    changeset-check.yml  — Verify changeset exists on PR
+    ci.yml               — Build + e2e (PR + reusable)
+    pre-commit.yml       — Run prek hooks on PR changed files
+    pre-commit-seed.yml  — Seed prek cache on push to main
 packages/
   eslint-config/       — @gtbuchanan/eslint-config (ESLint configure())
   markdownlint-config/ — @gtbuchanan/markdownlint-config (markdownlint configure())
@@ -80,12 +84,43 @@ Dual-linter setup:
   - `markdownlint-cli2` — Markdown linting with `--fix`
   - `oxfmt` — JSON/Markdown/YAML formatting (local system hook)
 
-### CI workflows
+### CI/CD workflows
 
-- **`pre-commit.yml`** — Reusable workflow for prek. Seed job warms the
-  hook cache on push to main. Run job executes hooks on PR changed files.
-- **`pnpm-tasks`** — Composite action: installs pnpm, caches store,
-  installs dependencies, runs optional pnpm commands.
+All workflows are reusable via `workflow_call` and run directly in this
+repo. Consuming repos call them with thin wrappers:
+
+```yaml
+# Example: consuming-repo/.github/workflows/cd.yml
+on:
+  push:
+    branches: [main]
+jobs:
+  cd:
+    uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
+```
+
+Repo-specific behavior is customized through `package.json` scripts
+(`build:ci`, `test:e2e`, etc.), not workflow inputs.
+
+- **`ci.yml`** — Build and e2e tests. Uploads two artifacts: `source`
+  (prepared `publishConfig.directory` contents for publish) and `packages`
+  (tarballs for e2e tests).
+- **`cd.yml`** — Calls CI, then runs version (changesets) and publish
+  (npm trusted publishing via OIDC).
+- **`changeset-check.yml`** — Verifies a changeset exists on every PR.
+  Use `pnpm changeset --empty` for PRs that don't need a version bump.
+- **`pre-commit.yml`** — Runs prek hooks against PR changed files.
+- **`pre-commit-seed.yml`** — Warms the prek hook environment cache so
+  PR builds get cache hits.
+
+Composite actions:
+
+- **`pnpm-tasks`** — Sets up pnpm and Node.js (version from
+  `package.json` engines), caches store, installs dependencies, and
+  runs optional pnpm commands.
+- **`pnpm-resolve-pinned`** — Resolves a package's exact version from the
+  lockfile without install. Used to pin `pnpm dlx` invocations to the
+  locked version.
 
 ## Conventions
 
@@ -100,6 +135,7 @@ Dual-linter setup:
 ```sh
 pnpm check    # compile → lint + test (fast, use during development)
 pnpm build    # full pipeline including pack + e2e (slower, use before commit)
+pnpm build:ci # build without e2e (used in CI, e2e runs as separate job)
 pnpm lint     # oxlint && eslint
 pnpm test     # vitest (unit tests via projects)
 pnpm test:e2e # vitest (e2e tests, requires tarballs from pack)
@@ -107,5 +143,23 @@ pnpm test:e2e # vitest (e2e tests, requires tarballs from pack)
 
 ## Versioning
 
-Uses changesets for per-package versioning. Each PR declares which packages
-changed via `pnpm changeset`.
+Every PR requires a changeset — CI enforces this. Create a `.changeset/<name>.md`
+file with YAML frontmatter listing affected packages and bump types:
+
+```markdown
+---
+'@gtbuchanan/eslint-config': patch
+---
+
+Fix rule conflict with oxlint
+```
+
+For PRs that don't affect published packages, create an empty changeset
+(no packages in frontmatter):
+
+```markdown
+---
+---
+
+Update CI workflow
+```

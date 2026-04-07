@@ -1,0 +1,75 @@
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  # Requires npm trusted publishing (OIDC) configured for each package.
+  publish:
+    environment: release
+    if: needs.version.outputs.hasChangesets == 'false'
+    name: Publish
+    needs: version
+    permissions:
+      contents: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: source
+
+      - env:
+          NPM_CONFIG_PROVENANCE: 'true'
+        name: Publish packages
+        run: pnpm dlx @changesets/cli@${{ needs.version.outputs.changesets-version }} publish
+
+  version:
+    name: Version
+    needs: ci
+    outputs:
+      changesets-version: ${{ steps.changesets.outputs.version }}
+      hasChangesets: ${{ steps.changesets-action.outputs.hasChangesets }}
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+
+      - id: changesets
+        uses: ./.github/actions/pnpm-resolve-pinned
+        with:
+          package: '@changesets/cli'
+
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        id: changesets-action
+        uses: changesets/action@v1
+        with:
+          version: pnpm dlx @changesets/cli@${{ steps.changesets.outputs.version }} version
+
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_call: {}
+
+permissions:
+  contents: read

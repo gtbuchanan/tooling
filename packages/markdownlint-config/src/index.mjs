@@ -22,3 +22,19 @@ const identity = val => val;
  * @returns {Configuration}
  */
 export const configure = (fn = identity) => fn(defaults);
+
+/** @typedef {{ ignores?: string[] }} Cli2Options */
+
+/** @type {Readonly<Cli2Options>} */
+const cli2Defaults = Object.freeze({
+  ignores: ['.changeset/**'],
+});
+
+/**
+ * Returns a markdownlint-cli2 options object with standard ignores
+ * (e.g. `.changeset/`). Pass an optional transform to override.
+ *
+ * @param {(defaults: Readonly<Cli2Options>) => Cli2Options} [fn]
+ * @returns {Cli2Options}
+ */
+export const configureCli2 = (fn = identity) => fn(cli2Defaults);

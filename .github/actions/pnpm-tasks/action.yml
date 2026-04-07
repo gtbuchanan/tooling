@@ -1,26 +1,18 @@
-description: Install pnpm, restore cache, and install dependencies
+description: Set up pnpm and Node.js, restore cache, and install dependencies
 inputs:
   commands:
     default: ''
     description: Newline-delimited pnpm commands to run after install (e.g. compile)
-  node-version:
-    default: '22'
-    description: Node.js version
-  version:
-    default: '10'
-    description: pnpm major version
 name: pnpm Tasks
 runs:
   steps:
     - uses: pnpm/action-setup@v5
-      with:
-        version: ${{ inputs.version }}
 
     - id: setup-node
       uses: actions/setup-node@v5
       with:
         cache: pnpm
-        node-version: ${{ inputs.node-version }}
+        node-version-file: package.json
 
     # HACK: pnpm has bugs around reporting peer resolution issues, so we
     # call twice — the second pass catches what the first silently misses.

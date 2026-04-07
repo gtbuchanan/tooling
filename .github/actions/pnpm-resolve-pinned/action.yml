@@ -1,0 +1,23 @@
+description: Resolve a package's locked version from pnpm-lock.yaml (no install required)
+inputs:
+  package:
+    description: Package name to resolve (e.g. @changesets/cli)
+    required: true
+name: pnpm Resolve Pinned
+outputs:
+  version:
+    description: Exact version from the lockfile
+    value: ${{ steps.resolve.outputs.version }}
+runs:
+  steps:
+    - id: resolve
+      run: |
+        version=$(pnpm ls --lockfile-only -w --depth 0 "${{ inputs.package }}" --json \
+          | jq -r ".[0].devDependencies[\"${{ inputs.package }}\"].version")
+        if [ -z "$version" ] || [ "$version" = "null" ]; then
+          echo "::error::Failed to resolve version for ${{ inputs.package }}"
+          exit 1
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+      shell: bash
+  using: composite

@@ -4,15 +4,11 @@ env:
   PREK_HOME: ~/.prek-cache
 
 jobs:
-  run:
-    name: Run
+  seed:
+    name: Seed
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-
-      # Shallow fetch of all branch tips so prek can diff against the base
-      - name: Fetch branch refs for diff
-        run: git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
       - uses: ./.github/actions/pnpm-tasks
 
@@ -24,14 +20,8 @@ jobs:
           restore-keys: |
             prek-${{ runner.os }}-
 
-      - name: Run pre-commit hooks
-        run: |
-          pnpm exec prek run \
-            --color=always \
-            --show-diff-on-failure \
-            --verbose \
-            --from-ref=origin/${{ github.base_ref }} \
-            --to-ref=${{ github.event.pull_request.head.sha }}
+      - name: Install hook environments
+        run: pnpm exec prek prepare-hooks
 
       - if: steps.prek-cache.outputs.cache-hit != 'true'
         name: Prune stale environments
@@ -40,7 +30,7 @@ jobs:
 name: Pre-Commit
 
 on:
-  pull_request:
+  push:
     branches: [main]
   workflow_call: {}
 

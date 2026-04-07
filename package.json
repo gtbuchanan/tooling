@@ -10,7 +10,8 @@
   "type": "module",
   "scripts": {
     "prepare": "prek install",
-    "build": "pnpm compile && concurrently -g pnpm:lint pnpm:test pnpm:prepare-publish && pnpm run pack && pnpm test:e2e",
+    "build": "pnpm build:ci && pnpm test:e2e",
+    "build:ci": "pnpm compile && concurrently -g pnpm:lint pnpm:test pnpm:prepare-publish && pnpm run pack",
     "changeset": "changeset",
     "check": "pnpm compile && concurrently -g pnpm:lint pnpm:test",
     "compile": "tsc -b",
@@ -19,7 +20,7 @@
     "lint:oxlint": "oxlint",
     "pack": "node --experimental-strip-types scripts/pack-all.ts",
     "prepare-publish": "node --experimental-strip-types scripts/prepare-publish.ts",
-    "release": "pnpm build && changeset publish",
+    "publish": "changeset publish",
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "version": "changeset version"
@@ -52,5 +53,6 @@
   },
   "engines": {
     "node": ">=22.16"
-  }
+  },
+  "packageManager": "pnpm@10.32.1"
 }

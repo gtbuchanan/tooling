@@ -3,29 +3,52 @@ env:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - run: pnpm build
+      - run: pnpm build:ci
+
+      # Two artifacts from the same build output:
+      # - source: prepared publishConfig.directory contents for changeset publish
+      # - packages: packed .tgz files for e2e tests
+      # A single artifact can't serve both — tarballs would need to be
+      # unpacked back into per-package dist/source/ dirs for publish.
+      - uses: actions/upload-artifact@v5
+        with:
+          name: source
+          path: packages/*/dist/source/
 
       - uses: actions/upload-artifact@v5
         with:
-          name: dist
+          name: packages
           path: dist/packages/*.tgz
 
-  pre-commit:
-    uses: ./.github/workflows/pre-commit.yml
+  e2e:
+    name: E2E Test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/pnpm-tasks
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: packages
+          path: dist/packages
+
+      - run: pnpm test:e2e
 
 name: CI
 
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  workflow_call: {}
 
 permissions:
   contents: read
