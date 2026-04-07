@@ -179,6 +179,15 @@ describe.concurrent('eslint CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
+  it('detects unsorted keys in JSON files', ({ fixture, expect }) => {
+    const { exitCode, stdout } = fixture.run({
+      files: { 'unsorted.json': '{\n  "beta": 1,\n  "alpha": 2\n}\n' },
+    });
+
+    expect(exitCode).not.toBe(0);
+    expect(stdout).toContain('json/sort-keys');
+  });
+
   it('allows comments in tsconfig.json via JSONC', ({ fixture, expect }) => {
     const { exitCode } = fixture.run({
       files: {
