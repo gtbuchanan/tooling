@@ -33,7 +33,7 @@ describe('oxlint CLI', () => {
 
     const result = fixture.run('oxlint', ['bad.js']);
 
-    expect(result.exitCode).not.toBe(0);
+    expect(result).not.toMatchObject({ exitCode: 0 });
   });
 
   it('passes clean code', ({ fixture, expect }) => {
@@ -41,7 +41,7 @@ describe('oxlint CLI', () => {
 
     const result = fixture.run('oxlint', ['good.js']);
 
-    expect(result.exitCode).toBe(0);
+    expect(result).toMatchObject({ exitCode: 0 });
   });
 
   it('enforces denyWarnings', ({ fixture, expect }) => {
@@ -49,7 +49,7 @@ describe('oxlint CLI', () => {
 
     const result = fixture.run('oxlint', ['warn.js']);
 
-    expect(result.exitCode).not.toBe(0);
+    expect(result).not.toMatchObject({ exitCode: 0 });
     expect(result.stdout).toContain('debugger');
   });
 
@@ -71,7 +71,7 @@ describe('oxlint CLI', () => {
 
     const result = fixture.run('oxlint', ['test/example.test.ts']);
 
-    expect(result.exitCode).toBe(0);
+    expect(result).toMatchObject({ exitCode: 0 });
   });
 });
 

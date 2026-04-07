@@ -36,7 +36,7 @@ describe('oxfmt CLI', () => {
 
     const result = fixture.run('oxfmt', ['--check', 'sub/package.json']);
 
-    expect(result.exitCode).not.toBe(0);
+    expect(result).not.toMatchObject({ exitCode: 0 });
   });
 
   it('passes well-formatted JSON', ({ fixture, expect }) => {
@@ -45,7 +45,7 @@ describe('oxfmt CLI', () => {
 
     const result = fixture.run('oxfmt', ['--check', 'data.json']);
 
-    expect(result.exitCode).toBe(0);
+    expect(result).toMatchObject({ exitCode: 0 });
   });
 
   it('ignores JavaScript and TypeScript files', ({ fixture, expect }) => {
@@ -61,8 +61,8 @@ describe('oxfmt CLI', () => {
       ['--check', '--no-error-on-unmatched-pattern', 'messy.mjs'],
     );
 
-    expect(tsResult.exitCode).toBe(0);
-    expect(jsResult.exitCode).toBe(0);
+    expect(tsResult).toMatchObject({ exitCode: 0 });
+    expect(jsResult).toMatchObject({ exitCode: 0 });
   });
 });
 

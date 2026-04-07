@@ -61,6 +61,6 @@ describe('tsconfig flattening', () => {
 
     const result = fixture.run('tsc', ['--noEmit']);
 
-    expect(result.exitCode).toBe(0);
+    expect(result).toMatchObject({ exitCode: 0 });
   });
 });
