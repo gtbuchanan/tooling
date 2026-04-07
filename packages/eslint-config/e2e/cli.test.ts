@@ -162,6 +162,33 @@ describe.concurrent('eslint CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
+  it('detects duplicate keys in JSON files', ({ fixture, expect }) => {
+    const { exitCode, stdout } = fixture.run({
+      files: { 'bad.json': '{\n  "key": 1,\n  "key": 2\n}\n' },
+    });
+
+    expect(exitCode).not.toBe(0);
+    expect(stdout).toContain('json/no-duplicate-keys');
+  });
+
+  it('passes for a valid JSON file', ({ fixture, expect }) => {
+    const { exitCode } = fixture.run({
+      files: { 'valid.json': '{\n  "key": "value"\n}\n' },
+    });
+
+    expect(exitCode).toBe(0);
+  });
+
+  it('allows comments in tsconfig.json via JSONC', ({ fixture, expect }) => {
+    const { exitCode } = fixture.run({
+      files: {
+        'tsconfig.json': '{\n  // A comment\n  "compilerOptions": {}\n}\n',
+      },
+    });
+
+    expect(exitCode).toBe(0);
+  });
+
   it('downgrades errors to warnings with onlyWarn', ({ fixture, expect }) => {
     const { exitCode, stdout } = fixture.run({
       config: createRequireOnlyWarnConfig,

@@ -26,6 +26,13 @@ describe('ESLint configure', () => {
     expect(onlyWarnImport).not.toHaveBeenCalled();
   });
 
+  it('includes json configs', async ({ expect }) => {
+    const configs = await configure({ onlyWarn: false });
+
+    expect(configs.some(cfg => cfg.language === 'json/json')).toBe(true);
+    expect(configs.some(cfg => cfg.language === 'json/jsonc')).toBe(true);
+  });
+
   it('includes pnpm configs by default', async ({ expect }) => {
     const configs = await configure({ onlyWarn: false });
 
