@@ -1,0 +1,35 @@
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: package.json
+
+      - id: changesets
+        uses: ./.github/actions/pnpm-resolve-pinned
+        with:
+          package: '@changesets/cli'
+
+      - name: Verify changeset exists
+        run: pnpm dlx @changesets/cli@${{ steps.changesets.outputs.version }} status --since=origin/main
+
+name: Changeset
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call: {}
+
+permissions:
+  contents: read

@@ -1,15 +1,24 @@
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
 import { describe, it } from 'vitest';
 
-const createRequireConfig = [
+const createRequireImport = [
   'import { createRequire } from "node:module";',
   'import { pathToFileURL } from "node:url";',
   'const { resolve } = createRequire(import.meta.url);',
   'const { href } = pathToFileURL(resolve("@gtbuchanan/markdownlint-config"));',
-  'const { configure } = await import(href);',
-  'export default configure();',
+  'export const mod = await import(href);',
+].join('\n');
+
+const createRequireConfig = [
+  createRequireImport,
+  'export default mod.configure();',
+].join('\n');
+
+const createRequireCli2Config = [
+  createRequireImport,
+  'export default mod.configureCli2();',
 ].join('\n');
 
 const bareImportConfig = [
@@ -92,6 +101,32 @@ describe('pre-commit isolation', () => {
     // Heading-style is disabled — mixed styles should not error
     const markdown = ['# ATX heading', '', 'Setext heading', '--------------', ''].join('\n');
     const result = runMarkdownlint(fixture, createRequireConfig, markdown);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+  });
+
+  it('ignores .changeset/ files with configureCli2', ({ expect }) => {
+    using fixture = createIsolatedFixture({
+      hookPackages: ['markdownlint-cli2'],
+      packageName: '@gtbuchanan/markdownlint-config',
+    });
+
+    const cli2 = join(fixture.hookDir, 'node_modules/.bin/markdownlint-cli2');
+    writeFileSync(join(fixture.projectDir, '.markdownlint.mjs'), createRequireConfig);
+    writeFileSync(join(fixture.projectDir, '.markdownlint-cli2.mjs'), createRequireCli2Config);
+
+    // Changeset file without a heading — would fail MD041 if not ignored
+    const changesetDir = join(fixture.projectDir, '.changeset');
+    mkdirSync(changesetDir);
+    writeFileSync(join(changesetDir, 'test-changeset.md'), 'No heading here\n');
+
+    // Also create a valid file so markdownlint has something to lint
+    writeFileSync(join(fixture.projectDir, 'test.md'), '# Valid\n\nContent.\n');
+
+    const result = runCommand(cli2, ['**/*.md'], {
+      cwd: fixture.projectDir,
+      env: { ...process.env, NODE_PATH: fixture.nodePath },
+    });
 
     expect(result).toMatchObject({ exitCode: 0 });
   });
