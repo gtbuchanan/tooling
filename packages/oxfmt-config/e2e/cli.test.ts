@@ -1,9 +1,13 @@
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   type ProjectFixture,
+  createIsolatedFixture,
   createProjectFixture,
   extendWithFixture,
+  runCommand,
 } from '@gtbuchanan/test-utils';
-import { describe } from 'vitest';
+import { it as baseIt, describe } from 'vitest';
 
 const oxfmtConfig = [
   "import { configure } from '@gtbuchanan/oxfmt-config';",
@@ -59,5 +63,53 @@ describe('oxfmt CLI', () => {
 
     expect(tsResult.exitCode).toBe(0);
     expect(jsResult.exitCode).toBe(0);
+  });
+});
+
+const createRequireConfig = [
+  'import { createRequire } from "node:module";',
+  'import { pathToFileURL } from "node:url";',
+  'const { resolve } = createRequire(import.meta.url);',
+  'const { href } = pathToFileURL(resolve("@gtbuchanan/oxfmt-config"));',
+  'const { configure } = await import(href);',
+  'export default configure();',
+].join('\n');
+
+describe('pre-commit isolation', () => {
+  baseIt('fails with bare import (proves isolation works)', ({ expect }) => {
+    using fixture = createIsolatedFixture({
+      hookPackages: ['oxfmt'],
+      packageName: '@gtbuchanan/oxfmt-config',
+    });
+
+    const oxfmt = join(fixture.hookDir, 'node_modules/.bin/oxfmt');
+    writeFileSync(join(fixture.projectDir, 'oxfmt.config.ts'), oxfmtConfig);
+    writeFileSync(join(fixture.projectDir, 'data.json'), '{}\n');
+
+    const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
+    const result = runCommand(oxfmt, ['--check', 'data.json'], {
+      cwd: fixture.projectDir,
+      env: envWithoutNodePath,
+    });
+
+    expect(result).not.toMatchObject({ exitCode: 0 });
+  });
+
+  baseIt('resolves config via NODE_PATH', ({ expect }) => {
+    using fixture = createIsolatedFixture({
+      hookPackages: ['oxfmt'],
+      packageName: '@gtbuchanan/oxfmt-config',
+    });
+
+    const oxfmt = join(fixture.hookDir, 'node_modules/.bin/oxfmt');
+    writeFileSync(join(fixture.projectDir, 'oxfmt.config.ts'), createRequireConfig);
+    writeFileSync(join(fixture.projectDir, 'data.json'), '{}\n');
+
+    const result = runCommand(oxfmt, ['--check', 'data.json'], {
+      cwd: fixture.projectDir,
+      env: { ...process.env, NODE_PATH: fixture.nodePath },
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
   });
 });

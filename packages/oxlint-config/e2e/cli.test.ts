@@ -1,7 +1,11 @@
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   type ProjectFixture,
+  createIsolatedFixture,
   createProjectFixture,
   extendWithFixture,
+  runCommand,
 } from '@gtbuchanan/test-utils';
 import { it as baseIt, describe } from 'vitest';
 
@@ -68,5 +72,53 @@ describe('oxlint CLI', () => {
     const result = fixture.run('oxlint', ['test/example.test.ts']);
 
     expect(result.exitCode).toBe(0);
+  });
+});
+
+const createRequireConfig = [
+  'import { createRequire } from "node:module";',
+  'import { pathToFileURL } from "node:url";',
+  'const { resolve } = createRequire(import.meta.url);',
+  'const { href } = pathToFileURL(resolve("@gtbuchanan/oxlint-config"));',
+  'const { configure } = await import(href);',
+  'export default configure({ options: { typeAware: false } });',
+].join('\n');
+
+describe('pre-commit isolation', () => {
+  baseIt('fails with bare import (proves isolation works)', ({ expect }) => {
+    using fixture = createIsolatedFixture({
+      hookPackages: ['oxlint'],
+      packageName: '@gtbuchanan/oxlint-config',
+    });
+
+    const oxlint = join(fixture.hookDir, 'node_modules/.bin/oxlint');
+    writeFileSync(join(fixture.projectDir, 'oxlint.config.ts'), oxlintConfig);
+    writeFileSync(join(fixture.projectDir, 'good.js'), 'export const greeting = 42;\n');
+
+    const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
+    const result = runCommand(oxlint, ['good.js'], {
+      cwd: fixture.projectDir,
+      env: envWithoutNodePath,
+    });
+
+    expect(result).not.toMatchObject({ exitCode: 0 });
+  });
+
+  baseIt('resolves config via NODE_PATH', ({ expect }) => {
+    using fixture = createIsolatedFixture({
+      hookPackages: ['oxlint'],
+      packageName: '@gtbuchanan/oxlint-config',
+    });
+
+    const oxlint = join(fixture.hookDir, 'node_modules/.bin/oxlint');
+    writeFileSync(join(fixture.projectDir, 'oxlint.config.ts'), createRequireConfig);
+    writeFileSync(join(fixture.projectDir, 'good.js'), 'export const greeting = 42;\n');
+
+    const result = runCommand(oxlint, ['good.js'], {
+      cwd: fixture.projectDir,
+      env: { ...process.env, NODE_PATH: fixture.nodePath },
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
   });
 });
