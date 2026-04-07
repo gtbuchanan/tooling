@@ -1,17 +1,15 @@
 {
   "name": "tooling-root",
   "private": true,
-  "type": "module",
+  "homepage": "https://github.com/gtbuchanan/tooling",
+  "bugs": "https://github.com/gtbuchanan/tooling/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/gtbuchanan/tooling.git"
   },
-  "bugs": "https://github.com/gtbuchanan/tooling/issues",
-  "homepage": "https://github.com/gtbuchanan/tooling",
-  "engines": {
-    "node": ">=22.16"
-  },
+  "type": "module",
   "scripts": {
+    "prepare": "prek install",
     "build": "pnpm compile && concurrently -g pnpm:lint pnpm:test pnpm:prepare-publish && pnpm run pack && pnpm test:e2e",
     "changeset": "changeset",
     "check": "pnpm compile && concurrently -g pnpm:lint pnpm:test",
@@ -33,6 +31,7 @@
     "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/tsconfig": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
+    "@j178/prek": "catalog:",
     "@tsconfig/strictest": "catalog:",
     "@types/cross-spawn": "catalog:",
     "@types/node": "catalog:",
@@ -49,5 +48,8 @@
     "typescript": "catalog:",
     "valibot": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }

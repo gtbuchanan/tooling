@@ -1,0 +1,27 @@
+---
+exclude: '[-.]lock\.'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        name: '[*] No Large Files'
+      - id: check-illegal-windows-names
+        name: '[*] No Illegal Windows Names'
+      - id: end-of-file-fixer
+        name: '[*] EOF New Line'
+      - id: fix-byte-order-marker
+        name: '[*] No BOM'
+      - id: forbid-submodules
+        name: '[Git] No Submodules'
+      - id: no-commit-to-branch
+        name: '[Git] No Commit to Branch'
+      - id: trailing-whitespace
+        name: '[*] No Trailing Whitespace'
+  - repo: local
+    hooks:
+      - id: oxfmt
+        name: oxfmt
+        entry: pnpm exec oxfmt --write
+        language: system
+        files: \.(json[5c]?|md|ya?ml)$
