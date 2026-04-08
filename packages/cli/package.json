@@ -29,6 +29,7 @@
     "valibot": "catalog:"
   },
   "devDependencies": {
+    "@gtbuchanan/test-utils": "workspace:*",
     "@types/cross-spawn": "catalog:"
   },
   "engines": {

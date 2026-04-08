@@ -161,6 +161,11 @@ Composite actions:
   `--max-warnings=0` (ESLint).
 - Inline suppressions require a `--` reason suffix.
 - All exported functions, types, interfaces, and constants must have JSDoc comments.
+- When asserting on `CommandResult` (exit code, stdout, stderr), use
+  `expect(result).toMatchObject({ exitCode: 0 })` instead of
+  `expect(result.exitCode).toBe(0)`. On failure, `toMatchObject` shows
+  the full result object (including stderr) in the diff, making failures
+  self-diagnosing.
 
 ## Build
 
