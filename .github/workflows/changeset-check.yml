@@ -3,6 +3,7 @@ env:
 
 jobs:
   check:
+    if: github.head_ref != 'changeset-release/main'
     name: Check
     runs-on: ubuntu-latest
     steps:
