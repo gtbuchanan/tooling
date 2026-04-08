@@ -2,6 +2,7 @@ import * as v from 'valibot';
 
 /** Valibot schema for the `publishConfig` field of package.json. */
 export const PublishConfigSchema = v.object({
+  bin: v.optional(v.record(v.string(), v.string())),
   directory: v.optional(v.string()),
   exports: v.optional(v.record(v.string(), v.string())),
   linkDirectory: v.optional(v.boolean()),
@@ -54,8 +55,9 @@ export const buildRepoFields = (
 });
 
 /**
- * Strips `devDependencies` and `scripts`, then promotes `publishConfig.exports`
- * and `publishConfig.scripts` to top-level fields for publishing.
+ * Strips `devDependencies` and `scripts`, then promotes `publishConfig.bin`,
+ * `publishConfig.exports`, and `publishConfig.scripts` to top-level fields
+ * for publishing.
  */
 export const buildOutput = (manifest: Manifest): Manifest => {
   const {
@@ -67,6 +69,9 @@ export const buildOutput = (manifest: Manifest): Manifest => {
 
   return {
     ...rest,
+    ...(publishConfig?.bin && {
+      bin: publishConfig.bin,
+    }),
     ...(publishConfig?.exports && {
       exports: publishConfig.exports,
     }),

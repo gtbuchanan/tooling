@@ -6,6 +6,7 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 
 | Package                                                         | Description                          |
 | --------------------------------------------------------------- | ------------------------------------ |
+| [@gtbuchanan/cli](packages/cli)                                 | Shared build CLI (`gtb`)             |
 | [@gtbuchanan/eslint-config](packages/eslint-config)             | Shared ESLint configuration          |
 | [@gtbuchanan/markdownlint-config](packages/markdownlint-config) | Shared markdownlint configuration    |
 | [@gtbuchanan/oxfmt-config](packages/oxfmt-config)               | Shared oxfmt configuration           |
@@ -39,35 +40,29 @@ differ:
 | `pre-commit.yml`      | PR           | Run prek hooks on changed files          |
 | `pre-commit-seed.yml` | Push to main | Warm prek cache for PR builds            |
 
-Repos customize behavior through `package.json` scripts, not workflow
-inputs.
+Repos customize behavior through `@gtbuchanan/cli` (`gtb`) commands
+invoked from `package.json` scripts, not workflow inputs. See the
+[CLI package](packages/cli) for available commands.
 
 ### Build pipeline conventions
 
-The `build:ci` script should produce two outputs:
+The `build:ci` command produces two outputs:
 
 - `packages/*/dist/source/` — publishable contents per package
 - `dist/packages/*.tgz` — tarballs for e2e tests
 
-The recommended `build:ci` pipeline:
+The pipeline:
 
 ```text
-compile → lint + test (concurrent) → pack
+compile → lint + test (concurrent) → prepack → pack
 ```
-
-| Root script | Purpose                                                                     |
-| ----------- | --------------------------------------------------------------------------- |
-| `compile`   | `tsc -b` then `pnpm -r --if-present run compile` for non-TS steps           |
-| `prepack`   | Prepare `dist/source/` (package.json, .npmignore) — auto-runs before `pack` |
-| `pack`      | `pnpm pack` each publishable package into `dist/packages/`                  |
-| `test:e2e`  | Runs with tarballs pre-downloaded to `dist/packages/`                       |
 
 Per-package hooks:
 
 - **`compile`** — Non-TS build steps (e.g., flattening tsconfig extends
   chains). Runs after `tsc -b` via `pnpm -r --if-present run compile`.
 - **`publishConfig.directory`** — Set to `dist/source` for packages that
-  need a clean publish directory. The `prepack` script generates
+  need a clean publish directory. The `prepack` command generates
   `package.json` and `.npmignore` there automatically.
 
 CD requires:
@@ -87,18 +82,20 @@ pnpm build
 
 ### Scripts
 
+All root scripts delegate to the `gtb` CLI:
+
 - `pnpm check` — Compile, lint, and test (fast, use during development)
 - `pnpm build` — Full pipeline including pack + e2e (slower, use before commit)
 - `pnpm compile` — TypeScript compilation + per-package `compile` scripts
 - `pnpm lint` — oxlint + ESLint
 - `pnpm test` — Unit tests
-- `pnpm test:e2e` — e2e tests (requires `pnpm pack` first)
+- `pnpm test:e2e` — E2E tests (requires packed tarballs)
 
 ### Versioning
 
 Uses [changesets](https://github.com/changesets/changesets) for per-package
 versioning. Every PR requires a changeset — CI enforces this.
 
-- `pnpm changeset` — declare which packages changed and the bump type
-- `pnpm changeset --empty` — for PRs that don't need a version bump
+- `pnpm exec changeset` — declare which packages changed and the bump type
+- `pnpm exec changeset --empty` — for PRs that don't need a version bump
   (CI changes, docs, etc.)

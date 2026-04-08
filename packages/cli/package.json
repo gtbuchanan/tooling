@@ -1,0 +1,37 @@
+{
+  "name": "@gtbuchanan/cli",
+  "version": "0.1.0",
+  "description": "Shared build CLI",
+  "bin": {
+    "gtb": "./dist/source/bin.js"
+  },
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "bin": {
+      "gtb": "./bin.js"
+    },
+    "directory": "dist/source",
+    "exports": {
+      ".": "./index.js"
+    },
+    "linkDirectory": false
+  },
+  "dependencies": {
+    "concurrently": "catalog:",
+    "cross-spawn": "catalog:",
+    "find-up-simple": "catalog:",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.16"
+  }
+}

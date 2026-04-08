@@ -1,7 +1,7 @@
 # @gtbuchanan/tooling
 
 Shared build configuration monorepo. Individual packages for ESLint, oxfmt,
-oxlint, TypeScript, and Vitest configuration.
+oxlint, TypeScript, Vitest configuration, and a shared build CLI.
 
 ## Structure
 
@@ -18,6 +18,7 @@ README.md              — Consumer-facing documentation
     pre-commit.yml       — Run prek hooks on PR changed files
     pre-commit-seed.yml  — Seed prek cache on push to main
 packages/
+  cli/                 — @gtbuchanan/cli (gtb build CLI for consumers)
   eslint-config/       — @gtbuchanan/eslint-config (ESLint configure())
   markdownlint-config/ — @gtbuchanan/markdownlint-config (markdownlint configure())
   oxfmt-config/        — @gtbuchanan/oxfmt-config (oxfmt configure())
@@ -25,9 +26,6 @@ packages/
   tsconfig/            — @gtbuchanan/tsconfig (shared base tsconfig.json)
   vitest-config/       — @gtbuchanan/vitest-config (configure, configureGlobal, configureProject, + e2e variants)
   test-utils/          — private shared E2E fixture utilities
-scripts/
-  prepack.ts — Prepares clean package.json for each package's dist/source
-  pack-all.ts — Runs pnpm pack across all packages
 ```
 
 ## Architecture
@@ -53,6 +51,35 @@ and options.
 
 - Unit: `configureProject` / `configureGlobal` / `configure`
 - E2E: `configureEndToEndProject` / `configureEndToEndGlobal` / `configureEndToEnd`
+
+### Build CLI
+
+`@gtbuchanan/cli` provides the `gtb` binary with commands that orchestrate
+the build pipeline. Consumers install it and delegate `package.json` scripts:
+
+```json
+{
+  "scripts": {
+    "build": "gtb build",
+    "check": "gtb check",
+    "lint": "gtb lint",
+    "test": "gtb test"
+  }
+}
+```
+
+This repo dogfoods via a `gtb` package.json script that runs the CLI
+source directly with `node --experimental-strip-types`, bypassing the
+compiled bin entry to avoid a bootstrapping dependency.
+
+Commands: `build`, `build:ci`, `check`, `compile`, `lint`, `lint:eslint`,
+`lint:oxlint`, `pack`, `prepack`, `prepare`, `test`, `test:e2e`.
+
+Parallel execution (lint, check, build:ci) uses concurrently's JS API
+with grouped output and kill-on-failure. Single commands use cross-spawn.
+
+Workspace detection for `pack`/`prepack` resolves `pnpm-workspace.yaml`
+packages globs for monorepos, or falls back to single-package mode.
 
 ### Linters
 
@@ -104,8 +131,8 @@ jobs:
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
 ```
 
-Repo-specific behavior is customized through `package.json` scripts
-(`build:ci`, `test:e2e`, etc.), not workflow inputs.
+Repo-specific behavior is customized through `@gtbuchanan/cli` (`gtb`)
+commands invoked from `package.json` scripts, not workflow inputs.
 
 - **`ci.yml`** — Build and e2e tests. Uploads two artifacts: `source`
   (prepared `publishConfig.directory` contents for publish) and `packages`
