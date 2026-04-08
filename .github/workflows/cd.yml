@@ -66,6 +66,7 @@ jobs:
         id: changesets-action
         uses: changesets/action@v1
         with:
+          github-token: ${{ steps.app-token.outputs.token }}
           version: pnpm dlx @changesets/cli@${{ steps.changesets.outputs.version }} version
 
 name: CD
