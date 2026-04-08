@@ -4,7 +4,7 @@ env:
 jobs:
   check:
     if: github.head_ref != 'changeset-release/main'
-    name: Check
+    name: Changeset
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,6 +24,14 @@ jobs:
 
       - name: Verify changeset exists
         run: pnpm dlx @changesets/cli@${{ steps.changesets.outputs.version }} status --since=origin/main
+
+  # Provides the required "Changeset" status check when the real check is skipped
+  check-release:
+    if: github.head_ref == 'changeset-release/main'
+    name: Changeset
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'Release PR consumes changesets — skipping'
 
 name: Changeset
 
