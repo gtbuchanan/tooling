@@ -54,7 +54,7 @@ The `build:ci` command produces two outputs:
 The pipeline:
 
 ```text
-compile → lint + test (concurrent) → prepack → pack
+compile → lint + test (concurrent) → pack
 ```
 
 Per-package hooks:
@@ -62,7 +62,7 @@ Per-package hooks:
 - **`compile`** — Non-TS build steps (e.g., flattening tsconfig extends
   chains). Runs after `tsc -b` via `pnpm -r --if-present run compile`.
 - **`publishConfig.directory`** — Set to `dist/source` for packages that
-  need a clean publish directory. The `prepack` command generates
+  need a clean publish directory. The `pack` command generates
   `package.json` and `.npmignore` there automatically.
 
 CD requires:

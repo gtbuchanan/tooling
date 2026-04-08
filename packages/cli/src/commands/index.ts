@@ -15,7 +15,7 @@ import {
   testVitest,
   testVitestE2e,
 } from './leaf.ts';
-import { pack, prepack } from './pack.ts';
+import { pack } from './pack.ts';
 
 /** Command registry mapping CLI names to handler functions. */
 export const commands: Record<
@@ -31,12 +31,9 @@ export const commands: Record<
   'lint:eslint': lintEslint,
   'lint:oxlint': lintOxlint,
   'pack': () => { pack(); },
-  'prepack': () => { prepack(); },
   prepare,
   test,
   'test:e2e': testE2e,
   'test:vitest': testVitest,
   'test:vitest:e2e': testVitestE2e,
 };
-
-export { prepack } from './pack.ts';

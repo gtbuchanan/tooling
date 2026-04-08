@@ -1,5 +1,5 @@
 import { type ParallelCommand, run, runParallel } from '../lib/process.ts';
-import { pack, prepack } from './pack.ts';
+import { pack } from './pack.ts';
 
 const lintCommands: readonly ParallelCommand[] = [
   { command: 'oxlint', name: 'oxlint' },
@@ -43,7 +43,6 @@ export const check = async (): Promise<void> => {
 /** Compile, lint + test in parallel, then pack. */
 export const buildCi = async (): Promise<void> => {
   await check();
-  prepack();
   pack();
 };
 

@@ -73,13 +73,13 @@ source directly with `node --experimental-strip-types`, bypassing the
 compiled bin entry to avoid a bootstrapping dependency.
 
 Commands: `build`, `build:ci`, `check`, `compile`, `lint`, `lint:eslint`,
-`lint:oxlint`, `pack`, `prepack`, `prepare`, `test`, `test:e2e`.
+`lint:oxlint`, `pack`, `prepare`, `test`, `test:e2e`.
 
 Parallel execution (lint, check, build:ci) uses concurrently's JS API
 with grouped output and kill-on-failure. Single commands use cross-spawn.
 
-Workspace detection for `pack`/`prepack` resolves `pnpm-workspace.yaml`
-packages globs for monorepos, or falls back to single-package mode.
+Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
+globs for monorepos, or falls back to single-package mode.
 
 ### Linters
 
@@ -180,8 +180,8 @@ pnpm run gtb test     # vitest (unit tests via projects)
 pnpm run gtb test:e2e # vitest (e2e tests, requires tarballs from pack)
 ```
 
-Only `build:ci`, `test:e2e`, `prepare`, and `prepack` have top-level script
-aliases (required by CI workflows and pnpm lifecycle hooks).
+Only `build:ci`, `test:e2e`, and `prepare` have top-level script aliases
+(required by CI workflows and pnpm lifecycle hooks).
 
 ## Versioning
 

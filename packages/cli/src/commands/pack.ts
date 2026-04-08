@@ -10,6 +10,7 @@ import {
 } from '../lib/manifest.ts';
 import {
   type ResolveWorkspaceOptions,
+  type WorkspaceContext,
   readManifest,
   resolveWorkspace,
 } from '../lib/workspace.ts';
@@ -17,18 +18,21 @@ import {
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';
 
-/**
- * Prepares `dist/source/` directories for all publishable packages.
- * Creates clean package.json and .npmignore in each.
- */
-export const prepack = (options?: ResolveWorkspaceOptions): void => {
-  const { packageDirs, rootDir } = resolveWorkspace(options);
+const generateManifests = ({ packageDirs, rootDir }: WorkspaceContext): void => {
   const rootRaw = readFileSync(join(rootDir, 'package.json'), 'utf-8');
   const root = v.parse(RootManifestSchema, JSON.parse(rootRaw));
 
   for (const pkgDir of packageDirs) {
     preparePackage(root, rootDir, pkgDir);
   }
+};
+
+/**
+ * Prepares `dist/source/` directories for all publishable packages.
+ * Creates clean package.json and .npmignore in each.
+ */
+export const prepack = (options?: ResolveWorkspaceOptions): void => {
+  generateManifests(resolveWorkspace(options));
 };
 
 const preparePackage = (
@@ -54,14 +58,15 @@ const preparePackage = (
   writeFileSync(join(target, '.npmignore'), npmignoreContent);
 };
 
-/** Packs all publishable packages into tarballs. */
+/** Generates `dist/source/` manifests and packs all publishable packages into tarballs. */
 export const pack = (options?: ResolveWorkspaceOptions): void => {
-  const { packageDirs, rootDir } = resolveWorkspace(options);
-  const destination = join(rootDir, 'dist', 'packages');
+  const ctx = resolveWorkspace(options);
+  generateManifests(ctx);
+  const destination = join(ctx.rootDir, 'dist', 'packages');
   rmSync(destination, { force: true, recursive: true });
   mkdirSync(destination, { recursive: true });
 
-  for (const pkgDir of packageDirs) {
+  for (const pkgDir of ctx.packageDirs) {
     packPackage(pkgDir, destination);
   }
 };

@@ -46,8 +46,7 @@ Commands are split into two tiers:
 | `check`    | Fast dev check: compile, lint+test (no pack)   |
 | `compile`  | All compilation steps (currently `tsc -b`)     |
 | `lint`     | All linters in parallel                        |
-| `pack`     | Prepack + `pnpm pack` each publishable package |
-| `prepack`  | Generate `dist/source/` manifests              |
+| `pack`     | Generate manifests + `pnpm pack` each package  |
 | `test`     | All unit test runners                          |
 | `test:e2e` | All e2e test runners                           |
 
@@ -102,7 +101,7 @@ commands needing to know about them.
 
 ## Workspace detection
 
-`pack` and `prepack` support both monorepo and single-package layouts:
+`pack` supports both monorepo and single-package layouts:
 
 - **Monorepo** — Detected via `pnpm-workspace.yaml` with a non-empty
   `packages` field. Iterates over all resolved package directories.

@@ -50,79 +50,6 @@ describe.concurrent('gtb CLI', () => {
   });
 });
 
-describe('gtb prepack', () => {
-  it('generates dist/source/package.json for monorepo', ({ expect }) => {
-    using fixture = createFixture();
-    writeFileSync(
-      join(fixture.projectDir, 'pnpm-workspace.yaml'),
-      "packages:\n  - 'packages/*'\n",
-    );
-    writeJson(fixture.projectDir, 'package.json', {
-      bugs: 'https://github.com/test/repo/issues',
-      homepage: 'https://github.com/test/repo',
-      private: true,
-      repository: {
-        type: 'git',
-        url: 'https://github.com/test/repo.git',
-      },
-    });
-    const pkgDir = join(fixture.projectDir, 'packages', 'my-lib');
-    mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
-      dependencies: { valibot: '^1.0.0' },
-      devDependencies: { vitest: '^4.0.0' },
-      exports: { '.': './src/index.ts' },
-      name: '@test/my-lib',
-      publishConfig: {
-        directory: 'dist/source',
-        exports: { '.': './index.js' },
-      },
-      scripts: { test: 'vitest' },
-      version: '1.0.0',
-    });
-
-    const result = fixture.run('gtb', ['prepack']);
-
-    expect(result).toMatchObject({ exitCode: 0 });
-
-    const output = readJson(
-      join(pkgDir, 'dist', 'source', 'package.json'),
-    );
-
-    expect(output).toHaveProperty('name', '@test/my-lib');
-    expect(output).toHaveProperty('exports', { '.': './index.js' });
-    expect(output).not.toHaveProperty('devDependencies');
-    expect(output).not.toHaveProperty('scripts');
-    expect(output).not.toHaveProperty('publishConfig');
-    expect(output).toHaveProperty(
-      'homepage',
-      'https://github.com/test/repo/tree/main/packages/my-lib',
-    );
-  });
-
-  it('works in single-package mode', ({ expect }) => {
-    using fixture = createFixture();
-    writeJson(fixture.projectDir, 'package.json', {
-      name: '@test/single',
-      publishConfig: {
-        directory: 'dist/source',
-        exports: { '.': './index.js' },
-      },
-    });
-
-    const result = fixture.run('gtb', ['prepack']);
-
-    expect(result).toMatchObject({ exitCode: 0 });
-
-    const output = readJson(
-      join(fixture.projectDir, 'dist', 'source', 'package.json'),
-    );
-
-    expect(output).toHaveProperty('name', '@test/single');
-    expect(output).toHaveProperty('exports', { '.': './index.js' });
-  });
-});
-
 describe('gtb pack', () => {
   it('produces tarballs for publishable packages', ({ expect }) => {
     using fixture = createFixture();
@@ -185,6 +112,51 @@ describe('gtb pack', () => {
 
     expect(tarballs).toHaveLength(1);
     expect(tarballs[0]).toMatch(/^test-public-lib-.*\.tgz$/v);
+  });
+
+  it('generates dist/source manifests before packing', ({ expect }) => {
+    using fixture = createFixture();
+    writeFileSync(
+      join(fixture.projectDir, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'packages/*'\n",
+    );
+    writeJson(fixture.projectDir, 'package.json', {
+      bugs: 'https://github.com/test/repo/issues',
+      homepage: 'https://github.com/test/repo',
+      private: true,
+      repository: {
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
+    });
+    const pkgDir = join(fixture.projectDir, 'packages', 'my-lib');
+    mkdirSync(pkgDir, { recursive: true });
+    writeJson(pkgDir, 'package.json', {
+      dependencies: { valibot: '^1.0.0' },
+      devDependencies: { vitest: '^4.0.0' },
+      exports: { '.': './src/index.ts' },
+      name: '@test/my-lib',
+      publishConfig: {
+        directory: 'dist/source',
+        exports: { '.': './index.js' },
+      },
+      scripts: { test: 'vitest' },
+      version: '1.0.0',
+    });
+
+    const result = fixture.run('gtb', ['pack']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+
+    const output = readJson(
+      join(pkgDir, 'dist', 'source', 'package.json'),
+    );
+
+    expect(output).toHaveProperty('name', '@test/my-lib');
+    expect(output).toHaveProperty('exports', { '.': './index.js' });
+    expect(output).not.toHaveProperty('devDependencies');
+    expect(output).not.toHaveProperty('scripts');
+    expect(output).not.toHaveProperty('publishConfig');
   });
 
   it('cleans dist/packages before packing', ({ expect }) => {

@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { findUpSync } from 'find-up-simple';
 
-/** Resolved workspace context for pack/prepack operations. */
+/** Resolved workspace context for pack operations. */
 export interface WorkspaceContext {
   readonly packageDirs: readonly string[];
   readonly rootDir: string;
