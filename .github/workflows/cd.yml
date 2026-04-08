@@ -28,6 +28,7 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           name: source
+          path: packages
 
       - env:
           NPM_CONFIG_PROVENANCE: 'true'

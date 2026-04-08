@@ -14,7 +14,7 @@
     "linkDirectory": false
   },
   "scripts": {
-    "prepack": "node --experimental-strip-types scripts/flatten.ts"
+    "compile": "node --experimental-strip-types scripts/flatten.ts"
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*",
