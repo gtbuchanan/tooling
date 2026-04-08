@@ -10,7 +10,13 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - run: pnpm build:ci
+      - name: Build
+        run: |
+          if jq -e '.scripts["build:ci"]' package.json >/dev/null 2>&1; then
+            pnpm build:ci
+          else
+            pnpm exec gtb build:ci
+          fi
 
       # Two artifacts from the same build output:
       # - source: prepared publishConfig.directory contents for changeset publish
@@ -41,7 +47,13 @@ jobs:
           name: packages
           path: dist/packages
 
-      - run: pnpm test:e2e
+      - name: E2E Test
+        run: |
+          if jq -e '.scripts["test:e2e"]' package.json >/dev/null 2>&1; then
+            pnpm test:e2e
+          else
+            pnpm exec gtb test:e2e
+          fi
 
 name: CI
 
