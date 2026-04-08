@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Shared build CLI",
   "bin": {
-    "gtb": "./dist/source/bin.js"
+    "gtb": "./dist/source/main.js"
   },
   "type": "module",
   "imports": {
@@ -14,7 +14,7 @@
   },
   "publishConfig": {
     "bin": {
-      "gtb": "./bin.js"
+      "gtb": "./main.js"
     },
     "directory": "dist/source",
     "exports": {

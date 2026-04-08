@@ -1,1 +1,1 @@
-export { commands } from './commands.ts';
+export { commands } from './commands/index.ts';

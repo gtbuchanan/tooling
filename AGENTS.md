@@ -169,14 +169,19 @@ Composite actions:
 
 ## Build
 
+Run commands via the `gtb` script (not aliased to top-level scripts):
+
 ```sh
-pnpm check    # compile → lint + test (fast, use during development)
-pnpm build    # full pipeline including pack + e2e (slower, use before commit)
-pnpm build:ci # build without e2e (used in CI, e2e runs as separate job)
-pnpm lint     # oxlint && eslint
-pnpm test     # vitest (unit tests via projects)
-pnpm test:e2e # vitest (e2e tests, requires tarballs from pack)
+pnpm run gtb check    # compile → lint + test (fast, use during development)
+pnpm run gtb build    # full pipeline including pack + e2e (slower, use before commit)
+pnpm run gtb build:ci # build without e2e (used in CI, e2e runs as separate job)
+pnpm run gtb lint     # oxlint && eslint
+pnpm run gtb test     # vitest (unit tests via projects)
+pnpm run gtb test:e2e # vitest (e2e tests, requires tarballs from pack)
 ```
+
+Only `build:ci`, `test:e2e`, `prepare`, and `prepack` have top-level script
+aliases (required by CI workflows and pnpm lifecycle hooks).
 
 ## Versioning
 

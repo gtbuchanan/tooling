@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'vitest';
-import { prepack } from '#src/commands.js';
+import { prepack } from '#src/commands/pack.js';
 
 const createTempDir = (): string =>
   mkdtempSync(join(tmpdir(), 'gtb-test-'));

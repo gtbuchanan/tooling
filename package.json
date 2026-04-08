@@ -9,18 +9,10 @@
   },
   "type": "module",
   "scripts": {
-    "gtb": "node --experimental-strip-types packages/cli/src/bin.ts",
+    "gtb": "node --experimental-strip-types packages/cli/src/main.ts",
     "prepare": "pnpm run gtb prepare",
-    "build": "pnpm run gtb build",
     "build:ci": "pnpm run gtb build:ci",
-    "check": "pnpm run gtb check",
-    "compile": "pnpm run gtb compile",
-    "lint": "pnpm run gtb lint",
-    "lint:eslint": "pnpm run gtb lint:eslint",
-    "lint:oxlint": "pnpm run gtb lint:oxlint",
-    "pack": "pnpm run gtb pack",
     "prepack": "pnpm run gtb prepack",
-    "test": "pnpm run gtb test",
     "test:e2e": "pnpm run gtb test:e2e"
   },
   "devDependencies": {

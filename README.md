@@ -77,19 +77,21 @@ CD requires:
 
 ```sh
 pnpm install
-pnpm build
+pnpm run gtb build
 ```
 
 ### Scripts
 
-All root scripts delegate to the `gtb` CLI:
+Run commands via `pnpm run gtb <command>`:
 
-- `pnpm check` — Compile, lint, and test (fast, use during development)
-- `pnpm build` — Full pipeline including pack + e2e (slower, use before commit)
-- `pnpm compile` — TypeScript compilation + per-package `compile` scripts
-- `pnpm lint` — oxlint + ESLint
-- `pnpm test` — Unit tests
-- `pnpm test:e2e` — E2E tests (requires packed tarballs)
+- `pnpm run gtb check` — Compile, lint, and test (fast, use during development)
+- `pnpm run gtb build` — Full pipeline including pack + e2e (slower, use before commit)
+- `pnpm run gtb compile` — TypeScript compilation + per-package `compile` scripts
+- `pnpm run gtb lint` — oxlint + ESLint
+- `pnpm run gtb test` — Unit tests
+- `pnpm run gtb test:e2e` — E2E tests (requires packed tarballs)
+
+See the [CLI package](packages/cli) for all available commands.
 
 ### Versioning
 
