@@ -9,9 +9,6 @@
   "exports": {
     ".": "./src/fixture.ts"
   },
-  "engines": {
-    "node": ">=22.16"
-  },
   "dependencies": {
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
@@ -19,5 +16,8 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }

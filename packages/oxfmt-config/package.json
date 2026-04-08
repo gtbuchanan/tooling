@@ -11,18 +11,18 @@
   },
   "publishConfig": {
     "directory": "dist/source",
-    "linkDirectory": false,
     "exports": {
       ".": "./index.js"
-    }
-  },
-  "engines": {
-    "node": ">=22.16"
+    },
+    "linkDirectory": false
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*"
   },
   "peerDependencies": {
     "oxfmt": ">=0.43.0"
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }

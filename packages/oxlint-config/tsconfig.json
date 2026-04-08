@@ -1,8 +1,4 @@
 {
   "files": [],
-  "references": [
-    { "path": "src" },
-    { "path": "test" },
-    { "path": "e2e" }
-  ]
+  "references": [{ "path": "src" }, { "path": "test" }, { "path": "e2e" }]
 }

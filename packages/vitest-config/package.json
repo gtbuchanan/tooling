@@ -15,17 +15,14 @@
   },
   "publishConfig": {
     "directory": "dist/source",
-    "linkDirectory": false,
     "exports": {
       ".": "./index.js",
       "./configure": "./configure.js",
       "./configure-e2e": "./configure-e2e.js",
       "./setup": "./setup.js",
       "./console-fail-test": "./console-fail-test.js"
-    }
-  },
-  "engines": {
-    "node": ">=22.16"
+    },
+    "linkDirectory": false
   },
   "dependencies": {
     "console-fail-test": "catalog:"
@@ -35,5 +32,8 @@
   },
   "peerDependencies": {
     "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }

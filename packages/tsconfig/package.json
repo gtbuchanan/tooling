@@ -2,6 +2,9 @@
   "name": "@gtbuchanan/tsconfig",
   "version": "0.0.0",
   "description": "Shared TypeScript configuration",
+  "files": [
+    "node.json"
+  ],
   "type": "module",
   "exports": {
     "./node.json": "./node.json"
@@ -10,15 +13,14 @@
     "directory": "dist/source",
     "linkDirectory": false
   },
-  "engines": {
-    "node": ">=22.16"
-  },
-  "files": ["node.json"],
   "scripts": {
     "prepack": "node --experimental-strip-types scripts/flatten.ts"
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*",
     "@tsconfig/strictest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }

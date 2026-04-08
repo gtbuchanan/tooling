@@ -11,18 +11,15 @@
   },
   "publishConfig": {
     "directory": "dist/source",
-    "linkDirectory": false,
     "exports": {
       ".": "./index.js"
-    }
+    },
+    "linkDirectory": false
   },
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "eslint-plugin-import-x": "catalog:"
-  },
-  "engines": {
-    "node": ">=22.16"
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*"
@@ -35,5 +32,8 @@
     "oxlint-tsgolint": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=22.16"
   }
 }
