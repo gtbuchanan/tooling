@@ -6,6 +6,7 @@ oxlint, TypeScript, and Vitest configuration.
 ## Structure
 
 ```text
+README.md              — Consumer-facing documentation
 .github/
   actions/
     pnpm-resolve-pinned/ — Composite action: resolve locked version without install
@@ -25,8 +26,8 @@ packages/
   vitest-config/       — @gtbuchanan/vitest-config (configure, configureGlobal, configureProject, + e2e variants)
   test-utils/          — private shared E2E fixture utilities
 scripts/
-  prepare-publish.ts — Prepares clean package.json for each package
-  pack-all.ts        — Runs pnpm pack across all packages
+  prepack.ts — Prepares clean package.json for each package's dist/source
+  pack-all.ts — Runs pnpm pack across all packages
 ```
 
 ## Architecture
