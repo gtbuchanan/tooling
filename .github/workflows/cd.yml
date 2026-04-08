@@ -40,9 +40,6 @@ jobs:
     outputs:
       changesets-version: ${{ steps.changesets.outputs.version }}
       hasChangesets: ${{ steps.changesets-action.outputs.hasChangesets }}
-    permissions:
-      contents: write
-      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -53,13 +50,19 @@ jobs:
         with:
           node-version-file: package.json
 
+      - id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - id: changesets
         uses: ./.github/actions/pnpm-resolve-pinned
         with:
           package: '@changesets/cli'
 
       - env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         id: changesets-action
         uses: changesets/action@v1
         with:

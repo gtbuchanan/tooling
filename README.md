@@ -47,9 +47,13 @@ inputs. Required scripts and their expected outputs:
 | `build:ci` | CI      | `packages/*/dist/source/` (publishable) and `dist/packages/*.tgz` (e2e) |
 | `test:e2e` | CI      | Runs with tarballs pre-downloaded to `dist/packages/`                   |
 
-CD requires a `release` GitHub environment with npm trusted publishing
-(OIDC) configured. Consuming repos must also have `@changesets/cli` as
-a devDependency.
+CD requires:
+
+- `release` GitHub environment with npm trusted publishing (OIDC)
+- A GitHub App with `contents: write` and `pull-requests: write`
+  permissions installed on the repo (so changeset PRs trigger checks)
+- Repo variable `APP_ID` and repo secret `APP_PRIVATE_KEY` from the App
+- `@changesets/cli` as a devDependency
 
 ## Development
 
