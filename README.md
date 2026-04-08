@@ -28,49 +28,12 @@ jobs:
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
 ```
 
-```yaml
-# .github/workflows/cd.yml
-on:
-  push:
-    branches: [main]
-jobs:
-  cd:
-    uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
-```
-
-```yaml
-# .github/workflows/changeset-check.yml
-on:
-  pull_request:
-    branches: [main]
-jobs:
-  changeset-check:
-    uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@main
-```
-
-```yaml
-# .github/workflows/pre-commit.yml
-on:
-  pull_request:
-    branches: [main]
-jobs:
-  pre-commit:
-    uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@main
-```
-
-```yaml
-# .github/workflows/pre-commit-seed.yml
-on:
-  push:
-    branches: [main]
-jobs:
-  pre-commit-seed:
-    uses: gtbuchanan/tooling/.github/workflows/pre-commit-seed.yml@main
-```
+Each workflow follows this same pattern — only the filename and trigger
+differ:
 
 | Workflow              | Trigger      | Description                              |
 | --------------------- | ------------ | ---------------------------------------- |
-| `ci.yml`              | PR           | Build + E2E test                         |
+| `ci.yml`              | PR           | Build + e2e test                         |
 | `cd.yml`              | Push to main | CI + changesets version + publish (OIDC) |
 | `changeset-check.yml` | PR           | Verify changeset exists                  |
 | `pre-commit.yml`      | PR           | Run prek hooks on changed files          |
@@ -102,7 +65,7 @@ pnpm build
 - `pnpm compile` — TypeScript compilation
 - `pnpm lint` — oxlint + ESLint
 - `pnpm test` — Unit tests
-- `pnpm test:e2e` — E2E tests (requires `pnpm pack` first)
+- `pnpm test:e2e` — e2e tests (requires `pnpm pack` first)
 
 ### Versioning
 

@@ -18,6 +18,37 @@ import { configure } from '@gtbuchanan/oxlint-config';
 export default configure();
 ```
 
+### Pre-commit
+
+[pre-commit](https://pre-commit.com/) runs hooks in an isolated environment
+where your project's `node_modules` is not available. Use `createRequire` so
+that `@gtbuchanan/oxlint-config` resolves in both local development and the
+pre-commit isolated environment:
+
+```typescript
+// oxlint.config.ts
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import type * as OxlintConfig from '@gtbuchanan/oxlint-config';
+
+interface ModuleMap {
+  '@gtbuchanan/oxlint-config': typeof OxlintConfig;
+}
+
+// createRequire bridges ESM→CJS resolution, which respects NODE_PATH (set by pre-commit)
+const { resolve } = createRequire(import.meta.url);
+
+async function importModule<S extends keyof ModuleMap>(specifier: S): Promise<ModuleMap[S]> {
+  const { href } = pathToFileURL(resolve(specifier));
+  const module: ModuleMap[S] = await import(href);
+  return module;
+}
+
+const { configure } = await importModule('@gtbuchanan/oxlint-config');
+
+export default configure();
+```
+
 ## Android / Termux
 
 oxlint has two known issues on Android:
@@ -36,4 +67,3 @@ oxlint has two known issues on Android:
   # Point oxlint to the linux-arm64 binary
   export OXLINT_TSGOLINT_PATH=/path/to/tsgolint-wrapper
   ```
-

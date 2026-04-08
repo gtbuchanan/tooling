@@ -23,7 +23,7 @@ pnpm add -D @gtbuchanan/tsconfig
 }
 ```
 
-## Node config
+## Node Config
 
 Includes all `@tsconfig/strictest` options plus:
 

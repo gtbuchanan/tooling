@@ -45,9 +45,10 @@ following the same pattern with `configureEndToEndProject()`.
 ### Vitest config API
 
 Three-layer API in `@gtbuchanan/vitest-config` with parallel unit and e2e
-variants. Per-project sets alias and includes. Global sets coverage,
-setupFiles, and mock reset. Combined composes both for single-project
-consumers. See JSDoc on each export for details and options.
+variants. Per-project configures path aliases and test includes. Global
+configures coverage, setupFiles, and mock reset. Combined composes both
+layers for single-project consumers. See JSDoc on each export for details
+and options.
 
 - Unit: `configureProject` / `configureGlobal` / `configure`
 - E2E: `configureEndToEndProject` / `configureEndToEndGlobal` / `configureEndToEnd`
@@ -57,15 +58,18 @@ consumers. See JSDoc on each export for details and options.
 Dual-linter setup:
 
 - **oxlint** — Primary linter. All categories at `warn` + `denyWarnings`.
-  `@stylistic/eslint-plugin` via jsPlugin for syntax-aware formatting.
-- **ESLint** — Supplementary. `eslint-plugin-pnpm` (needs JSON/YAML parsers
-  oxlint can't load), `eslint-plugin-n` (rules not in oxlint), and
-  `eslint-plugin-yml` (YAML linting + key sorting). `eslint-plugin-oxlint`
-  disables overlapping rules. Must be last in config.
+  Uses `@stylistic/eslint-plugin` via the jsPlugin loader for syntax-aware
+  formatting.
+- **ESLint** — Supplementary. `@eslint/json` (JSON linting),
+  `eslint-plugin-pnpm` (workspace validation), `eslint-plugin-n` (Node.js
+  rules not in oxlint), `eslint-plugin-yml` (YAML linting + key sorting),
+  `@vitest/eslint-plugin` (test rules), `typescript-eslint` (type-aware
+  linting), and `eslint-plugin-only-warn` (downgrades errors to warnings).
+  `eslint-plugin-oxlint` disables overlapping rules — must be last in config.
 
 ### Formatter
 
-- **oxfmt** — Formats non-JS/TS files (JSON, Markdown, etc.).
+- **oxfmt** — Formats non-JS/TS files (JSON, Markdown, YAML, etc.).
   JS/TS files are ignored via `ignorePatterns` because `@stylistic` handles
   formatting through oxlint.
 

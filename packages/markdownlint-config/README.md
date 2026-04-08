@@ -11,11 +11,17 @@ pnpm add -D @gtbuchanan/markdownlint-config markdownlint-cli2
 
 ## Usage
 
+[pre-commit](https://pre-commit.com/) runs hooks in an isolated environment
+where your project's `node_modules` is not available. Use `createRequire` so
+that `@gtbuchanan/markdownlint-config` resolves in both local development and
+the pre-commit isolated environment:
+
 ```javascript
 // .markdownlint.mjs
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
+// createRequire bridges ESM→CJS resolution, which respects NODE_PATH (set by pre-commit)
 const { resolve } = createRequire(import.meta.url);
 const { href } = pathToFileURL(resolve('@gtbuchanan/markdownlint-config'));
 const { configure } = await import(href);
