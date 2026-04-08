@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   type ProjectFixture,
@@ -120,5 +120,90 @@ describe('gtb prepack', () => {
 
     expect(output).toHaveProperty('name', '@test/single');
     expect(output).toHaveProperty('exports', { '.': './index.js' });
+  });
+});
+
+describe('gtb pack', () => {
+  it('produces tarballs for publishable packages', ({ expect }) => {
+    using fixture = createFixture();
+    writeFileSync(
+      join(fixture.projectDir, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'packages/*'\n",
+    );
+    writeJson(fixture.projectDir, 'package.json', {
+      private: true,
+    });
+    const pkgDir = join(fixture.projectDir, 'packages', 'my-lib');
+    mkdirSync(pkgDir, { recursive: true });
+    writeJson(pkgDir, 'package.json', {
+      name: '@test/my-lib',
+      version: '1.0.0',
+    });
+
+    const result = fixture.run('gtb', ['pack']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+
+    const tarballs = readdirSync(
+      join(fixture.projectDir, 'dist', 'packages'),
+    );
+
+    expect(tarballs).toHaveLength(1);
+    expect(tarballs[0]).toMatch(/^test-my-lib-.*\.tgz$/v);
+  });
+
+  it('skips private packages', ({ expect }) => {
+    using fixture = createFixture();
+    writeFileSync(
+      join(fixture.projectDir, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'packages/*'\n",
+    );
+    writeJson(fixture.projectDir, 'package.json', {
+      private: true,
+    });
+    const publicDir = join(fixture.projectDir, 'packages', 'public-lib');
+    mkdirSync(publicDir, { recursive: true });
+    writeJson(publicDir, 'package.json', {
+      name: '@test/public-lib',
+      version: '1.0.0',
+    });
+    const privateDir = join(fixture.projectDir, 'packages', 'internal');
+    mkdirSync(privateDir, { recursive: true });
+    writeJson(privateDir, 'package.json', {
+      name: '@test/internal',
+      private: true,
+      version: '1.0.0',
+    });
+
+    const result = fixture.run('gtb', ['pack']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+
+    const tarballs = readdirSync(
+      join(fixture.projectDir, 'dist', 'packages'),
+    );
+
+    expect(tarballs).toHaveLength(1);
+    expect(tarballs[0]).toMatch(/^test-public-lib-.*\.tgz$/v);
+  });
+
+  it('cleans dist/packages before packing', ({ expect }) => {
+    using fixture = createFixture();
+    writeJson(fixture.projectDir, 'package.json', {
+      name: '@test/my-lib',
+      version: '1.0.0',
+    });
+    const distDir = join(fixture.projectDir, 'dist', 'packages');
+    mkdirSync(distDir, { recursive: true });
+    writeFileSync(join(distDir, 'stale-0.0.0.tgz'), '');
+
+    const result = fixture.run('gtb', ['pack']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+
+    const tarballs = readdirSync(distDir);
+
+    expect(tarballs).not.toContain('stale-0.0.0.tgz');
+    expect(tarballs).toHaveLength(1);
   });
 });
