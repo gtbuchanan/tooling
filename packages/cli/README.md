@@ -11,19 +11,29 @@ pnpm add -D @gtbuchanan/cli
 
 ## Usage
 
-Add scripts to your `package.json` that delegate to `gtb`:
+Run commands directly via `pnpm exec gtb <command>` — no `package.json`
+scripts required. The CI workflows detect `gtb` automatically.
+
+The `prepare` script is the one exception — it must be declared so pnpm
+runs it on install to set up pre-commit hooks via prek:
 
 ```json
 {
   "scripts": {
-    "prepare": "gtb prepare",
+    "prepare": "gtb prepare"
+  }
+}
+```
+
+Other script aliases are optional convenience shortcuts:
+
+```json
+{
+  "scripts": {
     "build": "gtb build",
-    "build:ci": "gtb build:ci",
     "check": "gtb check",
-    "compile": "gtb compile",
     "lint": "gtb lint",
-    "test": "gtb test",
-    "test:e2e": "gtb test:e2e"
+    "test": "gtb test"
   }
 }
 ```
