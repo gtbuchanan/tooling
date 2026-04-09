@@ -26,7 +26,8 @@
     "concurrently": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
-    "valibot": "catalog:"
+    "valibot": "catalog:",
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*",
