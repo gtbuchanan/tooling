@@ -21,8 +21,7 @@ export const run = async (
     child.on('close', (code) => {
       if (code === 0) {
         resolve();
-      }
-      else {
+      } else {
         reject(new Error(`${command} exited with code ${String(code)}`));
       }
     });
@@ -48,8 +47,7 @@ export const runParallel = async (
         killOthersOn: ['failure'],
       },
     ).result;
-  }
-  catch {
+  } catch {
     const names = commands.map(cmd => cmd.name).join(', ');
     throw new Error(`Parallel execution failed: ${names}`);
   }
