@@ -1,8 +1,11 @@
 #!/usr/bin/env node
-import { commands } from './commands/index.ts';
+import { createCommands } from './commands/index.ts';
+import { readRootScripts } from './lib/hook.ts';
 
 const argvOffset = 2;
 const [name, ...args] = process.argv.slice(argvOffset);
+
+const commands = createCommands(readRootScripts());
 
 if (name === undefined || name === '--help' || name === '-h') {
   const available = Object.keys(commands).join(', ');

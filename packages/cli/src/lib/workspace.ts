@@ -17,6 +17,16 @@ export interface ResolveWorkspaceOptions {
 }
 
 /**
+ * Resolves the workspace root directory from the given starting directory.
+ * Looks for pnpm-workspace.yaml upward; falls back to cwd.
+ */
+export const resolveRootDir = (options?: ResolveWorkspaceOptions): string => {
+  const cwd = options?.cwd ?? process.cwd();
+  const workspaceFile = findUpSync('pnpm-workspace.yaml', { cwd });
+  return workspaceFile === undefined ? cwd : dirname(workspaceFile);
+};
+
+/**
  * Resolves the workspace context from the given directory.
  * If a pnpm-workspace.yaml with non-empty `packages` globs is found,
  * resolves to monorepo mode. Otherwise, single-package mode using cwd.

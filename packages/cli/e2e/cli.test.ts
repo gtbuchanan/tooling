@@ -33,6 +33,7 @@ describe.concurrent('gtb CLI', () => {
     expect(result.stdout).toContain('Usage: gtb');
     expect(result.stdout).toContain('build');
     expect(result.stdout).toContain('compile');
+    expect(result.stdout).toContain('generate');
     expect(result.stdout).toContain('lint');
     expect(result.stdout).toContain('test:fast');
     expect(result.stdout).toContain('test:slow');
@@ -50,6 +51,30 @@ describe.concurrent('gtb CLI', () => {
     const result = fixture.run('gtb', ['nonexistent']);
 
     expect(result.exitCode).not.toBe(0);
+  });
+});
+
+describe.concurrent('gtb hooks', () => {
+  it('replaces a step when gtb:<step> script is defined', ({ fixture, expect }) => {
+    fixture.writeFile(
+      'package.json',
+      JSON.stringify({
+        scripts: { 'gtb:compile:ts': 'echo hooked-compile-ts' },
+      }),
+    );
+
+    const result = fixture.run('gtb', ['compile:ts']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.stdout).toContain('hooked-compile-ts');
+  });
+
+  it('runs default when no hook is defined', ({ fixture, expect }) => {
+    const result = fixture.run('gtb', ['compile:ts']);
+
+    // Fails (no tsconfig) — verifies the default command ran
+    expect(result).not.toMatchObject({ exitCode: 0 });
+    expect(result.stdout).not.toContain('hooked');
   });
 });
 

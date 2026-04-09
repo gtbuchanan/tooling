@@ -53,6 +53,13 @@ export const testVitestE2e = async (
   });
 };
 
+/** Runs per-package generate scripts (code generation, i18n compilation, etc.). */
+export const generate = async (
+  args: readonly string[],
+): Promise<void> => {
+  await run('pnpm', { args: ['-r', '--if-present', 'run', 'generate', ...args] });
+};
+
 /** Installs pre-commit hooks via prek. */
 export const prepare = async (
   args: readonly string[],

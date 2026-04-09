@@ -55,6 +55,7 @@ Commands are split into two tiers:
 | `build:ci`  | CI pipeline: check → pack (slow/e2e are separate CI) |
 | `check`     | Fast dev check: compile → lint + test:fast           |
 | `compile`   | All compilation steps (currently `tsc -b`)           |
+| `generate`  | Per-package code generation (standalone)             |
 | `lint`      | All linters in parallel                              |
 | `pack`      | Generate manifests + `pnpm pack` each package        |
 | `test`      | All source tests (unified coverage)                  |
@@ -69,6 +70,7 @@ Commands are split into two tiers:
 | `compile:ts`       | `tsc -b`                                   |
 | `lint:eslint`      | `eslint --max-warnings=0`                  |
 | `lint:oxlint`      | `oxlint`                                   |
+| `generate`         | `pnpm -r --if-present run generate`        |
 | `prepare`          | `prek install`                             |
 | `test:vitest`      | `vitest run`                               |
 | `test:vitest:fast` | `vitest run --tags-filter='!slow'`         |
@@ -82,6 +84,41 @@ gtb test:vitest --reporter=verbose
 gtb test:vitest --tags-filter='!slow && !db'
 gtb lint:eslint --fix
 ```
+
+## Customizing steps
+
+Any gtb step can be replaced by defining a `gtb:<step>` script in the
+root `package.json`. When a step runs, gtb checks for a matching hook
+and delegates to `pnpm run gtb:<step>` instead of the default.
+
+```json
+{
+  "scripts": {
+    "build": "gtb build",
+    "gtb:compile:ts": "vue-tsc -b",
+    "gtb:lint:eslint": "my-custom-lint"
+  }
+}
+```
+
+Hooks apply at every level — both top-level commands and sub-steps
+within composed commands. For example, `gtb:compile:ts` replaces just
+the type-checker without affecting per-package `compile` scripts, while
+`gtb:compile` replaces the entire compile step.
+
+Hooking a composed command (e.g., `gtb:check`) replaces it everywhere
+— both standalone and when called from `build`.
+
+## Generate
+
+`gtb generate` runs per-package `generate` scripts via
+`pnpm -r --if-present run generate`. Use it for code generation that
+slow tests need without a full compile (Paraglide, Prisma, etc.).
+
+`generate` is a standalone command — not part of `build` or `build:ci`
+pipelines. In the `build` pipeline, `compile` handles code generation
+(e.g., Vite with Paraglide plugin). For isolated CI slow-test jobs,
+run `gtb generate` before `gtb test:slow`.
 
 ## Test tags
 

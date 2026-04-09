@@ -62,9 +62,14 @@ Per-package hooks:
 
 - **`compile`** — Non-TS build steps (e.g., flattening tsconfig extends
   chains). Runs after `tsc -b` via `pnpm -r --if-present run compile`.
+- **`generate`** — Code generation (Paraglide, Prisma, etc.). Standalone
+  command for CI slow-test jobs.
 - **`publishConfig.directory`** — Set to `dist/source` for packages that
   need a clean publish directory. The `pack` command generates
   `package.json` and `.npmignore` there automatically.
+
+Any gtb step can be replaced via `gtb:<step>` scripts. See the
+[CLI package](packages/cli#customizing-steps) for details.
 
 CD requires:
 
@@ -88,6 +93,7 @@ Run commands via `pnpm run gtb <command>`:
 - `pnpm run gtb check` — Compile, lint, and test:fast (use during development)
 - `pnpm run gtb build` — Full pipeline: check → test:slow + pack → test:e2e
 - `pnpm run gtb compile` — TypeScript compilation + per-package `compile` scripts
+- `pnpm run gtb generate` — Per-package code generation (standalone)
 - `pnpm run gtb lint` — oxlint + ESLint
 - `pnpm run gtb test` — All source tests (fast + slow, unified coverage)
 - `pnpm run gtb test:fast` — Fast source tests only

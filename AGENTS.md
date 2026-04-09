@@ -74,15 +74,35 @@ This repo dogfoods via a `gtb` package.json script that runs the CLI
 source directly with `node --experimental-strip-types`, bypassing the
 compiled bin entry to avoid a bootstrapping dependency.
 
-Commands: `build`, `build:ci`, `check`, `compile`, `lint`, `lint:eslint`,
-`lint:oxlint`, `pack`, `prepare`, `test`, `test:fast`, `test:slow`,
-`test:e2e`.
+Commands: `build`, `build:ci`, `check`, `compile`, `generate`, `lint`,
+`lint:eslint`, `lint:oxlint`, `pack`, `prepare`, `test`, `test:fast`,
+`test:slow`, `test:e2e`.
 
 Parallel execution (lint, check, build:ci) uses concurrently's JS API
 with grouped output and kill-on-failure. Single commands use cross-spawn.
 
 Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
 globs for monorepos, or falls back to single-package mode.
+
+#### Hook system
+
+The command registry uses a mutable `Record<string, CommandHandler>`
+built in `createCommands(scripts)`. Leaf commands are registered first,
+then composed commands whose closures capture the registry by reference.
+A final phase wraps every entry with `resolveStep(scripts, name, handler)`
+so that `gtb:<step>` scripts in the consumer's root `package.json`
+replace defaults.
+
+Because closures capture the registry object (not individual entries),
+hook resolution at any level is respected at call time — composed
+commands calling `registry['compile:ts']!([])` see the resolved version.
+
+Parallel commands use `resolveParallelCommand` which substitutes
+command strings. Default commands route through `gtb <step>` so that
+sub-step hooks are honoured through the binary.
+
+`generate` is a standalone leaf command (not in any pipeline). It runs
+`pnpm -r --if-present run generate` for per-package code generation.
 
 ### Linters
 
@@ -228,14 +248,15 @@ Consumer guidance:
 Run commands via the `gtb` script (not aliased to top-level scripts):
 
 ```sh
-pnpm run gtb check     # compile → lint + test:fast (fast, use during development)
-pnpm run gtb build     # full pipeline: check → test:slow + pack → test:e2e
-pnpm run gtb build:ci  # build without slow/e2e (used in CI, separate jobs)
-pnpm run gtb lint      # oxlint && eslint
-pnpm run gtb test      # vitest (fast + slow source tests)
-pnpm run gtb test:fast # vitest (fast source tests only)
-pnpm run gtb test:slow # vitest (slow source tests only, tagged slow)
-pnpm run gtb test:e2e  # vitest (e2e tests, requires tarballs from pack)
+pnpm run gtb check      # compile → lint + test:fast (fast, use during development)
+pnpm run gtb build      # full pipeline: check → test:slow + pack → test:e2e
+pnpm run gtb build:ci   # build without slow/e2e (used in CI, separate jobs)
+pnpm run gtb generate   # per-package code generation (standalone, not in pipelines)
+pnpm run gtb lint       # oxlint && eslint
+pnpm run gtb test       # vitest (fast + slow source tests)
+pnpm run gtb test:fast  # vitest (fast source tests only)
+pnpm run gtb test:slow  # vitest (slow source tests only, tagged slow)
+pnpm run gtb test:e2e   # vitest (e2e tests, requires tarballs from pack)
 ```
 
 Only `build:ci`, `test:e2e`, `test:slow`, and `prepare` have top-level
