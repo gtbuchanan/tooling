@@ -3,6 +3,7 @@ import { runParallel } from '../../lib/process.ts';
 import type { Invoke } from '../types.ts';
 import { def as compileDef } from './compile.ts';
 import { lintParallelCmds } from './parallel.ts';
+import { def as testFastDef } from './test-fast.ts';
 
 /** Compiles, then lints and runs fast tests in parallel. */
 export const def = {
@@ -11,7 +12,7 @@ export const def = {
     await invoke(compileDef);
     await runParallel([
       ...lintParallelCmds(scripts),
-      resolveParallelCommand(scripts, 'test:fast', 'vitest run --tags-filter=!slow'),
+      resolveParallelCommand(scripts, testFastDef, 'vitest run --tags-filter=!slow'),
     ]);
   },
 } as const;

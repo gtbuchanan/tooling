@@ -52,7 +52,7 @@ describe(resolveStep, () => {
 
 describe(resolveParallelCommand, () => {
   it('returns default command when no hook exists', ({ expect }) => {
-    const result = resolveParallelCommand({}, 'lint:oxlint', 'oxlint');
+    const result = resolveParallelCommand({}, { name: 'lint:oxlint' }, 'oxlint');
 
     expect(result).toEqual({ command: 'oxlint', name: 'lint:oxlint' });
   });
@@ -60,7 +60,7 @@ describe(resolveParallelCommand, () => {
   it('returns pnpm run command when hook exists', ({ expect }) => {
     const result = resolveParallelCommand(
       { 'gtb:lint:oxlint': 'my-linter' },
-      'lint:oxlint',
+      { name: 'lint:oxlint' },
       'oxlint',
     );
 

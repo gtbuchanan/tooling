@@ -61,9 +61,9 @@ export const resolveStep = (
  */
 export const resolveParallelCommand = (
   scripts: Scripts,
-  step: string,
+  command: { readonly name: string },
   defaultCommand: string,
 ): ParallelCommand =>
-  hasHook(scripts, step)
-    ? { command: `pnpm run ${hookScriptName(step)}`, name: step }
-    : { command: defaultCommand, name: step };
+  hasHook(scripts, command.name)
+    ? { command: `pnpm run ${hookScriptName(command.name)}`, name: command.name }
+    : { command: defaultCommand, name: command.name };
