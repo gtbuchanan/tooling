@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { basename, join, resolve as resolvePath } from 'node:path';
 import {
+  type TestTagDefinition,
   type UserWorkspaceConfig,
   type ViteUserConfig,
   defaultExclude,
@@ -27,10 +28,27 @@ export interface VitestConfigureOptions {
   readonly hasAssertions?: boolean;
 }
 
+/**
+ * Options for the `slow` test tag. Accepts any {@link TestTagDefinition}
+ * property except `name` (always `'slow'`). Timeout defaults to 300s.
+ */
+export type VitestSlowTagOptions = Partial<Omit<TestTagDefinition, 'name'>>;
+
 /** Options for global Vitest configuration ({@link configureGlobal}). */
 export interface VitestConfigureGlobalOptions extends VitestConfigureOptions {
   /** Glob patterns for auto-discovering project directories. */
   readonly projects?: readonly string[];
+  /**
+   * Configuration for the `slow` test tag. Tests tagged `slow` get an
+   * extended timeout. Filter at runtime with `--tags-filter`.
+   * @defaultValue {}
+   */
+  readonly slow?: VitestSlowTagOptions;
+  /**
+   * Additional test tags. Merged with the built-in `slow` tag.
+   * Use `--tags-filter` to select tests by tag at runtime.
+   */
+  readonly tags?: readonly TestTagDefinition[];
 }
 
 /** Default test exclude patterns, extending Vitest's built-in excludes. */
@@ -178,12 +196,13 @@ export const buildProjectConfig = (
 interface GlobalConfigSpec {
   readonly coverageInclude?: readonly string[];
   readonly reportsDirectory?: string;
+  readonly tags?: readonly TestTagDefinition[];
   readonly testTimeout?: number;
 }
 
 /**
  * Builds global Vitest settings: coverage, setupFiles, mockReset, unstubEnvs,
- * and optional projects list.
+ * tags, and optional projects list.
  */
 export const buildGlobalConfig = (
   spec: GlobalConfigSpec,
@@ -195,9 +214,11 @@ export const buildGlobalConfig = (
       ...(spec.reportsDirectory && {
         coverage: {
           cleanOnRerun: false,
+          enabled: true,
           exclude: [...excludeDefault],
           include: [...(spec.coverageInclude ?? coverageInclude)],
           provider: 'v8',
+          reporter: ['lcov'],
           reportsDirectory: join(
             process.cwd(),
             spec.reportsDirectory,
@@ -205,7 +226,10 @@ export const buildGlobalConfig = (
         },
       }),
       mockReset: true,
+      outputFile: { blob: 'dist/vitest-blob/blob.json' },
+      reporters: ['default', 'blob'],
       setupFiles: resolveSetupFiles(setupOptions),
+      ...(spec.tags && { tags: [...spec.tags] }),
       ...(spec.testTimeout && {
         testTimeout: spec.testTimeout,
       }),
@@ -218,6 +242,8 @@ export const buildGlobalConfig = (
 
 const unitTestInclude = ['test/**/*.test.ts'] as const;
 
+const defaultSlowTimeout = 300_000;
+
 /**
  * Per-project configuration for use with vitest projects.
  * Sets excludes. Does not include global-only settings.
@@ -227,18 +253,32 @@ export const configureProject = (): UserWorkspaceConfig =>
 
 /**
  * Global configuration for use in the root vitest.config.ts of a monorepo.
- * Sets coverage, setupFiles, and other global-only settings.
+ * Sets coverage, setupFiles, tags, and other global-only settings.
  * When `projects` is provided, generates inline project entries for each
  * resolved directory using {@link configureProject}. Directories with their
  * own vitest config are included as-is.
+ *
+ * Configures a `slow` test tag for long-running source tests. Filter at
+ * runtime with `--tags-filter`:
+ * - `--tags-filter="!slow"` — fast tests only
+ * - `--tags-filter="slow"` — slow tests only
+ * - (no filter) — all tests
  */
 export const configureGlobal = (
   options: VitestConfigureGlobalOptions = {},
 ): ViteUserConfig => {
-  const { coverageDirs, projects: projectPatterns, ...setupOptions } = options;
+  const {
+    coverageDirs,
+    projects: projectPatterns,
+    slow: slowOptions = {},
+    tags: extraTags = [],
+    ...setupOptions
+  } = options;
+
   const resolved = projectPatterns === undefined
     ? undefined
     : resolveProjects(projectPatterns, configureProject);
+
   return buildGlobalConfig(
     {
       coverageInclude: resolveCoverageInclude(
@@ -246,6 +286,10 @@ export const configureGlobal = (
         coverageDirs,
       ),
       reportsDirectory: 'dist/coverage',
+      tags: [
+        { timeout: defaultSlowTimeout, ...slowOptions, name: 'slow' },
+        ...extraTags,
+      ],
     },
     setupOptions,
     resolved,

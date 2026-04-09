@@ -33,7 +33,53 @@ jobs:
           name: packages
           path: dist/packages/*.tgz
 
+      # When slow tests are enabled, upload blob for merging.
+      # Otherwise, upload coverage directly as the final artifact.
+      - if: inputs.run-slow-tests == true
+        uses: actions/upload-artifact@v5
+        with:
+          if-no-files-found: error
+          name: vitest-blob-fast
+          path: dist/vitest-blob/
+
+      - if: inputs.run-slow-tests != true
+        uses: actions/upload-artifact@v5
+        with:
+          if-no-files-found: error
+          name: coverage
+          path: dist/coverage/
+
+  coverage:
+    if: inputs.run-slow-tests == true
+    name: Coverage
+    needs: [build, slow-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/pnpm-tasks
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist/vitest-blob-parts
+          pattern: vitest-blob-*
+
+      - name: Merge Coverage
+        run: |
+          mkdir -p dist/vitest-blob
+          for f in dist/vitest-blob-parts/*/blob.json; do
+            cp "$f" "dist/vitest-blob/$(basename "$(dirname "$f")").json"
+          done
+          pnpm exec vitest --merge-reports dist/vitest-blob --reporter=default
+
+      - uses: actions/upload-artifact@v5
+        with:
+          if-no-files-found: error
+          name: coverage
+          path: dist/coverage/
+
   e2e:
+    if: inputs.run-e2e == '' || inputs.run-e2e == true
     name: E2E Test
     needs: build
     runs-on: ubuntu-latest
@@ -55,12 +101,44 @@ jobs:
             pnpm exec gtb test:e2e
           fi
 
+  slow-tests:
+    if: inputs.run-slow-tests == true
+    name: Slow Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/pnpm-tasks
+
+      - name: Slow Tests
+        run: |
+          if jq -e '.scripts["test:slow"]' package.json >/dev/null 2>&1; then
+            pnpm test:slow
+          else
+            pnpm exec gtb test:slow
+          fi
+
+      - uses: actions/upload-artifact@v5
+        with:
+          if-no-files-found: error
+          name: vitest-blob-slow
+          path: dist/vitest-blob/
+
 name: CI
 
 on:
   pull_request:
     branches: [main]
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      run-e2e:
+        default: true
+        description: Run e2e tests (artifact tier)
+        type: boolean
+      run-slow-tests:
+        default: false
+        description: Run slow source tests
+        type: boolean
 
 permissions:
   contents: read

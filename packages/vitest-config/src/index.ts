@@ -13,6 +13,7 @@ export {
   resolveSetupFiles,
   type VitestConfigureGlobalOptions,
   type VitestConfigureOptions,
+  type VitestSlowTagOptions,
 } from './configure.ts';
 
 export {

@@ -6,6 +6,8 @@ import {
   lint,
   test,
   testE2e,
+  testFast,
+  testSlow,
 } from './composed.ts';
 import {
   compileTs,
@@ -14,6 +16,8 @@ import {
   prepare,
   testVitest,
   testVitestE2e,
+  testVitestFast,
+  testVitestSlow,
 } from './leaf.ts';
 import { pack } from './pack.ts';
 
@@ -34,6 +38,10 @@ export const commands: Record<
   prepare,
   test,
   'test:e2e': testE2e,
+  'test:fast': testFast,
+  'test:slow': testSlow,
   'test:vitest': testVitest,
   'test:vitest:e2e': testVitestE2e,
+  'test:vitest:fast': testVitestFast,
+  'test:vitest:slow': testVitestSlow,
 };

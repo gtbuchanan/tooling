@@ -34,14 +34,15 @@ differ:
 
 | Workflow              | Trigger      | Description                              |
 | --------------------- | ------------ | ---------------------------------------- |
-| `ci.yml`              | PR           | Build + e2e test                         |
+| `ci.yml`              | PR           | Build + e2e + optional slow tests        |
 | `cd.yml`              | Push to main | CI + changesets version + publish (OIDC) |
 | `changeset-check.yml` | PR           | Verify changeset exists                  |
 | `pre-commit.yml`      | PR           | Run prek hooks on changed files          |
 | `pre-commit-seed.yml` | Push to main | Warm prek cache for PR builds            |
 
 Repos customize behavior through `@gtbuchanan/cli` (`gtb`) commands
-invoked from `package.json` scripts, not workflow inputs. See the
+invoked from `package.json` scripts. `ci.yml` also accepts workflow
+inputs (`run-e2e`, `run-slow-tests`) for toggling test tiers. See the
 [CLI package](packages/cli) for available commands.
 
 ### Build pipeline conventions
@@ -54,7 +55,7 @@ The `build:ci` command produces two outputs:
 The pipeline:
 
 ```text
-compile → lint + test (concurrent) → pack
+compile → lint + test:fast (concurrent) → pack
 ```
 
 Per-package hooks:
@@ -84,11 +85,13 @@ pnpm run gtb build
 
 Run commands via `pnpm run gtb <command>`:
 
-- `pnpm run gtb check` — Compile, lint, and test (fast, use during development)
-- `pnpm run gtb build` — Full pipeline including pack + e2e (slower, use before commit)
+- `pnpm run gtb check` — Compile, lint, and test:fast (use during development)
+- `pnpm run gtb build` — Full pipeline: check → test:slow + pack → test:e2e
 - `pnpm run gtb compile` — TypeScript compilation + per-package `compile` scripts
 - `pnpm run gtb lint` — oxlint + ESLint
-- `pnpm run gtb test` — Unit tests
+- `pnpm run gtb test` — All source tests (fast + slow, unified coverage)
+- `pnpm run gtb test:fast` — Fast source tests only
+- `pnpm run gtb test:slow` — Slow source tests only (tagged `slow`)
 - `pnpm run gtb test:e2e` — E2E tests (requires packed tarballs)
 
 See the [CLI package](packages/cli) for all available commands.

@@ -21,11 +21,27 @@ export const lintOxlint = async (
   await run('oxlint', { args });
 };
 
-/** Runs unit tests via Vitest. */
+/** Runs all source tests via Vitest. */
 export const testVitest = async (
   args: readonly string[],
 ): Promise<void> => {
   await run('vitest', { args: ['run', ...args] });
+};
+
+/** Runs fast source tests via Vitest (excludes tests tagged `slow`). */
+export const testVitestFast = async (
+  args: readonly string[],
+): Promise<void> => {
+  await run('vitest', { args: ['run', '--tags-filter=!slow', ...args] });
+};
+
+/** Runs slow source tests via Vitest (only tests tagged `slow`). */
+export const testVitestSlow = async (
+  args: readonly string[],
+): Promise<void> => {
+  await run('vitest', {
+    args: ['run', '--tags-filter=slow', '--pass-with-no-tests', ...args],
+  });
 };
 
 /** Runs end-to-end tests via Vitest with the e2e config. */

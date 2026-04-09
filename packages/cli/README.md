@@ -49,33 +49,53 @@ Commands are split into two tiers:
 
 ### Composed
 
-| Command    | Description                                    |
-| ---------- | ---------------------------------------------- |
-| `build`    | Full pipeline: compile, lint+test, pack, e2e   |
-| `build:ci` | CI pipeline: compile, lint+test, pack (no e2e) |
-| `check`    | Fast dev check: compile, lint+test (no pack)   |
-| `compile`  | All compilation steps (currently `tsc -b`)     |
-| `lint`     | All linters in parallel                        |
-| `pack`     | Generate manifests + `pnpm pack` each package  |
-| `test`     | All unit test runners                          |
-| `test:e2e` | All e2e test runners                           |
+| Command     | Description                                          |
+| ----------- | ---------------------------------------------------- |
+| `build`     | Full pipeline: check → test:slow + pack → test:e2e   |
+| `build:ci`  | CI pipeline: check → pack (slow/e2e are separate CI) |
+| `check`     | Fast dev check: compile → lint + test:fast           |
+| `compile`   | All compilation steps (currently `tsc -b`)           |
+| `lint`      | All linters in parallel                              |
+| `pack`      | Generate manifests + `pnpm pack` each package        |
+| `test`      | All source tests (unified coverage)                  |
+| `test:fast` | Source tests excluding tests tagged `slow`           |
+| `test:slow` | Source tests tagged `slow` only                      |
+| `test:e2e`  | E2e tests (requires packed tarballs)                 |
 
 ### Leaf
 
-| Command           | Tool                                       |
-| ----------------- | ------------------------------------------ |
-| `compile:ts`      | `tsc -b`                                   |
-| `lint:eslint`     | `eslint --max-warnings=0`                  |
-| `lint:oxlint`     | `oxlint`                                   |
-| `prepare`         | `prek install`                             |
-| `test:vitest`     | `vitest run`                               |
-| `test:vitest:e2e` | `vitest run --config vitest.config.e2e.ts` |
+| Command            | Tool                                       |
+| ------------------ | ------------------------------------------ |
+| `compile:ts`       | `tsc -b`                                   |
+| `lint:eslint`      | `eslint --max-warnings=0`                  |
+| `lint:oxlint`      | `oxlint`                                   |
+| `prepare`          | `prek install`                             |
+| `test:vitest`      | `vitest run`                               |
+| `test:vitest:fast` | `vitest run --tags-filter='!slow'`         |
+| `test:vitest:slow` | `vitest run --tags-filter=slow`            |
+| `test:vitest:e2e`  | `vitest run --config vitest.config.e2e.ts` |
 
 Leaf commands forward extra arguments:
 
 ```sh
 gtb test:vitest --reporter=verbose
+gtb test:vitest --tags-filter='!slow && !db'
 gtb lint:eslint --fix
+```
+
+## Test tags
+
+`test:fast` and `test:slow` use Vitest's `--tags-filter` to split tests
+by the `slow` tag. See
+[@gtbuchanan/vitest-config](../vitest-config/README.md#test-tags)
+for how to tag tests and configure custom tags.
+
+`gtb` commands are non-interactive (run-once). For watch mode and the
+Vitest UI, run vitest directly:
+
+```sh
+pnpm exec vitest --ui --coverage.reporter=html
+pnpm exec vitest --watch --tags-filter='!slow'
 ```
 
 ## Design
