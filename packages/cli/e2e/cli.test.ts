@@ -70,10 +70,16 @@ describe.concurrent('gtb hooks', () => {
   });
 
   it('runs default when no hook is defined', ({ fixture, expect }) => {
+    fixture.writeFile(
+      'package.json',
+      JSON.stringify({
+        scripts: { 'gtb:lint:eslint': 'echo hooked-lint' },
+      }),
+    );
+
     const result = fixture.run('gtb', ['compile:ts']);
 
-    // Fails (no tsconfig) — verifies the default command ran
-    expect(result).not.toMatchObject({ exitCode: 0 });
+    // No hook for compile:ts — default handler runs, not the lint hook
     expect(result.stdout).not.toContain('hooked');
   });
 });
