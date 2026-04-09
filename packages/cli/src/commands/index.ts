@@ -15,10 +15,10 @@ export type CommandRegistry = Record<string, CommandHandler>;
 export const createCommands = (scripts: Scripts): CommandRegistry => {
   const registry: CommandRegistry = {};
 
-  const invoke = async (name: string): Promise<void> => {
-    const handler = registry[name];
+  const invoke = async (command: { readonly name: string }): Promise<void> => {
+    const handler = registry[command.name];
     if (handler === undefined) {
-      throw new Error(`Command '${name}' is not registered`);
+      throw new Error(`Command '${command.name}' is not registered`);
     }
     await handler([]);
   };

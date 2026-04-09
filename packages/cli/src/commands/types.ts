@@ -1,7 +1,7 @@
 import type { CommandHandler, Scripts } from '../lib/hook.ts';
 
-/** Invokes a registered command by name. */
-export type Invoke = (name: string) => Promise<void>;
+/** Invokes a registered command. Accepts a def for compile-time safety. */
+export type Invoke = (command: { readonly name: string }) => Promise<void>;
 
 /** Descriptor for a command with no dependencies on other commands. */
 export interface LeafCommandDef<Name extends string = string> {
