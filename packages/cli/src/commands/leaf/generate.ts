@@ -1,10 +1,8 @@
-import { run } from '../../lib/process.ts';
-import type { LeafCommandDef } from '../types.ts';
+import type { RunCommandDef } from '../types.ts';
 
 /** Runs per-package generate scripts (code generation, i18n compilation, etc.). */
 export const def = {
-  handler: async (args) => {
-    await run('pnpm', { args: ['-r', '--if-present', 'run', 'generate', ...args] });
-  },
+  args: ['-r', '--if-present', 'run', 'generate'],
+  bin: 'pnpm',
   name: 'generate',
-} as const satisfies LeafCommandDef;
+} as const satisfies RunCommandDef;

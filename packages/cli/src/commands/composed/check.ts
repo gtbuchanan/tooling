@@ -1,5 +1,6 @@
-import { type Scripts, resolveParallelCommand } from '../../lib/hook.ts';
+import { type Scripts, resolveParallelCommand, toCommandString } from '../../lib/hook.ts';
 import { runParallel } from '../../lib/process.ts';
+import { testVitestFast } from '../leaf/index.ts';
 import type { Invoke } from '../types.ts';
 import { def as compileDef } from './compile.ts';
 import { lintParallelCmds } from './parallel.ts';
@@ -12,7 +13,7 @@ export const def = {
     await invoke(compileDef);
     await runParallel([
       ...lintParallelCmds(scripts),
-      resolveParallelCommand(scripts, testFastDef, 'vitest run --tags-filter=!slow'),
+      resolveParallelCommand(scripts, testFastDef, toCommandString(testVitestFast)),
     ]);
   },
 } as const;

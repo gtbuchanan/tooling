@@ -1,9 +1,17 @@
 import { type CommandHandler, type Scripts, resolveStep } from '../lib/hook.ts';
+import { run } from '../lib/process.ts';
 import * as composed from './composed/index.ts';
 import * as leaf from './leaf/index.ts';
+import type { LeafCommandDef } from './types.ts';
 
 /** Command registry mapping CLI names to handler functions. */
 export type CommandRegistry = Record<string, CommandHandler>;
+
+/** Derives a handler from a leaf def (run-based or custom). */
+const toHandler = (def: LeafCommandDef): CommandHandler =>
+  'handler' in def
+    ? def.handler
+    : async (args) => { await run(def.bin, { args: [...def.args, ...args] }); };
 
 /**
  * Builds the command registry with hook resolution applied.
@@ -24,7 +32,7 @@ export const createCommands = (scripts: Scripts): CommandRegistry => {
   };
 
   for (const def of Object.values(leaf)) {
-    registry[def.name] = resolveStep(scripts, def.name, def.handler);
+    registry[def.name] = resolveStep(scripts, def.name, toHandler(def));
   }
 
   for (const def of Object.values(composed)) {

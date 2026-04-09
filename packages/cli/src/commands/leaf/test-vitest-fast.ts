@@ -1,10 +1,8 @@
-import { run } from '../../lib/process.ts';
-import type { LeafCommandDef } from '../types.ts';
+import type { RunCommandDef } from '../types.ts';
 
-/** Runs fast source tests via Vitest (excludes tests tagged slow). */
+/** Runs fast source tests via Vitest (excludes tests tagged `slow`). */
 export const def = {
-  handler: async (args) => {
-    await run('vitest', { args: ['run', '--tags-filter=!slow', ...args] });
-  },
+  args: ['run', '--tags-filter=!slow'],
+  bin: 'vitest',
   name: 'test:vitest:fast',
-} as const satisfies LeafCommandDef;
+} as const satisfies RunCommandDef;

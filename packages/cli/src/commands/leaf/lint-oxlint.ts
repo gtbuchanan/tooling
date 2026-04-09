@@ -1,10 +1,8 @@
-import { run } from '../../lib/process.ts';
-import type { LeafCommandDef } from '../types.ts';
+import type { RunCommandDef } from '../types.ts';
 
 /** Runs oxlint. */
 export const def = {
-  handler: async (args) => {
-    await run('oxlint', { args });
-  },
+  args: [],
+  bin: 'oxlint',
   name: 'lint:oxlint',
-} as const satisfies LeafCommandDef;
+} as const satisfies RunCommandDef;

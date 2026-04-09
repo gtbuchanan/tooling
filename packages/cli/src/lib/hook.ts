@@ -55,9 +55,19 @@ export const resolveStep = (
 ): CommandHandler =>
   hasHook(scripts, step) ? () => runHook(step) : defaultFn;
 
+/** Builds a shell command string from a bin + args descriptor. */
+export const toCommandString = (
+  command: { readonly args: readonly string[]; readonly bin: string },
+): string =>
+  command.args.length > 0
+    ? `${command.bin} ${command.args.join(' ')}`
+    : command.bin;
+
 /**
  * Resolves a parallel command through hook resolution. If `gtb:<step>` is
  * defined, substitutes the command string with `pnpm run gtb:<step>`.
+ * The default command string is derived from the def's `bin` + `args` when
+ * available, or provided explicitly for non-run commands.
  */
 export const resolveParallelCommand = (
   scripts: Scripts,

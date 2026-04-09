@@ -1,10 +1,8 @@
-import { run } from '../../lib/process.ts';
-import type { LeafCommandDef } from '../types.ts';
+import type { RunCommandDef } from '../types.ts';
 
 /** Runs ESLint with zero-warning threshold. */
 export const def = {
-  handler: async (args) => {
-    await run('eslint', { args: ['--max-warnings=0', ...args] });
-  },
+  args: ['--max-warnings=0'],
+  bin: 'eslint',
   name: 'lint:eslint',
-} as const satisfies LeafCommandDef;
+} as const satisfies RunCommandDef;

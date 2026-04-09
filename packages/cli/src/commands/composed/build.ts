@@ -1,6 +1,6 @@
-import { type Scripts, resolveParallelCommand } from '../../lib/hook.ts';
+import { type Scripts, resolveParallelCommand, toCommandString } from '../../lib/hook.ts';
 import { runParallel } from '../../lib/process.ts';
-import { pack } from '../leaf/index.ts';
+import { pack, testVitestSlow } from '../leaf/index.ts';
 import type { Invoke } from '../types.ts';
 import { def as checkDef } from './check.ts';
 import { def as testE2eDef } from './test-e2e.ts';
@@ -12,9 +12,7 @@ export const def = {
   resolve: (invoke: Invoke, scripts: Scripts) => async () => {
     await invoke(checkDef);
     await runParallel([
-      resolveParallelCommand(
-        scripts, testSlowDef, 'vitest run --tags-filter=slow --pass-with-no-tests',
-      ),
+      resolveParallelCommand(scripts, testSlowDef, toCommandString(testVitestSlow)),
       resolveParallelCommand(scripts, pack, 'gtb pack'),
     ]);
     await invoke(testE2eDef);

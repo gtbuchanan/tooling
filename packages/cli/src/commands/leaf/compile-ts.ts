@@ -1,10 +1,8 @@
-import { run } from '../../lib/process.ts';
-import type { LeafCommandDef } from '../types.ts';
+import type { RunCommandDef } from '../types.ts';
 
 /** Runs `tsc -b` with optional pass-through args. */
 export const def = {
-  handler: async (args) => {
-    await run('tsc', { args: ['-b', ...args] });
-  },
+  args: ['-b'],
+  bin: 'tsc',
   name: 'compile:ts',
-} as const satisfies LeafCommandDef;
+} as const satisfies RunCommandDef;

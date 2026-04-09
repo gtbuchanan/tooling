@@ -1,10 +1,8 @@
-import { run } from '../../lib/process.ts';
-import type { LeafCommandDef } from '../types.ts';
+import type { RunCommandDef } from '../types.ts';
 
 /** Runs end-to-end tests via Vitest with the e2e config. */
 export const def = {
-  handler: async (args) => {
-    await run('vitest', { args: ['run', '--config', 'vitest.config.e2e.ts', ...args] });
-  },
+  args: ['run', '--config', 'vitest.config.e2e.ts'],
+  bin: 'vitest',
   name: 'test:vitest:e2e',
-} as const satisfies LeafCommandDef;
+} as const satisfies RunCommandDef;
