@@ -7,13 +7,13 @@ import {
   RootManifestSchema,
   buildOutput,
   buildRepoFields,
-} from '../lib/manifest.ts';
+} from './manifest.ts';
 import {
   type ResolveWorkspaceOptions,
   type WorkspaceContext,
   readManifest,
   resolveWorkspace,
-} from '../lib/workspace.ts';
+} from './workspace.ts';
 
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';

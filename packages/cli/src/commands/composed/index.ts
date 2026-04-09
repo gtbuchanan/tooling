@@ -1,0 +1,9 @@
+export { def as build } from './build.ts';
+export { def as buildCi } from './build-ci.ts';
+export { def as check } from './check.ts';
+export { def as compile } from './compile.ts';
+export { def as lint } from './lint.ts';
+export { def as test } from './test.ts';
+export { def as testE2e } from './test-e2e.ts';
+export { def as testFast } from './test-fast.ts';
+export { def as testSlow } from './test-slow.ts';
