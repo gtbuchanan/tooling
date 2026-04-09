@@ -105,6 +105,57 @@ import { defineProject } from 'vitest/config';
 export default defineProject(configureEndToEndProject(import.meta.dirname));
 ```
 
+## Test tags
+
+`configureGlobal` defines a built-in `slow` tag with a 300s timeout for
+long-running source tests (e.g., testcontainers). Tag tests via the
+options object or `@module-tag`:
+
+```typescript
+test('container setup', { tags: ['slow'] }, () => {
+  /* ... */
+});
+```
+
+```typescript
+/** @module-tag slow */
+test('all tests in this file are slow', () => {
+  /* ... */
+});
+```
+
+Filter with `--tags-filter` at runtime:
+
+```sh
+vitest run --tags-filter='!slow'  # fast tests only
+vitest run --tags-filter='slow'   # slow tests only
+vitest run                        # all tests (unified coverage)
+```
+
+### Custom tags
+
+Add consumer-defined tags via the `tags` option:
+
+```typescript
+configureGlobal({
+  tags: [{ name: 'db', timeout: 60_000 }],
+});
+```
+
+For custom filter expressions, use `--tags-filter`:
+
+```sh
+vitest run --tags-filter='!slow && !db'
+```
+
+### Slow tag options
+
+Customize the `slow` tag timeout:
+
+```typescript
+configureGlobal({ slow: { timeout: 600_000 } });
+```
+
 ## Setup files
 
 Two opt-in setup files (enabled by default):

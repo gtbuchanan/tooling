@@ -14,7 +14,7 @@ README.md              — Consumer-facing documentation
   workflows/
     cd.yml               — Calls CI, then version + publish on main
     changeset-check.yml  — Verify changeset exists on PR
-    ci.yml               — Build + e2e (PR + reusable)
+    ci.yml               — Build + slow + e2e + coverage (PR + reusable)
     pre-commit.yml       — Run prek hooks on PR changed files
     pre-commit-seed.yml  — Seed prek cache on push to main
 packages/
@@ -50,6 +50,8 @@ layers for single-project consumers. See JSDoc on each export for details
 and options.
 
 - Unit: `configureProject` / `configureGlobal` / `configure`
+- Slow tag: `configureGlobal` defines a `slow` tag (300s timeout).
+  Customize via `configureGlobal({ slow: { timeout: 600_000 } })`
 - E2E: `configureEndToEndProject` / `configureEndToEndGlobal` / `configureEndToEnd`
 
 ### Build CLI
@@ -73,7 +75,8 @@ source directly with `node --experimental-strip-types`, bypassing the
 compiled bin entry to avoid a bootstrapping dependency.
 
 Commands: `build`, `build:ci`, `check`, `compile`, `lint`, `lint:eslint`,
-`lint:oxlint`, `pack`, `prepare`, `test`, `test:e2e`.
+`lint:oxlint`, `pack`, `prepare`, `test`, `test:fast`, `test:slow`,
+`test:e2e`.
 
 Parallel execution (lint, check, build:ci) uses concurrently's JS API
 with grouped output and kill-on-failure. Single commands use cross-spawn.
@@ -132,11 +135,14 @@ jobs:
 ```
 
 Repo-specific behavior is customized through `@gtbuchanan/cli` (`gtb`)
-commands invoked from `package.json` scripts, not workflow inputs.
+commands invoked from `package.json` scripts. `ci.yml` also accepts
+workflow inputs (`run-e2e`, `run-slow-tests`) for toggling test tiers.
 
-- **`ci.yml`** — Build and e2e tests. Uploads two artifacts: `source`
-  (prepared `publishConfig.directory` contents for publish) and `packages`
-  (tarballs for e2e tests).
+- **`ci.yml`** — Build, slow tests, e2e tests, and coverage merging.
+  Inputs: `run-e2e` (default `true`), `run-slow-tests` (default `false`).
+  Uploads artifacts: `source` (publish), `packages` (e2e tarballs),
+  and `coverage` (final report). When `run-slow-tests` is enabled,
+  fast and slow coverage are merged in a separate `coverage` job.
 - **`cd.yml`** — Calls CI, then runs version (changesets) and publish
   (npm trusted publishing via OIDC).
 - **`changeset-check.yml`** — Verifies a changeset exists on every PR.
@@ -153,6 +159,56 @@ Composite actions:
 - **`pnpm-resolve-pinned`** — Resolves a package's exact version from the
   lockfile without install. Used to pin `pnpm dlx` invocations to the
   locked version.
+
+### Testing strategy
+
+Three buckets across two axes — speed (fast vs slow) and target (source
+vs artifact):
+
+|          | Source (coverage, no pack) | Artifact (no coverage, needs pack) |
+| -------- | -------------------------- | ---------------------------------- |
+| **Fast** | Unit + fast integration    | —                                  |
+| **Slow** | Testcontainers, etc.       | E2E (Playwright, CLI tools)        |
+
+Commands:
+
+| Command     | Bucket                | Coverage | Needs pack |
+| ----------- | --------------------- | -------- | ---------- |
+| `test:fast` | Fast source           | Yes      | No         |
+| `test:slow` | Slow source           | Yes      | No         |
+| `test:e2e`  | Artifact              | No       | Yes        |
+| `test`      | test:fast + test:slow | Merged   | No         |
+
+Pipeline:
+
+```text
+check   = compile → lint + test:fast (parallel)
+build   = check → test:slow + pack (parallel) → test:e2e
+buildCi = check → pack  (slow + e2e are separate CI jobs)
+```
+
+Vitest configs:
+
+- `vitest.config.ts` — all source tests per package (coverage enabled)
+- `vitest.config.e2e.ts` — artifact tests per package (no coverage)
+
+Slow tests use Vitest's native tag system (`test('name', { tags: ['slow'] }, ...)`
+or `/** @module-tag slow */`). The `--tags-filter` CLI option controls
+which tests run (`!slow` for fast, `slow` for slow-only, omit for all).
+
+CI coverage merging: both tiers write to `dist/coverage/` (separate
+runners, no conflict). Fast and slow jobs upload as `coverage-fast`
+and `coverage-slow` artifacts. A `coverage` job downloads both and
+runs `vitest --merge-reports` to produce a unified report.
+
+Consumer guidance:
+
+- `test/` — source tests (unit + integration). Coverage via source config.
+- `e2e/` — artifact tests. No source coverage. Needs tarballs from pack.
+- Tag slow source tests with `slow` (via options or `@module-tag`).
+- Add custom tags via `configureGlobal({ tags: [{ name: 'db', timeout: 60_000 }] })`.
+  Filter with `pnpm exec vitest run --tags-filter="!db"` (run vitest directly
+  for custom filter expressions; `gtb` commands only handle the `slow` tag).
 
 ## Conventions
 
@@ -172,16 +228,18 @@ Composite actions:
 Run commands via the `gtb` script (not aliased to top-level scripts):
 
 ```sh
-pnpm run gtb check    # compile → lint + test (fast, use during development)
-pnpm run gtb build    # full pipeline including pack + e2e (slower, use before commit)
-pnpm run gtb build:ci # build without e2e (used in CI, e2e runs as separate job)
-pnpm run gtb lint     # oxlint && eslint
-pnpm run gtb test     # vitest (unit tests via projects)
-pnpm run gtb test:e2e # vitest (e2e tests, requires tarballs from pack)
+pnpm run gtb check     # compile → lint + test:fast (fast, use during development)
+pnpm run gtb build     # full pipeline: check → test:slow + pack → test:e2e
+pnpm run gtb build:ci  # build without slow/e2e (used in CI, separate jobs)
+pnpm run gtb lint      # oxlint && eslint
+pnpm run gtb test      # vitest (fast + slow source tests)
+pnpm run gtb test:fast # vitest (fast source tests only)
+pnpm run gtb test:slow # vitest (slow source tests only, tagged slow)
+pnpm run gtb test:e2e  # vitest (e2e tests, requires tarballs from pack)
 ```
 
-Only `build:ci`, `test:e2e`, and `prepare` have top-level script aliases
-(required by CI workflows and pnpm lifecycle hooks).
+Only `build:ci`, `test:e2e`, `test:slow`, and `prepare` have top-level
+script aliases (required by CI workflows and pnpm lifecycle hooks).
 
 ## Versioning
 

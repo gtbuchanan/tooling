@@ -12,7 +12,8 @@
     "gtb": "node --experimental-strip-types packages/cli/src/main.ts",
     "prepare": "pnpm run gtb prepare",
     "build:ci": "pnpm run gtb build:ci",
-    "test:e2e": "pnpm run gtb test:e2e"
+    "test:e2e": "pnpm run gtb test:e2e",
+    "test:slow": "pnpm run gtb test:slow"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",

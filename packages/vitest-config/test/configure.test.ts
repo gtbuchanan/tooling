@@ -96,6 +96,20 @@ describe('vitest configure', () => {
 
     expect(config.test?.include).toBeUndefined();
   });
+
+  it('enables coverage', ({ expect }) => {
+    const config = configure();
+
+    expect(config.test?.coverage?.enabled).toBe(true);
+  });
+
+  it('configures slow tag', ({ expect }) => {
+    const config = configure();
+
+    expect(config.test?.tags).toEqual([
+      { name: 'slow', timeout: 300_000 },
+    ]);
+  });
 });
 
 describe('vitest configureGlobal', () => {
@@ -136,6 +150,45 @@ describe('vitest configureGlobal', () => {
     const config = configureGlobal();
 
     expect(config.test).not.toHaveProperty('projects');
+  });
+
+  it('enables coverage', ({ expect }) => {
+    const config = configureGlobal();
+
+    expect(config.test?.coverage?.enabled).toBe(true);
+  });
+
+  it('uses lcov coverage reporter', ({ expect }) => {
+    const config = configureGlobal();
+
+    expect(config.test?.coverage?.reporter).toEqual(['lcov']);
+  });
+
+  it('configures slow tag with default timeout', ({ expect }) => {
+    const config = configureGlobal();
+
+    expect(config.test?.tags).toEqual([
+      { name: 'slow', timeout: 300_000 },
+    ]);
+  });
+
+  it('accepts custom slow tag timeout', ({ expect }) => {
+    const config = configureGlobal({ slow: { timeout: 600_000 } });
+
+    expect(config.test?.tags).toEqual([
+      { name: 'slow', timeout: 600_000 },
+    ]);
+  });
+
+  it('merges custom tags with built-in slow tag', ({ expect }) => {
+    const config = configureGlobal({
+      tags: [{ name: 'db', timeout: 60_000 }],
+    });
+
+    expect(config.test?.tags).toEqual([
+      { name: 'slow', timeout: 300_000 },
+      { name: 'db', timeout: 60_000 },
+    ]);
   });
 });
 

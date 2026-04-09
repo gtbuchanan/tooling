@@ -34,6 +34,9 @@ describe.concurrent('gtb CLI', () => {
     expect(result.stdout).toContain('build');
     expect(result.stdout).toContain('compile');
     expect(result.stdout).toContain('lint');
+    expect(result.stdout).toContain('test:fast');
+    expect(result.stdout).toContain('test:slow');
+    expect(result.stdout).toContain('test:e2e');
   });
 
   it('prints help with no arguments', ({ fixture, expect }) => {
