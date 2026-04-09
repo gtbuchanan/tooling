@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
@@ -29,42 +29,15 @@ export const resolveWorkspace = (
   if (workspaceFile !== undefined) {
     const rootDir = dirname(workspaceFile);
     const globs = parsePackageGlobs(workspaceFile);
-    const packageDirs = globs.flatMap(pattern => resolveGlob(rootDir, pattern));
+    const packageDirs = globs.flatMap(pattern =>
+      globSync(`${pattern}/`, { cwd: rootDir }).map(dir => resolve(rootDir, dir)),
+    );
     if (packageDirs.length > 0) {
       return { packageDirs, rootDir };
     }
   }
 
   return { packageDirs: [cwd], rootDir: cwd };
-};
-
-const wildcardSuffix = '/*';
-
-/**
- * Resolves a simple glob pattern (e.g., `packages/*`) to absolute directories.
- * Handles `dir/*` patterns by listing subdirectories. Falls back to treating
- * the pattern as a literal path.
- */
-const resolveGlob = (
-  rootDir: string,
-  pattern: string,
-): readonly string[] => {
-  if (pattern.endsWith(wildcardSuffix)) {
-    const parentDir = join(
-      rootDir,
-      pattern.slice(0, -wildcardSuffix.length),
-    );
-    try {
-      return readdirSync(parentDir, { withFileTypes: true })
-        .filter(entry => entry.isDirectory())
-        .map(entry => resolve(parentDir, entry.name));
-    }
-    catch {
-      return [];
-    }
-  }
-
-  return [resolve(rootDir, pattern)];
 };
 
 const WorkspaceSchema = v.object({
