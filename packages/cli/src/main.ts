@@ -7,8 +7,7 @@ const [name, ...args] = process.argv.slice(argvOffset);
 if (name === undefined || name === '--help' || name === '-h') {
   const available = Object.keys(commands).join(', ');
   console.log(`Usage: gtb <command> [...args]\n\nCommands: ${available}`);
-}
-else {
+} else {
   const command = commands[name];
   if (command === undefined) {
     throw new Error(`Unknown command: ${name}`);

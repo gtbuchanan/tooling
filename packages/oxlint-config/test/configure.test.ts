@@ -103,6 +103,16 @@ describe('oxlint configure', () => {
     expect(config.rules?.['@stylistic/semi']).toBeDefined();
   });
 
+  it.runIf(!isAndroid)('enforces 1tbs brace style', ({ expect }) => {
+    const config = configure();
+
+    expect(config.rules?.['@stylistic/brace-style']).toEqual([
+      'warn',
+      '1tbs',
+      { allowSingleLine: true },
+    ]);
+  });
+
   it.runIf(isAndroid)('omits stylistic rules on Android', ({ expect }) => {
     const config = configure();
 

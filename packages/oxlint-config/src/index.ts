@@ -183,6 +183,7 @@ export const isAndroid = process.platform === 'android';
 
 /** Default stylistic customize options for `@stylistic/eslint-plugin`. */
 export const stylisticCustomizeDefaults: StylisticCustomizeOptions = {
+  braceStyle: '1tbs',
   semi: true,
   severity: 'warn',
 };
