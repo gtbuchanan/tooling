@@ -78,6 +78,28 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks).toHaveProperty('lint:eslint');
   });
 
+  it('lint:eslint includes root config in inputs', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasEslint: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+    const task = result.tasks['lint:eslint'];
+
+    expect(task?.inputs).toContain('$TURBO_ROOT$/eslint.config.*');
+  });
+
+  it('lint:eslint includes eslint cache in outputs', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasEslint: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+    const task = result.tasks['lint:eslint'];
+
+    expect(task?.outputs).toContain('dist/.eslintcache');
+  });
+
   it('includes lint:oxlint when any package has oxlint', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ hasOxlint: true }),

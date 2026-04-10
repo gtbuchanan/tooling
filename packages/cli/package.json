@@ -40,6 +40,7 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
+    "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",

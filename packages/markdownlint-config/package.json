@@ -23,6 +23,7 @@
     "markdownlint": "catalog:"
   },
   "devDependencies": {
+    "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*"
   },

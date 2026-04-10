@@ -99,7 +99,11 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     {
       condition: flags.hasEslint,
       key: 'lint:eslint',
-      value: { dependsOn: deps, inputs: [...inputs, 'eslint.config.*'], outputs: [] },
+      value: {
+        dependsOn: deps,
+        inputs: ['$TURBO_ROOT$/eslint.config.*', ...inputs, 'eslint.config.*'],
+        outputs: ['dist/.eslintcache'],
+      },
     },
     {
       condition: flags.hasOxlint,
@@ -199,7 +203,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
 /** Direct tool invocations for self-hosted (workspace:*) packages. */
 const selfHostedScripts: Readonly<Record<string, string>> = {
   'compile:ts': 'tsc -p tsconfig.build.json',
-  'lint:eslint': 'eslint --max-warnings=0',
+  'lint:eslint': 'eslint --cache --cache-location dist/.eslintcache --max-warnings=0',
   'lint:oxlint': 'oxlint',
   'test:vitest:fast': 'vitest run --tags-filter=!slow',
   'test:vitest:slow': 'vitest run --tags-filter=slow --pass-with-no-tests',

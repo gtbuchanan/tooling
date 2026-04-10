@@ -18,7 +18,9 @@ export const compileTs = async (
 export const lintEslint = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('eslint', { args: ['--max-warnings=0', ...args] });
+  await run('eslint', {
+    args: ['--cache', '--cache-location', 'dist/.eslintcache', '--max-warnings=0', ...args],
+  });
 };
 
 /** Runs oxlint. */

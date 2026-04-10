@@ -30,13 +30,16 @@
         "typecheck:ts"
       ],
       "inputs": [
+        "$TURBO_ROOT$/eslint.config.*",
         "src/**",
         "test/**",
         "e2e/**",
         "scripts/**",
         "eslint.config.*"
       ],
-      "outputs": []
+      "outputs": [
+        "dist/.eslintcache"
+      ]
     },
     "lint:oxlint": {
       "dependsOn": [
