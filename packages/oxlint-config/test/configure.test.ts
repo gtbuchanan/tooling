@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { configure } from '#src/index.js';
+import { configure, defaultEntryPoints } from '#src/index.js';
 
 const isAndroid = process.platform === 'android';
 
@@ -240,5 +240,54 @@ describe('oxlint configure', () => {
     const config = configure();
 
     expect(config.rules?.['class-methods-use-this']).toBe('warn');
+  });
+
+  it('exports defaultEntryPoints with bin and scripts', ({ expect }) => {
+    expect(defaultEntryPoints).toEqual([
+      '**/bin/**/*.ts',
+      '**/scripts/**/*.ts',
+    ]);
+  });
+
+  it('disables import/no-nodejs-modules for server target', ({ expect }) => {
+    const config = configure();
+    const nodeModulesOverride = config.overrides?.find(
+      override => override.rules?.['import/no-nodejs-modules'] === 'off' &&
+        override.files.includes('**/*.ts'),
+    );
+
+    expect(nodeModulesOverride).toBeDefined();
+  });
+
+  it('does not disable import/no-nodejs-modules globally for browser target', ({ expect }) => {
+    const config = configure({ target: 'browser' });
+    const globalDisable = config.overrides?.find(
+      override => override.rules?.['import/no-nodejs-modules'] === 'off' &&
+        override.files.includes('**/*.ts') &&
+        !override.rules['no-console'],
+    );
+
+    expect(globalDisable).toBeUndefined();
+  });
+
+  it('exempts entry points from import/no-nodejs-modules in browser target', ({ expect }) => {
+    const config = configure({ target: 'browser' });
+    const exemption = config.overrides?.find(
+      override => override.rules?.['import/no-nodejs-modules'] === 'off' &&
+        override.rules['no-console'] === 'off',
+    );
+
+    expect(exemption?.files).toContain('**/bin/**/*.ts');
+    expect(exemption?.files).toContain('**/scripts/**/*.ts');
+  });
+
+  it('uses custom entryPoints for browser exemptions', ({ expect }) => {
+    const custom = ['**/cli/**/*.ts'];
+    const config = configure({ entryPoints: custom, target: 'browser' });
+    const exemption = config.overrides?.find(
+      override => override.rules?.['import/no-nodejs-modules'] === 'off',
+    );
+
+    expect(exemption?.files).toEqual(custom);
   });
 });

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { commands } from './commands/index.ts';
+import { commands } from '#src/commands/index.ts';
 
 const argvOffset = 2;
 const [name, ...args] = process.argv.slice(argvOffset);

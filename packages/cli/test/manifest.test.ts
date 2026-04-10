@@ -46,6 +46,17 @@ describe(buildOutput, () => {
     expect(result['bin']).toEqual({ gtb: './bin.js' });
   });
 
+  it('remaps publishConfig.imports to top-level imports', ({ expect }) => {
+    const result = buildOutput({
+      imports: { '#src/*': './src/*' },
+      publishConfig: {
+        imports: { '#src/*.ts': './*.js' },
+      },
+    });
+
+    expect(result['imports']).toEqual({ '#src/*.ts': './*.js' });
+  });
+
   it('strips publishConfig from output', ({ expect }) => {
     const result = buildOutput({
       publishConfig: {
