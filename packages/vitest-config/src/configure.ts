@@ -296,22 +296,39 @@ export const configureGlobal = (
   );
 };
 
-/**
- * Combined configuration for single-project consumers.
- * Composes global settings with project-level alias and excludes.
- * Omits the monorepo-specific `test.include` from `configureProject`.
- */
-export const configure = (
-  options: VitestConfigureOptions = {},
+const buildCombinedConfig = (
+  options: VitestConfigureOptions,
+  includeTestPatterns: boolean,
 ): ViteUserConfig => {
   const project = configureProject();
   return mergeConfig(
     configureGlobal(options),
     defineConfig({
       ...(project.resolve && { resolve: project.resolve }),
-      ...(project.test?.exclude && {
-        test: { exclude: project.test.exclude },
-      }),
+      test: {
+        ...(project.test?.exclude && { exclude: project.test.exclude }),
+        ...(includeTestPatterns && project.test?.include && {
+          include: project.test.include,
+        }),
+      },
     }),
   );
 };
+
+/**
+ * Combined configuration for single-project consumers.
+ * Composes global settings with project-level excludes.
+ * Omits `test.include` — single projects don't need explicit test patterns.
+ */
+export const configure = (
+  options: VitestConfigureOptions = {},
+): ViteUserConfig => buildCombinedConfig(options, false);
+
+/**
+ * Per-package configuration for Turborepo-managed monorepos.
+ * Composes global settings with project-level includes and excludes.
+ * Each package runs its own vitest instance with full coverage.
+ */
+export const configurePackage = (
+  options: VitestConfigureOptions = {},
+): ViteUserConfig => buildCombinedConfig(options, true);

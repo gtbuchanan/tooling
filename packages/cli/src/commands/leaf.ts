@@ -1,10 +1,17 @@
 import { run } from '../lib/process.ts';
 
-/** Runs `tsc -b` with optional pass-through args. */
+/** Runs `tsc --noEmit` for type-checking with optional pass-through args. */
+export const typecheckTs = async (
+  args: readonly string[],
+): Promise<void> => {
+  await run('tsc', { args: ['--noEmit', ...args] });
+};
+
+/** Runs `tsc -p tsconfig.build.json` to emit compiled output. */
 export const compileTs = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('tsc', { args: ['-b', ...args] });
+  await run('tsc', { args: ['-p', 'tsconfig.build.json', ...args] });
 };
 
 /** Runs ESLint with zero-warning threshold. */

@@ -3,6 +3,7 @@ import {
   buildWorkspaceEntry,
   configure,
   configureGlobal,
+  configurePackage,
   configureProject,
   coverageInclude,
   defaultCoverageDirs,
@@ -276,5 +277,34 @@ describe('vitest configureProject', () => {
     const config = configureProject();
 
     expect(config.test).not.toHaveProperty('coverage');
+  });
+});
+
+describe('vitest configurePackage', () => {
+  it('includes test patterns', ({ expect }) => {
+    const config = configurePackage();
+
+    expect(config.test?.include).toEqual(['test/**/*.test.ts']);
+  });
+
+  it('includes global settings (coverage, setupFiles)', ({ expect }) => {
+    const config = configurePackage();
+
+    expect(config.test?.coverage?.enabled).toBe(true);
+    expect(config.test?.setupFiles).toBeDefined();
+    expect(config.test?.mockReset).toBe(true);
+  });
+
+  it('includes blob reporter', ({ expect }) => {
+    const config = configurePackage();
+
+    expect(config.test?.reporters).toContain('blob');
+    expect(config.test?.outputFile).toHaveProperty('blob');
+  });
+
+  it('includes default excludes', ({ expect }) => {
+    const config = configurePackage();
+
+    expect(config.test?.exclude).toContain('**/dist/**');
   });
 });

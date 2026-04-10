@@ -18,6 +18,7 @@ import {
   testVitestE2e,
   testVitestFast,
   testVitestSlow,
+  typecheckTs,
 } from './leaf.ts';
 import { pack } from './pack.ts';
 import { turboCheck } from './turbo-check.ts';
@@ -48,4 +49,5 @@ export const commands: Record<
   'test:vitest:slow': testVitestSlow,
   'turbo:check': turboCheck,
   'turbo:init': turboInit,
+  'typecheck:ts': typecheckTs,
 };
