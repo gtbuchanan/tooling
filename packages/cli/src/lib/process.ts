@@ -1,4 +1,3 @@
-import concurrently from 'concurrently';
 import crossSpawn from 'cross-spawn';
 
 /** Options for spawning a single command. */
@@ -27,28 +26,4 @@ export const run = async (
     });
     child.on('error', reject);
   });
-};
-
-/** Command descriptor for parallel execution. */
-export interface ParallelCommand {
-  readonly command: string;
-  readonly name: string;
-}
-
-/** Runs commands in parallel with grouped output. Rejects if any command fails. */
-export const runParallel = async (
-  commands: readonly ParallelCommand[],
-): Promise<void> => {
-  try {
-    await concurrently(
-      [...commands],
-      {
-        group: true,
-        killOthersOn: ['failure'],
-      },
-    ).result;
-  } catch {
-    const names = commands.map(cmd => cmd.name).join(', ');
-    throw new Error(`Parallel execution failed: ${names}`);
-  }
 };

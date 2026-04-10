@@ -23,7 +23,6 @@
     "linkDirectory": false
   },
   "dependencies": {
-    "concurrently": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
     "valibot": "catalog:",
