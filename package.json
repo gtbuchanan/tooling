@@ -9,7 +9,7 @@
   },
   "type": "module",
   "scripts": {
-    "gtb": "node --experimental-strip-types packages/cli/src/main.ts",
+    "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
     "prepare": "pnpm run gtb prepare",
     "build:ci": "pnpm run gtb build:ci",
     "test:e2e": "pnpm run gtb test:e2e",

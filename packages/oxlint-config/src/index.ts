@@ -27,6 +27,12 @@ export interface OxlintConfigureOptions {
    */
   readonly options?: Partial<OxlintConfig['options']>;
   /**
+   * File patterns for entry points exempt from browser-only restrictions
+   * (e.g. `import/no-nodejs-modules`, `no-console`).
+   * @defaultValue Bin directories, scripts directories, and main entry points
+   */
+  readonly entryPoints?: string[];
+  /**
    * Additional rule overrides appended after the built-in vitest overrides.
    * @defaultValue []
    */
@@ -37,8 +43,9 @@ export interface OxlintConfigureOptions {
    */
   readonly stylistic?: StylisticCustomizeOptions;
   /**
-   * Target environment. Browser targets enable `no-console` and `no-alert`.
-   * Scripts and bin directories are always exempt from `no-console`.
+   * Target environment. Server targets disable `import/no-nodejs-modules`.
+   * Browser targets enable `no-console` and `no-alert`; entry points are
+   * exempt from both `no-console` and `import/no-nodejs-modules`.
    * @defaultValue 'server'
    */
   readonly target?: 'browser' | 'server';
@@ -180,6 +187,12 @@ const eslintCommentsRecommendedRules: DummyRuleMap = {
 // https://github.com/oxc-project/oxc/issues/21045
 /** Whether the current platform is Android (Termux). */
 export const isAndroid = process.platform === 'android';
+
+/** Default file patterns for entry points (bin and scripts directories). */
+export const defaultEntryPoints: readonly string[] = [
+  '**/bin/**/*.ts',
+  '**/scripts/**/*.ts',
+];
 
 /** Default stylistic customize options for `@stylistic/eslint-plugin`. */
 export const stylisticCustomizeDefaults: StylisticCustomizeOptions = {
@@ -355,11 +368,11 @@ const browserOverride: OxlintOverride = {
   },
 };
 
-const browserConsoleExemption: OxlintOverride = {
-  files: ['**/scripts/**/*.ts', '**/bin/**/*.ts'],
+const serverOverride: OxlintOverride = {
+  files: ['**/*.ts'],
   rules: {
-    // Justification: Scripts and CLIs use console as their interface
-    'no-console': 'off',
+    // Justification: Server code uses Node.js built-in modules
+    'import/no-nodejs-modules': 'off',
   },
 };
 
@@ -372,6 +385,7 @@ const browserConsoleExemption: OxlintOverride = {
 export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
   const {
     categories: categoryOverrides,
+    entryPoints = [...defaultEntryPoints],
     ignorePatterns = ['.claude/worktrees/**', '**/dist/**'],
     options: optionOverrides,
     overrides = [],
@@ -379,9 +393,19 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
     target = 'server',
   } = opts;
 
+  const browserEntryPointExemption: OxlintOverride = {
+    files: entryPoints,
+    rules: {
+      // Justification: Entry points and scripts are Node.js by nature
+      'import/no-nodejs-modules': 'off',
+      // Justification: Scripts and CLIs use console as their interface
+      'no-console': 'off',
+    },
+  };
+
   const targetOverrides = target === 'browser'
-    ? [browserOverride, browserConsoleExemption]
-    : [];
+    ? [browserOverride, browserEntryPointExemption]
+    : [serverOverride];
 
   return defineConfig({
     categories: {

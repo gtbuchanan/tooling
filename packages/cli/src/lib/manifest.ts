@@ -5,6 +5,7 @@ export const PublishConfigSchema = v.object({
   bin: v.optional(v.record(v.string(), v.string())),
   directory: v.optional(v.string()),
   exports: v.optional(v.record(v.string(), v.string())),
+  imports: v.optional(v.record(v.string(), v.string())),
   linkDirectory: v.optional(v.boolean()),
   scripts: v.optional(v.record(v.string(), v.string())),
 });
@@ -56,8 +57,8 @@ export const buildRepoFields = (
 
 /**
  * Strips `devDependencies` and `scripts`, then promotes `publishConfig.bin`,
- * `publishConfig.exports`, and `publishConfig.scripts` to top-level fields
- * for publishing.
+ * `publishConfig.exports`, `publishConfig.imports`, and
+ * `publishConfig.scripts` to top-level fields for publishing.
  */
 export const buildOutput = (manifest: Manifest): Manifest => {
   const {
@@ -74,6 +75,16 @@ export const buildOutput = (manifest: Manifest): Manifest => {
     }),
     ...(publishConfig?.exports && {
       exports: publishConfig.exports,
+    }),
+    /*
+     * Pnpm doesn't natively promote publishConfig.imports. Needed because
+     * rewriteRelativeImportExtensions only rewrites relative imports, not
+     * subpath imports (#src/*). Dev uses .ts extensions resolved via the
+     * source imports map; published packages need .ts → .js rewriting
+     * via a separate imports map (e.g. "#src/*.ts": "./*.js").
+     */
+    ...(publishConfig?.imports && {
+      imports: publishConfig.imports,
     }),
     ...(publishConfig?.scripts && {
       scripts: publishConfig.scripts,
