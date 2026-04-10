@@ -1,12 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import * as v from 'valibot';
+import { ManifestSchema } from './manifest.ts';
 
 const jsonIndent = 2;
-
-/** Schema for reading scripts from package.json (preserves other fields). */
-export const PackageJsonSchema = v.looseObject({
-  scripts: v.optional(v.record(v.string(), v.string())),
-});
 
 /** Result of merging scripts into a package.json. */
 export interface MergeResult {
@@ -54,7 +50,7 @@ export const mergePackageScripts = (
   force: boolean,
 ): MergeResult => {
   const raw: unknown = JSON.parse(readFileSync(path, 'utf-8'));
-  const manifest = v.parse(PackageJsonSchema, raw);
+  const manifest = v.parse(ManifestSchema, raw);
   const { added, merged, skipped } = classifyScripts(
     manifest.scripts ?? {}, expected, force,
   );
@@ -62,16 +58,4 @@ export const mergePackageScripts = (
   writeJsonFile(path, { ...manifest, scripts: merged });
 
   return { added, skipped };
-};
-
-/** Writes a file only if it does not already exist. Returns status. */
-export const writeIfMissing = (
-  path: string,
-  content: string,
-): 'created' | 'skipped' => {
-  if (existsSync(path)) {
-    return 'skipped';
-  }
-  writeFileSync(path, content);
-  return 'created';
 };

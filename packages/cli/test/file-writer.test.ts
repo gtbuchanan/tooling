@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { describe, it } from 'vitest';
 import {
   mergePackageScripts,
-  writeIfMissing,
   writeJsonFile,
 } from '#src/lib/file-writer.js';
 
@@ -122,28 +121,5 @@ describe(mergePackageScripts, () => {
       name: 'test',
       version: '1.0.0',
     });
-  });
-});
-
-describe(writeIfMissing, () => {
-  it('writes file when it does not exist', ({ expect }) => {
-    const dir = createTempDir();
-    const path = join(dir, 'new.ts');
-
-    const result = writeIfMissing(path, 'export default {};');
-
-    expect(result).toBe('created');
-    expect(readFileSync(path, 'utf-8')).toBe('export default {};');
-  });
-
-  it('skips when file already exists', ({ expect }) => {
-    const dir = createTempDir();
-    const path = join(dir, 'existing.ts');
-    writeFileSync(path, 'original content');
-
-    const result = writeIfMissing(path, 'new content');
-
-    expect(result).toBe('skipped');
-    expect(readFileSync(path, 'utf-8')).toBe('original content');
   });
 });

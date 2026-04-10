@@ -8,18 +8,12 @@ import { readManifest, resolveWorkspace } from './workspace.ts';
 export interface PackageCapabilities {
   /** Package directory path. */
   readonly dir: string;
-  /** Existing compile script value (preserved by turbo:init). */
-  readonly existingCompileScript: string | undefined;
   /** Has an `e2e/` directory. */
   readonly hasE2e: boolean;
   /** Has ESLint config or `@gtbuchanan/eslint-config` dependency. */
   readonly hasEslint: boolean;
   /** Has oxlint config or `@gtbuchanan/oxlint-config` dependency. */
   readonly hasOxlint: boolean;
-  /** Has a `scripts/` directory. */
-  readonly hasScripts: boolean;
-  /** Has a `src/` directory. */
-  readonly hasSrc: boolean;
   /** Has a `test/` directory. */
   readonly hasTest: boolean;
   /** Has `@gtbuchanan/tsconfig` dependency or `tsconfig.json`. */
@@ -63,7 +57,9 @@ const hasConfigFile = (base: string, prefix: string): boolean =>
 const hasDep = (deps: Record<string, string>, name: string): boolean =>
   name in deps;
 
-const parseManifest = (dir: string): v.InferOutput<typeof ManifestSchema> => {
+type Manifest = v.InferOutput<typeof ManifestSchema>;
+
+const parseManifest = (dir: string): Manifest => {
   try {
     return v.parse(ManifestSchema, readManifest(dir));
   } catch {
@@ -71,30 +67,25 @@ const parseManifest = (dir: string): v.InferOutput<typeof ManifestSchema> => {
   }
 };
 
-const mergeDeps = (
-  manifest: v.InferOutput<typeof ManifestSchema>,
-): Record<string, string> => ({
+const mergeDeps = (manifest: Manifest): Record<string, string> => ({
   ...manifest.dependencies,
   ...manifest.devDependencies,
 });
 
-/** Discovers capabilities for a single package directory. */
-export const discoverPackage = (dir: string): PackageCapabilities => {
-  const manifest = parseManifest(dir);
+const buildCapabilities = (
+  dir: string,
+  manifest: Manifest,
+): PackageCapabilities => {
   const deps = mergeDeps(manifest);
-  const scripts = manifest.scripts ?? {};
   const hasVitest = hasDep(deps, '@gtbuchanan/vitest-config') ||
     hasConfigFile(dir, 'vitest.config');
   const hasTest = hasDir(dir, 'test');
 
   return {
     dir,
-    existingCompileScript: scripts['compile'],
     hasE2e: hasDir(dir, 'e2e'),
     hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasConfigFile(dir, 'eslint.config'),
     hasOxlint: hasDep(deps, '@gtbuchanan/oxlint-config') || hasConfigFile(dir, 'oxlint.config'),
-    hasScripts: hasDir(dir, 'scripts'),
-    hasSrc: hasDir(dir, 'src'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || existsSync(join(dir, 'tsconfig.json')),
     hasVitest,
@@ -104,6 +95,10 @@ export const discoverPackage = (dir: string): PackageCapabilities => {
   };
 };
 
+/** Discovers capabilities for a single package directory. */
+export const discoverPackage = (dir: string): PackageCapabilities =>
+  buildCapabilities(dir, parseManifest(dir));
+
 /** Discovers capabilities for an entire workspace. */
 export const discoverWorkspace = (
   options?: DiscoverWorkspaceOptions,
@@ -111,16 +106,14 @@ export const discoverWorkspace = (
   const ctx = resolveWorkspace(options);
   const isMonorepo = ctx.packageDirs.length > 1 ||
     ctx.packageDirs[0] !== ctx.rootDir;
-  const root = discoverPackage(ctx.rootDir);
   const rootManifest = parseManifest(ctx.rootDir);
   const rootDeps = mergeDeps(rootManifest);
-  const packages = ctx.packageDirs.map(discoverPackage);
 
   return {
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
-    packages,
-    root,
+    packages: ctx.packageDirs.map(dir => buildCapabilities(dir, parseManifest(dir))),
+    root: buildCapabilities(ctx.rootDir, rootManifest),
     rootDir: ctx.rootDir,
   };
 };

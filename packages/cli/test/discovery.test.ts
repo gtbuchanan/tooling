@@ -16,17 +16,6 @@ const writeFile = (dir: string, name: string, content = ''): void => {
 };
 
 describe(discoverPackage, () => {
-  it('detects src directory', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(join(dir, 'src'));
-
-    const result = discoverPackage(dir);
-
-    expect(result.hasSrc).toBe(true);
-    expect(result.hasTest).toBe(false);
-  });
-
   it('detects test directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
@@ -45,16 +34,6 @@ describe(discoverPackage, () => {
     const result = discoverPackage(dir);
 
     expect(result.hasE2e).toBe(true);
-  });
-
-  it('detects scripts directory', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(join(dir, 'scripts'));
-
-    const result = discoverPackage(dir);
-
-    expect(result.hasScripts).toBe(true);
   });
 
   it('detects eslint via config file', ({ expect }) => {
@@ -174,26 +153,6 @@ describe(discoverPackage, () => {
     expect(result.hasVitestE2e).toBe(true);
   });
 
-  it('detects existing compile script', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      scripts: { compile: 'node scripts/flatten.ts' },
-    });
-
-    const result = discoverPackage(dir);
-
-    expect(result.existingCompileScript).toBe('node scripts/flatten.ts');
-  });
-
-  it('returns undefined for missing compile script', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-
-    const result = discoverPackage(dir);
-
-    expect(result.existingCompileScript).toBeUndefined();
-  });
-
   it('returns all false for minimal package', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
@@ -204,13 +163,11 @@ describe(discoverPackage, () => {
       hasE2e: false,
       hasEslint: false,
       hasOxlint: false,
-      hasScripts: false,
-      hasSrc: false,
       hasTest: false,
       hasTypeScript: false,
       hasVitest: false,
       hasVitestE2e: false,
-      isPublished: false,
+isPublished: false,
     });
   });
 });
@@ -235,7 +192,7 @@ describe(discoverWorkspace, () => {
     expect(result.isMonorepo).toBe(true);
     expect(result.packages).toHaveLength(1);
     expect(result.packages[0]!.hasEslint).toBe(true);
-    expect(result.packages[0]!.hasSrc).toBe(true);
+    expect(result.packages[0]!.hasEslint).toBe(true);
   });
 
   it('discovers single-package repo', ({ expect }) => {
@@ -250,7 +207,6 @@ describe(discoverWorkspace, () => {
     expect(result.isMonorepo).toBe(false);
     expect(result.packages).toHaveLength(1);
     expect(result.packages[0]!.hasTypeScript).toBe(true);
-    expect(result.packages[0]!.hasSrc).toBe(true);
   });
 
   it('includes root capabilities', ({ expect }) => {

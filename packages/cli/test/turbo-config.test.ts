@@ -11,12 +11,9 @@ const makeCapabilities = (
 ): PackageCapabilities => {
   const merged = {
     dir: '/fake/pkg',
-    existingCompileScript: undefined as string | undefined,
     hasE2e: false,
     hasEslint: false,
     hasOxlint: false,
-    hasScripts: false,
-    hasSrc: false,
     hasTest: false,
     hasTypeScript: false,
     hasVitest: false,

@@ -2,7 +2,6 @@ import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
 
 /** Turborepo task definition. */
 export interface TurboTask {
-  readonly cache?: boolean;
   readonly dependsOn?: readonly string[];
   readonly env?: readonly string[];
   readonly inputs?: readonly string[];

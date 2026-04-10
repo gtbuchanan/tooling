@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as v from 'valibot';
 import { discoverWorkspace } from '../lib/discovery.ts';
-import { PackageJsonSchema } from '../lib/file-writer.ts';
+import { ManifestSchema } from '../lib/manifest.ts';
 import {
   type TurboJson,
   generatePackageScripts,
@@ -40,7 +40,7 @@ const checkScripts = (
   dir: string,
   expected: Record<string, string>,
 ): readonly string[] => {
-  const result = v.safeParse(PackageJsonSchema, readManifest(dir));
+  const result = v.safeParse(ManifestSchema, readManifest(dir));
   if (!result.success) {
     return [];
   }
