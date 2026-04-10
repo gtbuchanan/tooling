@@ -169,7 +169,7 @@ describe('turbo:init integration', () => {
     expect(discovery.isSelfHosted).toBe(true);
   });
 
-  it('uses direct invocations for self-hosted', ({ expect }) => {
+  it('generates gtb shim for self-hosted', ({ expect }) => {
     const root = mkdtempSync(join(tmpdir(), 'gtb-selfhost-'));
     writeFileSync(join(root, 'package.json'), JSON.stringify({
       devDependencies: {
@@ -182,9 +182,10 @@ describe('turbo:init integration', () => {
 
     const discovery = discoverWorkspace({ cwd: root });
     const scripts = generatePackageScripts(
-      discovery.packages[0]!, discovery.isSelfHosted,
+      discovery.packages[0]!, discovery.isSelfHosted, discovery.rootDir,
     );
 
-    expect(scripts['typecheck:ts']).toBe('tsc --noEmit');
+    expect(scripts['typecheck:ts']).toBe('gtb typecheck:ts');
+    expect(scripts['gtb']).toContain('packages/cli/bin/gtb.ts');
   });
 });

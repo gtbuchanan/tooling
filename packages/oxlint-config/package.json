@@ -1,11 +1,27 @@
 {
+  "dependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
+    "@stylistic/eslint-plugin": "catalog:",
+    "eslint-plugin-import-x": "catalog:"
+  },
+  "devDependencies": {
+    "@gtbuchanan/test-utils": "workspace:*"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "exports": {
+      ".": "./index.js"
+    },
+    "linkDirectory": false
+  },
   "scripts": {
-    "compile:ts": "tsc -b src",
-    "lint:eslint": "eslint --max-warnings=0",
-    "lint:oxlint": "oxlint -c oxlint.config.ts",
-    "test:vitest:fast": "vitest run --tags-filter=!slow",
-    "test:vitest:slow": "vitest run --tags-filter=slow --pass-with-no-tests",
-    "typecheck:ts": "tsc --noEmit"
+    "compile:ts": "gtb compile:ts",
+    "lint:eslint": "gtb lint:eslint",
+    "lint:oxlint": "gtb lint:oxlint",
+    "test:vitest:fast": "gtb test:vitest:fast",
+    "test:vitest:slow": "gtb test:vitest:slow",
+    "typecheck:ts": "gtb typecheck:ts",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
   "name": "@gtbuchanan/oxlint-config",
   "version": "0.1.0",
@@ -16,21 +32,6 @@
   },
   "exports": {
     ".": "./src/index.ts"
-  },
-  "publishConfig": {
-    "directory": "dist/source",
-    "exports": {
-      ".": "./index.js"
-    },
-    "linkDirectory": false
-  },
-  "dependencies": {
-    "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
-    "@stylistic/eslint-plugin": "catalog:",
-    "eslint-plugin-import-x": "catalog:"
-  },
-  "devDependencies": {
-    "@gtbuchanan/test-utils": "workspace:*"
   },
   "peerDependencies": {
     "oxlint": "^1.58.0",

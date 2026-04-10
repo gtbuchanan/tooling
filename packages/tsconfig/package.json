@@ -1,9 +1,21 @@
 {
+  "devDependencies": {
+    "@gtbuchanan/eslint-config": "workspace:*",
+    "@gtbuchanan/oxlint-config": "workspace:*",
+    "@gtbuchanan/test-utils": "workspace:*",
+    "@tsconfig/strictest": "catalog:"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "linkDirectory": false
+  },
   "scripts": {
     "compile": "node --experimental-strip-types scripts/flatten.ts",
-    "lint:eslint": "eslint --max-warnings=0",
-    "lint:oxlint": "oxlint -c oxlint.config.ts",
-    "typecheck:ts": "tsc --noEmit"
+    "lint:eslint": "gtb lint:eslint",
+    "lint:oxlint": "gtb lint:oxlint",
+    "typecheck:ts": "gtb typecheck:ts",
+    "compile:ts": "gtb compile:ts",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
   "name": "@gtbuchanan/tsconfig",
   "version": "0.1.0",
@@ -14,16 +26,6 @@
   "type": "module",
   "exports": {
     "./node.json": "./node.json"
-  },
-  "publishConfig": {
-    "directory": "dist/source",
-    "linkDirectory": false
-  },
-  "devDependencies": {
-    "@gtbuchanan/eslint-config": "workspace:*",
-    "@gtbuchanan/oxlint-config": "workspace:*",
-    "@gtbuchanan/test-utils": "workspace:*",
-    "@tsconfig/strictest": "catalog:"
   },
   "engines": {
     "node": ">=22.17"

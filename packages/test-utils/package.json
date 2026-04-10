@@ -1,21 +1,4 @@
 {
-  "scripts": {
-    "lint:eslint": "eslint --max-warnings=0",
-    "lint:oxlint": "oxlint -c oxlint.config.ts",
-    "test:vitest:fast": "vitest run --tags-filter=!slow",
-    "test:vitest:slow": "vitest run --tags-filter=slow --pass-with-no-tests",
-    "typecheck:ts": "tsc --noEmit"
-  },
-  "name": "@gtbuchanan/test-utils",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "imports": {
-    "#src/*": "./src/*"
-  },
-  "exports": {
-    ".": "./src/fixture.ts"
-  },
   "dependencies": {
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
@@ -23,6 +6,24 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "catalog:"
+  },
+  "private": true,
+  "scripts": {
+    "lint:eslint": "gtb lint:eslint",
+    "lint:oxlint": "gtb lint:oxlint",
+    "test:vitest:fast": "gtb test:vitest:fast",
+    "test:vitest:slow": "gtb test:vitest:slow",
+    "typecheck:ts": "gtb typecheck:ts",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
+  },
+  "name": "@gtbuchanan/test-utils",
+  "version": "0.0.0",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "exports": {
+    ".": "./src/fixture.ts"
   },
   "engines": {
     "node": ">=22.17"

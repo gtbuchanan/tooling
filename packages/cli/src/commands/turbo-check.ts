@@ -64,7 +64,9 @@ export const turboCheck = (_args: readonly string[]): void => {
   const drift = [
     ...checkTurboTasks(discovery.rootDir, expected),
     ...discovery.packages.flatMap(
-      pkg => checkScripts(pkg.dir, generatePackageScripts(pkg, discovery.isSelfHosted)),
+      pkg => checkScripts(
+        pkg.dir, generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir),
+      ),
     ),
   ];
 

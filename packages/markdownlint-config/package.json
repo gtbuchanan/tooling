@@ -1,16 +1,11 @@
 {
-  "scripts": {
-    "compile:ts": "tsc -b src",
-    "lint:eslint": "eslint --max-warnings=0",
-    "lint:oxlint": "oxlint -c oxlint.config.ts",
-    "typecheck:ts": "tsc --noEmit"
+  "dependencies": {
+    "markdownlint": "catalog:"
   },
-  "name": "@gtbuchanan/markdownlint-config",
-  "version": "0.1.0",
-  "description": "Shared markdownlint configuration",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.mjs"
+  "devDependencies": {
+    "@gtbuchanan/eslint-config": "workspace:*",
+    "@gtbuchanan/oxlint-config": "workspace:*",
+    "@gtbuchanan/test-utils": "workspace:*"
   },
   "publishConfig": {
     "directory": "dist/source",
@@ -19,13 +14,19 @@
     },
     "linkDirectory": false
   },
-  "dependencies": {
-    "markdownlint": "catalog:"
+  "scripts": {
+    "compile:ts": "gtb compile:ts",
+    "lint:eslint": "gtb lint:eslint",
+    "lint:oxlint": "gtb lint:oxlint",
+    "typecheck:ts": "gtb typecheck:ts",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
-  "devDependencies": {
-    "@gtbuchanan/eslint-config": "workspace:*",
-    "@gtbuchanan/oxlint-config": "workspace:*",
-    "@gtbuchanan/test-utils": "workspace:*"
+  "name": "@gtbuchanan/markdownlint-config",
+  "version": "0.1.0",
+  "description": "Shared markdownlint configuration",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs"
   },
   "engines": {
     "node": ">=22.17"

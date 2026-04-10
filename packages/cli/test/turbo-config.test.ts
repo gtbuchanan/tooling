@@ -271,12 +271,14 @@ describe.concurrent(generatePackageScripts, () => {
     expect(result).toHaveProperty('test:vitest:slow', 'gtb test:vitest:slow');
   });
 
-  it('uses direct invocations for self-hosted packages', ({ expect }) => {
-    const caps = makeCapabilities({ hasTypeScript: true });
+  it('generates gtb shim for self-hosted packages', ({ expect }) => {
+    const caps = makeCapabilities({ dir: '/root/packages/app', hasTypeScript: true });
 
-    const result = generatePackageScripts(caps, true);
+    const result = generatePackageScripts(caps, true, '/root');
 
-    expect(result).toHaveProperty('typecheck:ts', 'tsc --noEmit');
+    expect(result).toHaveProperty('typecheck:ts', 'gtb typecheck:ts');
+    expect(result['gtb']).toContain('node --experimental-strip-types');
+    expect(result['gtb']).toContain('packages/cli/bin/gtb.ts');
   });
 
   it('generates nothing for empty capabilities', ({ expect }) => {

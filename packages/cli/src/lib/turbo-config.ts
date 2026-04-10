@@ -1,3 +1,4 @@
+import { relative } from 'node:path';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
 
 /** Turborepo task definition. */
@@ -200,24 +201,10 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   return { $schema: 'https://turbo.build/schema.json', tasks: collect(entries) };
 };
 
-/** Direct tool invocations for self-hosted (workspace:*) packages. */
-const selfHostedScripts: Readonly<Record<string, string>> = {
-  'compile:ts': 'tsc -p tsconfig.build.json',
-  'lint:eslint': 'eslint --cache --cache-location dist/.eslintcache --max-warnings=0',
-  'lint:oxlint': 'oxlint',
-  'test:vitest:fast': 'vitest run --tags-filter=!slow',
-  'test:vitest:slow': 'vitest run --tags-filter=slow --pass-with-no-tests',
-  'typecheck:ts': 'tsc --noEmit',
-};
-
 const packageScriptEntries = (
   caps: PackageCapabilities,
-  isSelfHosted: boolean,
 ): readonly ConditionalEntry<string>[] => {
-  const cmd = (name: string): string =>
-    isSelfHosted
-      ? (selfHostedScripts[name] ?? `gtb ${name}`)
-      : `gtb ${name}`;
+  const cmd = (name: string): string => `gtb ${name}`;
 
   return [
     { condition: caps.hasTypeScript, key: 'typecheck:ts', value: cmd('typecheck:ts') },
@@ -237,11 +224,26 @@ const packageScriptEntries = (
   ];
 };
 
+/** Generates the gtb shim script for self-hosted packages. */
+const gtbShim = (pkgDir: string, rootDir: string): string => {
+  const rel = relative(pkgDir, rootDir).replaceAll('\\', '/');
+
+  return `node --experimental-strip-types ${rel}/packages/cli/bin/gtb.ts`;
+};
+
 /** Generates per-package scripts from capabilities. */
 export const generatePackageScripts = (
   caps: PackageCapabilities,
   isSelfHosted: boolean,
-): Record<string, string> => collect(packageScriptEntries(caps, isSelfHosted));
+  rootDir?: string,
+): Record<string, string> => {
+  const scripts = collect(packageScriptEntries(caps));
+  if (isSelfHosted && rootDir !== undefined) {
+    scripts['gtb'] = gtbShim(caps.dir, rootDir);
+  }
+
+  return scripts;
+};
 
 const rootScriptEntries = (flags: ToolFlags): readonly ConditionalEntry<string>[] => [
   { condition: flags.hasCheck, key: 'check', value: 'turbo run check' },

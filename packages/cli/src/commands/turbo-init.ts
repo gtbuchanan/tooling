@@ -30,9 +30,9 @@ const writeRootScripts = (discovery: WorkspaceDiscovery, force: boolean): void =
 };
 
 const writePackageScripts = (
-  pkg: PackageCapabilities, force: boolean, isSelfHosted: boolean,
+  pkg: PackageCapabilities, force: boolean, isSelfHosted: boolean, rootDir: string,
 ): void => {
-  const scripts = generatePackageScripts(pkg, isSelfHosted);
+  const scripts = generatePackageScripts(pkg, isSelfHosted, rootDir);
   if (Object.keys(scripts).length === 0) {
     return;
   }
@@ -47,6 +47,6 @@ export const turboInit = (args: readonly string[]): void => {
   writeTurboJson(discovery);
   writeRootScripts(discovery, force);
   for (const pkg of discovery.packages) {
-    writePackageScripts(pkg, force, discovery.isSelfHosted);
+    writePackageScripts(pkg, force, discovery.isSelfHosted, discovery.rootDir);
   }
 };
