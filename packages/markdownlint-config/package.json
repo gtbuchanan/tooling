@@ -2,7 +2,7 @@
   "scripts": {
     "compile:ts": "tsc -b src",
     "lint:eslint": "eslint --max-warnings=0",
-    "lint:oxlint": "oxlint",
+    "lint:oxlint": "oxlint -c oxlint.config.ts",
     "typecheck:ts": "tsc --noEmit"
   },
   "name": "@gtbuchanan/markdownlint-config",
@@ -23,6 +23,7 @@
     "markdownlint": "catalog:"
   },
   "devDependencies": {
+    "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*"
   },
   "engines": {

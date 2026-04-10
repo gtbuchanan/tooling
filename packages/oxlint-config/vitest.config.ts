@@ -1,3 +1,3 @@
-import { configurePackage } from '@gtbuchanan/vitest-config/configure';
+import { configurePackage } from '../vitest-config/src/configure.ts';
 
 export default configurePackage();

@@ -2,7 +2,7 @@
   "scripts": {
     "compile": "node --experimental-strip-types scripts/flatten.ts",
     "lint:eslint": "eslint --max-warnings=0",
-    "lint:oxlint": "oxlint",
+    "lint:oxlint": "oxlint -c oxlint.config.ts",
     "typecheck:ts": "tsc --noEmit"
   },
   "name": "@gtbuchanan/tsconfig",
@@ -20,6 +20,7 @@
     "linkDirectory": false
   },
   "devDependencies": {
+    "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*",
     "@tsconfig/strictest": "catalog:"
   },

@@ -2,7 +2,7 @@
   "scripts": {
     "compile:ts": "tsc -b src",
     "lint:eslint": "eslint --max-warnings=0",
-    "lint:oxlint": "oxlint",
+    "lint:oxlint": "oxlint -c oxlint.config.ts",
     "test:vitest:fast": "vitest run --tags-filter=!slow",
     "test:vitest:slow": "vitest run --tags-filter=slow --pass-with-no-tests",
     "typecheck:ts": "tsc --noEmit"
@@ -39,6 +39,7 @@
     "typescript-eslint": "catalog:"
   },
   "devDependencies": {
+    "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*"
   },
