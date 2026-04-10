@@ -65,8 +65,7 @@ coverage, setupFiles, and mock reset.
 ### Build CLI
 
 `@gtbuchanan/cli` provides the `gtb` binary with leaf commands that
-perform individual build steps. Turborepo handles orchestration;
-`gtb` no longer composes commands.
+perform individual build steps. Turborepo handles orchestration.
 
 Consumers install it and wire scripts in `package.json`:
 
