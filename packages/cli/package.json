@@ -11,7 +11,7 @@
   "version": "0.1.0",
   "description": "Shared build CLI",
   "bin": {
-    "gtb": "./dist/source/main.js"
+    "gtb": "./dist/source/bin/gtb.js"
   },
   "type": "module",
   "imports": {
@@ -22,11 +22,14 @@
   },
   "publishConfig": {
     "bin": {
-      "gtb": "./main.js"
+      "gtb": "./bin/gtb.js"
     },
     "directory": "dist/source",
     "exports": {
       ".": "./index.js"
+    },
+    "imports": {
+      "#src/*.ts": "./*.js"
     },
     "linkDirectory": false
   },

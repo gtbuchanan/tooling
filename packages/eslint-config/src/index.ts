@@ -1,6 +1,7 @@
 import json from '@eslint/json';
 import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import {
+  defaultEntryPoints,
   eslintCommentsRuleOverrides,
   importOrderRules,
   isAndroid,
@@ -31,8 +32,9 @@ export interface ESLintConfigureOptions {
    */
   readonly ignores?: string[];
   /**
-   * File patterns where `process.exit` and hashbang are allowed.
-   * @defaultValue Bin directories and main entry points
+   * File patterns for entry points exempt from `process.exit` and hashbang
+   * restrictions.
+   * @defaultValue {@link defaultEntryPoints}
    */
   readonly entryPoints?: string[];
   /**
@@ -196,7 +198,7 @@ const vitestConfigs: Linter.Config[] = [
  */
 export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {
   const {
-    entryPoints = ['**/bin/**/*.ts', '**/main.ts'],
+    entryPoints = [...defaultEntryPoints],
     extraConfigs = [],
     ignores = ['.claude/worktrees/**', '**/dist/**', '**/pnpm-lock.yaml'],
     onlyWarn = true,
