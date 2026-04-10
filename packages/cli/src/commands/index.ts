@@ -20,6 +20,8 @@ import {
   testVitestSlow,
 } from './leaf.ts';
 import { pack } from './pack.ts';
+import { turboCheck } from './turbo-check.ts';
+import { turboInit } from './turbo-init.ts';
 
 /** Command registry mapping CLI names to handler functions. */
 export const commands: Record<
@@ -44,4 +46,6 @@ export const commands: Record<
   'test:vitest:e2e': testVitestE2e,
   'test:vitest:fast': testVitestFast,
   'test:vitest:slow': testVitestSlow,
+  'turbo:check': turboCheck,
+  'turbo:init': turboInit,
 };
