@@ -194,28 +194,6 @@ describe(discoverPackage, () => {
     expect(result.existingCompileScript).toBeUndefined();
   });
 
-  it('detects self-hosted (workspace:* cli dep)', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
-    });
-
-    const result = discoverPackage(dir);
-
-    expect(result.isSelfHosted).toBe(true);
-  });
-
-  it('detects non-self-hosted cli dep', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/cli': '^0.1.0' },
-    });
-
-    const result = discoverPackage(dir);
-
-    expect(result.isSelfHosted).toBe(false);
-  });
-
   it('returns all false for minimal package', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
@@ -233,7 +211,6 @@ describe(discoverPackage, () => {
       hasVitest: false,
       hasVitestE2e: false,
       isPublished: false,
-      isSelfHosted: false,
     });
   });
 });
@@ -291,6 +268,6 @@ describe(discoverWorkspace, () => {
 
     const result = discoverWorkspace({ cwd: root });
 
-    expect(result.root.isSelfHosted).toBe(true);
+    expect(result.isSelfHosted).toBe(true);
   });
 });

@@ -29,8 +29,10 @@ const writeRootScripts = (discovery: WorkspaceDiscovery, force: boolean): void =
   logMergeResult('root', mergePackageScripts(rootPkgPath, generateRootScripts(discovery), force));
 };
 
-const writePackageScripts = (pkg: PackageCapabilities, force: boolean): void => {
-  const scripts = generatePackageScripts(pkg);
+const writePackageScripts = (
+  pkg: PackageCapabilities, force: boolean, isSelfHosted: boolean,
+): void => {
+  const scripts = generatePackageScripts(pkg, isSelfHosted);
   if (Object.keys(scripts).length === 0) {
     return;
   }
@@ -45,6 +47,6 @@ export const turboInit = (args: readonly string[]): void => {
   writeTurboJson(discovery);
   writeRootScripts(discovery, force);
   for (const pkg of discovery.packages) {
-    writePackageScripts(pkg, force);
+    writePackageScripts(pkg, force, discovery.isSelfHosted);
   }
 };

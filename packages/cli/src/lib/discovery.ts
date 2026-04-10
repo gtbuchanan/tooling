@@ -32,14 +32,14 @@ export interface PackageCapabilities {
   readonly hasVitestE2e: boolean;
   /** Published package (not private, has publishConfig.directory). */
   readonly isPublished: boolean;
-  /** `@gtbuchanan/cli` is a workspace:* dependency (bootstrapping). */
-  readonly isSelfHosted: boolean;
 }
 
 /** Full workspace discovery result. */
 export interface WorkspaceDiscovery {
   /** Whether a pnpm-workspace.yaml was found. */
   readonly isMonorepo: boolean;
+  /** `@gtbuchanan/cli` is a workspace:* dependency (bootstrapping). */
+  readonly isSelfHosted: boolean;
   /** Capabilities per workspace package. */
   readonly packages: readonly PackageCapabilities[];
   /** Root-level capabilities. */
@@ -101,7 +101,6 @@ export const discoverPackage = (dir: string): PackageCapabilities => {
     hasVitestE2e: hasConfigFile(dir, 'vitest.config.e2e'),
     hasVitestTests: hasVitest && hasTest,
     isPublished: manifest.private !== true && manifest.publishConfig?.directory !== undefined,
-    isSelfHosted: deps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
   };
 };
 
@@ -113,7 +112,15 @@ export const discoverWorkspace = (
   const isMonorepo = ctx.packageDirs.length > 1 ||
     ctx.packageDirs[0] !== ctx.rootDir;
   const root = discoverPackage(ctx.rootDir);
+  const rootManifest = parseManifest(ctx.rootDir);
+  const rootDeps = mergeDeps(rootManifest);
   const packages = ctx.packageDirs.map(discoverPackage);
 
-  return { isMonorepo, packages, root, rootDir: ctx.rootDir };
+  return {
+    isMonorepo,
+    isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
+    packages,
+    root,
+    rootDir: ctx.rootDir,
+  };
 };

@@ -209,9 +209,10 @@ const selfHostedScripts: Readonly<Record<string, string>> = {
 
 const packageScriptEntries = (
   caps: PackageCapabilities,
+  isSelfHosted: boolean,
 ): readonly ConditionalEntry<string>[] => {
   const cmd = (name: string): string =>
-    caps.isSelfHosted
+    isSelfHosted
       ? (selfHostedScripts[name] ?? `gtb ${name}`)
       : `gtb ${name}`;
 
@@ -236,7 +237,8 @@ const packageScriptEntries = (
 /** Generates per-package scripts from capabilities. */
 export const generatePackageScripts = (
   caps: PackageCapabilities,
-): Record<string, string> => collect(packageScriptEntries(caps));
+  isSelfHosted: boolean,
+): Record<string, string> => collect(packageScriptEntries(caps, isSelfHosted));
 
 const rootScriptEntries = (flags: ToolFlags): readonly ConditionalEntry<string>[] => [
   { condition: flags.hasCheck, key: 'check', value: 'turbo run check' },

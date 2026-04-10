@@ -24,6 +24,7 @@ describe(writeJsonFile, () => {
     writeJsonFile(path, { alpha: 1, beta: 2 });
 
     const content = readFileSync(path, 'utf-8');
+
     expect(content).toBe(
       `${JSON.stringify({ alpha: 1, beta: 2 }, null, jsonIndent)}\n`,
     );

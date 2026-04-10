@@ -23,10 +23,12 @@ const makeCapabilities = (
     hasVitestE2e: false,
     hasVitestTests: false,
     isPublished: false,
-    isSelfHosted: false,
     ...overrides,
   };
-  return { ...merged, hasVitestTests: overrides.hasVitestTests ?? (merged.hasVitest && merged.hasTest) };
+  return {
+    ...merged,
+    hasVitestTests: overrides.hasVitestTests ?? (merged.hasVitest && merged.hasTest),
+  };
 };
 
 const makeDiscovery = (
@@ -34,6 +36,7 @@ const makeDiscovery = (
   rootOverrides: Partial<PackageCapabilities> = {},
 ): WorkspaceDiscovery => ({
   isMonorepo: packages.length > 1,
+  isSelfHosted: false,
   packages,
   root: makeCapabilities(rootOverrides),
   rootDir: '/fake/root',
@@ -219,7 +222,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates typecheck:ts for TypeScript packages', ({ expect }) => {
     const caps = makeCapabilities({ hasTypeScript: true });
 
-    const result = generatePackageScripts(caps);
+    const result = generatePackageScripts(caps, false);
 
     expect(result).toHaveProperty('typecheck:ts', 'gtb typecheck:ts');
   });
@@ -227,7 +230,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates compile:ts for published packages', ({ expect }) => {
     const caps = makeCapabilities({ isPublished: true });
 
-    const result = generatePackageScripts(caps);
+    const result = generatePackageScripts(caps, false);
 
     expect(result).toHaveProperty('compile:ts', 'gtb compile:ts');
   });
@@ -235,7 +238,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates lint:eslint for ESLint packages', ({ expect }) => {
     const caps = makeCapabilities({ hasEslint: true });
 
-    const result = generatePackageScripts(caps);
+    const result = generatePackageScripts(caps, false);
 
     expect(result).toHaveProperty('lint:eslint', 'gtb lint:eslint');
   });
@@ -243,19 +246,16 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates test:vitest:fast for Vitest + test/ packages', ({ expect }) => {
     const caps = makeCapabilities({ hasTest: true, hasVitest: true });
 
-    const result = generatePackageScripts(caps);
+    const result = generatePackageScripts(caps, false);
 
     expect(result).toHaveProperty('test:vitest:fast', 'gtb test:vitest:fast');
     expect(result).toHaveProperty('test:vitest:slow', 'gtb test:vitest:slow');
   });
 
   it('uses direct invocations for self-hosted packages', ({ expect }) => {
-    const caps = makeCapabilities({
-      hasTypeScript: true,
-      isSelfHosted: true,
-    });
+    const caps = makeCapabilities({ hasTypeScript: true });
 
-    const result = generatePackageScripts(caps);
+    const result = generatePackageScripts(caps, true);
 
     expect(result).toHaveProperty('typecheck:ts', 'tsc --noEmit');
   });
@@ -263,7 +263,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates nothing for empty capabilities', ({ expect }) => {
     const caps = makeCapabilities();
 
-    const result = generatePackageScripts(caps);
+    const result = generatePackageScripts(caps, false);
 
     expect(Object.keys(result)).toHaveLength(0);
   });
