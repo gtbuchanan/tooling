@@ -11,9 +11,9 @@
   "scripts": {
     "gtb": "node --experimental-strip-types packages/cli/src/main.ts",
     "prepare": "pnpm run gtb prepare",
-    "build:ci": "pnpm run gtb build:ci",
-    "test:e2e": "pnpm run gtb test:e2e",
-    "test:slow": "pnpm run gtb test:slow"
+    "build:ci": "tsc -b && pnpm -r --if-present run compile && pnpm run gtb lint:oxlint && pnpm run gtb lint:eslint && pnpm run gtb test:vitest:fast && pnpm run gtb pack",
+    "test:e2e": "pnpm run gtb test:vitest:e2e",
+    "test:slow": "pnpm run gtb test:vitest:slow"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
@@ -37,6 +37,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
+    "turbo": "catalog:",
     "typescript": "catalog:",
     "valibot": "catalog:",
     "vitest": "catalog:"

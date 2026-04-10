@@ -11,12 +11,7 @@ jobs:
       - uses: ./.github/actions/pnpm-tasks
 
       - name: Build
-        run: |
-          if jq -e '.scripts["build:ci"]' package.json >/dev/null 2>&1; then
-            pnpm build:ci
-          else
-            pnpm exec gtb build:ci
-          fi
+        run: pnpm build:ci
 
       # Two artifacts from the same build output:
       # - source: prepared publishConfig.directory contents for changeset publish
@@ -94,12 +89,7 @@ jobs:
           path: dist/packages
 
       - name: E2E Test
-        run: |
-          if jq -e '.scripts["test:e2e"]' package.json >/dev/null 2>&1; then
-            pnpm test:e2e
-          else
-            pnpm exec gtb test:e2e
-          fi
+        run: pnpm test:e2e
 
   slow-tests:
     if: inputs.run-slow-tests == true
@@ -111,12 +101,7 @@ jobs:
       - uses: ./.github/actions/pnpm-tasks
 
       - name: Slow Tests
-        run: |
-          if jq -e '.scripts["test:slow"]' package.json >/dev/null 2>&1; then
-            pnpm test:slow
-          else
-            pnpm exec gtb test:slow
-          fi
+        run: pnpm test:slow
 
       - uses: actions/upload-artifact@v5
         with:
