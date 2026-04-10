@@ -1,4 +1,12 @@
 {
+  "scripts": {
+    "compile:ts": "tsc -b src",
+    "lint:eslint": "eslint --max-warnings=0",
+    "lint:oxlint": "oxlint",
+    "test:vitest:fast": "vitest run --tags-filter=!slow",
+    "test:vitest:slow": "vitest run --tags-filter=slow --pass-with-no-tests",
+    "typecheck:ts": "tsc --noEmit"
+  },
   "name": "@gtbuchanan/eslint-config",
   "version": "0.1.0",
   "description": "Shared ESLint configuration",
@@ -31,7 +39,8 @@
     "typescript-eslint": "catalog:"
   },
   "devDependencies": {
-    "@gtbuchanan/test-utils": "workspace:*"
+    "@gtbuchanan/test-utils": "workspace:*",
+    "@gtbuchanan/vitest-config": "workspace:*"
   },
   "peerDependencies": {
     "eslint": "^10.0.0"

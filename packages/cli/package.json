@@ -1,4 +1,12 @@
 {
+  "scripts": {
+    "compile:ts": "tsc -b src",
+    "lint:eslint": "eslint --max-warnings=0",
+    "lint:oxlint": "oxlint",
+    "test:vitest:fast": "vitest run --tags-filter=!slow",
+    "test:vitest:slow": "vitest run --tags-filter=slow --pass-with-no-tests",
+    "typecheck:ts": "tsc --noEmit"
+  },
   "name": "@gtbuchanan/cli",
   "version": "0.1.0",
   "description": "Shared build CLI",
@@ -30,6 +38,7 @@
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*",
+    "@gtbuchanan/vitest-config": "workspace:*",
     "@types/cross-spawn": "catalog:"
   },
   "engines": {

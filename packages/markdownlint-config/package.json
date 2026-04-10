@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "compile:ts": "tsc -b src",
+    "lint:eslint": "eslint --max-warnings=0",
+    "lint:oxlint": "oxlint",
+    "typecheck:ts": "tsc --noEmit"
+  },
   "name": "@gtbuchanan/markdownlint-config",
   "version": "0.1.0",
   "description": "Shared markdownlint configuration",

@@ -201,6 +201,9 @@ importers:
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      '@gtbuchanan/vitest-config':
+        specifier: workspace:*
+        version: link:../vitest-config
       '@types/cross-spawn':
         specifier: 'catalog:'
         version: 6.0.6
@@ -251,6 +254,9 @@ importers:
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      '@gtbuchanan/vitest-config':
+        specifier: workspace:*
+        version: link:../vitest-config
     publishDirectory: dist/source
 
   packages/markdownlint-config:
@@ -273,6 +279,9 @@ importers:
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      '@gtbuchanan/vitest-config':
+        specifier: workspace:*
+        version: link:../vitest-config
     publishDirectory: dist/source
 
   packages/oxlint-config:
@@ -296,6 +305,9 @@ importers:
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      '@gtbuchanan/vitest-config':
+        specifier: workspace:*
+        version: link:../vitest-config
     publishDirectory: dist/source
 
   packages/test-utils:

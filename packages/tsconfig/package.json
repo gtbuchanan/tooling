@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "compile": "node --experimental-strip-types scripts/flatten.ts",
+    "lint:eslint": "eslint --max-warnings=0",
+    "lint:oxlint": "oxlint",
+    "typecheck:ts": "tsc --noEmit"
+  },
   "name": "@gtbuchanan/tsconfig",
   "version": "0.1.0",
   "description": "Shared TypeScript configuration",
@@ -12,9 +18,6 @@
   "publishConfig": {
     "directory": "dist/source",
     "linkDirectory": false
-  },
-  "scripts": {
-    "compile": "node --experimental-strip-types scripts/flatten.ts"
   },
   "devDependencies": {
     "@gtbuchanan/test-utils": "workspace:*",

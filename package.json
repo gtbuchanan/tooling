@@ -1,4 +1,13 @@
 {
+  "scripts": {
+    "gtb": "node --experimental-strip-types packages/cli/src/main.ts",
+    "prepare": "pnpm run gtb prepare",
+    "build:ci": "turbo run check compile:ts && pnpm run gtb pack",
+    "test:e2e": "pnpm run gtb test:vitest:e2e",
+    "test:slow": "pnpm run gtb test:vitest:slow",
+    "check": "turbo run check",
+    "build": "turbo run check compile:ts test:vitest:slow && pnpm run gtb pack && pnpm run test:e2e"
+  },
   "name": "tooling-root",
   "private": true,
   "homepage": "https://github.com/gtbuchanan/tooling",
@@ -8,13 +17,6 @@
     "url": "https://github.com/gtbuchanan/tooling.git"
   },
   "type": "module",
-  "scripts": {
-    "gtb": "node --experimental-strip-types packages/cli/src/main.ts",
-    "prepare": "pnpm run gtb prepare",
-    "build:ci": "tsc -b && pnpm -r --if-present run compile && pnpm run gtb lint:oxlint && pnpm run gtb lint:eslint && pnpm run gtb test:vitest:fast && pnpm run gtb pack",
-    "test:e2e": "pnpm run gtb test:vitest:e2e",
-    "test:slow": "pnpm run gtb test:vitest:slow"
-  },
   "devDependencies": {
     "@changesets/cli": "catalog:",
     "@gtbuchanan/cli": "workspace:*",
