@@ -52,7 +52,11 @@ const checkScripts = (
     .map(name => `${dir}: missing script '${name}'`);
 };
 
-/** Validates project config against expected baseline from discovery. */
+/**
+ * Validates project config against expected baseline from discovery.
+ * Checks existence of turbo tasks and package scripts only — modified
+ * script values (consumer customizations) are not flagged as drift.
+ */
 export const turboCheck = (_args: readonly string[]): void => {
   const discovery = discoverWorkspace();
   const expected = generateTurboJson(discovery);
