@@ -24,48 +24,63 @@ packages/
   oxfmt-config/        — @gtbuchanan/oxfmt-config (oxfmt configure())
   oxlint-config/       — @gtbuchanan/oxlint-config (oxlint configure())
   tsconfig/            — @gtbuchanan/tsconfig (shared base tsconfig.json)
-  vitest-config/       — @gtbuchanan/vitest-config (configure, configureGlobal, configureProject, + e2e variants)
+  vitest-config/       — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
   test-utils/          — private shared E2E fixture utilities
 ```
 
 ## Architecture
 
-### Vitest projects
+### Turborepo
 
-The root `vitest.config.ts` uses `configureGlobal({ projects: ['packages/*'] })`
-to auto-discover packages. Per-package `vitest.config.ts` files are not needed
-unless a package requires custom settings — the global config generates inline
-project entries via `configureProject()` for each directory. Directories with
-their own `vitest.config.ts` are included as-is.
+Turborepo orchestrates the build pipeline via `turbo.json`. Each package
+defines leaf task scripts in `package.json`; Turborepo handles dependency
+ordering, caching, and parallelism.
 
-The root `vitest.config.e2e.ts` uses `configureEndToEndGlobal({ projects: ['packages/*'] })`
-following the same pattern with `configureEndToEndProject()`.
+- **Task graph** — `turbo.json` declares tasks and their `dependsOn`
+  relationships. Aggregate tasks (`check`, `build`, `lint`) use the
+  transit node pattern: they exist only as `dependsOn` targets with no
+  corresponding script, so Turborepo resolves their dependencies without
+  executing anything.
+- **Root tasks** — `turbo.json` defines root-level tasks (e.g., `//#pack`)
+  for operations that span the entire workspace.
+- **Consumer customization** — Consumers override behavior by replacing
+  `package.json` script values. No hooks or plugin system.
+- **`turbo:init`** — Generates `turbo.json` and per-package scripts from
+  workspace discovery. Run after adding packages or changing the task graph.
+- **`turbo:check`** — Validates that generated `turbo.json` and per-package
+  scripts have not drifted from the expected state.
 
 ### Vitest config API
 
-Three-layer API in `@gtbuchanan/vitest-config` with parallel unit and e2e
-variants. Per-project configures path aliases and test includes. Global
-configures coverage, setupFiles, and mock reset. Combined composes both
-layers for single-project consumers. See JSDoc on each export for details
-and options.
+Per-package Vitest configuration using `configurePackage()` from
+`@gtbuchanan/vitest-config`. Each package has its own `vitest.config.ts`
+that calls `configurePackage()` to set up path aliases, test includes,
+coverage, setupFiles, and mock reset.
 
-- Unit: `configureProject` / `configureGlobal` / `configure`
+- Unit: `configurePackage` / `configureGlobal`
 - Slow tag: `configureGlobal` defines a `slow` tag (300s timeout).
   Customize via `configureGlobal({ slow: { timeout: 600_000 } })`
-- E2E: `configureEndToEndProject` / `configureEndToEndGlobal` / `configureEndToEnd`
+- E2E: `configureEndToEndPackage` / `configureEndToEndGlobal`
 
 ### Build CLI
 
-`@gtbuchanan/cli` provides the `gtb` binary with commands that orchestrate
-the build pipeline. Consumers install it and delegate `package.json` scripts:
+`@gtbuchanan/cli` provides the `gtb` binary with leaf commands that
+perform individual build steps. Turborepo handles orchestration;
+`gtb` no longer composes commands.
+
+Consumers install it and wire scripts in `package.json`:
 
 ```json
 {
   "scripts": {
-    "build": "gtb build",
-    "check": "gtb check",
-    "lint": "gtb lint",
-    "test": "gtb test"
+    "typecheck:ts": "gtb typecheck:ts",
+    "compile:ts": "gtb compile:ts",
+    "lint:eslint": "gtb lint:eslint",
+    "lint:oxlint": "gtb lint:oxlint",
+    "test:vitest": "gtb test:vitest",
+    "test:vitest:fast": "gtb test:vitest:fast",
+    "test:vitest:slow": "gtb test:vitest:slow",
+    "test:vitest:e2e": "gtb test:vitest:e2e"
   }
 }
 ```
@@ -74,15 +89,21 @@ This repo dogfoods via a `gtb` package.json script that runs the CLI
 source directly with `node --experimental-strip-types`, bypassing the
 compiled bin entry to avoid a bootstrapping dependency.
 
-Commands: `build`, `build:ci`, `check`, `compile`, `lint`, `lint:eslint`,
-`lint:oxlint`, `pack`, `prepare`, `test`, `test:fast`, `test:slow`,
-`test:e2e`.
-
-Parallel execution (lint, check, build:ci) uses concurrently's JS API
-with grouped output and kill-on-failure. Single commands use cross-spawn.
+Commands: `typecheck:ts`, `compile:ts`, `lint:eslint`, `lint:oxlint`,
+`test:vitest`, `test:vitest:fast`, `test:vitest:slow`, `test:vitest:e2e`,
+`pack`, `prepare`, `turbo:init`, `turbo:check`.
 
 Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
 globs for monorepos, or falls back to single-package mode.
+
+### Per-package linter/formatter configs
+
+- **ESLint** — Uses root `eslint.config.ts`; ESLint walks up to find it
+  automatically. No per-package config needed.
+- **oxlint** — Requires per-package config files. The `lint:oxlint`
+  command uses the `-c` flag to point at the package-local config.
+- **Vitest** — Each package uses `configurePackage()` in its own
+  `vitest.config.ts`.
 
 ### Linters
 
@@ -134,9 +155,9 @@ jobs:
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
 ```
 
-Repo-specific behavior is customized through `@gtbuchanan/cli` (`gtb`)
-commands invoked from `package.json` scripts. `ci.yml` also accepts
-workflow inputs (`run-e2e`, `run-slow-tests`) for toggling test tiers.
+Repo-specific behavior is customized through `package.json` scripts
+backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
+(`run-e2e`, `run-slow-tests`) for toggling test tiers.
 
 - **`ci.yml`** — Build, slow tests, e2e tests, and coverage merging.
   Inputs: `run-e2e` (default `true`), `run-slow-tests` (default `false`).
@@ -172,31 +193,31 @@ vs artifact):
 
 Commands:
 
-| Command     | Bucket                | Coverage | Needs pack |
-| ----------- | --------------------- | -------- | ---------- |
-| `test:fast` | Fast source           | Yes      | No         |
-| `test:slow` | Slow source           | Yes      | No         |
-| `test:e2e`  | Artifact              | No       | Yes        |
-| `test`      | test:fast + test:slow | Merged   | No         |
+| Command           | Bucket                     | Coverage | Needs pack |
+| ----------------- | -------------------------- | -------- | ---------- |
+| `test:vitest:fast`| Fast source                | Yes      | No         |
+| `test:vitest:slow`| Slow source                | Yes      | No         |
+| `test:vitest:e2e` | Artifact                   | No       | Yes        |
+| `test:vitest`     | test:vitest:fast + slow    | Merged   | No         |
 
-Pipeline:
+Pipeline (Turborepo task graph):
 
 ```text
-check   = compile → lint + test:fast (parallel)
-build   = check → test:slow + pack (parallel) → test:e2e
-buildCi = check → pack  (slow + e2e are separate CI jobs)
+typecheck:ts → lint:eslint, lint:oxlint, test:vitest:fast, test:vitest:slow
+^compile:ts → test:vitest:fast, test:vitest:slow
+compile:ts → //#pack → test:vitest:e2e
 ```
 
 Vitest configs:
 
-- `vitest.config.ts` — all source tests per package (coverage enabled)
-- `vitest.config.e2e.ts` — artifact tests per package (no coverage)
+- Per-package `vitest.config.ts` — source tests (coverage enabled via `configurePackage()`)
+- Per-package `vitest.config.e2e.ts` — artifact tests (no coverage)
 
 Slow tests use Vitest's native tag system (`test('name', { tags: ['slow'] }, ...)`
 or `/** @module-tag slow */`). The `--tags-filter` CLI option controls
 which tests run (`!slow` for fast, `slow` for slow-only, omit for all).
 
-CI coverage merging: both tiers write to `dist/coverage/` (separate
+CI coverage merging: per-package runs write to `dist/coverage/` (separate
 runners, no conflict). Fast and slow jobs upload as `coverage-fast`
 and `coverage-slow` artifacts. A `coverage` job downloads both and
 runs `vitest --merge-reports` to produce a unified report.
@@ -225,21 +246,16 @@ Consumer guidance:
 
 ## Build
 
-Run commands via the `gtb` script (not aliased to top-level scripts):
+Root scripts delegate to Turborepo:
 
 ```sh
-pnpm run gtb check     # compile → lint + test:fast (fast, use during development)
-pnpm run gtb build     # full pipeline: check → test:slow + pack → test:e2e
-pnpm run gtb build:ci  # build without slow/e2e (used in CI, separate jobs)
-pnpm run gtb lint      # oxlint && eslint
-pnpm run gtb test      # vitest (fast + slow source tests)
-pnpm run gtb test:fast # vitest (fast source tests only)
-pnpm run gtb test:slow # vitest (slow source tests only, tagged slow)
-pnpm run gtb test:e2e  # vitest (e2e tests, requires tarballs from pack)
+pnpm check     # turbo run check
+pnpm build:ci  # turbo run check compile:ts && pack
+pnpm build     # turbo run check compile:ts test:vitest:slow && pack && test:e2e
 ```
 
-Only `build:ci`, `test:e2e`, `test:slow`, and `prepare` have top-level
-script aliases (required by CI workflows and pnpm lifecycle hooks).
+This repo dogfoods `gtb` via a package.json script that runs the CLI
+source directly with `node --experimental-strip-types`.
 
 ## Versioning
 

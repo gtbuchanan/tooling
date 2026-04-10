@@ -1,7 +1,8 @@
 # @gtbuchanan/cli
 
 Shared build CLI for JavaScript/TypeScript projects. Provides the `gtb`
-binary that orchestrates compile, lint, test, pack, and publish workflows.
+binary with leaf commands that wrap individual tools and Turborepo
+integration for pipeline orchestration.
 
 ## Install
 
@@ -11,11 +12,26 @@ pnpm add -D @gtbuchanan/cli
 
 ## Usage
 
-Run commands directly via `pnpm exec gtb <command>` — no `package.json`
-scripts required. The CI workflows detect `gtb` automatically.
+After installing, generate your `turbo.json` and per-package scripts:
 
-The `prepare` script is the one exception — it must be declared so pnpm
-runs it on install to set up pre-commit hooks via prek:
+```sh
+pnpm exec gtb turbo:init
+```
+
+This scaffolds `turbo.json` task definitions and adds the necessary
+`package.json` scripts so Turborepo can orchestrate the pipeline. Re-run
+after adding packages or changing capabilities.
+
+Run the pipeline via Turborepo:
+
+```sh
+turbo run check       # compile → lint + test:fast (parallel)
+turbo run build       # full pipeline
+turbo run test:fast   # fast source tests only
+```
+
+The `prepare` script must be declared so pnpm runs it on install to set
+up pre-commit hooks via prek:
 
 ```json
 {
@@ -25,55 +41,33 @@ runs it on install to set up pre-commit hooks via prek:
 }
 ```
 
-Other script aliases are optional convenience shortcuts:
+Use `turbo:check` in CI to detect drift between the generated config and
+the current workspace state:
 
-```json
-{
-  "scripts": {
-    "build": "gtb build",
-    "check": "gtb check",
-    "lint": "gtb lint",
-    "test": "gtb test"
-  }
-}
+```sh
+pnpm exec gtb turbo:check
 ```
 
 ## Commands
 
-Commands are split into two tiers:
-
-- **Composed commands** orchestrate the build pipeline. They don't
-  forward extra arguments — their behavior is fixed so that adding
-  new toolchains (e.g., C#) later doesn't break consumers.
-- **Leaf commands** target a single tool and forward extra arguments.
-
-### Composed
-
-| Command     | Description                                          |
-| ----------- | ---------------------------------------------------- |
-| `build`     | Full pipeline: check → test:slow + pack → test:e2e   |
-| `build:ci`  | CI pipeline: check → pack (slow/e2e are separate CI) |
-| `check`     | Fast dev check: compile → lint + test:fast           |
-| `compile`   | All compilation steps (currently `tsc -b`)           |
-| `lint`      | All linters in parallel                              |
-| `pack`      | Generate manifests + `pnpm pack` each package        |
-| `test`      | All source tests (unified coverage)                  |
-| `test:fast` | Source tests excluding tests tagged `slow`           |
-| `test:slow` | Source tests tagged `slow` only                      |
-| `test:e2e`  | E2e tests (requires packed tarballs)                 |
-
-### Leaf
+All commands are leaf commands — they target a single tool and forward
+extra arguments. Turborepo handles orchestration (parallel groups,
+sequential pipelines, caching, dependency graphs).
 
 | Command            | Tool                                       |
 | ------------------ | ------------------------------------------ |
-| `compile:ts`       | `tsc -b`                                   |
+| `compile:ts`       | `tsc -p tsconfig.build.json`               |
+| `typecheck:ts`     | `tsc --noEmit`                             |
 | `lint:eslint`      | `eslint --max-warnings=0`                  |
 | `lint:oxlint`      | `oxlint`                                   |
+| `pack`             | Generate manifests + `pnpm pack`           |
 | `prepare`          | `prek install`                             |
 | `test:vitest`      | `vitest run`                               |
 | `test:vitest:fast` | `vitest run --tags-filter='!slow'`         |
 | `test:vitest:slow` | `vitest run --tags-filter=slow`            |
 | `test:vitest:e2e`  | `vitest run --config vitest.config.e2e.ts` |
+| `turbo:init`       | Scaffold `turbo.json` and package scripts  |
+| `turbo:check`      | Validate config against workspace state    |
 
 Leaf commands forward extra arguments:
 
@@ -81,12 +75,13 @@ Leaf commands forward extra arguments:
 gtb test:vitest --reporter=verbose
 gtb test:vitest --tags-filter='!slow && !db'
 gtb lint:eslint --fix
+gtb turbo:init --force   # overwrite existing scripts
 ```
 
 ## Test tags
 
-`test:fast` and `test:slow` use Vitest's `--tags-filter` to split tests
-by the `slow` tag. See
+`test:vitest:fast` and `test:vitest:slow` use Vitest's `--tags-filter`
+to split tests by the `slow` tag. See
 [@gtbuchanan/vitest-config](../vitest-config/README.md#test-tags)
 for how to tag tests and configure custom tags.
 
@@ -100,34 +95,18 @@ pnpm exec vitest --watch --tags-filter='!slow'
 
 ## Design
 
-### Why a custom CLI instead of Turborepo / Nx / Gulp?
+### Why a custom CLI alongside Turborepo?
 
-Those tools orchestrate scripts that each repo defines — consumers still
+Turborepo orchestrates scripts that each repo defines — consumers still
 specify _what_ `lint` or `compile` means in every repo. `gtb` centralizes
 those definitions so consumers inherit them by installing one package.
 This is closer to what `react-scripts` does for Create React App.
 
-The overlap is in the orchestration layer (parallel groups, sequential
-pipelines). Turborepo/Nx do that better — with caching, dependency
-graphs, and incremental builds. But they don't replace the "install
-one package, get all build commands" value.
-
-The two approaches are complementary: `gtb` could use Turborepo or Nx
-internally for orchestration without changing the consumer-facing surface.
-Consumers would still run `gtb build` and never know the difference.
-
-### Composed vs leaf command split
-
-Composed commands (`compile`, `lint`, `test`, etc.) don't forward
-arguments because they may dispatch to multiple toolchains in the
-future. For example, if a repo adds C# alongside TypeScript, `compile`
-would run both `tsc -b` and `dotnet build` — pass-through args would
-be ambiguous.
-
-Leaf commands (`compile:ts`, `lint:eslint`, `test:vitest`, etc.) target
-a single tool and forward all extra arguments. This split ensures
-consumers can always reach tool-specific flags without the composed
-commands needing to know about them.
+Turborepo provides the orchestration layer (caching, dependency graphs,
+incremental builds, parallel execution). `gtb` provides the tool
+definitions layer (what each command runs, with what flags). The two are
+complementary: `turbo:init` generates the `turbo.json` pipeline and
+`package.json` scripts that delegate to `gtb` leaf commands.
 
 ## Workspace detection
 
