@@ -192,14 +192,15 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks).toHaveProperty('test:vitest:e2e');
   });
 
-  it('includes //#pack when any package is published', ({ expect }) => {
+  it('includes pack:npm when any package is published', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ isPublished: true }),
     ]);
 
     const result = generateTurboJson(discovery);
 
-    expect(result.tasks).toHaveProperty('//#pack');
+    expect(result.tasks).toHaveProperty('pack:npm');
+    expect(result.tasks).toHaveProperty('pack');
   });
 
   it('prunes typecheck:ts from lint dependsOn when no TypeScript', ({ expect }) => {
@@ -276,7 +277,7 @@ describe.concurrent(generateTurboJson, () => {
 
     expect(result.tasks['build:ci']?.dependsOn).toContain('check');
     expect(result.tasks['build:ci']?.dependsOn).toContain('compile');
-    expect(result.tasks['build:ci']?.dependsOn).toContain('//#pack');
+    expect(result.tasks['build:ci']?.dependsOn).toContain('pack');
   });
 
   it('has $schema field', ({ expect }) => {

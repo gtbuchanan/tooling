@@ -15,6 +15,7 @@
   },
   "scripts": {
     "compile:ts": "node --experimental-strip-types scripts/flatten.ts",
+    "pack:npm": "pnpm run gtb pack:npm",
     "lint:eslint": "pnpm run gtb lint:eslint",
     "lint:oxlint": "pnpm run gtb lint:oxlint",
     "typecheck:ts": "pnpm run gtb typecheck:ts",

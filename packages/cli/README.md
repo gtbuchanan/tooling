@@ -60,7 +60,8 @@ sequential pipelines, caching, dependency graphs).
 | `typecheck:ts`     | `tsc --noEmit`                             |
 | `lint:eslint`      | `eslint --max-warnings=0`                  |
 | `lint:oxlint`      | `oxlint`                                   |
-| `pack`             | Generate manifests + `pnpm pack`           |
+| `pack`             | Generate manifests + `pnpm pack` (all)     |
+| `pack:npm`         | Generate manifest + `pnpm pack` (per-pkg)  |
 | `prepare`          | `prek install`                             |
 | `test:vitest`      | `vitest run`                               |
 | `test:vitest:fast` | `vitest run --tags-filter='!slow'`         |

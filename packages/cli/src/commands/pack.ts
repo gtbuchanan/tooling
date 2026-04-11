@@ -1,9 +1,10 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import crossSpawn from 'cross-spawn';
 import * as v from 'valibot';
 import {
   ManifestSchema,
+  type RootManifest,
   RootManifestSchema,
   buildOutput,
   buildRepoFields,
@@ -17,10 +18,13 @@ import {
 
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';
+const packDestination = join('dist', 'packages', 'npm');
+
+const readRootManifest = (rootDir: string): RootManifest =>
+  v.parse(RootManifestSchema, readManifest(rootDir));
 
 const generateManifests = ({ packageDirs, rootDir }: WorkspaceContext): void => {
-  const rootRaw = readFileSync(join(rootDir, 'package.json'), 'utf-8');
-  const root = v.parse(RootManifestSchema, JSON.parse(rootRaw));
+  const root = readRootManifest(rootDir);
 
   for (const pkgDir of packageDirs) {
     preparePackage(root, rootDir, pkgDir);
@@ -36,7 +40,7 @@ export const prepack = (options?: ResolveWorkspaceOptions): void => {
 };
 
 const preparePackage = (
-  root: v.InferOutput<typeof RootManifestSchema>,
+  root: RootManifest,
   rootDir: string,
   pkgDir: string,
 ): void => {
@@ -58,24 +62,14 @@ const preparePackage = (
   writeFileSync(join(target, '.npmignore'), npmignoreContent);
 };
 
-/** Generates `dist/source/` manifests and packs all publishable packages into tarballs. */
-export const pack = (options?: ResolveWorkspaceOptions): void => {
-  const ctx = resolveWorkspace(options);
-  generateManifests(ctx);
-  const destination = join(ctx.rootDir, 'dist', 'packages');
-  rmSync(destination, { force: true, recursive: true });
-  mkdirSync(destination, { recursive: true });
-
-  for (const pkgDir of ctx.packageDirs) {
-    packPackage(pkgDir, destination);
-  }
-};
-
-const packPackage = (pkgDir: string, destination: string): void => {
+const runPnpmPack = (pkgDir: string, destination: string): void => {
   const manifest = v.parse(ManifestSchema, readManifest(pkgDir));
   if (manifest.private === true) {
     return;
   }
+
+  rmSync(destination, { force: true, recursive: true });
+  mkdirSync(destination, { recursive: true });
 
   const result = crossSpawn.sync(
     'pnpm',
@@ -89,5 +83,27 @@ const packPackage = (pkgDir: string, destination: string): void => {
     throw new Error(
       `pnpm pack failed for ${pkgDir} with code ${String(result.status)}`,
     );
+  }
+};
+
+/**
+ * Per-package pack for npm. Generates `dist/source/` manifest and packs
+ * a tarball to `dist/packages/npm/`. Designed to run as a turbo task.
+ */
+export const packNpm = (): void => {
+  const pkgDir = process.cwd();
+  const ctx = resolveWorkspace({ cwd: pkgDir });
+  const root = readRootManifest(ctx.rootDir);
+  preparePackage(root, ctx.rootDir, pkgDir);
+  runPnpmPack(pkgDir, join(pkgDir, packDestination));
+};
+
+/** Generates `dist/source/` manifests and packs all publishable packages into tarballs. */
+export const pack = (options?: ResolveWorkspaceOptions): void => {
+  const ctx = resolveWorkspace(options);
+  generateManifests(ctx);
+
+  for (const pkgDir of ctx.packageDirs) {
+    runPnpmPack(pkgDir, join(pkgDir, packDestination));
   }
 };

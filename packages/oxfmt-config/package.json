@@ -18,6 +18,7 @@
   },
   "scripts": {
     "compile:ts": "tsc -b",
+    "pack:npm": "pnpm run gtb pack:npm",
     "lint:eslint": "pnpm run gtb lint:eslint",
     "lint:oxlint": "pnpm run gtb lint:oxlint",
     "test:vitest:fast": "pnpm run gtb test:vitest:fast",

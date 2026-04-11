@@ -208,8 +208,9 @@ generate:* → generate → typecheck:ts, compile:ts, lint:eslint, lint:oxlint
 typecheck:ts → typecheck → check
 typecheck:ts → lint:eslint, lint:oxlint → lint → check
 ^compile:ts → test:vitest:fast → check
-test:vitest:fast → test:vitest:slow
-compile:ts → compile → //#pack → test:vitest:e2e
+test:vitest:fast → test:vitest:slow → test:slow → build
+compile:ts → pack:npm → pack → test:vitest:e2e → test:e2e → build
+check + compile + pack → build:ci → build
 ```
 
 Test tasks include `env: ["CI"]` so Turborepo hashes the `CI` environment

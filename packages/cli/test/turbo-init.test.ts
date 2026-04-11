@@ -78,7 +78,7 @@ describe('turbo:init integration', () => {
     expect(turboJson.tasks).toHaveProperty('lint:oxlint');
     expect(turboJson.tasks).toHaveProperty('test:vitest:fast');
     expect(turboJson.tasks).toHaveProperty('test:vitest:slow');
-    expect(turboJson.tasks).toHaveProperty('//#pack');
+    expect(turboJson.tasks).toHaveProperty('pack:npm');
     expect(turboJson.tasks).toHaveProperty('check');
     expect(turboJson.tasks).toHaveProperty('build');
     expect(turboJson.tasks).toHaveProperty('build:ci');

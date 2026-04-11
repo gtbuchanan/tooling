@@ -1,5 +1,8 @@
 import type { SpawnSyncOptions } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  globSync, mkdirSync, mkdtempSync, readFileSync,
+  readdirSync, rmSync, writeFileSync,
+} from 'node:fs';
 import { createRequire } from 'node:module';
 import { devNull, tmpdir } from 'node:os';
 import { delimiter, dirname, join } from 'node:path';
@@ -59,10 +62,31 @@ export const matchTarball = (files: readonly string[], packageName: string): str
   return tgzName;
 };
 
-const locateTarball = (packageName: string): string => {
-  const outDir = process.env['OUTPUT_DIR'] ?? join(process.cwd(), 'dist');
-  const packagesDir = join(outDir, 'packages');
-  return join(packagesDir, matchTarball(readdirSync(packagesDir), packageName));
+interface TarballEntry {
+  readonly dir: string;
+  readonly name: string;
+}
+
+const collectTarballs = (): readonly TarballEntry[] => {
+  const wsFile = findUpSync('pnpm-workspace.yaml', { cwd: process.cwd() });
+  const wsRoot = wsFile === undefined ? process.cwd() : dirname(wsFile);
+  const packDirs = globSync('packages/*/dist/packages/npm', { cwd: wsRoot });
+  return packDirs.flatMap((packDir) => {
+    const abs = join(wsRoot, packDir);
+    return readdirSync(abs).map(file => ({ dir: abs, name: file }));
+  });
+};
+
+const locateTarballFrom = (
+  entries: readonly TarballEntry[],
+  packageName: string,
+): string => {
+  const name = matchTarball(entries.map(entry => entry.name), packageName);
+  const match = entries.find(entry => entry.name === name);
+  if (match === undefined) {
+    throw new Error(`Tarball ${name} not found`);
+  }
+  return join(match.dir, match.name);
 };
 
 /** Result of a synchronous child process execution. */
@@ -157,10 +181,11 @@ const createSubdir = (parent: string, name: string): string => {
 
 const resolveTarballs = (
   options: Pick<ProjectFixtureOptions, 'packageName' | 'workspaceDeps'>,
-): readonly string[] => [
-  locateTarball(options.packageName),
-  ...(options.workspaceDeps ?? []).map(locateTarball),
-];
+): readonly string[] => {
+  const entries = collectTarballs();
+  const names = [options.packageName, ...(options.workspaceDeps ?? [])];
+  return names.map(name => locateTarballFrom(entries, name));
+};
 
 /**
  * Creates an {@link IsolatedFixture} from a tarball. Installs hook and deps

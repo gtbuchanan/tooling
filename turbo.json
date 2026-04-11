@@ -1,6 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
+    "build": {
+      "dependsOn": ["build:ci", "test:slow", "test:e2e"]
+    },
+    "build:ci": {
+      "dependsOn": ["check", "compile", "pack"]
+    },
     "check": {
       "dependsOn": ["typecheck", "lint", "test:vitest:fast"]
     },
@@ -31,6 +37,26 @@
     "lint:oxlint": {
       "dependsOn": ["typecheck:ts"],
       "inputs": ["bin/**", "src/**", "test/**", "e2e/**", "scripts/**", "oxlint.config.*"],
+      "outputs": []
+    },
+    "pack": {
+      "dependsOn": ["pack:npm"]
+    },
+    "pack:npm": {
+      "dependsOn": ["compile:ts"],
+      "inputs": ["$TURBO_ROOT$/package.json", "dist/source/**", "package.json"],
+      "outputs": ["dist/packages/npm/**", "dist/source/package.json"]
+    },
+    "test:e2e": {
+      "dependsOn": ["test:vitest:e2e"]
+    },
+    "test:slow": {
+      "dependsOn": ["test:vitest:slow"]
+    },
+    "test:vitest:e2e": {
+      "dependsOn": ["pack", "^pack"],
+      "env": ["CI"],
+      "inputs": ["e2e/**", "vitest.config.e2e.*"],
       "outputs": []
     },
     "test:vitest:fast": {

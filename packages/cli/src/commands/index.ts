@@ -9,7 +9,7 @@ import {
   testVitestSlow,
   typecheckTs,
 } from './leaf.ts';
-import { pack } from './pack.ts';
+import { pack, packNpm } from './pack.ts';
 import { turboCheck } from './turbo-check.ts';
 import { turboInit } from './turbo-init.ts';
 
@@ -22,6 +22,7 @@ export const commands: Record<
   'lint:eslint': lintEslint,
   'lint:oxlint': lintOxlint,
   'pack': () => { pack(); },
+  'pack:npm': () => { packNpm(); },
   'prepare': prepare,
   'test:vitest': testVitest,
   'test:vitest:e2e': testVitestE2e,

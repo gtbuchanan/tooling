@@ -10,13 +10,13 @@
   "type": "module",
   "scripts": {
     "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
-    "build": "turbo run check compile test:vitest:slow && pnpm run gtb pack && pnpm run test:e2e",
-    "build:ci": "turbo run check compile && pnpm run gtb pack",
+    "build": "turbo run build",
+    "build:ci": "turbo run build:ci",
     "check": "turbo run check",
     "pack": "pnpm run gtb pack",
     "prepare": "pnpm run gtb prepare",
-    "test:e2e": "pnpm run gtb test:vitest:e2e",
-    "test:slow": "turbo run test:vitest:slow"
+    "test:e2e": "turbo run test:e2e",
+    "test:slow": "turbo run test:slow"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",

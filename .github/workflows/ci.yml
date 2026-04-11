@@ -26,7 +26,7 @@ jobs:
       - uses: actions/upload-artifact@v5
         with:
           name: packages
-          path: dist/packages/*.tgz
+          path: packages/*/dist/packages/npm/*.tgz
 
       # When slow tests are enabled, upload blob for merging.
       # Otherwise, upload coverage directly as the final artifact.
@@ -87,7 +87,6 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           name: packages
-          path: dist/packages
 
       - name: E2E Test
         run: pnpm test:e2e

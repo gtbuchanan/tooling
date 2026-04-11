@@ -1,5 +1,4 @@
-import { relative } from 'node:path';
-import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
+import type { WorkspaceDiscovery } from './discovery.ts';
 
 /** Turborepo task definition. */
 export interface TurboTask {
@@ -16,14 +15,14 @@ export interface TurboJson {
 }
 
 /** Conditional entry for building records from flags. */
-interface ConditionalEntry<Value> {
+export interface ConditionalEntry<Value> {
   readonly condition: boolean;
   readonly key: string;
   readonly value: Value;
 }
 
 /** Filters conditional entries and builds a record. */
-const collect = <Value>(
+export const collect = <Value>(
   entries: readonly ConditionalEntry<Value>[],
 ): Record<string, Value> =>
   Object.fromEntries(
@@ -31,7 +30,7 @@ const collect = <Value>(
   );
 
 /** Flags summarizing which tool categories are active across all packages. */
-interface ToolFlags {
+export interface ToolFlags {
   readonly hasCheck: boolean;
   readonly hasE2e: boolean;
   readonly hasEslint: boolean;
@@ -44,7 +43,8 @@ interface ToolFlags {
   readonly hasVitest: boolean;
 }
 
-const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
+/** @internal Exported for script generation. */
+export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasEslint = discovery.packages.some(pkg => pkg.hasEslint);
   const hasOxlint = discovery.packages.some(pkg => pkg.hasOxlint);
   const hasLint = hasEslint || hasOxlint;
@@ -101,13 +101,16 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
       outputs: ['dist/source/**'],
     },
   },
+];
+
+const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
-    key: '//#pack',
+    key: 'pack:npm',
     value: {
       dependsOn: ['compile:ts'],
-      inputs: ['packages/*/dist/source/**', 'packages/*/package.json'],
-      outputs: ['dist/packages/**', 'packages/*/dist/source/package.json'],
+      inputs: ['$TURBO_ROOT$/package.json', 'dist/source/**', 'package.json'],
+      outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
     },
   },
 ];
@@ -159,7 +162,7 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
       condition: flags.hasE2e,
       key: 'test:vitest:e2e',
       value: {
-        dependsOn: flags.hasPublished ? ['//#pack'] : [],
+        dependsOn: flags.hasPublished ? ['pack', '^pack'] : [],
         env: ['CI'],
         inputs: ['e2e/**', 'vitest.config.e2e.*'],
         outputs: [],
@@ -181,6 +184,14 @@ const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask
     condition: flags.hasPublished,
     key: 'compile',
     value: { dependsOn: ['compile:ts'] },
+  },
+];
+
+const packAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasPublished,
+    key: 'pack',
+    value: { dependsOn: ['pack:npm'] },
   },
 ];
 
@@ -212,17 +223,22 @@ const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
 ];
 
 const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
+  const testAggregates: readonly ConditionalEntry<TurboTask>[] = [
+    { condition: flags.hasVitest, key: 'test:slow', value: { dependsOn: ['test:vitest:slow'] } },
+    { condition: flags.hasE2e, key: 'test:e2e', value: { dependsOn: ['test:vitest:e2e'] } },
+  ];
   const ciDeps = [
     ...(flags.hasCheck ? ['check'] : []),
-    ...(flags.hasPublished ? ['compile', '//#pack'] : []),
+    ...(flags.hasPublished ? ['compile', 'pack'] : []),
   ];
   const fullDeps = [
     ...ciDeps,
-    ...(flags.hasVitest ? ['test:vitest:slow'] : []),
-    ...(flags.hasE2e ? ['test:vitest:e2e'] : []),
+    ...(flags.hasVitest ? ['test:slow'] : []),
+    ...(flags.hasE2e ? ['test:e2e'] : []),
   ];
 
   return [
+    ...testAggregates,
     { condition: ciDeps.length > 0, key: 'build:ci', value: { dependsOn: ciDeps } },
     { condition: fullDeps.length > 0, key: 'build', value: { dependsOn: fullDeps } },
   ];
@@ -234,11 +250,13 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   const entries = [
     ...typecheckTasks(flags),
     ...compileTasks(flags),
+    ...packTasks(flags),
     ...lintTasks(flags),
     ...testTasks(flags),
     ...generateAggregate(flags),
     ...typecheckAggregate(flags),
     ...compileAggregate(flags),
+    ...packAggregate(flags),
     ...lintAggregate(flags),
     ...checkAggregate(flags),
     ...buildAggregates(flags),
@@ -247,69 +265,4 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   return { $schema: 'https://turbo.build/schema.json', tasks: collect(entries) };
 };
 
-const packageScriptEntries = (
-  caps: PackageCapabilities,
-  isSelfHosted: boolean,
-): readonly ConditionalEntry<string>[] => {
-  // Self-hosted repos define gtb as a package.json script (shim to source).
-  // Bare `gtb` only resolves node_modules/.bin — not sibling scripts — so
-  // Self-hosted must use `pnpm run gtb` to invoke the script by name.
-  const cmd = (name: string): string =>
-    isSelfHosted ? `pnpm run gtb ${name}` : `gtb ${name}`;
-
-  return [
-    { condition: caps.hasTypeScript, key: 'typecheck:ts', value: cmd('typecheck:ts') },
-    { condition: caps.isPublished, key: 'compile:ts', value: cmd('compile:ts') },
-    { condition: caps.hasEslint, key: 'lint:eslint', value: cmd('lint:eslint') },
-    { condition: caps.hasOxlint, key: 'lint:oxlint', value: cmd('lint:oxlint') },
-    {
-      condition: caps.hasVitestTests,
-      key: 'test:vitest:fast',
-      value: cmd('test:vitest:fast'),
-    },
-    {
-      condition: caps.hasVitestTests,
-      key: 'test:vitest:slow',
-      value: cmd('test:vitest:slow'),
-    },
-  ];
-};
-
-/** Generates the gtb shim script for self-hosted packages. */
-const gtbShim = (pkgDir: string, rootDir: string): string => {
-  const rel = relative(pkgDir, rootDir).replaceAll('\\', '/');
-
-  return `node --experimental-strip-types ${rel}/packages/cli/bin/gtb.ts`;
-};
-
-/** Generates per-package scripts from capabilities. */
-export const generatePackageScripts = (
-  caps: PackageCapabilities,
-  isSelfHosted: boolean,
-  rootDir?: string,
-): Record<string, string> => {
-  const scripts = collect(packageScriptEntries(caps, isSelfHosted));
-  if (isSelfHosted && rootDir !== undefined) {
-    scripts['gtb'] = gtbShim(caps.dir, rootDir);
-  }
-
-  return scripts;
-};
-
-const rootScriptEntries = (flags: ToolFlags): readonly ConditionalEntry<string>[] => [
-  { condition: flags.hasCheck, key: 'check', value: 'turbo run check' },
-  { condition: flags.hasCheck || flags.hasPublished, key: 'build:ci', value: 'turbo run build:ci' },
-  {
-    condition: flags.hasCheck || flags.hasPublished || flags.hasE2e,
-    key: 'build',
-    value: 'turbo run build',
-  },
-  { condition: flags.hasPublished, key: 'pack', value: 'gtb pack' },
-  { condition: flags.hasE2e, key: 'test:e2e', value: 'gtb test:vitest:e2e' },
-  { condition: true, key: 'prepare', value: 'gtb prepare' },
-];
-
-/** Generates root-level convenience scripts. */
-export const generateRootScripts = (
-  discovery: WorkspaceDiscovery,
-): Record<string, string> => collect(rootScriptEntries(resolveToolFlags(discovery)));
+export { generatePackageScripts, generateRootScripts } from './turbo-scripts.ts';
