@@ -10,18 +10,10 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
+      - uses: rharkor/caching-for-turbo@v2
+
       - name: Build
         run: pnpm build:ci
-
-      # Two artifacts from the same build output:
-      # - source: prepared publishConfig.directory contents for changeset publish
-      # - packages: packed .tgz files for e2e tests
-      # A single artifact can't serve both — tarballs would need to be
-      # unpacked back into per-package dist/source/ dirs for publish.
-      - uses: actions/upload-artifact@v5
-        with:
-          name: source
-          path: packages/*/dist/source/
 
       - uses: actions/upload-artifact@v5
         with:
@@ -84,10 +76,9 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: actions/download-artifact@v5
-        with:
-          name: packages
+      - uses: rharkor/caching-for-turbo@v2
 
+      # Turbo cache restores pack:npm outputs from the build job.
       - name: E2E Test
         run: pnpm test:e2e
 
@@ -99,6 +90,8 @@ jobs:
       - uses: actions/checkout@v5
 
       - uses: ./.github/actions/pnpm-tasks
+
+      - uses: rharkor/caching-for-turbo@v2
 
       - name: Slow Tests
         run: pnpm test:slow
