@@ -95,14 +95,16 @@ Commands: `typecheck:ts`, `compile:ts`, `lint:eslint`, `lint:oxlint`,
 Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
 globs for monorepos, or falls back to single-package mode.
 
-### Per-package linter/formatter configs
+### Per-package tool configs
 
-- **ESLint** — Uses root `eslint.config.ts`; ESLint walks up to find it
-  automatically. No per-package config needed.
-- **oxlint** — Requires per-package config files. The `lint:oxlint`
-  command uses the `-c` flag to point at the package-local config.
-- **Vitest** — Each package uses `configurePackage()` in its own
-  `vitest.config.ts`.
+- **ESLint** — Per-package `eslint.config.ts` importing `configure()`
+  from `@gtbuchanan/eslint-config`. ESLint caching enabled via
+  `--cache --cache-location dist/.eslintcache`.
+- **oxlint** — Per-package `oxlint.config.ts` importing `configure()`
+  from `@gtbuchanan/oxlint-config`. Pre-commit hook uses
+  `--disable-nested-config` to prevent parent config conflicts.
+- **Vitest** — Per-package `vitest.config.ts` using `configurePackage()`
+  from `@gtbuchanan/vitest-config/configure`.
 
 ### Linters
 
@@ -206,6 +208,12 @@ typecheck:ts → lint:eslint, lint:oxlint, test:vitest:fast, test:vitest:slow
 ^compile:ts → test:vitest:fast, test:vitest:slow
 compile:ts → //#pack → test:vitest:e2e
 ```
+
+Lint and test tasks depend on `typecheck:ts` to ensure type errors are
+caught before linting. Both ESLint (with `typescript-eslint`) and oxlint
+(with `typeAware`) run their own type resolution, so the dependency is
+not strictly required — but type errors can cause confusing linter output.
+Consumers who prefer parallelism can remove the dependency.
 
 Vitest configs:
 
