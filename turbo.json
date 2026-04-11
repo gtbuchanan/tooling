@@ -2,7 +2,7 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "check": {
-      "dependsOn": ["lint", "test:vitest:fast"]
+      "dependsOn": ["typecheck", "lint", "test:vitest:fast"]
     },
     "compile": {
       "dependsOn": ["compile:ts"]
@@ -44,6 +44,9 @@
       "env": ["CI"],
       "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
       "outputs": ["dist/coverage/vitest/**", "dist/test-results/vitest/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["typecheck:ts"]
     },
     "typecheck:ts": {
       "inputs": [

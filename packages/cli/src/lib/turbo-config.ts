@@ -46,16 +46,17 @@ const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasEslint = discovery.packages.some(pkg => pkg.hasEslint);
   const hasOxlint = discovery.packages.some(pkg => pkg.hasOxlint);
   const hasLint = hasEslint || hasOxlint;
+  const hasTypeScript = discovery.packages.some(pkg => pkg.hasTypeScript);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
 
   return {
-    hasCheck: hasLint || hasVitest,
+    hasCheck: hasTypeScript || hasLint || hasVitest,
     hasE2e: discovery.root.hasVitestE2e,
     hasEslint,
     hasLint,
     hasOxlint,
     hasPublished: discovery.packages.some(pkg => pkg.isPublished),
-    hasTypeScript: discovery.packages.some(pkg => pkg.hasTypeScript),
+    hasTypeScript,
     hasVitest,
   };
 };
@@ -71,6 +72,14 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
       ],
       outputs: [],
     },
+  },
+];
+
+const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasTypeScript,
+    key: 'typecheck',
+    value: { dependsOn: ['typecheck:ts'] },
   },
 ];
 
@@ -171,6 +180,7 @@ const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
     key: 'check',
     value: {
       dependsOn: [
+        ...(flags.hasTypeScript ? ['typecheck'] : []),
         ...(flags.hasLint ? ['lint'] : []),
         ...(flags.hasVitest ? ['test:vitest:fast'] : []),
       ],
@@ -203,6 +213,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...compileTasks(flags),
     ...lintTasks(flags),
     ...testTasks(flags),
+    ...typecheckAggregate(flags),
     ...compileAggregate(flags),
     ...lintAggregate(flags),
     ...checkAggregate(flags),
