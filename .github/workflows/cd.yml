@@ -21,7 +21,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: rharkor/caching-for-turbo@v2
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
       # Restore compiled dist/source/ from turbo cache (no artifact needed).
       - run: pnpm pack

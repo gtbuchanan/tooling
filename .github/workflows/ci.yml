@@ -10,7 +10,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: rharkor/caching-for-turbo@v2
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
       - name: Build
         run: pnpm build:ci
@@ -39,7 +39,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: rharkor/caching-for-turbo@v2
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
       # Turbo cache restores fast + slow blobs, then runs the merge.
       - name: Merge Coverage
@@ -61,7 +61,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: rharkor/caching-for-turbo@v2
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
       # Turbo cache restores pack:npm outputs from the build job.
       - name: E2E Test
@@ -76,7 +76,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: rharkor/caching-for-turbo@v2
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
       - name: Slow Tests
         run: pnpm test:slow
