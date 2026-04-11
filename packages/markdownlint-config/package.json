@@ -14,10 +14,10 @@
     "linkDirectory": false
   },
   "scripts": {
-    "compile:ts": "gtb compile:ts",
-    "lint:eslint": "gtb lint:eslint",
-    "lint:oxlint": "gtb lint:oxlint",
-    "typecheck:ts": "gtb typecheck:ts",
+    "compile:ts": "pnpm run gtb compile:ts",
+    "lint:eslint": "pnpm run gtb lint:eslint",
+    "lint:oxlint": "pnpm run gtb lint:oxlint",
+    "typecheck:ts": "pnpm run gtb typecheck:ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
   "dependencies": {

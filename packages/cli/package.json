@@ -26,12 +26,12 @@
     "linkDirectory": false
   },
   "scripts": {
-    "compile:ts": "gtb compile:ts",
-    "lint:eslint": "gtb lint:eslint",
-    "lint:oxlint": "gtb lint:oxlint",
-    "test:vitest:fast": "gtb test:vitest:fast",
-    "test:vitest:slow": "gtb test:vitest:slow",
-    "typecheck:ts": "gtb typecheck:ts",
+    "compile:ts": "pnpm run gtb compile:ts",
+    "lint:eslint": "pnpm run gtb lint:eslint",
+    "lint:oxlint": "pnpm run gtb lint:oxlint",
+    "test:vitest:fast": "pnpm run gtb test:vitest:fast",
+    "test:vitest:slow": "pnpm run gtb test:vitest:slow",
+    "typecheck:ts": "pnpm run gtb typecheck:ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
   "dependencies": {

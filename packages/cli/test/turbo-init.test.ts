@@ -185,7 +185,7 @@ describe('turbo:init integration', () => {
       discovery.packages[0]!, discovery.isSelfHosted, discovery.rootDir,
     );
 
-    expect(scripts['typecheck:ts']).toBe('gtb typecheck:ts');
+    expect(scripts['typecheck:ts']).toBe('pnpm run gtb typecheck:ts');
     expect(scripts['gtb']).toContain('packages/cli/bin/gtb.ts');
   });
 });

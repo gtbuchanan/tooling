@@ -206,8 +206,13 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
 
 const packageScriptEntries = (
   caps: PackageCapabilities,
+  isSelfHosted: boolean,
 ): readonly ConditionalEntry<string>[] => {
-  const cmd = (name: string): string => `gtb ${name}`;
+  // Self-hosted repos define gtb as a package.json script (shim to source).
+  // Bare `gtb` only resolves node_modules/.bin — not sibling scripts — so
+  // Self-hosted must use `pnpm run gtb` to invoke the script by name.
+  const cmd = (name: string): string =>
+    isSelfHosted ? `pnpm run gtb ${name}` : `gtb ${name}`;
 
   return [
     { condition: caps.hasTypeScript, key: 'typecheck:ts', value: cmd('typecheck:ts') },
@@ -240,7 +245,7 @@ export const generatePackageScripts = (
   isSelfHosted: boolean,
   rootDir?: string,
 ): Record<string, string> => {
-  const scripts = collect(packageScriptEntries(caps));
+  const scripts = collect(packageScriptEntries(caps, isSelfHosted));
   if (isSelfHosted && rootDir !== undefined) {
     scripts['gtb'] = gtbShim(caps.dir, rootDir);
   }

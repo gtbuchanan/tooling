@@ -276,7 +276,7 @@ describe.concurrent(generatePackageScripts, () => {
 
     const result = generatePackageScripts(caps, true, '/root');
 
-    expect(result).toHaveProperty('typecheck:ts', 'gtb typecheck:ts');
+    expect(result).toHaveProperty('typecheck:ts', 'pnpm run gtb typecheck:ts');
     expect(result['gtb']).toContain('node --experimental-strip-types');
     expect(result['gtb']).toContain('packages/cli/bin/gtb.ts');
   });
