@@ -23,11 +23,11 @@ export const lintEslint = async (
   });
 };
 
-/** Runs oxlint. */
+/** Runs oxlint with nested config disabled (per-package config is authoritative). */
 export const lintOxlint = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('oxlint', { args });
+  await run('oxlint', { args: ['--disable-nested-config', ...args] });
 };
 
 /** Runs all source tests via Vitest. */
