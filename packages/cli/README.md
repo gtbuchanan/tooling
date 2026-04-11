@@ -108,6 +108,46 @@ definitions layer (what each command runs, with what flags). The two are
 complementary: `turbo:init` generates the `turbo.json` pipeline and
 `package.json` scripts that delegate to `gtb` leaf commands.
 
+## Code generation
+
+Projects that use code generation (Paraglide, Prisma, protobuf, etc.)
+should define `generate:<tool>` scripts in their `package.json`:
+
+```json
+{
+  "scripts": {
+    "generate:prisma": "prisma generate",
+    "generate:paraglide": "paraglide-js compile"
+  }
+}
+```
+
+`turbo:init` discovers these scripts and wires them into the pipeline
+automatically. The `generate` aggregate runs before `typecheck:ts`,
+`compile:ts`, and all lint tasks, so generated code is always available
+when those steps execute.
+
+**Prefer standalone generation over build plugins.** Embedding generation
+in a build plugin (e.g., Vite Paraglide plugin) breaks Turborepo's cache
+granularity — the generation step can't be cached independently, and
+typecheck can't run until the full build completes. Standalone
+`generate:<tool>` scripts have explicit inputs and outputs that Turborepo
+caches individually.
+
+Define inputs and outputs in a per-package `turbo.json`:
+
+```json
+{
+  "extends": ["//"],
+  "tasks": {
+    "generate:prisma": {
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["src/generated/**"]
+    }
+  }
+}
+```
+
 ## Workspace detection
 
 `pack` supports both monorepo and single-package layouts:

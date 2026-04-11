@@ -1,45 +1,96 @@
 import { describe, it } from 'vitest';
-import type { PackageCapabilities, WorkspaceDiscovery } from '#src/lib/discovery.js';
-import {
-  generatePackageScripts,
-  generateRootScripts,
-  generateTurboJson,
-} from '#src/lib/turbo-config.js';
-
-const makeCapabilities = (
-  overrides: Partial<PackageCapabilities> = {},
-): PackageCapabilities => {
-  const merged = {
-    dir: '/fake/pkg',
-    hasE2e: false,
-    hasEslint: false,
-    hasOxlint: false,
-    hasTest: false,
-    hasTypeScript: false,
-    hasVitest: false,
-    hasVitestE2e: false,
-    hasVitestTests: false,
-    isPublished: false,
-    ...overrides,
-  };
-  return {
-    ...merged,
-    hasVitestTests: overrides.hasVitestTests ?? (merged.hasVitest && merged.hasTest),
-  };
-};
-
-const makeDiscovery = (
-  packages: readonly PackageCapabilities[],
-  rootOverrides: Partial<PackageCapabilities> = {},
-): WorkspaceDiscovery => ({
-  isMonorepo: packages.length > 1,
-  isSelfHosted: false,
-  packages,
-  root: makeCapabilities(rootOverrides),
-  rootDir: '/fake/root',
-});
+import { generateTurboJson } from '#src/lib/turbo-config.js';
+import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
 
 describe.concurrent(generateTurboJson, () => {
+  it('includes generate aggregate when any package has generate scripts', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({
+        generateScripts: ['generate:prisma'],
+      }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['generate']?.dependsOn).toStrictEqual(['generate:prisma']);
+  });
+
+  it('deduplicates generate scripts across packages', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({
+        generateScripts: ['generate:prisma'],
+      }),
+      makeCapabilities({
+        generateScripts: ['generate:paraglide', 'generate:prisma'],
+      }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['generate']?.dependsOn).toStrictEqual([
+      'generate:paraglide',
+      'generate:prisma',
+    ]);
+  });
+
+  it('omits generate aggregate when no packages have generate scripts', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities()]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).not.toHaveProperty('generate');
+  });
+
+  it('typecheck:ts depends on generate when generate exists', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ generateScripts: ['generate:test'], hasTypeScript: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['typecheck:ts']?.dependsOn).toContain('generate');
+  });
+
+  it('typecheck:ts has no generate dep without generate scripts', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasTypeScript: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['typecheck:ts']?.dependsOn ?? []).not.toContain('generate');
+  });
+
+  it('compile:ts depends on generate when generate exists', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ generateScripts: ['generate:test'], isPublished: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['compile:ts']?.dependsOn).toContain('generate');
+  });
+
+  it('lint:eslint depends on generate when generate exists', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ generateScripts: ['generate:test'], hasEslint: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['lint:eslint']?.dependsOn).toContain('generate');
+  });
+
+  it('lint:oxlint depends on generate when generate exists', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ generateScripts: ['generate:test'], hasOxlint: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['lint:oxlint']?.dependsOn).toContain('generate');
+  });
+
   it('includes typecheck:ts when any package has TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ hasTypeScript: true }),
@@ -234,117 +285,5 @@ describe.concurrent(generateTurboJson, () => {
     const result = generateTurboJson(discovery);
 
     expect(result.$schema).toBe('https://turbo.build/schema.json');
-  });
-});
-
-describe.concurrent(generatePackageScripts, () => {
-  it('generates typecheck:ts for TypeScript packages', ({ expect }) => {
-    const caps = makeCapabilities({ hasTypeScript: true });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('typecheck:ts', 'gtb typecheck:ts');
-  });
-
-  it('generates compile:ts for published packages', ({ expect }) => {
-    const caps = makeCapabilities({ isPublished: true });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('compile:ts', 'gtb compile:ts');
-  });
-
-  it('generates lint:eslint for ESLint packages', ({ expect }) => {
-    const caps = makeCapabilities({ hasEslint: true });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('lint:eslint', 'gtb lint:eslint');
-  });
-
-  it('generates test:vitest:fast for Vitest + test/ packages', ({ expect }) => {
-    const caps = makeCapabilities({ hasTest: true, hasVitest: true });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('test:vitest:fast', 'gtb test:vitest:fast');
-    expect(result).toHaveProperty('test:vitest:slow', 'gtb test:vitest:slow');
-  });
-
-  it('generates gtb shim for self-hosted packages', ({ expect }) => {
-    const caps = makeCapabilities({ dir: '/root/packages/app', hasTypeScript: true });
-
-    const result = generatePackageScripts(caps, true, '/root');
-
-    expect(result).toHaveProperty('typecheck:ts', 'pnpm run gtb typecheck:ts');
-    expect(result['gtb']).toContain('node --experimental-strip-types');
-    expect(result['gtb']).toContain('packages/cli/bin/gtb.ts');
-  });
-
-  it('generates nothing for empty capabilities', ({ expect }) => {
-    const caps = makeCapabilities();
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(Object.keys(result)).toHaveLength(0);
-  });
-});
-
-describe.concurrent(generateRootScripts, () => {
-  it('generates turbo run check', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({
-        hasEslint: true,
-        hasTest: true,
-        hasTypeScript: true,
-        hasVitest: true,
-      }),
-    ]);
-
-    const result = generateRootScripts(discovery);
-
-    expect(result).toHaveProperty('check', 'turbo run check');
-  });
-
-  it('generates turbo run build', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({
-        hasEslint: true,
-        hasTest: true,
-        hasTypeScript: true,
-        hasVitest: true,
-        isPublished: true,
-      }),
-    ]);
-
-    const result = generateRootScripts(discovery);
-
-    expect(result).toHaveProperty('build', 'turbo run build');
-  });
-
-  it('generates pack script when published packages exist', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
-    ]);
-
-    const result = generateRootScripts(discovery);
-
-    expect(result).toHaveProperty('pack', 'gtb pack');
-  });
-
-  it('omits pack when no published packages', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
-
-    const result = generateRootScripts(discovery);
-
-    expect(result).not.toHaveProperty('pack');
-  });
-
-  it('always generates prepare', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
-
-    const result = generateRootScripts(discovery);
-
-    expect(result).toHaveProperty('prepare', 'gtb prepare');
   });
 });

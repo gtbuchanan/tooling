@@ -35,6 +35,8 @@ interface ToolFlags {
   readonly hasCheck: boolean;
   readonly hasE2e: boolean;
   readonly hasEslint: boolean;
+  readonly hasGenerate: boolean;
+  readonly generateScripts: readonly string[];
   readonly hasLint: boolean;
   readonly hasOxlint: boolean;
   readonly hasPublished: boolean;
@@ -46,13 +48,18 @@ const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasEslint = discovery.packages.some(pkg => pkg.hasEslint);
   const hasOxlint = discovery.packages.some(pkg => pkg.hasOxlint);
   const hasLint = hasEslint || hasOxlint;
+  const generateScripts = [...new Set(
+    discovery.packages.flatMap(pkg => pkg.generateScripts),
+  )].sort();
   const hasTypeScript = discovery.packages.some(pkg => pkg.hasTypeScript);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
 
   return {
+    generateScripts,
     hasCheck: hasTypeScript || hasLint || hasVitest,
     hasE2e: discovery.root.hasVitestE2e,
     hasEslint,
+    hasGenerate: generateScripts.length > 0,
     hasLint,
     hasOxlint,
     hasPublished: discovery.packages.some(pkg => pkg.isPublished),
@@ -66,6 +73,7 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
     condition: flags.hasTypeScript,
     key: 'typecheck:ts',
     value: {
+      dependsOn: [...(flags.hasGenerate ? ['generate'] : [])],
       inputs: [
         'bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**',
         'tsconfig.json', 'tsconfig.*.json',
@@ -88,7 +96,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
     condition: flags.hasPublished,
     key: 'compile:ts',
     value: {
-      dependsOn: ['^compile:ts'],
+      dependsOn: ['^compile:ts', ...(flags.hasGenerate ? ['generate'] : [])],
       inputs: ['bin/**', 'src/**', 'scripts/**', 'tsconfig.json', 'tsconfig.*.json'],
       outputs: ['dist/source/**'],
     },
@@ -105,7 +113,10 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
 ];
 
 const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const deps = flags.hasTypeScript ? ['typecheck:ts'] : [];
+  const deps = [
+    ...(flags.hasGenerate ? ['generate'] : []),
+    ...(flags.hasTypeScript ? ['typecheck:ts'] : []),
+  ];
   const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**'];
 
   return [
@@ -156,6 +167,14 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     },
   ];
 };
+
+const generateAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasGenerate,
+    key: 'generate',
+    value: { dependsOn: [...flags.generateScripts] },
+  },
+];
 
 const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
@@ -217,6 +236,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...compileTasks(flags),
     ...lintTasks(flags),
     ...testTasks(flags),
+    ...generateAggregate(flags),
     ...typecheckAggregate(flags),
     ...compileAggregate(flags),
     ...lintAggregate(flags),

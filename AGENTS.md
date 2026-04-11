@@ -204,6 +204,7 @@ Commands:
 Pipeline (Turborepo task graph):
 
 ```text
+generate:* → generate → typecheck:ts, compile:ts, lint:eslint, lint:oxlint
 typecheck:ts → typecheck → check
 typecheck:ts → lint:eslint, lint:oxlint → lint → check
 ^compile:ts → test:vitest:fast → check

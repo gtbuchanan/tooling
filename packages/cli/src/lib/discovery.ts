@@ -10,6 +10,10 @@ export interface PackageCapabilities {
   readonly dir: string;
   /** Has an `e2e/` directory. */
   readonly hasE2e: boolean;
+  /** Has one or more `generate:*` scripts in package.json. */
+  readonly hasGenerate: boolean;
+  /** Names of `generate:*` scripts found in package.json. */
+  readonly generateScripts: readonly string[];
   /** Has ESLint config or `@gtbuchanan/eslint-config` dependency. */
   readonly hasEslint: boolean;
   /** Has oxlint config or `@gtbuchanan/oxlint-config` dependency. */
@@ -72,6 +76,11 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
   ...manifest.devDependencies,
 });
 
+const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
+  Object.keys(manifest.scripts ?? {})
+    .filter(name => name.startsWith('generate:'))
+    .sort();
+
 const buildCapabilities = (
   dir: string,
   manifest: Manifest,
@@ -80,11 +89,14 @@ const buildCapabilities = (
   const hasVitest = hasDep(deps, '@gtbuchanan/vitest-config') ||
     hasConfigFile(dir, 'vitest.config');
   const hasTest = hasDir(dir, 'test');
+  const generateScripts = collectGenerateScripts(manifest);
 
   return {
     dir,
+    generateScripts,
     hasE2e: hasDir(dir, 'e2e'),
     hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasConfigFile(dir, 'eslint.config'),
+    hasGenerate: generateScripts.length > 0,
     hasOxlint: hasDep(deps, '@gtbuchanan/oxlint-config') || hasConfigFile(dir, 'oxlint.config'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || existsSync(join(dir, 'tsconfig.json')),

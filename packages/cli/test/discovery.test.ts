@@ -153,6 +153,47 @@ describe(discoverPackage, () => {
     expect(result.hasVitestE2e).toBe(true);
   });
 
+  it('detects generate via script prefix', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {
+      scripts: { 'generate:prisma': 'prisma generate' },
+    });
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasGenerate).toBe(true);
+    expect(result.generateScripts).toStrictEqual(['generate:prisma']);
+  });
+
+  it('collects multiple generate scripts', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {
+      scripts: {
+        'generate:paraglide': 'paraglide-js compile',
+        'generate:prisma': 'prisma generate',
+      },
+    });
+
+    const result = discoverPackage(dir);
+
+    expect(result.generateScripts).toStrictEqual([
+      'generate:paraglide',
+      'generate:prisma',
+    ]);
+  });
+
+  it('does not detect generate without colon prefix', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {
+      scripts: { codegen: 'some-tool generate', generate: 'gen all' },
+    });
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasGenerate).toBe(false);
+    expect(result.generateScripts).toStrictEqual([]);
+  });
+
   it('returns all false for minimal package', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
@@ -162,6 +203,7 @@ describe(discoverPackage, () => {
     expect(result).toMatchObject({
       hasE2e: false,
       hasEslint: false,
+      hasGenerate: false,
       hasOxlint: false,
       hasTest: false,
       hasTypeScript: false,
