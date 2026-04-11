@@ -204,7 +204,7 @@ Commands:
 Pipeline (Turborepo task graph):
 
 ```text
-typecheck:ts → lint:eslint, lint:oxlint, test:vitest:fast, test:vitest:slow
+typecheck:ts → lint:eslint, lint:oxlint
 ^compile:ts → test:vitest:fast, test:vitest:slow
 compile:ts → //#pack → test:vitest:e2e
 ```
@@ -213,11 +213,11 @@ Test tasks include `env: ["CI"]` so Turborepo hashes the `CI` environment
 variable into the task cache key. This prevents local and CI caches from
 colliding — Vitest uses different reporters and coverage settings in CI.
 
-Lint and test tasks depend on `typecheck:ts` to ensure type errors are
-caught before linting. Both ESLint (with `typescript-eslint`) and oxlint
+Lint tasks depend on `typecheck:ts` to prevent confusing linter output
+from type errors. Both ESLint (with `typescript-eslint`) and oxlint
 (with `typeAware`) run their own type resolution, so the dependency is
-not strictly required — but type errors can cause confusing linter output.
-Consumers who prefer parallelism can remove the dependency.
+not strictly required — consumers who prefer parallelism can remove it.
+Test tasks do not depend on `typecheck:ts` to maximize parallelism.
 
 Vitest configs:
 

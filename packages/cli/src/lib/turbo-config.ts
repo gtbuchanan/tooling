@@ -119,7 +119,6 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
 
 const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
-    ...(flags.hasTypeScript ? ['typecheck:ts'] : []),
     ...(flags.hasPublished ? ['^compile:ts'] : []),
   ];
   const shared: TurboTask = {

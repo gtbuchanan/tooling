@@ -34,13 +34,13 @@
       "outputs": []
     },
     "test:vitest:fast": {
-      "dependsOn": ["typecheck:ts", "^compile:ts"],
+      "dependsOn": ["^compile:ts"],
       "env": ["CI"],
       "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
       "outputs": ["dist/coverage/vitest/**", "dist/test-results/vitest/**"]
     },
     "test:vitest:slow": {
-      "dependsOn": ["typecheck:ts", "^compile:ts"],
+      "dependsOn": ["^compile:ts"],
       "env": ["CI"],
       "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
       "outputs": ["dist/coverage/vitest/**", "dist/test-results/vitest/**"]
