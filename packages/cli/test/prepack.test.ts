@@ -1,15 +1,13 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'vitest';
 import { prepack } from '#src/commands/pack.js';
-
-const createTempDir = (): string =>
-  mkdtempSync(join(tmpdir(), 'gtb-test-'));
+import { createTempDir } from './helpers.ts';
 
 const jsonIndent = 2;
 
-const writeJson = (dir: string, name: string, data: unknown): void => {
+/** Writes formatted JSON (matches prepack output for assertion). */
+const writeFormattedJson = (dir: string, name: string, data: unknown): void => {
   writeFileSync(
     join(dir, name),
     `${JSON.stringify(data, null, jsonIndent)}\n`,
@@ -26,7 +24,7 @@ describe(prepack, () => {
       join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeJson(root, 'package.json', {
+    writeFormattedJson(root, 'package.json', {
       bugs: 'https://github.com/test/repo/issues',
       homepage: 'https://github.com/test/repo',
       repository: {
@@ -36,7 +34,7 @@ describe(prepack, () => {
     });
     const pkgDir = join(root, 'packages', 'my-lib');
     mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
+    writeFormattedJson(pkgDir, 'package.json', {
       dependencies: { valibot: '^1.0.0' },
       devDependencies: { vitest: '^4.0.0' },
       exports: { '.': './src/index.ts' },
@@ -78,10 +76,10 @@ describe(prepack, () => {
       join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeJson(root, 'package.json', {});
+    writeFormattedJson(root, 'package.json', {});
     const pkgDir = join(root, 'packages', 'my-lib');
     mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
+    writeFormattedJson(pkgDir, 'package.json', {
       name: '@test/my-lib',
       publishConfig: { directory: 'dist/source' },
     });
@@ -102,10 +100,10 @@ describe(prepack, () => {
       join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeJson(root, 'package.json', {});
+    writeFormattedJson(root, 'package.json', {});
     const pkgDir = join(root, 'packages', 'cli');
     mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
+    writeFormattedJson(pkgDir, 'package.json', {
       bin: { mycli: './dist/source/bin.js' },
       name: '@test/cli',
       publishConfig: {
@@ -128,10 +126,10 @@ describe(prepack, () => {
       join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeJson(root, 'package.json', {});
+    writeFormattedJson(root, 'package.json', {});
     const pkgDir = join(root, 'packages', 'internal');
     mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
+    writeFormattedJson(pkgDir, 'package.json', {
       name: '@test/internal',
       private: true,
       publishConfig: { directory: 'dist/source' },
@@ -150,10 +148,10 @@ describe(prepack, () => {
       join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeJson(root, 'package.json', {});
+    writeFormattedJson(root, 'package.json', {});
     const pkgDir = join(root, 'packages', 'no-publish');
     mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
+    writeFormattedJson(pkgDir, 'package.json', {
       name: '@test/no-publish',
     });
 
@@ -166,7 +164,7 @@ describe(prepack, () => {
 
   it('works in single-package mode', ({ expect }) => {
     const root = createTempDir();
-    writeJson(root, 'package.json', {
+    writeFormattedJson(root, 'package.json', {
       name: '@test/single',
       publishConfig: {
         directory: 'dist/source',

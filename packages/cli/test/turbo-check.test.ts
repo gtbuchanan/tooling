@@ -1,5 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as v from 'valibot';
 import { describe, it } from 'vitest';
@@ -11,17 +10,11 @@ import {
   generatePackageScripts,
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
+import { createTempDir, writeJson } from './helpers.ts';
 
 const TurboJsonSchema = v.looseObject({
   tasks: v.optional(v.record(v.string(), v.unknown())),
 });
-
-const createTempDir = (): string =>
-  mkdtempSync(join(tmpdir(), 'gtb-turbo-check-'));
-
-const writeJson = (dir: string, name: string, data: unknown): void => {
-  writeFileSync(join(dir, name), JSON.stringify(data));
-};
 
 const createConsumerProject = (): string => {
   const root = createTempDir();

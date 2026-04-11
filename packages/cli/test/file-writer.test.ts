@@ -1,14 +1,11 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'vitest';
 import {
   mergePackageScripts,
   writeJsonFile,
 } from '#src/lib/file-writer.js';
-
-const createTempDir = (): string =>
-  mkdtempSync(join(tmpdir(), 'gtb-writer-'));
+import { createTempDir } from './helpers.ts';
 
 const readJson = (path: string): unknown =>
   JSON.parse(readFileSync(path, 'utf-8'));

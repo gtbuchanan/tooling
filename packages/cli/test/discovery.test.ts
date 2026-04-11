@@ -1,15 +1,8 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'vitest';
 import { discoverPackage, discoverWorkspace } from '#src/lib/discovery.js';
-
-const createTempDir = (): string =>
-  mkdtempSync(join(tmpdir(), 'gtb-discovery-'));
-
-const writeJson = (dir: string, name: string, data: unknown): void => {
-  writeFileSync(join(dir, name), JSON.stringify(data));
-};
+import { createTempDir, writeJson } from './helpers.ts';
 
 const writeFile = (dir: string, name: string, content = ''): void => {
   writeFileSync(join(dir, name), content);
