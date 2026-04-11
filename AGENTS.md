@@ -209,6 +209,10 @@ typecheck:ts → lint:eslint, lint:oxlint, test:vitest:fast, test:vitest:slow
 compile:ts → //#pack → test:vitest:e2e
 ```
 
+Test tasks include `env: ["CI"]` so Turborepo hashes the `CI` environment
+variable into the task cache key. This prevents local and CI caches from
+colliding — Vitest uses different reporters and coverage settings in CI.
+
 Lint and test tasks depend on `typecheck:ts` to ensure type errors are
 caught before linting. Both ESLint (with `typescript-eslint`) and oxlint
 (with `typeAware`) run their own type resolution, so the dependency is
