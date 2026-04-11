@@ -65,7 +65,10 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
     condition: flags.hasTypeScript,
     key: 'typecheck:ts',
     value: {
-      inputs: ['src/**', 'test/**', 'e2e/**', 'scripts/**', 'tsconfig.json', 'tsconfig.*.json'],
+      inputs: [
+        'bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**',
+        'tsconfig.json', 'tsconfig.*.json',
+      ],
       outputs: [],
     },
   },
@@ -77,7 +80,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
     key: 'compile:ts',
     value: {
       dependsOn: ['^compile:ts'],
-      inputs: ['src/**', 'tsconfig.json', 'tsconfig.*.json'],
+      inputs: ['bin/**', 'src/**', 'tsconfig.json', 'tsconfig.*.json'],
       outputs: ['dist/source/**'],
     },
   },
@@ -94,7 +97,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
 
 const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = flags.hasTypeScript ? ['typecheck:ts'] : [];
-  const inputs = ['src/**', 'test/**', 'e2e/**', 'scripts/**'];
+  const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**'];
 
   return [
     {
@@ -122,7 +125,7 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
   const shared: TurboTask = {
     dependsOn: deps,
     env: ['CI'],
-    inputs: ['src/**', 'test/**', 'vitest.config.*'],
+    inputs: ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.*'],
     outputs: ['dist/coverage/**', 'dist/vitest-blob/**'],
   };
 
