@@ -1,11 +1,13 @@
 {
-  "dependencies": {
-    "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
-    "@stylistic/eslint-plugin": "catalog:",
-    "eslint-plugin-import-x": "catalog:"
+  "name": "@gtbuchanan/oxlint-config",
+  "version": "0.1.0",
+  "description": "Shared oxlint configuration",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
   },
-  "devDependencies": {
-    "@gtbuchanan/test-utils": "workspace:*"
+  "exports": {
+    ".": "./src/index.ts"
   },
   "publishConfig": {
     "directory": "dist/source",
@@ -23,15 +25,13 @@
     "typecheck:ts": "gtb typecheck:ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
-  "name": "@gtbuchanan/oxlint-config",
-  "version": "0.1.0",
-  "description": "Shared oxlint configuration",
-  "type": "module",
-  "imports": {
-    "#src/*": "./src/*"
+  "dependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
+    "@stylistic/eslint-plugin": "catalog:",
+    "eslint-plugin-import-x": "catalog:"
   },
-  "exports": {
-    ".": "./src/index.ts"
+  "devDependencies": {
+    "@gtbuchanan/test-utils": "workspace:*"
   },
   "peerDependencies": {
     "oxlint": "^1.58.0",

@@ -192,12 +192,12 @@ vs artifact):
 
 Commands:
 
-| Command           | Bucket                     | Coverage | Needs pack |
-| ----------------- | -------------------------- | -------- | ---------- |
-| `test:vitest:fast`| Fast source                | Yes      | No         |
-| `test:vitest:slow`| Slow source                | Yes      | No         |
-| `test:vitest:e2e` | Artifact                   | No       | Yes        |
-| `test:vitest`     | test:vitest:fast + slow    | Merged   | No         |
+| Command            | Bucket                  | Coverage | Needs pack |
+| ------------------ | ----------------------- | -------- | ---------- |
+| `test:vitest:fast` | Fast source             | Yes      | No         |
+| `test:vitest:slow` | Slow source             | Yes      | No         |
+| `test:vitest:e2e`  | Artifact                | No       | Yes        |
+| `test:vitest`      | test:vitest:fast + slow | Merged   | No         |
 
 Pipeline (Turborepo task graph):
 

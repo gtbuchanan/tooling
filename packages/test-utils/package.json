@@ -1,13 +1,14 @@
 {
-  "dependencies": {
-    "cross-spawn": "catalog:",
-    "find-up-simple": "catalog:",
-    "valibot": "catalog:"
-  },
-  "devDependencies": {
-    "@types/cross-spawn": "catalog:"
-  },
+  "name": "@gtbuchanan/test-utils",
+  "version": "0.0.0",
   "private": true,
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "exports": {
+    ".": "./src/fixture.ts"
+  },
   "scripts": {
     "lint:eslint": "gtb lint:eslint",
     "lint:oxlint": "gtb lint:oxlint",
@@ -16,14 +17,13 @@
     "typecheck:ts": "gtb typecheck:ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
-  "name": "@gtbuchanan/test-utils",
-  "version": "0.0.0",
-  "type": "module",
-  "imports": {
-    "#src/*": "./src/*"
+  "dependencies": {
+    "cross-spawn": "catalog:",
+    "find-up-simple": "catalog:",
+    "valibot": "catalog:"
   },
-  "exports": {
-    ".": "./src/fixture.ts"
+  "devDependencies": {
+    "@types/cross-spawn": "catalog:"
   },
   "engines": {
     "node": ">=22.17"

@@ -1,10 +1,17 @@
 {
-  "dependencies": {
-    "console-fail-test": "catalog:"
+  "name": "@gtbuchanan/vitest-config",
+  "version": "0.1.0",
+  "description": "Shared Vitest configuration",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
   },
-  "devDependencies": {
-    "@gtbuchanan/oxlint-config": "workspace:*",
-    "@gtbuchanan/test-utils": "workspace:*"
+  "exports": {
+    ".": "./src/index.ts",
+    "./configure": "./src/configure.ts",
+    "./configure-e2e": "./src/configure-e2e.ts",
+    "./setup": "./src/setup.ts",
+    "./console-fail-test": "./src/console-fail-test.ts"
   },
   "publishConfig": {
     "directory": "dist/source",
@@ -26,19 +33,12 @@
     "typecheck:ts": "gtb typecheck:ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
   },
-  "name": "@gtbuchanan/vitest-config",
-  "version": "0.1.0",
-  "description": "Shared Vitest configuration",
-  "type": "module",
-  "imports": {
-    "#src/*": "./src/*"
+  "dependencies": {
+    "console-fail-test": "catalog:"
   },
-  "exports": {
-    ".": "./src/index.ts",
-    "./configure": "./src/configure.ts",
-    "./configure-e2e": "./src/configure-e2e.ts",
-    "./setup": "./src/setup.ts",
-    "./console-fail-test": "./src/console-fail-test.ts"
+  "devDependencies": {
+    "@gtbuchanan/oxlint-config": "workspace:*",
+    "@gtbuchanan/test-utils": "workspace:*"
   },
   "peerDependencies": {
     "vitest": "^4.0.0"
