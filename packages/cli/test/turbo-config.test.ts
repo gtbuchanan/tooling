@@ -224,7 +224,7 @@ describe.concurrent(generateTurboJson, () => {
     const result = generateTurboJson(discovery);
 
     expect(result.tasks['build:ci']?.dependsOn).toContain('check');
-    expect(result.tasks['build:ci']?.dependsOn).toContain('compile:ts');
+    expect(result.tasks['build:ci']?.dependsOn).toContain('compile');
     expect(result.tasks['build:ci']?.dependsOn).toContain('//#pack');
   });
 

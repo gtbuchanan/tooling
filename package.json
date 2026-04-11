@@ -10,8 +10,8 @@
   "type": "module",
   "scripts": {
     "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
-    "build": "turbo run check compile:ts test:vitest:slow && pnpm run gtb pack && pnpm run test:e2e",
-    "build:ci": "turbo run check compile:ts && pnpm run gtb pack",
+    "build": "turbo run check compile test:vitest:slow && pnpm run gtb pack && pnpm run test:e2e",
+    "build:ci": "turbo run check compile && pnpm run gtb pack",
     "check": "turbo run check",
     "pack": "pnpm run gtb pack",
     "prepare": "pnpm run gtb prepare",

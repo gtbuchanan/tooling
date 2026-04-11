@@ -4,9 +4,12 @@
     "check": {
       "dependsOn": ["lint", "test:vitest:fast"]
     },
+    "compile": {
+      "dependsOn": ["compile:ts"]
+    },
     "compile:ts": {
       "dependsOn": ["^compile:ts"],
-      "inputs": ["bin/**", "src/**", "tsconfig.json", "tsconfig.*.json"],
+      "inputs": ["bin/**", "src/**", "scripts/**", "tsconfig.json", "tsconfig.*.json"],
       "outputs": ["dist/source/**"]
     },
     "lint": {

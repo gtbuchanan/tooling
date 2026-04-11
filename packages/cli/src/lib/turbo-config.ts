@@ -80,7 +80,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
     key: 'compile:ts',
     value: {
       dependsOn: ['^compile:ts'],
-      inputs: ['bin/**', 'src/**', 'tsconfig.json', 'tsconfig.*.json'],
+      inputs: ['bin/**', 'src/**', 'scripts/**', 'tsconfig.json', 'tsconfig.*.json'],
       outputs: ['dist/source/**'],
     },
   },
@@ -145,6 +145,14 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
   ];
 };
 
+const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasPublished,
+    key: 'compile',
+    value: { dependsOn: ['compile:ts'] },
+  },
+];
+
 const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasLint,
@@ -174,7 +182,7 @@ const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
 const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const ciDeps = [
     ...(flags.hasCheck ? ['check'] : []),
-    ...(flags.hasPublished ? ['compile:ts', '//#pack'] : []),
+    ...(flags.hasPublished ? ['compile', '//#pack'] : []),
   ];
   const fullDeps = [
     ...ciDeps,
@@ -196,6 +204,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...compileTasks(flags),
     ...lintTasks(flags),
     ...testTasks(flags),
+    ...compileAggregate(flags),
     ...lintAggregate(flags),
     ...checkAggregate(flags),
     ...buildAggregates(flags),
