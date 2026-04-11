@@ -285,7 +285,7 @@ export const configureGlobal = (
         projectPatterns,
         coverageDirs,
       ),
-      reportsDirectory: 'dist/coverage',
+      reportsDirectory: 'dist/coverage/vitest',
       tags: [
         { timeout: defaultSlowTimeout, ...slowOptions, name: 'slow' },
         ...extraTags,
