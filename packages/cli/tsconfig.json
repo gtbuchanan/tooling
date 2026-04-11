@@ -1,4 +1,20 @@
 {
   "files": [],
-  "references": [{ "path": "bin" }, { "path": "src" }, { "path": "test" }, { "path": "e2e" }]
+  "references": [
+    {
+      "path": "bin"
+    },
+    {
+      "path": "src"
+    },
+    {
+      "path": "test"
+    },
+    {
+      "path": "e2e"
+    },
+    {
+      "path": "tsconfig.root.json"
+    }
+  ]
 }

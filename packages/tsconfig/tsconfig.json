@@ -1,4 +1,14 @@
 {
   "files": [],
-  "references": [{ "path": "scripts" }, { "path": "e2e" }]
+  "references": [
+    {
+      "path": "scripts"
+    },
+    {
+      "path": "e2e"
+    },
+    {
+      "path": "tsconfig.root.json"
+    }
+  ]
 }

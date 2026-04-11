@@ -167,7 +167,7 @@ describe(discoverPackage, () => {
       hasTypeScript: false,
       hasVitest: false,
       hasVitestE2e: false,
-isPublished: false,
+      isPublished: false,
     });
   });
 });
