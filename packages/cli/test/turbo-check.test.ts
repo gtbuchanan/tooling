@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as v from 'valibot';
 import { describe, it } from 'vitest';
+import { parseIgnoreArgs } from '#src/commands/turbo-check.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { writeJsonFile } from '#src/lib/file-writer.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
@@ -151,5 +152,35 @@ describe('turbo:check drift detection', () => {
     const missing = Object.keys(expected).filter(name => !(name in actual));
 
     expect(missing).toHaveLength(0);
+  });
+});
+
+describe(parseIgnoreArgs, () => {
+  it('parses single --ignore flag', ({ expect }) => {
+    const result = parseIgnoreArgs(['--ignore', 'test:vitest:slow']);
+
+    expect(result.has('test:vitest:slow')).toBe(true);
+  });
+
+  it('parses multiple --ignore flags', ({ expect }) => {
+    const result = parseIgnoreArgs([
+      '--ignore', 'test:vitest:slow',
+      '--ignore', 'lint:oxlint',
+    ]);
+
+    expect(result.has('test:vitest:slow')).toBe(true);
+    expect(result.has('lint:oxlint')).toBe(true);
+  });
+
+  it('returns empty set with no flags', ({ expect }) => {
+    const result = parseIgnoreArgs([]);
+
+    expect(result.size).toBe(0);
+  });
+
+  it('ignores --ignore without value', ({ expect }) => {
+    const result = parseIgnoreArgs(['--ignore']);
+
+    expect(result.size).toBe(0);
   });
 });
