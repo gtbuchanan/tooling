@@ -18,6 +18,14 @@
       "inputs": ["bin/**", "src/**", "scripts/**", "tsconfig.json", "tsconfig.*.json"],
       "outputs": ["dist/source/**"]
     },
+    "coverage:merge": {
+      "dependsOn": ["coverage:vitest:merge"]
+    },
+    "coverage:vitest:merge": {
+      "dependsOn": ["test:vitest:fast", "test:vitest:slow"],
+      "inputs": ["dist/test-results/vitest/merge/blob-*.json"],
+      "outputs": ["dist/coverage/vitest/merged/**"]
+    },
     "lint": {
       "dependsOn": ["lint:eslint", "lint:oxlint"]
     },
@@ -63,13 +71,13 @@
       "dependsOn": ["^compile:ts"],
       "env": ["CI"],
       "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
-      "outputs": ["dist/coverage/vitest/**", "dist/test-results/vitest/**"]
+      "outputs": ["dist/coverage/vitest/fast/**", "dist/test-results/vitest/merge/blob-fast.json"]
     },
     "test:vitest:slow": {
-      "dependsOn": ["test:vitest:fast", "^compile:ts"],
+      "dependsOn": ["^compile:ts"],
       "env": ["CI"],
       "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
-      "outputs": ["dist/coverage/vitest/**", "dist/test-results/vitest/**"]
+      "outputs": ["dist/coverage/vitest/slow/**", "dist/test-results/vitest/merge/blob-slow.json"]
     },
     "typecheck": {
       "dependsOn": ["typecheck:ts"]

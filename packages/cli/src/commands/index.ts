@@ -1,5 +1,6 @@
 import {
   compileTs,
+  coverageVitestMerge,
   lintEslint,
   lintOxlint,
   prepare,
@@ -19,6 +20,7 @@ export const commands: Record<
   (args: readonly string[]) => Promise<void> | void
 > = {
   'compile:ts': compileTs,
+  'coverage:vitest:merge': coverageVitestMerge,
   'lint:eslint': lintEslint,
   'lint:oxlint': lintOxlint,
   'pack': () => { pack(); },

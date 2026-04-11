@@ -144,19 +144,37 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
   const deps = [
     ...(flags.hasPublished ? ['^compile:ts'] : []),
   ];
-  const shared: TurboTask = {
-    dependsOn: deps,
-    env: ['CI'],
-    inputs: ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.*'],
-    outputs: ['dist/coverage/vitest/**', 'dist/test-results/vitest/**'],
-  };
+  const testInputs = ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.*'];
 
   return [
-    { condition: flags.hasVitest, key: 'test:vitest:fast', value: shared },
+    {
+      condition: flags.hasVitest,
+      key: 'test:vitest:fast',
+      value: {
+        dependsOn: deps,
+        env: ['CI'],
+        inputs: testInputs,
+        outputs: ['dist/coverage/vitest/fast/**', 'dist/test-results/vitest/merge/blob-fast.json'],
+      },
+    },
     {
       condition: flags.hasVitest,
       key: 'test:vitest:slow',
-      value: { ...shared, dependsOn: ['test:vitest:fast', ...deps] },
+      value: {
+        dependsOn: deps,
+        env: ['CI'],
+        inputs: testInputs,
+        outputs: ['dist/coverage/vitest/slow/**', 'dist/test-results/vitest/merge/blob-slow.json'],
+      },
+    },
+    {
+      condition: flags.hasVitest,
+      key: 'coverage:vitest:merge',
+      value: {
+        dependsOn: ['test:vitest:fast', 'test:vitest:slow'],
+        inputs: ['dist/test-results/vitest/merge/blob-*.json'],
+        outputs: ['dist/coverage/vitest/merged/**'],
+      },
     },
     {
       condition: flags.hasE2e,
@@ -226,6 +244,11 @@ const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>
   const testAggregates: readonly ConditionalEntry<TurboTask>[] = [
     { condition: flags.hasVitest, key: 'test:slow', value: { dependsOn: ['test:vitest:slow'] } },
     { condition: flags.hasE2e, key: 'test:e2e', value: { dependsOn: ['test:vitest:e2e'] } },
+    {
+      condition: flags.hasVitest,
+      key: 'coverage:merge',
+      value: { dependsOn: ['coverage:vitest:merge'] },
+    },
   ];
   const ciDeps = [
     ...(flags.hasCheck ? ['check'] : []),

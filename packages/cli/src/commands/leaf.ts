@@ -41,7 +41,14 @@ export const testVitest = async (
 export const testVitestFast = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('vitest', { args: ['run', '--tags-filter=!slow', ...args] });
+  await run('vitest', {
+    args: [
+      'run', '--tags-filter=!slow',
+      '--outputFile.blob=dist/test-results/vitest/merge/blob-fast.json',
+      '--coverage.reportsDirectory=dist/coverage/vitest/fast',
+      ...args,
+    ],
+  });
 };
 
 /** Runs slow source tests via Vitest (only tests tagged `slow`). */
@@ -49,7 +56,25 @@ export const testVitestSlow = async (
   args: readonly string[],
 ): Promise<void> => {
   await run('vitest', {
-    args: ['run', '--tags-filter=slow', '--pass-with-no-tests', ...args],
+    args: [
+      'run', '--tags-filter=slow', '--pass-with-no-tests',
+      '--outputFile.blob=dist/test-results/vitest/merge/blob-slow.json',
+      '--coverage.reportsDirectory=dist/coverage/vitest/slow',
+      ...args,
+    ],
+  });
+};
+
+/** Merges fast + slow coverage blobs into a unified report. */
+export const coverageVitestMerge = async (
+  args: readonly string[],
+): Promise<void> => {
+  await run('vitest', {
+    args: [
+      '--merge-reports', 'dist/test-results/vitest/merge',
+      '--coverage.reportsDirectory=dist/coverage/vitest/merged',
+      ...args,
+    ],
   });
 };
 

@@ -226,7 +226,7 @@ export const buildGlobalConfig = (
         },
       }),
       mockReset: true,
-      outputFile: { blob: 'dist/test-results/vitest/blob.json' },
+      outputFile: { blob: 'dist/test-results/vitest/blob-all.json' },
       reporters: ['default', 'blob'],
       setupFiles: resolveSetupFiles(setupOptions),
       ...(spec.tags && { tags: [...spec.tags] }),
@@ -285,7 +285,7 @@ export const configureGlobal = (
         projectPatterns,
         coverageDirs,
       ),
-      reportsDirectory: 'dist/coverage/vitest',
+      reportsDirectory: 'dist/coverage/vitest/all',
       tags: [
         { timeout: defaultSlowTimeout, ...slowOptions, name: 'slow' },
         ...extraTags,

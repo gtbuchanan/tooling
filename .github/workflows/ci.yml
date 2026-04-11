@@ -20,21 +20,14 @@ jobs:
           name: packages
           path: packages/*/dist/packages/npm/*.tgz
 
-      # When slow tests are enabled, upload blob for merging.
-      # Otherwise, upload coverage directly as the final artifact.
-      - if: inputs.run-slow-tests == true
-        uses: actions/upload-artifact@v5
-        with:
-          if-no-files-found: error
-          name: test-results-fast
-          path: packages/*/dist/test-results/
-
+      # When slow tests are enabled, merged coverage comes from the coverage job.
+      # Otherwise, fast-only coverage is the final artifact.
       - if: inputs.run-slow-tests != true
         uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
           name: coverage
-          path: packages/*/dist/coverage/
+          path: packages/*/dist/coverage/vitest/fast/
 
   coverage:
     if: inputs.run-slow-tests == true
@@ -46,25 +39,17 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: actions/download-artifact@v5
-        with:
-          path: dist/test-results-parts
-          pattern: test-results-*
+      - uses: rharkor/caching-for-turbo@v2
 
+      # Turbo cache restores fast + slow blobs, then runs the merge.
       - name: Merge Coverage
-        run: |
-          mkdir -p dist/test-results/vitest
-          for f in dist/test-results-parts/*/vitest/blob.json; do
-            part="$(basename "$(dirname "$(dirname "$f")")")"
-            cp "$f" "dist/test-results/vitest/${part}.json"
-          done
-          pnpm exec vitest --merge-reports dist/test-results/vitest --reporter=default
+        run: pnpm coverage:merge
 
       - uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
           name: coverage
-          path: dist/coverage/
+          path: packages/*/dist/coverage/vitest/merged/
 
   e2e:
     if: inputs.run-e2e == '' || inputs.run-e2e == true

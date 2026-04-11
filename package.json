@@ -13,6 +13,7 @@
     "build": "turbo run build",
     "build:ci": "turbo run build:ci",
     "check": "turbo run check",
+    "coverage:merge": "turbo run coverage:merge",
     "pack": "pnpm run gtb pack",
     "prepare": "pnpm run gtb prepare",
     "test:e2e": "turbo run test:e2e",
