@@ -24,7 +24,7 @@ jobs:
       - uses: rharkor/caching-for-turbo@v2
 
       # Restore compiled dist/source/ from turbo cache (no artifact needed).
-      - run: pnpm exec turbo run pack
+      - run: pnpm pack
 
       - env:
           NPM_CONFIG_PROVENANCE: 'true'

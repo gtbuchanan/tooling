@@ -97,7 +97,7 @@ describe.concurrent(generateRootScripts, () => {
 
     const result = generateRootScripts(discovery);
 
-    expect(result).toHaveProperty('pack', 'gtb pack');
+    expect(result).toHaveProperty('pack', 'turbo run pack');
   });
 
   it('omits pack when no published packages', ({ expect }) => {

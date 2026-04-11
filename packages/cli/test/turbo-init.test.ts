@@ -125,7 +125,7 @@ describe('turbo:init integration', () => {
       'build': 'turbo run build',
       'build:ci': 'turbo run build:ci',
       'check': 'turbo run check',
-      'pack': 'gtb pack',
+      'pack': 'turbo run pack',
       'prepare': 'gtb prepare',
     });
   });

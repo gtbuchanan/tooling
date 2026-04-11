@@ -71,7 +71,7 @@ const rootScriptEntries = (flags: ToolFlags): readonly ConditionalEntry<string>[
     value: 'turbo run build',
   },
   { condition: flags.hasVitest, key: 'coverage:merge', value: 'turbo run coverage:merge' },
-  { condition: flags.hasPublished, key: 'pack', value: 'gtb pack' },
+  { condition: flags.hasPublished, key: 'pack', value: 'turbo run pack' },
   { condition: flags.hasE2e, key: 'test:e2e', value: 'turbo run test:e2e' },
   { condition: flags.hasVitest, key: 'test:slow', value: 'turbo run test:slow' },
   { condition: true, key: 'prepare', value: 'gtb prepare' },

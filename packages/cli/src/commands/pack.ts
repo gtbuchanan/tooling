@@ -112,13 +112,3 @@ export const packNpm = (): void => {
   const root = readRootManifest(ctx.rootDir);
   prepareAndPack(root, ctx.rootDir, pkgDir);
 };
-
-/** Generates `dist/source/` manifests and packs all publishable packages into tarballs. */
-export const pack = (options?: ResolveWorkspaceOptions): void => {
-  const ctx = resolveWorkspace(options);
-  const root = readRootManifest(ctx.rootDir);
-
-  for (const pkgDir of ctx.packageDirs) {
-    prepareAndPack(root, ctx.rootDir, pkgDir);
-  }
-};
