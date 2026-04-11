@@ -226,7 +226,7 @@ export const buildGlobalConfig = (
         },
       }),
       mockReset: true,
-      outputFile: { blob: 'dist/vitest-blob/blob.json' },
+      outputFile: { blob: 'dist/test-results/vitest/blob.json' },
       reporters: ['default', 'blob'],
       setupFiles: resolveSetupFiles(setupOptions),
       ...(spec.tags && { tags: [...spec.tags] }),

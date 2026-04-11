@@ -126,7 +126,7 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     dependsOn: deps,
     env: ['CI'],
     inputs: ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.*'],
-    outputs: ['dist/coverage/vitest/**', 'dist/vitest-blob/**'],
+    outputs: ['dist/coverage/vitest/**', 'dist/test-results/vitest/**'],
   };
 
   return [

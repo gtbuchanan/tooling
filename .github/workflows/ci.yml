@@ -34,15 +34,15 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
-          name: vitest-blob-fast
-          path: dist/vitest-blob/
+          name: test-results-fast
+          path: packages/*/dist/test-results/
 
       - if: inputs.run-slow-tests != true
         uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
           name: coverage
-          path: dist/coverage/
+          path: packages/*/dist/coverage/
 
   coverage:
     if: inputs.run-slow-tests == true
@@ -56,16 +56,17 @@ jobs:
 
       - uses: actions/download-artifact@v5
         with:
-          path: dist/vitest-blob-parts
-          pattern: vitest-blob-*
+          path: dist/test-results-parts
+          pattern: test-results-*
 
       - name: Merge Coverage
         run: |
-          mkdir -p dist/vitest-blob
-          for f in dist/vitest-blob-parts/*/blob.json; do
-            cp "$f" "dist/vitest-blob/$(basename "$(dirname "$f")").json"
+          mkdir -p dist/test-results/vitest
+          for f in dist/test-results-parts/*/vitest/blob.json; do
+            part="$(basename "$(dirname "$(dirname "$f")")")"
+            cp "$f" "dist/test-results/vitest/${part}.json"
           done
-          pnpm exec vitest --merge-reports dist/vitest-blob --reporter=default
+          pnpm exec vitest --merge-reports dist/test-results/vitest --reporter=default
 
       - uses: actions/upload-artifact@v5
         with:
@@ -106,8 +107,8 @@ jobs:
       - uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
-          name: vitest-blob-slow
-          path: dist/vitest-blob/
+          name: test-results-slow
+          path: packages/*/dist/test-results/
 
 name: CI
 
