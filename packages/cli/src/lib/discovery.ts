@@ -1,8 +1,12 @@
 import { existsSync, globSync } from 'node:fs';
 import { join } from 'node:path';
 import * as v from 'valibot';
-import { ManifestSchema } from './manifest.ts';
-import { readManifest, resolveWorkspace } from './workspace.ts';
+import { type Manifest, ManifestSchema } from './manifest.ts';
+import {
+  type ResolveWorkspaceOptions,
+  readManifest,
+  resolveWorkspace,
+} from './workspace.ts';
 
 /** Capabilities detected for a single package. */
 export interface PackageCapabilities {
@@ -46,12 +50,6 @@ export interface WorkspaceDiscovery {
   readonly rootDir: string;
 }
 
-/** Options for {@link discoverWorkspace}. */
-export interface DiscoverWorkspaceOptions {
-  /** Directory to search from. Defaults to `process.cwd()`. */
-  readonly cwd?: string;
-}
-
 const hasDir = (base: string, name: string): boolean =>
   existsSync(join(base, name));
 
@@ -60,8 +58,6 @@ const hasConfigFile = (base: string, prefix: string): boolean =>
 
 const hasDep = (deps: Record<string, string>, name: string): boolean =>
   name in deps;
-
-type Manifest = v.InferOutput<typeof ManifestSchema>;
 
 const parseManifest = (dir: string): Manifest => {
   try {
@@ -113,7 +109,7 @@ export const discoverPackage = (dir: string): PackageCapabilities =>
 
 /** Discovers capabilities for an entire workspace. */
 export const discoverWorkspace = (
-  options?: DiscoverWorkspaceOptions,
+  options?: ResolveWorkspaceOptions,
 ): WorkspaceDiscovery => {
   const ctx = resolveWorkspace(options);
   const isMonorepo = ctx.packageDirs.length > 1 ||
