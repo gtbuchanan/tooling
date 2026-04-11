@@ -139,7 +139,11 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
 
   return [
     { condition: flags.hasVitest, key: 'test:vitest:fast', value: shared },
-    { condition: flags.hasVitest, key: 'test:vitest:slow', value: shared },
+    {
+      condition: flags.hasVitest,
+      key: 'test:vitest:slow',
+      value: { ...shared, dependsOn: ['test:vitest:fast', ...deps] },
+    },
     {
       condition: flags.hasE2e,
       key: 'test:vitest:e2e',

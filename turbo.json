@@ -40,7 +40,7 @@
       "outputs": ["dist/coverage/vitest/**", "dist/test-results/vitest/**"]
     },
     "test:vitest:slow": {
-      "dependsOn": ["^compile:ts"],
+      "dependsOn": ["test:vitest:fast", "^compile:ts"],
       "env": ["CI"],
       "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
       "outputs": ["dist/coverage/vitest/**", "dist/test-results/vitest/**"]

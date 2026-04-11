@@ -204,9 +204,11 @@ Commands:
 Pipeline (Turborepo task graph):
 
 ```text
-typecheck:ts → lint:eslint, lint:oxlint
-^compile:ts → test:vitest:fast, test:vitest:slow
-compile:ts → //#pack → test:vitest:e2e
+typecheck:ts → typecheck → check
+typecheck:ts → lint:eslint, lint:oxlint → lint → check
+^compile:ts → test:vitest:fast → check
+test:vitest:fast → test:vitest:slow
+compile:ts → compile → //#pack → test:vitest:e2e
 ```
 
 Test tasks include `env: ["CI"]` so Turborepo hashes the `CI` environment
