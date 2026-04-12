@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import {
   generatePackageScripts,
+  generateRequiredRootScripts,
   generateRootScripts,
 } from '#src/lib/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
@@ -59,22 +60,7 @@ describe.concurrent(generatePackageScripts, () => {
 });
 
 describe.concurrent(generateRootScripts, () => {
-  it('generates turbo run check', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({
-        hasEslint: true,
-        hasTest: true,
-        hasTypeScript: true,
-        hasVitest: true,
-      }),
-    ]);
-
-    const result = generateRootScripts(discovery);
-
-    expect(result).toHaveProperty('check', 'turbo run check');
-  });
-
-  it('generates turbo run build', ({ expect }) => {
+  it('includes aliases and required scripts', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
         hasEslint: true,
@@ -87,10 +73,13 @@ describe.concurrent(generateRootScripts, () => {
 
     const result = generateRootScripts(discovery);
 
+    expect(result).toHaveProperty('check', 'turbo run check');
     expect(result).toHaveProperty('build', 'turbo run build');
+    expect(result).toHaveProperty('prepare', 'gtb prepare');
+    expect(result).toHaveProperty('turbo:check', 'gtb turbo:check');
   });
 
-  it('generates pack script when published packages exist', ({ expect }) => {
+  it('generates pack alias when published packages exist', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ isPublished: true }),
     ]);
@@ -100,19 +89,31 @@ describe.concurrent(generateRootScripts, () => {
     expect(result).toHaveProperty('pack', 'turbo run pack');
   });
 
-  it('omits pack when no published packages', ({ expect }) => {
+  it('omits pack alias when no published packages', ({ expect }) => {
     const discovery = makeDiscovery([makeCapabilities()]);
 
     const result = generateRootScripts(discovery);
 
     expect(result).not.toHaveProperty('pack');
   });
+});
 
-  it('always generates prepare', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
+describe.concurrent(generateRequiredRootScripts, () => {
+  it('returns only prepare and turbo:check regardless of capabilities', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({
+        hasEslint: true,
+        hasTypeScript: true,
+        hasVitest: true,
+        isPublished: true,
+      }),
+    ]);
 
-    const result = generateRootScripts(discovery);
+    const result = generateRequiredRootScripts(discovery);
 
-    expect(result).toHaveProperty('prepare', 'gtb prepare');
+    expect(result).toStrictEqual({
+      'prepare': 'gtb prepare',
+      'turbo:check': 'gtb turbo:check',
+    });
   });
 });
