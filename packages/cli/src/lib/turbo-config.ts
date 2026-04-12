@@ -1,4 +1,24 @@
+import {
+  compileTs, coverageVitestMerge, lintEslint, lintOxlint,
+  packNpm, testVitestE2e, testVitestFast, testVitestSlow,
+  typecheckTs,
+} from '../commands/leaf/index.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+
+/** Turbo-only aggregate task names (no CLI handler). */
+export const Aggregate = {
+  build: 'build',
+  buildCi: 'build:ci',
+  check: 'check',
+  compile: 'compile',
+  coverageMerge: 'coverage:merge',
+  generate: 'generate',
+  lint: 'lint',
+  pack: 'pack',
+  testE2e: 'test:e2e',
+  testSlow: 'test:slow',
+  typecheck: 'typecheck',
+} as const;
 
 /** Turborepo task definition. */
 export interface TurboTask {
@@ -68,12 +88,15 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   };
 };
 
+/** Creates a topological (cross-package) task dependency. */
+const topo = (task: string): string => `^${task}`;
+
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasTypeScript,
-    key: 'typecheck:ts',
+    key: typecheckTs.name,
     value: {
-      dependsOn: [...(flags.hasGenerate ? ['generate'] : [])],
+      dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: [
         'bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**',
         'tsconfig.json', 'tsconfig.*.json',
@@ -86,17 +109,17 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
 const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasTypeScript,
-    key: 'typecheck',
-    value: { dependsOn: ['typecheck:ts'] },
+    key: Aggregate.typecheck,
+    value: { dependsOn: [typecheckTs.name] },
   },
 ];
 
 const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
-    key: 'compile:ts',
+    key: compileTs.name,
     value: {
-      dependsOn: ['^compile:ts', ...(flags.hasGenerate ? ['generate'] : [])],
+      dependsOn: [topo(compileTs.name), ...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: ['bin/**', 'src/**', 'scripts/**', 'tsconfig.json', 'tsconfig.*.json'],
       outputs: ['dist/source/**'],
     },
@@ -106,9 +129,9 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
 const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
-    key: 'pack:npm',
+    key: packNpm.name,
     value: {
-      dependsOn: ['compile:ts'],
+      dependsOn: [compileTs.name],
       inputs: ['$TURBO_ROOT$/package.json', 'dist/source/**', 'package.json'],
       outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
     },
@@ -117,15 +140,15 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
 
 const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
-    ...(flags.hasGenerate ? ['generate'] : []),
-    ...(flags.hasTypeScript ? ['typecheck:ts'] : []),
+    ...(flags.hasGenerate ? [Aggregate.generate] : []),
+    ...(flags.hasTypeScript ? [typecheckTs.name] : []),
   ];
   const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**'];
 
   return [
     {
       condition: flags.hasEslint,
-      key: 'lint:eslint',
+      key: lintEslint.name,
       value: {
         dependsOn: deps,
         inputs: ['$TURBO_ROOT$/eslint.config.*', ...inputs, 'eslint.config.*'],
@@ -134,7 +157,7 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     },
     {
       condition: flags.hasOxlint,
-      key: 'lint:oxlint',
+      key: lintOxlint.name,
       value: { dependsOn: deps, inputs: [...inputs, 'oxlint.config.*'], outputs: [] },
     },
   ];
@@ -142,14 +165,14 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
 
 const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
-    ...(flags.hasPublished ? ['^compile:ts'] : []),
+    ...(flags.hasPublished ? [topo(compileTs.name)] : []),
   ];
   const testInputs = ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.*'];
 
   return [
     {
       condition: flags.hasVitest,
-      key: 'test:vitest:fast',
+      key: testVitestFast.name,
       value: {
         dependsOn: deps,
         env: ['CI'],
@@ -159,7 +182,7 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     },
     {
       condition: flags.hasVitest,
-      key: 'test:vitest:slow',
+      key: testVitestSlow.name,
       value: {
         dependsOn: deps,
         env: ['CI'],
@@ -169,18 +192,18 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     },
     {
       condition: flags.hasVitest,
-      key: 'coverage:vitest:merge',
+      key: coverageVitestMerge.name,
       value: {
-        dependsOn: ['test:vitest:fast', 'test:vitest:slow'],
+        dependsOn: [testVitestFast.name, testVitestSlow.name],
         inputs: ['dist/test-results/vitest/merge/blob-*.json'],
         outputs: ['dist/coverage/vitest/merged/**'],
       },
     },
     {
       condition: flags.hasE2e,
-      key: 'test:vitest:e2e',
+      key: testVitestE2e.name,
       value: {
-        dependsOn: flags.hasPublished ? ['pack', '^pack'] : [],
+        dependsOn: flags.hasPublished ? [Aggregate.pack, topo(Aggregate.pack)] : [],
         env: ['CI'],
         inputs: ['e2e/**', 'vitest.config.e2e.*'],
         outputs: [],
@@ -192,7 +215,7 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
 const generateAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasGenerate,
-    key: 'generate',
+    key: Aggregate.generate,
     value: { dependsOn: [...flags.generateScripts] },
   },
 ];
@@ -200,27 +223,27 @@ const generateAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTas
 const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
-    key: 'compile',
-    value: { dependsOn: ['compile:ts'] },
+    key: Aggregate.compile,
+    value: { dependsOn: [compileTs.name] },
   },
 ];
 
 const packAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
-    key: 'pack',
-    value: { dependsOn: ['pack:npm'] },
+    key: Aggregate.pack,
+    value: { dependsOn: [packNpm.name] },
   },
 ];
 
 const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasLint,
-    key: 'lint',
+    key: Aggregate.lint,
     value: {
       dependsOn: [
-        ...(flags.hasEslint ? ['lint:eslint'] : []),
-        ...(flags.hasOxlint ? ['lint:oxlint'] : []),
+        ...(flags.hasEslint ? [lintEslint.name] : []),
+        ...(flags.hasOxlint ? [lintOxlint.name] : []),
       ],
     },
   },
@@ -229,12 +252,12 @@ const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[]
 const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasCheck,
-    key: 'check',
+    key: Aggregate.check,
     value: {
       dependsOn: [
-        ...(flags.hasTypeScript ? ['typecheck'] : []),
-        ...(flags.hasLint ? ['lint'] : []),
-        ...(flags.hasVitest ? ['test:vitest:fast'] : []),
+        ...(flags.hasTypeScript ? [Aggregate.typecheck] : []),
+        ...(flags.hasLint ? [Aggregate.lint] : []),
+        ...(flags.hasVitest ? [testVitestFast.name] : []),
       ],
     },
   },
@@ -242,28 +265,36 @@ const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
 
 const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const testAggregates: readonly ConditionalEntry<TurboTask>[] = [
-    { condition: flags.hasVitest, key: 'test:slow', value: { dependsOn: ['test:vitest:slow'] } },
-    { condition: flags.hasE2e, key: 'test:e2e', value: { dependsOn: ['test:vitest:e2e'] } },
     {
       condition: flags.hasVitest,
-      key: 'coverage:merge',
-      value: { dependsOn: ['coverage:vitest:merge'] },
+      key: Aggregate.testSlow,
+      value: { dependsOn: [testVitestSlow.name] },
+    },
+    {
+      condition: flags.hasE2e,
+      key: Aggregate.testE2e,
+      value: { dependsOn: [testVitestE2e.name] },
+    },
+    {
+      condition: flags.hasVitest,
+      key: Aggregate.coverageMerge,
+      value: { dependsOn: [coverageVitestMerge.name] },
     },
   ];
   const ciDeps = [
-    ...(flags.hasCheck ? ['check'] : []),
-    ...(flags.hasPublished ? ['compile', 'pack'] : []),
+    ...(flags.hasCheck ? [Aggregate.check] : []),
+    ...(flags.hasPublished ? [Aggregate.compile, Aggregate.pack] : []),
   ];
   const fullDeps = [
     ...ciDeps,
-    ...(flags.hasVitest ? ['test:slow'] : []),
-    ...(flags.hasE2e ? ['test:e2e'] : []),
+    ...(flags.hasVitest ? [Aggregate.testSlow] : []),
+    ...(flags.hasE2e ? [Aggregate.testE2e] : []),
   ];
 
   return [
     ...testAggregates,
-    { condition: ciDeps.length > 0, key: 'build:ci', value: { dependsOn: ciDeps } },
-    { condition: fullDeps.length > 0, key: 'build', value: { dependsOn: fullDeps } },
+    { condition: ciDeps.length > 0, key: Aggregate.buildCi, value: { dependsOn: ciDeps } },
+    { condition: fullDeps.length > 0, key: Aggregate.build, value: { dependsOn: fullDeps } },
   ];
 };
 
