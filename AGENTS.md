@@ -41,8 +41,6 @@ ordering, caching, and parallelism.
   transit node pattern: they exist only as `dependsOn` targets with no
   corresponding script, so Turborepo resolves their dependencies without
   executing anything.
-- **Root tasks** — `turbo.json` defines root-level tasks (e.g., `//#pack`)
-  for operations that span the entire workspace.
 - **Consumer customization** — Consumers override behavior by replacing
   `package.json` script values. No hooks or plugin system.
 - **`turbo:init`** — Generates `turbo.json` and per-package scripts from
@@ -88,9 +86,10 @@ This repo dogfoods via a `gtb` package.json script that runs the CLI
 source directly with `node --experimental-strip-types`, bypassing the
 compiled bin entry to avoid a bootstrapping dependency.
 
-Commands: `typecheck:ts`, `compile:ts`, `lint:eslint`, `lint:oxlint`,
-`test:vitest`, `test:vitest:fast`, `test:vitest:slow`, `test:vitest:e2e`,
-`pack`, `prepare`, `turbo:init`, `turbo:check`.
+Commands: `typecheck:ts`, `compile:ts`, `coverage:vitest:merge`,
+`lint:eslint`, `lint:oxlint`, `test:vitest`, `test:vitest:fast`,
+`test:vitest:slow`, `test:vitest:e2e`, `pack:npm`, `prepare`,
+`turbo:init`, `turbo:check`.
 
 Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
 globs for monorepos, or falls back to single-package mode.

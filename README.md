@@ -109,10 +109,10 @@ Turbo tasks can also be run individually:
 - `turbo run test:vitest:fast` — Fast source tests only
 - `turbo run test:vitest:slow` — Slow source tests only (tagged `slow`)
 
-Non-Turbo commands go through the CLI directly:
+All commands go through Turbo for caching:
 
-- `pnpm pack` — Pack tarballs (root-level, orchestrated by Turbo via `//#pack`)
-- `pnpm test:e2e` — E2E tests (requires packed tarballs)
+- `pnpm pack` — Pack tarballs (per-package `pack:npm` via Turbo)
+- `pnpm test:e2e` — E2E tests (Turbo cache restores tarballs)
 
 ### Consumer setup
 
