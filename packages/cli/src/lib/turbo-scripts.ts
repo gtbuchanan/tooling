@@ -75,6 +75,7 @@ const rootScriptEntries = (flags: ToolFlags): readonly ConditionalEntry<string>[
   { condition: flags.hasE2e, key: 'test:e2e', value: 'turbo run test:e2e' },
   { condition: flags.hasVitest, key: 'test:slow', value: 'turbo run test:slow' },
   { condition: true, key: 'prepare', value: 'gtb prepare' },
+  { condition: true, key: 'turbo:check', value: 'gtb turbo:check' },
 ];
 
 /** Generates root-level convenience scripts. */

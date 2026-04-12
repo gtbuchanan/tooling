@@ -17,7 +17,8 @@
     "pack": "turbo run pack",
     "prepare": "pnpm run gtb prepare",
     "test:e2e": "turbo run test:e2e",
-    "test:slow": "turbo run test:slow"
+    "test:slow": "turbo run test:slow",
+    "turbo:check": "pnpm run gtb turbo:check"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",

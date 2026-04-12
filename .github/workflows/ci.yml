@@ -12,6 +12,9 @@ jobs:
 
       - uses: rharkor/caching-for-turbo@v2.3.13
 
+      - name: Check config drift
+        run: pnpm turbo:check
+
       - name: Build
         run: pnpm build:ci
 

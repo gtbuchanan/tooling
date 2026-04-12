@@ -4,10 +4,11 @@ import * as v from 'valibot';
 import { describe, it, vi } from 'vitest';
 import { parseIgnoreArgs, turboCheck } from '#src/commands/turbo-check.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
-import { writeJsonFile } from '#src/lib/file-writer.js';
+import { mergePackageScripts, writeJsonFile } from '#src/lib/file-writer.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
 import {
   generatePackageScripts,
+  generateRootScripts,
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
 import { createTempDir, writeJson } from './helpers.ts';
@@ -55,6 +56,7 @@ const createConsumerProject = (): string => {
 const initProject = (root: string): void => {
   const discovery = discoverWorkspace({ cwd: root });
   writeJsonFile(join(root, 'turbo.json'), generateTurboJson(discovery));
+  mergePackageScripts(join(root, 'package.json'), generateRootScripts(discovery), true);
 
   for (const pkg of discovery.packages) {
     const scripts = generatePackageScripts(pkg, discovery.isSelfHosted);
