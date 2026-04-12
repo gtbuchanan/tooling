@@ -1,9 +1,12 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, it } from 'vitest';
+import * as v from 'valibot';
+import { describe, it, vi } from 'vitest';
+import { turboInit } from '#src/commands/turbo-init.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
-import { mergePackageScripts, writeJsonFile } from '#src/lib/file-writer.js';
+import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
+import { ManifestSchema } from '#src/lib/manifest.js';
 import {
   generatePackageScripts,
   generateRootScripts,
@@ -167,6 +170,53 @@ describe('turbo:init integration', () => {
     const discovery = discoverWorkspace({ cwd: root });
 
     expect(discovery.isSelfHosted).toBe(true);
+  });
+
+  it('turboInit command writes turbo.json and scripts', ({ expect }) => {
+    const root = createConsumerProject();
+    const origCwd = process.cwd();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    try {
+      process.chdir(root);
+      turboInit([]);
+    } finally {
+      process.chdir(origCwd);
+    }
+
+    expect(existsSync(join(root, 'turbo.json'))).toBe(true);
+
+    const scripts: unknown = JSON.parse(
+      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf-8'),
+    );
+
+    expect(scripts).toHaveProperty('scripts.typecheck:ts');
+  });
+
+  it('turboInit --force overwrites existing scripts', ({ expect }) => {
+    const root = createConsumerProject();
+    const origCwd = process.cwd();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    try {
+      process.chdir(root);
+      turboInit([]);
+
+      const appPkg = join(root, 'packages', 'app', 'package.json');
+      const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
+      const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
+      writeJsonFile(appPkg, { ...manifest, scripts });
+
+      turboInit(['--force']);
+    } finally {
+      process.chdir(origCwd);
+    }
+
+    const result: unknown = JSON.parse(
+      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf-8'),
+    );
+
+    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb typecheck:ts');
   });
 
   it('generates gtb shim for self-hosted', ({ expect }) => {

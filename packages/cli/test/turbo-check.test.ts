@@ -1,8 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as v from 'valibot';
-import { describe, it } from 'vitest';
-import { parseIgnoreArgs } from '#src/commands/turbo-check.js';
+import { describe, it, vi } from 'vitest';
+import { parseIgnoreArgs, turboCheck } from '#src/commands/turbo-check.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { writeJsonFile } from '#src/lib/file-writer.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
@@ -145,6 +145,64 @@ describe('turbo:check drift detection', () => {
     const missing = Object.keys(expected).filter(name => !(name in actual));
 
     expect(missing).toHaveLength(0);
+  });
+});
+
+describe('turbo:check command', () => {
+  const runInDir = (dir: string, fn: () => void): void => {
+    const origCwd = process.cwd();
+    const origExitCode = process.exitCode;
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      process.chdir(dir);
+      fn();
+    } finally {
+      process.chdir(origCwd);
+      process.exitCode = origExitCode;
+    }
+  };
+
+  it('passes with no drift', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).not.toBe(1);
+    });
+  });
+
+  it('sets exitCode 1 on drift', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+
+    const tasks = readTurboTasks(root);
+    delete tasks['typecheck:ts'];
+    writeJsonFile(join(root, 'turbo.json'), { $schema: '', tasks });
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
+  it('--ignore suppresses specific drift', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+
+    const tasks = readTurboTasks(root);
+    delete tasks['typecheck:ts'];
+    writeJsonFile(join(root, 'turbo.json'), { $schema: '', tasks });
+
+    runInDir(root, () => {
+      turboCheck(['--ignore', 'typecheck:ts']);
+
+      expect(process.exitCode).not.toBe(1);
+    });
   });
 });
 
