@@ -1,7 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as v from 'valibot';
 import { discoverWorkspace } from '../lib/discovery.ts';
+import { readJsonFile } from '../lib/file-writer.ts';
 import { ManifestSchema } from '../lib/manifest.ts';
 import {
   type TurboJson,
@@ -37,7 +38,7 @@ const checkTurboTasks = (
     return ['turbo.json is missing (run gtb turbo:init)'];
   }
 
-  const raw: unknown = JSON.parse(readFileSync(path, 'utf-8'));
+  const raw = readJsonFile(path);
   const result = v.safeParse(TurboJsonSchema, raw);
   if (!result.success) {
     return ['turbo.json: failed to parse'];

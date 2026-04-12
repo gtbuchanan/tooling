@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
 import { parse } from 'yaml';
+import { readJsonFile } from './file-writer.ts';
 import { type Manifest, ManifestSchema } from './manifest.ts';
 
 /** Resolved workspace context for pack operations. */
@@ -54,7 +55,7 @@ const parsePackageGlobs = (workspaceFile: string): readonly string[] => {
 
 /** Reads and parses a package.json from the given directory. */
 export const readManifest = (dir: string): unknown =>
-  JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'));
+  readJsonFile(join(dir, 'package.json'));
 
 /** Reads and validates a package.json as a {@link Manifest}. */
 export const readParsedManifest = (dir: string): Manifest =>

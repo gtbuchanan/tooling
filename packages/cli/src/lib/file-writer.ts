@@ -12,6 +12,10 @@ export interface MergeResult {
   readonly skipped: readonly string[];
 }
 
+/** Reads and parses a JSON file. */
+export const readJsonFile = (path: string): unknown =>
+  JSON.parse(readFileSync(path, 'utf-8'));
+
 /** Writes a JSON object to a file with formatting and trailing newline. */
 export const writeJsonFile = (path: string, data: unknown): void => {
   writeFileSync(path, `${JSON.stringify(data, null, jsonIndent)}\n`);
@@ -49,7 +53,7 @@ export const mergePackageScripts = (
   expected: Readonly<Record<string, string>>,
   force: boolean,
 ): MergeResult => {
-  const raw: unknown = JSON.parse(readFileSync(path, 'utf-8'));
+  const raw = readJsonFile(path);
   const manifest = v.parse(ManifestSchema, raw);
   const { added, merged, skipped } = classifyScripts(
     manifest.scripts ?? {}, expected, force,
