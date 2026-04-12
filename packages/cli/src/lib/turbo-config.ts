@@ -319,4 +319,8 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   return { $schema: 'https://turbo.build/schema.json', tasks: collect(entries) };
 };
 
-export { generatePackageScripts, generateRootScripts } from './turbo-scripts.ts';
+export {
+  generatePackageScripts,
+  generateRequiredRootScripts,
+  generateRootScripts,
+} from './turbo-scripts.ts';
