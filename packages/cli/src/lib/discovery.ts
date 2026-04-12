@@ -1,4 +1,4 @@
-import { existsSync, globSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Manifest } from './manifest.ts';
 import {
@@ -52,8 +52,17 @@ export interface WorkspaceDiscovery {
 const hasDir = (base: string, name: string): boolean =>
   existsSync(join(base, name));
 
-const hasConfigFile = (base: string, prefix: string): boolean =>
-  globSync(`${prefix}.*`, { cwd: base }).length > 0;
+/** Lists files in a directory (returns empty array if dir doesn't exist). */
+const listFiles = (dir: string): readonly string[] => {
+  try {
+    return readdirSync(dir);
+  } catch {
+    return [];
+  }
+};
+
+const hasFilePrefix = (files: readonly string[], prefix: string): boolean =>
+  files.some(file => file.startsWith(`${prefix}.`));
 
 const hasDep = (deps: Record<string, string>, name: string): boolean =>
   name in deps;
@@ -81,8 +90,9 @@ const buildCapabilities = (
   manifest: Manifest,
 ): PackageCapabilities => {
   const deps = mergeDeps(manifest);
+  const files = listFiles(dir);
   const hasVitest = hasDep(deps, '@gtbuchanan/vitest-config') ||
-    hasConfigFile(dir, 'vitest.config');
+    hasFilePrefix(files, 'vitest.config');
   const hasTest = hasDir(dir, 'test');
   const generateScripts = collectGenerateScripts(manifest);
 
@@ -90,13 +100,13 @@ const buildCapabilities = (
     dir,
     generateScripts,
     hasE2e: hasDir(dir, 'e2e'),
-    hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasConfigFile(dir, 'eslint.config'),
+    hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasFilePrefix(files, 'eslint.config'),
     hasGenerate: generateScripts.length > 0,
-    hasOxlint: hasDep(deps, '@gtbuchanan/oxlint-config') || hasConfigFile(dir, 'oxlint.config'),
+    hasOxlint: hasDep(deps, '@gtbuchanan/oxlint-config') || hasFilePrefix(files, 'oxlint.config'),
     hasTest,
-    hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || existsSync(join(dir, 'tsconfig.json')),
+    hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),
     hasVitest,
-    hasVitestE2e: hasConfigFile(dir, 'vitest.config.e2e'),
+    hasVitestE2e: hasFilePrefix(files, 'vitest.config.e2e'),
     hasVitestTests: hasVitest && hasTest,
     isPublished: manifest.private !== true && manifest.publishConfig?.directory !== undefined,
   };
