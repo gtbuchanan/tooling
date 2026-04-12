@@ -3,13 +3,12 @@ import { join } from 'node:path';
 import * as v from 'valibot';
 import { discoverWorkspace } from '../lib/discovery.ts';
 import { readJsonFile } from '../lib/file-writer.ts';
-import { ManifestSchema } from '../lib/manifest.ts';
 import {
   type TurboJson,
   generatePackageScripts,
   generateTurboJson,
 } from '../lib/turbo-config.ts';
-import { readManifest } from '../lib/workspace.ts';
+import { readParsedManifest } from '../lib/workspace.ts';
 
 const TurboJsonSchema = v.looseObject({
   tasks: v.optional(v.record(v.string(), v.unknown())),
@@ -52,17 +51,20 @@ const checkTurboTasks = (
     .map(name => `turbo.json: missing task '${name}'`);
 };
 
+const tryReadScripts = (dir: string): Record<string, string> | undefined => {
+  try {
+    return readParsedManifest(dir).scripts;
+  } catch {
+    return undefined;
+  }
+};
+
 const checkScripts = (
   dir: string,
   expected: Record<string, string>,
   ignored: ReadonlySet<string>,
 ): readonly string[] => {
-  const result = v.safeParse(ManifestSchema, readManifest(dir));
-  if (!result.success) {
-    return [];
-  }
-
-  const { scripts } = result.output;
+  const scripts = tryReadScripts(dir);
 
   return Object.keys(expected)
     .filter(name => !ignored.has(name))
