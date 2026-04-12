@@ -8,15 +8,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/pnpm-tasks
-
-      - uses: rharkor/caching-for-turbo@v2.3.13
-
-      - name: Check config drift
-        run: pnpm turbo:check
-
-      - name: Build
-        run: pnpm build:ci
+      - uses: ./.github/actions/turbo-run
+        with:
+          task: build:ci
 
       - uses: actions/upload-artifact@v5
         with:
@@ -32,6 +26,17 @@ jobs:
           name: coverage
           path: packages/*/dist/coverage/vitest/fast/
 
+  config-check:
+    name: Config Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/pnpm-tasks
+
+      - name: Check config drift
+        run: pnpm turbo:check
+
   coverage:
     if: inputs.run-slow-tests == true
     name: Coverage
@@ -40,13 +45,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/pnpm-tasks
-
-      - uses: rharkor/caching-for-turbo@v2.3.13
-
-      # Turbo cache restores fast + slow blobs, then runs the merge.
-      - name: Merge Coverage
-        run: pnpm coverage:merge
+      - uses: ./.github/actions/turbo-run
+        with:
+          task: coverage:merge
 
       - uses: actions/upload-artifact@v5
         with:
@@ -62,13 +63,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/pnpm-tasks
-
-      - uses: rharkor/caching-for-turbo@v2.3.13
-
-      # Turbo cache restores pack:npm outputs from the build job.
-      - name: E2E Test
-        run: pnpm test:e2e
+      - uses: ./.github/actions/turbo-run
+        with:
+          task: test:e2e
 
   slow-tests:
     if: inputs.run-slow-tests == true
@@ -77,12 +74,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/pnpm-tasks
-
-      - uses: rharkor/caching-for-turbo@v2.3.13
-
-      - name: Slow Tests
-        run: pnpm test:slow
+      - uses: ./.github/actions/turbo-run
+        with:
+          task: test:slow
 
       - uses: actions/upload-artifact@v5
         with:

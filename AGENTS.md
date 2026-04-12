@@ -11,6 +11,7 @@ README.md              — Consumer-facing documentation
   actions/
     pnpm-resolve-pinned/ — Composite action: resolve locked version without install
     pnpm-tasks/          — Composite action: install pnpm, cache, install deps
+    turbo-run/           — Composite action: run turbo task, skip install on cache hit
   workflows/
     cd.yml               — Calls CI, then version + publish on main
     changeset-check.yml  — Verify changeset exists on PR
@@ -160,12 +161,13 @@ backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
 (`run-e2e`, `run-slow-tests`) for toggling test tiers.
 
 - **`ci.yml`** — Build, slow tests, e2e tests, and coverage merging.
+  All jobs use `turbo-run` to skip `pnpm install` on full cache hits.
   Inputs: `run-e2e` (default `true`), `run-slow-tests` (default `false`).
-  Uploads artifacts: `source` (publish), `packages` (e2e tarballs),
-  and `coverage` (final report). When `run-slow-tests` is enabled,
-  fast and slow coverage are merged in a separate `coverage` job.
+  Uploads artifacts: `packages` (e2e tarballs) and `coverage` (final
+  report). When `run-slow-tests` is enabled, fast and slow coverage are
+  merged in a separate `coverage` job.
 - **`cd.yml`** — Calls CI, then runs version (changesets) and publish
-  (npm trusted publishing via OIDC).
+  (npm trusted publishing via OIDC). Publish uses `turbo-run` for pack.
 - **`changeset-check.yml`** — Verifies a changeset exists on every PR.
   Use `pnpm changeset --empty` for PRs that don't need a version bump.
 - **`pre-commit.yml`** — Runs prek hooks against PR changed files.
@@ -174,9 +176,14 @@ backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
 
 Composite actions:
 
+- **`turbo-run`** — Runs a turbo task, skipping `pnpm install` when
+  turbo remote cache covers all tasks. Resolves the locked turbo version,
+  dry-runs to check cache status, then either restores from cache or
+  falls back to full install. Used by all CI jobs.
 - **`pnpm-tasks`** — Sets up pnpm and Node.js (version from
   `package.json` engines), caches store, installs dependencies, and
-  runs optional pnpm commands.
+  runs optional pnpm commands. Used by non-turbo jobs (config-check,
+  pre-commit).
 - **`pnpm-resolve-pinned`** — Resolves a package's exact version from the
   lockfile without install. Used to pin `pnpm dlx` invocations to the
   locked version.
