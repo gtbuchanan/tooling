@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 import crossSpawn from 'cross-spawn';
 import * as v from 'valibot';
 import {
-  ManifestSchema,
+  type Manifest,
   type RootManifest,
   RootManifestSchema,
   buildOutput,
@@ -12,6 +12,7 @@ import {
 import {
   type ResolveWorkspaceOptions,
   readManifest,
+  readParsedManifest,
   resolveWorkspace,
 } from '../lib/workspace.ts';
 
@@ -35,7 +36,7 @@ export const prepack = (options?: ResolveWorkspaceOptions): void => {
 };
 
 const writeSourceManifest = (
-  manifest: v.InferOutput<typeof ManifestSchema>,
+  manifest: Manifest,
   root: RootManifest,
   target: string,
   directory: string,
@@ -55,7 +56,7 @@ const preparePackage = (
   rootDir: string,
   pkgDir: string,
 ): void => {
-  const manifest = v.parse(ManifestSchema, readManifest(pkgDir));
+  const manifest = readParsedManifest(pkgDir);
   const dir = manifest.publishConfig?.directory;
   if (manifest.private === true || dir === undefined) {
     return;
@@ -90,7 +91,7 @@ const prepareAndPack = (
   rootDir: string,
   pkgDir: string,
 ): void => {
-  const manifest = v.parse(ManifestSchema, readManifest(pkgDir));
+  const manifest = readParsedManifest(pkgDir);
   const dir = manifest.publishConfig?.directory;
   if (manifest.private === true || dir === undefined) {
     return;

@@ -1,10 +1,9 @@
 import { existsSync, globSync } from 'node:fs';
 import { join } from 'node:path';
-import * as v from 'valibot';
-import { type Manifest, ManifestSchema } from './manifest.ts';
+import type { Manifest } from './manifest.ts';
 import {
   type ResolveWorkspaceOptions,
-  readManifest,
+  readParsedManifest,
   resolveWorkspace,
 } from './workspace.ts';
 
@@ -61,7 +60,7 @@ const hasDep = (deps: Record<string, string>, name: string): boolean =>
 
 const parseManifest = (dir: string): Manifest => {
   try {
-    return v.parse(ManifestSchema, readManifest(dir));
+    return readParsedManifest(dir);
   } catch {
     return {};
   }
