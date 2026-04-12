@@ -1,35 +1,19 @@
-import {
-  compileTs,
-  coverageVitestMerge,
-  lintEslint,
-  lintOxlint,
-  prepare,
-  testVitest,
-  testVitestE2e,
-  testVitestFast,
-  testVitestSlow,
-  typecheckTs,
-} from './leaf.ts';
-import { packNpm } from './pack.ts';
-import { turboCheck } from './turbo-check.ts';
-import { turboInit } from './turbo-init.ts';
+import { run } from '../lib/process.ts';
+import * as leaf from './leaf/index.ts';
+import type { CommandHandler, LeafCommandDef } from './types.ts';
 
-/** Command registry mapping CLI names to handler functions. */
-export const commands: Record<
-  string,
-  (args: readonly string[]) => Promise<void> | void
-> = {
-  'compile:ts': compileTs,
-  'coverage:vitest:merge': coverageVitestMerge,
-  'lint:eslint': lintEslint,
-  'lint:oxlint': lintOxlint,
-  'pack:npm': () => { packNpm(); },
-  'prepare': prepare,
-  'test:vitest': testVitest,
-  'test:vitest:e2e': testVitestE2e,
-  'test:vitest:fast': testVitestFast,
-  'test:vitest:slow': testVitestSlow,
-  'turbo:check': turboCheck,
-  'turbo:init': turboInit,
-  'typecheck:ts': typecheckTs,
-};
+/** Derives a handler from a leaf def (run-based or custom). */
+const toHandler = (def: LeafCommandDef): CommandHandler =>
+  'handler' in def
+    ? def.handler
+    : async (args) => { await run(def.bin, { args: [...def.args, ...args] }); };
+
+/**
+ * Command registry mapping CLI names to handler functions.
+ *
+ * Built from barrel re-exports — adding a command file and its barrel
+ * entry automatically extends the registry.
+ */
+export const commands: Record<string, CommandHandler> = Object.fromEntries(
+  Object.values(leaf).map(def => [def.name, toHandler(def)]),
+);
