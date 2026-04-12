@@ -70,7 +70,12 @@ interface TarballEntry {
 const collectTarballs = (): readonly TarballEntry[] => {
   const wsFile = findUpSync('pnpm-workspace.yaml', { cwd: process.cwd() });
   const wsRoot = wsFile === undefined ? process.cwd() : dirname(wsFile);
-  const packDirs = globSync('packages/*/dist/packages/npm', { cwd: wsRoot });
+  const packDirs = [
+    // Monorepo: per-package tarballs
+    ...globSync('packages/*/dist/packages/npm', { cwd: wsRoot }),
+    // Single-package: root tarballs
+    ...globSync('dist/packages/npm', { cwd: wsRoot }),
+  ];
   return packDirs.flatMap((packDir) => {
     const abs = join(wsRoot, packDir);
     return readdirSync(abs).map(file => ({ dir: abs, name: file }));
