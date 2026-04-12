@@ -1,4 +1,5 @@
 *.tsbuildinfo
 .claude/worktrees/
+.turbo/
 dist/
 node_modules/

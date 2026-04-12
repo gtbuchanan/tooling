@@ -1,0 +1,98 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["build:ci", "test:slow", "test:e2e"]
+    },
+    "build:ci": {
+      "dependsOn": ["check", "compile", "pack"]
+    },
+    "check": {
+      "dependsOn": ["typecheck", "lint", "test:vitest:fast"]
+    },
+    "compile": {
+      "dependsOn": ["compile:ts"]
+    },
+    "compile:ts": {
+      "dependsOn": ["^compile:ts"],
+      "inputs": ["bin/**", "src/**", "scripts/**", "tsconfig.json", "tsconfig.*.json"],
+      "outputs": ["dist/source/**"]
+    },
+    "coverage:merge": {
+      "dependsOn": ["coverage:vitest:merge"]
+    },
+    "coverage:vitest:merge": {
+      "dependsOn": ["test:vitest:fast", "test:vitest:slow"],
+      "inputs": ["dist/test-results/vitest/merge/blob-*.json"],
+      "outputs": ["dist/coverage/vitest/merged/**"]
+    },
+    "lint": {
+      "dependsOn": ["lint:eslint", "lint:oxlint"]
+    },
+    "lint:eslint": {
+      "dependsOn": ["typecheck:ts"],
+      "inputs": [
+        "$TURBO_ROOT$/eslint.config.*",
+        "bin/**",
+        "src/**",
+        "test/**",
+        "e2e/**",
+        "scripts/**",
+        "eslint.config.*"
+      ],
+      "outputs": ["dist/.eslintcache"]
+    },
+    "lint:oxlint": {
+      "dependsOn": ["typecheck:ts"],
+      "inputs": ["bin/**", "src/**", "test/**", "e2e/**", "scripts/**", "oxlint.config.*"],
+      "outputs": []
+    },
+    "pack": {
+      "dependsOn": ["pack:npm"]
+    },
+    "pack:npm": {
+      "dependsOn": ["compile:ts"],
+      "inputs": ["$TURBO_ROOT$/package.json", "dist/source/**", "package.json"],
+      "outputs": ["dist/packages/npm/**", "dist/source/package.json"]
+    },
+    "test:e2e": {
+      "dependsOn": ["test:vitest:e2e"]
+    },
+    "test:slow": {
+      "dependsOn": ["test:vitest:slow"]
+    },
+    "test:vitest:e2e": {
+      "dependsOn": ["pack", "^pack"],
+      "env": ["CI"],
+      "inputs": ["e2e/**", "vitest.config.e2e.*"],
+      "outputs": []
+    },
+    "test:vitest:fast": {
+      "dependsOn": ["^compile:ts"],
+      "env": ["CI"],
+      "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
+      "outputs": ["dist/coverage/vitest/fast/**", "dist/test-results/vitest/merge/blob-fast.json"]
+    },
+    "test:vitest:slow": {
+      "dependsOn": ["^compile:ts"],
+      "env": ["CI"],
+      "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
+      "outputs": ["dist/coverage/vitest/slow/**", "dist/test-results/vitest/merge/blob-slow.json"]
+    },
+    "typecheck": {
+      "dependsOn": ["typecheck:ts"]
+    },
+    "typecheck:ts": {
+      "inputs": [
+        "bin/**",
+        "src/**",
+        "test/**",
+        "e2e/**",
+        "scripts/**",
+        "tsconfig.json",
+        "tsconfig.*.json"
+      ],
+      "outputs": []
+    }
+  }
+}

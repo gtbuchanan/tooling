@@ -1,24 +1,33 @@
 import { run } from '../lib/process.ts';
 
-/** Runs `tsc -b` with optional pass-through args. */
+/** Runs `tsc --noEmit` for type-checking with optional pass-through args. */
+export const typecheckTs = async (
+  args: readonly string[],
+): Promise<void> => {
+  await run('tsc', { args: ['--noEmit', ...args] });
+};
+
+/** Runs `tsc -p tsconfig.build.json` to emit compiled output. */
 export const compileTs = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('tsc', { args: ['-b', ...args] });
+  await run('tsc', { args: ['-p', 'tsconfig.build.json', ...args] });
 };
 
 /** Runs ESLint with zero-warning threshold. */
 export const lintEslint = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('eslint', { args: ['--max-warnings=0', ...args] });
+  await run('eslint', {
+    args: ['--cache', '--cache-location', 'dist/.eslintcache', '--max-warnings=0', ...args],
+  });
 };
 
-/** Runs oxlint. */
+/** Runs oxlint with nested config disabled (per-package config is authoritative). */
 export const lintOxlint = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('oxlint', { args });
+  await run('oxlint', { args: ['--disable-nested-config', ...args] });
 };
 
 /** Runs all source tests via Vitest. */
@@ -32,7 +41,14 @@ export const testVitest = async (
 export const testVitestFast = async (
   args: readonly string[],
 ): Promise<void> => {
-  await run('vitest', { args: ['run', '--tags-filter=!slow', ...args] });
+  await run('vitest', {
+    args: [
+      'run', '--tags-filter=!slow',
+      '--outputFile.blob=dist/test-results/vitest/merge/blob-fast.json',
+      '--coverage.reportsDirectory=dist/coverage/vitest/fast',
+      ...args,
+    ],
+  });
 };
 
 /** Runs slow source tests via Vitest (only tests tagged `slow`). */
@@ -40,7 +56,25 @@ export const testVitestSlow = async (
   args: readonly string[],
 ): Promise<void> => {
   await run('vitest', {
-    args: ['run', '--tags-filter=slow', '--pass-with-no-tests', ...args],
+    args: [
+      'run', '--tags-filter=slow', '--pass-with-no-tests',
+      '--outputFile.blob=dist/test-results/vitest/merge/blob-slow.json',
+      '--coverage.reportsDirectory=dist/coverage/vitest/slow',
+      ...args,
+    ],
+  });
+};
+
+/** Merges fast + slow coverage blobs into a unified report. */
+export const coverageVitestMerge = async (
+  args: readonly string[],
+): Promise<void> => {
+  await run('vitest', {
+    args: [
+      '--merge-reports', 'dist/test-results/vitest/merge',
+      '--coverage.reportsDirectory=dist/coverage/vitest/merged',
+      ...args,
+    ],
   });
 };
 

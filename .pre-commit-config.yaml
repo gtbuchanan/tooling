@@ -32,7 +32,7 @@ repos:
         id: eslint
         language: system
         name: eslint
-      - entry: pnpm exec oxlint --fix
+      - entry: pnpm exec oxlint --disable-nested-config --fix
         files: \.(ts|mts|cts|js|mjs|cjs)$
         id: oxlint
         language: system

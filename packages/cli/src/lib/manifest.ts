@@ -29,6 +29,7 @@ export type RootManifest = v.InferOutput<typeof RootManifestSchema>;
 
 /** Valibot schema for per-package package.json. Uses `looseObject` to preserve extra fields. */
 export const ManifestSchema = v.looseObject({
+  dependencies: v.optional(v.record(v.string(), v.string())),
   devDependencies: v.optional(v.record(v.string(), v.string())),
   private: v.optional(v.boolean()),
   publishConfig: v.optional(PublishConfigSchema),

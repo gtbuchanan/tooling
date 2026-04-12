@@ -31,12 +31,13 @@ describe.concurrent('gtb CLI', () => {
 
     expect(result).toMatchObject({ exitCode: 0 });
     expect(result.stdout).toContain('Usage: gtb');
-    expect(result.stdout).toContain('build');
-    expect(result.stdout).toContain('compile');
-    expect(result.stdout).toContain('lint');
-    expect(result.stdout).toContain('test:fast');
-    expect(result.stdout).toContain('test:slow');
-    expect(result.stdout).toContain('test:e2e');
+    expect(result.stdout).toContain('compile:ts');
+    expect(result.stdout).toContain('typecheck:ts');
+    expect(result.stdout).toContain('lint:eslint');
+    expect(result.stdout).toContain('lint:oxlint');
+    expect(result.stdout).toContain('test:vitest:fast');
+    expect(result.stdout).toContain('turbo:init');
+    expect(result.stdout).toContain('turbo:check');
   });
 
   it('prints help with no arguments', ({ fixture, expect }) => {

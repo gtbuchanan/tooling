@@ -1,54 +1,47 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import crossSpawn from 'cross-spawn';
 import * as v from 'valibot';
 import {
-  ManifestSchema,
+  type Manifest,
+  type RootManifest,
   RootManifestSchema,
   buildOutput,
   buildRepoFields,
 } from '../lib/manifest.ts';
 import {
   type ResolveWorkspaceOptions,
-  type WorkspaceContext,
   readManifest,
+  readParsedManifest,
   resolveWorkspace,
 } from '../lib/workspace.ts';
 
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';
+const packDestination = join('dist', 'packages', 'npm');
 
-const generateManifests = ({ packageDirs, rootDir }: WorkspaceContext): void => {
-  const rootRaw = readFileSync(join(rootDir, 'package.json'), 'utf-8');
-  const root = v.parse(RootManifestSchema, JSON.parse(rootRaw));
-
-  for (const pkgDir of packageDirs) {
-    preparePackage(root, rootDir, pkgDir);
-  }
-};
+const readRootManifest = (rootDir: string): RootManifest =>
+  v.parse(RootManifestSchema, readManifest(rootDir));
 
 /**
  * Prepares `dist/source/` directories for all publishable packages.
  * Creates clean package.json and .npmignore in each.
  */
 export const prepack = (options?: ResolveWorkspaceOptions): void => {
-  generateManifests(resolveWorkspace(options));
+  const ctx = resolveWorkspace(options);
+  const root = readRootManifest(ctx.rootDir);
+  for (const pkgDir of ctx.packageDirs) {
+    preparePackage(root, ctx.rootDir, pkgDir);
+  }
 };
 
-const preparePackage = (
-  root: v.InferOutput<typeof RootManifestSchema>,
-  rootDir: string,
-  pkgDir: string,
+const writeSourceManifest = (
+  manifest: Manifest,
+  root: RootManifest,
+  target: string,
+  directory: string,
 ): void => {
-  const manifest = v.parse(ManifestSchema, readManifest(pkgDir));
-  const dir = manifest.publishConfig?.directory;
-  if (manifest.private === true || dir === undefined) {
-    return;
-  }
-
-  const target = join(pkgDir, dir);
   mkdirSync(target, { recursive: true });
-  const directory = relative(rootDir, pkgDir).replaceAll('\\', '/');
   const json = JSON.stringify(
     { ...buildOutput(manifest), ...buildRepoFields(root, directory) },
     null,
@@ -58,24 +51,25 @@ const preparePackage = (
   writeFileSync(join(target, '.npmignore'), npmignoreContent);
 };
 
-/** Generates `dist/source/` manifests and packs all publishable packages into tarballs. */
-export const pack = (options?: ResolveWorkspaceOptions): void => {
-  const ctx = resolveWorkspace(options);
-  generateManifests(ctx);
-  const destination = join(ctx.rootDir, 'dist', 'packages');
-  rmSync(destination, { force: true, recursive: true });
-  mkdirSync(destination, { recursive: true });
-
-  for (const pkgDir of ctx.packageDirs) {
-    packPackage(pkgDir, destination);
-  }
-};
-
-const packPackage = (pkgDir: string, destination: string): void => {
-  const manifest = v.parse(ManifestSchema, readManifest(pkgDir));
-  if (manifest.private === true) {
+const preparePackage = (
+  root: RootManifest,
+  rootDir: string,
+  pkgDir: string,
+): void => {
+  const manifest = readParsedManifest(pkgDir);
+  const dir = manifest.publishConfig?.directory;
+  if (manifest.private === true || dir === undefined) {
     return;
   }
+
+  const target = join(pkgDir, dir);
+  const directory = relative(rootDir, pkgDir).replaceAll('\\', '/');
+  writeSourceManifest(manifest, root, target, directory);
+};
+
+const execPnpmPack = (pkgDir: string, destination: string): void => {
+  rmSync(destination, { force: true, recursive: true });
+  mkdirSync(destination, { recursive: true });
 
   const result = crossSpawn.sync(
     'pnpm',
@@ -90,4 +84,32 @@ const packPackage = (pkgDir: string, destination: string): void => {
       `pnpm pack failed for ${pkgDir} with code ${String(result.status)}`,
     );
   }
+};
+
+const prepareAndPack = (
+  root: RootManifest,
+  rootDir: string,
+  pkgDir: string,
+): void => {
+  const manifest = readParsedManifest(pkgDir);
+  const dir = manifest.publishConfig?.directory;
+  if (manifest.private === true || dir === undefined) {
+    return;
+  }
+
+  const target = join(pkgDir, dir);
+  const directory = relative(rootDir, pkgDir).replaceAll('\\', '/');
+  writeSourceManifest(manifest, root, target, directory);
+  execPnpmPack(pkgDir, join(pkgDir, packDestination));
+};
+
+/**
+ * Per-package pack for npm. Generates `dist/source/` manifest and packs
+ * a tarball to `dist/packages/npm/`. Designed to run as a turbo task.
+ */
+export const packNpm = (): void => {
+  const pkgDir = process.cwd();
+  const ctx = resolveWorkspace({ cwd: pkgDir });
+  const root = readRootManifest(ctx.rootDir);
+  prepareAndPack(root, ctx.rootDir, pkgDir);
 };

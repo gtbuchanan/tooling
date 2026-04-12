@@ -19,16 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v5
+      - uses: ./.github/actions/pnpm-tasks
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: package.json
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
-      - uses: actions/download-artifact@v5
-        with:
-          name: source
-          path: packages
+      # Restore compiled dist/source/ from turbo cache (no artifact needed).
+      - run: pnpm pack
 
       - env:
           NPM_CONFIG_PROVENANCE: 'true'

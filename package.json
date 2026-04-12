@@ -10,10 +10,15 @@
   "type": "module",
   "scripts": {
     "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
+    "build": "turbo run build",
+    "build:ci": "turbo run build:ci",
+    "check": "turbo run check",
+    "coverage:merge": "turbo run coverage:merge",
+    "pack": "turbo run pack",
     "prepare": "pnpm run gtb prepare",
-    "build:ci": "pnpm run gtb build:ci",
-    "test:e2e": "pnpm run gtb test:e2e",
-    "test:slow": "pnpm run gtb test:slow"
+    "test:e2e": "turbo run test:e2e",
+    "test:slow": "turbo run test:slow",
+    "turbo:check": "pnpm run gtb turbo:check"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
@@ -28,7 +33,6 @@
     "@types/cross-spawn": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "concurrently": "catalog:",
     "console-fail-test": "catalog:",
     "cross-spawn": "catalog:",
     "eslint": "catalog:",
@@ -38,6 +42,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
+    "turbo": "catalog:",
     "typescript": "catalog:",
     "valibot": "catalog:",
     "vitest": "catalog:"

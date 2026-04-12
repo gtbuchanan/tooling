@@ -4,6 +4,7 @@ export {
   buildWorkspaceEntry,
   configure,
   configureGlobal,
+  configurePackage,
   configureProject,
   coverageInclude,
   defaultCoverageDirs,

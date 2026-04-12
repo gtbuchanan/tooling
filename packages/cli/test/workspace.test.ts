@@ -1,11 +1,8 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'vitest';
 import { resolveWorkspace } from '#src/lib/workspace.js';
-
-const createTempDir = (): string =>
-  mkdtempSync(join(tmpdir(), 'gtb-test-'));
+import { createTempDir } from './helpers.ts';
 
 describe(resolveWorkspace, () => {
   it('detects monorepo with packages glob', ({ expect }) => {

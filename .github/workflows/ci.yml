@@ -10,44 +10,27 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - name: Build
-        run: |
-          if jq -e '.scripts["build:ci"]' package.json >/dev/null 2>&1; then
-            pnpm build:ci
-          else
-            pnpm exec gtb build:ci
-          fi
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
-      # Two artifacts from the same build output:
-      # - source: prepared publishConfig.directory contents for changeset publish
-      # - packages: packed .tgz files for e2e tests
-      # A single artifact can't serve both — tarballs would need to be
-      # unpacked back into per-package dist/source/ dirs for publish.
-      - uses: actions/upload-artifact@v5
-        with:
-          name: source
-          path: packages/*/dist/source/
+      - name: Check config drift
+        run: pnpm turbo:check
+
+      - name: Build
+        run: pnpm build:ci
 
       - uses: actions/upload-artifact@v5
         with:
           name: packages
-          path: dist/packages/*.tgz
+          path: packages/*/dist/packages/npm/*.tgz
 
-      # When slow tests are enabled, upload blob for merging.
-      # Otherwise, upload coverage directly as the final artifact.
-      - if: inputs.run-slow-tests == true
-        uses: actions/upload-artifact@v5
-        with:
-          if-no-files-found: error
-          name: vitest-blob-fast
-          path: dist/vitest-blob/
-
+      # When slow tests are enabled, merged coverage comes from the coverage job.
+      # Otherwise, fast-only coverage is the final artifact.
       - if: inputs.run-slow-tests != true
         uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
           name: coverage
-          path: dist/coverage/
+          path: packages/*/dist/coverage/vitest/fast/
 
   coverage:
     if: inputs.run-slow-tests == true
@@ -59,24 +42,17 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: actions/download-artifact@v5
-        with:
-          path: dist/vitest-blob-parts
-          pattern: vitest-blob-*
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
+      # Turbo cache restores fast + slow blobs, then runs the merge.
       - name: Merge Coverage
-        run: |
-          mkdir -p dist/vitest-blob
-          for f in dist/vitest-blob-parts/*/blob.json; do
-            cp "$f" "dist/vitest-blob/$(basename "$(dirname "$f")").json"
-          done
-          pnpm exec vitest --merge-reports dist/vitest-blob --reporter=default
+        run: pnpm coverage:merge
 
       - uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
           name: coverage
-          path: dist/coverage/
+          path: packages/*/dist/coverage/vitest/merged/
 
   e2e:
     if: inputs.run-e2e == '' || inputs.run-e2e == true
@@ -88,18 +64,11 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - uses: actions/download-artifact@v5
-        with:
-          name: packages
-          path: dist/packages
+      - uses: rharkor/caching-for-turbo@v2.3.13
 
+      # Turbo cache restores pack:npm outputs from the build job.
       - name: E2E Test
-        run: |
-          if jq -e '.scripts["test:e2e"]' package.json >/dev/null 2>&1; then
-            pnpm test:e2e
-          else
-            pnpm exec gtb test:e2e
-          fi
+        run: pnpm test:e2e
 
   slow-tests:
     if: inputs.run-slow-tests == true
@@ -110,19 +79,16 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
+      - uses: rharkor/caching-for-turbo@v2.3.13
+
       - name: Slow Tests
-        run: |
-          if jq -e '.scripts["test:slow"]' package.json >/dev/null 2>&1; then
-            pnpm test:slow
-          else
-            pnpm exec gtb test:slow
-          fi
+        run: pnpm test:slow
 
       - uses: actions/upload-artifact@v5
         with:
           if-no-files-found: error
-          name: vitest-blob-slow
-          path: dist/vitest-blob/
+          name: test-results-slow
+          path: packages/*/dist/test-results/
 
 name: CI
 

@@ -16,6 +16,17 @@
     },
     "linkDirectory": false
   },
+  "scripts": {
+    "compile:ts": "tsc -b",
+    "pack:npm": "pnpm run gtb pack:npm",
+    "lint:eslint": "pnpm run gtb lint:eslint",
+    "lint:oxlint": "pnpm run gtb lint:oxlint",
+    "test:vitest:fast": "pnpm run gtb test:vitest:fast",
+    "test:vitest:slow": "pnpm run gtb test:vitest:slow",
+    "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
+    "typecheck:ts": "pnpm run gtb typecheck:ts",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
+  },
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",

@@ -13,10 +13,20 @@
     },
     "linkDirectory": false
   },
+  "scripts": {
+    "compile:ts": "tsc -b",
+    "pack:npm": "pnpm run gtb pack:npm",
+    "lint:eslint": "pnpm run gtb lint:eslint",
+    "lint:oxlint": "pnpm run gtb lint:oxlint",
+    "typecheck:ts": "pnpm run gtb typecheck:ts",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
+  },
   "dependencies": {
     "markdownlint": "catalog:"
   },
   "devDependencies": {
+    "@gtbuchanan/eslint-config": "workspace:*",
+    "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*"
   },
   "engines": {
