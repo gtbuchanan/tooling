@@ -1,14 +1,7 @@
 {
-  "files": [],
-  "references": [
-    { "path": "packages/cli" },
-    { "path": "packages/eslint-config" },
-    { "path": "packages/markdownlint-config" },
-    { "path": "packages/oxfmt-config" },
-    { "path": "packages/oxlint-config" },
-    { "path": "packages/tsconfig" },
-    { "path": "packages/vitest-config" },
-    { "path": "packages/test-utils" },
-    { "path": "tsconfig.root.json" }
-  ]
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "extends": "./tsconfig.base.json",
+  "include": ["bin", "scripts", "src", "test", "e2e", "*.config.*"]
 }

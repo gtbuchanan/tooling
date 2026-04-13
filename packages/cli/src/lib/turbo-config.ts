@@ -98,6 +98,7 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
     value: {
       dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: [
+        '$TURBO_ROOT$/tsconfig.base.json',
         'bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**',
         'tsconfig.json', 'tsconfig.*.json',
       ],
@@ -120,7 +121,10 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
     key: compileTs.name,
     value: {
       dependsOn: [topo(compileTs.name), ...(flags.hasGenerate ? [Aggregate.generate] : [])],
-      inputs: ['bin/**', 'src/**', 'scripts/**', 'tsconfig.json', 'tsconfig.*.json'],
+      inputs: [
+        '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
+        'bin/**', 'src/**', 'scripts/**', 'tsconfig.json', 'tsconfig.*.json',
+      ],
       outputs: ['dist/source/**'],
     },
   },
@@ -316,7 +320,12 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...buildAggregates(flags),
   ];
 
-  return { $schema: 'https://turbo.build/schema.json', tasks: collect(entries) };
+  const tasks = collect(entries);
+  const sorted = Object.fromEntries(
+    Object.entries(tasks).sort(([left], [right]) => left.localeCompare(right)),
+  );
+
+  return { $schema: 'https://turbo.build/schema.json', tasks: sorted };
 };
 
 export {

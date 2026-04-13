@@ -3,6 +3,7 @@ import {
   type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace,
 } from '../lib/discovery.ts';
 import { type MergeResult, mergePackageScripts, writeJsonFile } from '../lib/file-writer.ts';
+import { planTsconfigs, readUserCompilerOptions } from '../lib/tsconfig-gen.ts';
 import {
   generatePackageScripts,
   generateRootScripts,
@@ -18,10 +19,9 @@ const logMergeResult = (label: string, result: MergeResult): void => {
   }
 };
 
-const writeTurboJson = (discovery: WorkspaceDiscovery): void => {
-  const turboPath = join(discovery.rootDir, 'turbo.json');
-  writeJsonFile(turboPath, generateTurboJson(discovery));
-  console.log(`wrote ${turboPath}`);
+const writeAndLog = (path: string, data: object): void => {
+  writeJsonFile(path, data);
+  console.log(`wrote ${path}`);
 };
 
 const writeRootScripts = (discovery: WorkspaceDiscovery, force: boolean): void => {
@@ -39,14 +39,20 @@ const writePackageScripts = (
   logMergeResult(pkg.dir, mergePackageScripts(join(pkg.dir, 'package.json'), scripts, force));
 };
 
-/** Generates turbo.json and per-package scripts from project discovery. */
+/** Generates turbo.json, tsconfigs, and per-package scripts from project discovery. */
 export const turboInit = (args: readonly string[]): void => {
   const force = args.includes('--force');
   const discovery = discoverWorkspace();
 
-  writeTurboJson(discovery);
-  writeRootScripts(discovery, force);
+  writeAndLog(join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery));
+
+  for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
+    const userOpts = readUserCompilerOptions(descriptor.path);
+    writeAndLog(descriptor.path, descriptor.generate(userOpts));
+  }
+
   for (const pkg of discovery.packages) {
     writePackageScripts(pkg, force, discovery.isSelfHosted, discovery.rootDir);
   }
+  writeRootScripts(discovery, force);
 };

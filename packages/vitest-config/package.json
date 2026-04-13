@@ -16,16 +16,16 @@
   "publishConfig": {
     "directory": "dist/source",
     "exports": {
-      ".": "./index.js",
-      "./configure": "./configure.js",
-      "./configure-e2e": "./configure-e2e.js",
-      "./setup": "./setup.js",
-      "./console-fail-test": "./console-fail-test.js"
+      ".": "./src/index.js",
+      "./configure": "./src/configure.js",
+      "./configure-e2e": "./src/configure-e2e.js",
+      "./setup": "./src/setup.js",
+      "./console-fail-test": "./src/console-fail-test.js"
     },
     "linkDirectory": false
   },
   "scripts": {
-    "compile:ts": "tsc -b",
+    "compile:ts": "pnpm run gtb compile:ts",
     "pack:npm": "pnpm run gtb pack:npm",
     "lint:eslint": "pnpm run gtb lint:eslint",
     "lint:oxlint": "pnpm run gtb lint:oxlint",
