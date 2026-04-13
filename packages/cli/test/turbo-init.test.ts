@@ -130,6 +130,7 @@ describe('turbo:init integration', () => {
       'check': 'turbo run check',
       'pack': 'turbo run pack',
       'prepare': 'gtb prepare',
+      'turbo:check': 'gtb turbo:check',
     });
   });
 

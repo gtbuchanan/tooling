@@ -6,7 +6,7 @@ import { readJsonFile } from '../lib/file-writer.ts';
 import {
   type TurboJson,
   generatePackageScripts,
-  generateRootScripts,
+  generateRequiredRootScripts,
   generateTurboJson,
 } from '../lib/turbo-config.ts';
 import { readParsedManifest } from '../lib/workspace.ts';
@@ -86,7 +86,7 @@ export const turboCheck = (args: readonly string[]): void => {
 
   const drift = [
     ...checkTurboTasks(discovery.rootDir, expected, ignored),
-    ...checkScripts(discovery.rootDir, generateRootScripts(discovery), ignored),
+    ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
     ...discovery.packages.flatMap(
       pkg => checkScripts(
         pkg.dir,

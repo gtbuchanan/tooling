@@ -1,0 +1,75 @@
+description: Run a turbo task, skipping pnpm install on full cache hit
+inputs:
+  task:
+    description: Turbo task to run (e.g., build:ci, test:e2e)
+    required: true
+name: Turbo Run
+outputs:
+  cache-hit:
+    description: Whether all turbo tasks were cache hits
+    value: ${{ steps.cache-check.outputs.hit }}
+runs:
+  steps:
+    - uses: pnpm/action-setup@v5
+
+    - id: setup-node
+      uses: actions/setup-node@v5
+      with:
+        cache: pnpm
+        node-version-file: package.json
+
+    - id: turbo-version
+      uses: ./.github/actions/pnpm-resolve-pinned
+      with:
+        package: turbo
+
+    - uses: rharkor/caching-for-turbo@v2.3.13
+
+    - env:
+        TURBO_TASK: ${{ inputs.task }}
+        TURBO_VERSION: ${{ steps.turbo-version.outputs.version }}
+      id: cache-check
+      name: Check turbo cache
+      run: |
+        hit=false
+        if dry=$(pnpm dlx "turbo@${TURBO_VERSION}" run "$TURBO_TASK" --dry=json); then
+          # Only check tasks that produce cached artifacts: must have a
+          # command (excludes aggregates) and outputs (turbo skips remote
+          # cache for output-less tasks like test runners).
+          filter='.tasks[] | select(.command != "" and .command != "<NONEXISTENT>" and (.outputs | length > 0))'
+          misses=$(echo "$dry" | jq "[${filter} | select(.cache.status != \"HIT\")] | length")
+          if [ "$misses" -eq 0 ]; then
+            hit=true
+          fi
+        else
+          echo "::warning::turbo dry-run failed; falling back to full install"
+        fi
+        echo "hit=$hit" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    # HACK: pnpm has bugs around reporting peer resolution issues, so we
+    # call twice — the second pass catches what the first silently misses.
+    # https://github.com/pnpm/pnpm/issues/7087
+    # https://github.com/pnpm/pnpm/issues/8433
+    - if: steps.cache-check.outputs.hit != 'true'
+      name: Install dependencies
+      run: |
+        pnpm install --frozen-lockfile
+        pnpm install --prefer-frozen-lockfile --resolution-only
+        git checkout -- pnpm-lock.yaml
+      shell: bash
+
+    - env:
+        TURBO_TASK: ${{ inputs.task }}
+        TURBO_VERSION: ${{ steps.turbo-version.outputs.version }}
+      name: Run turbo task
+      run: pnpm dlx "turbo@${TURBO_VERSION}" run "$TURBO_TASK"
+      shell: bash
+
+    # Prune stale packages on inexact cache restore so the re-saved cache
+    # does not grow unbounded
+    - if: steps.cache-check.outputs.hit != 'true' && steps.setup-node.outputs.cache-hit != 'true'
+      name: Prune pnpm store
+      run: pnpm store prune
+      shell: bash
+  using: composite
