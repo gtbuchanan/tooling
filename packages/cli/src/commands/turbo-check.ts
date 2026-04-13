@@ -1,8 +1,13 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as v from 'valibot';
-import { discoverWorkspace } from '../lib/discovery.ts';
+import { type WorkspaceDiscovery, discoverWorkspace } from '../lib/discovery.ts';
 import { readJsonFile } from '../lib/file-writer.ts';
+import {
+  type GeneratedTsconfig,
+  planTsconfigs,
+  readUserCompilerOptions,
+} from '../lib/tsconfig-gen.ts';
 import {
   type TurboJson,
   generatePackageScripts,
@@ -73,10 +78,68 @@ const checkScripts = (
     .map(name => `${dir}: missing script '${name}'`);
 };
 
+const TsconfigCheckSchema = v.looseObject({
+  compilerOptions: v.optional(v.record(v.string(), v.unknown())),
+  extends: v.optional(v.string()),
+  include: v.optional(v.array(v.string())),
+});
+
+const checkOwnedCompilerOptions = (
+  path: string,
+  actual: Record<string, unknown> | undefined,
+  expected: GeneratedTsconfig,
+  ownedKeys: Readonly<Record<string, unknown>>,
+): readonly string[] =>
+  Object.keys(ownedKeys)
+    .filter(key => actual?.[key] !== expected.compilerOptions[key])
+    .map((key) => {
+      const want = String(expected.compilerOptions[key]);
+      return `${path}: compilerOptions.${key} should be ${want}`;
+    });
+
+const checkTsconfigStructure = (
+  path: string,
+  expected: GeneratedTsconfig,
+  ownedKeys: Readonly<Record<string, unknown>>,
+): readonly string[] => {
+  const result = v.safeParse(TsconfigCheckSchema, readJsonFile(path));
+  if (!result.success) {
+    return [`${path}: failed to parse`];
+  }
+
+  const actual = result.output;
+
+  return [
+    ...(actual.extends === expected.extends
+      ? []
+      : [`${path}: extends should be '${expected.extends}'`]),
+    ...(expected.include === undefined ||
+      JSON.stringify(actual.include) === JSON.stringify(expected.include)
+      ? []
+      : [`${path}: include should be ${JSON.stringify(expected.include)}`]),
+    ...checkOwnedCompilerOptions(path, actual.compilerOptions, expected, ownedKeys),
+  ];
+};
+
+const checkTsconfigFile = (
+  path: string,
+  expected: GeneratedTsconfig,
+  ownedKeys: Readonly<Record<string, unknown>>,
+): readonly string[] =>
+  existsSync(path)
+    ? checkTsconfigStructure(path, expected, ownedKeys)
+    : [`${path}: missing (run gtb turbo:init)`];
+
+const checkTsconfigs = (
+  { rootDir, packages }: WorkspaceDiscovery,
+): readonly string[] =>
+  planTsconfigs(rootDir, packages).flatMap(({ path, generate, ownedKeys }) =>
+    checkTsconfigFile(path, generate(readUserCompilerOptions(path)), ownedKeys),
+  );
+
 /**
  * Validates project config against expected baseline from discovery.
- * Checks existence of turbo tasks and package scripts only — modified
- * script values (consumer customizations) are not flagged as drift.
+ * Checks turbo tasks, package scripts, and tsconfig structure.
  * Use `--ignore <name>` to skip specific tasks/scripts.
  */
 export const turboCheck = (args: readonly string[]): void => {
@@ -86,6 +149,7 @@ export const turboCheck = (args: readonly string[]): void => {
 
   const drift = [
     ...checkTurboTasks(discovery.rootDir, expected, ignored),
+    ...checkTsconfigs(discovery),
     ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
     ...discovery.packages.flatMap(
       pkg => checkScripts(

@@ -12,12 +12,12 @@
   "publishConfig": {
     "directory": "dist/source",
     "exports": {
-      ".": "./index.js"
+      ".": "./src/index.js"
     },
     "linkDirectory": false
   },
   "scripts": {
-    "compile:ts": "tsc -b",
+    "compile:ts": "pnpm run gtb compile:ts",
     "pack:npm": "pnpm run gtb pack:npm",
     "lint:eslint": "pnpm run gtb lint:eslint",
     "lint:oxlint": "pnpm run gtb lint:oxlint",

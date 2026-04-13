@@ -1,20 +1,7 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "bin"
-    },
-    {
-      "path": "src"
-    },
-    {
-      "path": "test"
-    },
-    {
-      "path": "e2e"
-    },
-    {
-      "path": "tsconfig.root.json"
-    }
-  ]
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "extends": "../../tsconfig.base.json",
+  "include": ["bin", "scripts", "src", "test", "e2e", "*.config.*"]
 }

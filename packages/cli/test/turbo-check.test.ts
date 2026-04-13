@@ -11,7 +11,7 @@ import {
   generateRootScripts,
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
-import { createTempDir, writeJson } from './helpers.ts';
+import { createTempDir, writeJson, writeTsconfigs } from './helpers.ts';
 
 const TurboJsonSchema = v.looseObject({
   tasks: v.optional(v.record(v.string(), v.unknown())),
@@ -56,6 +56,7 @@ const createConsumerProject = (): string => {
 const initProject = (root: string): void => {
   const discovery = discoverWorkspace({ cwd: root });
   writeJsonFile(join(root, 'turbo.json'), generateTurboJson(discovery));
+  writeTsconfigs(root, discovery.packages);
   mergePackageScripts(join(root, 'package.json'), generateRootScripts(discovery), true);
 
   for (const pkg of discovery.packages) {
