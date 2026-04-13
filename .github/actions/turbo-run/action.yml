@@ -33,9 +33,10 @@ runs:
       run: |
         hit=false
         if dry=$(pnpm dlx "turbo@${TURBO_VERSION}" run "$TURBO_TASK" --dry=json); then
-          echo "$dry" | jq '[.tasks[] | {taskId, hash, cache}]' >&2
+          # Only check tasks with outputs — turbo skips remote cache for
+          # output-less tasks (aggregates, outputs: []), so they always MISS.
           misses=$(echo "$dry" \
-            | jq '[.tasks[] | select(.cache.status != "HIT")] | length')
+            | jq '[.tasks[] | select(.cache.status != "HIT" and (.outputs | length > 0))] | length')
           if [ "$misses" -eq 0 ]; then
             hit=true
           fi
