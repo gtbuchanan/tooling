@@ -16,7 +16,8 @@
     "test:vitest:slow": "pnpm run gtb test:vitest:slow",
     "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
     "typecheck:ts": "pnpm run gtb typecheck:ts",
-    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts"
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload"
   },
   "dependencies": {
     "cross-spawn": "catalog:",

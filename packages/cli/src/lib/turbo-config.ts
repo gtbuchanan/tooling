@@ -4,6 +4,7 @@ import {
   typecheckTs,
 } from '../commands/leaf/index.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import { aggregateTasks } from './turbo-aggregates.ts';
 
 /** Turbo-only aggregate task names (no CLI handler). */
 export const Aggregate = {
@@ -104,14 +105,6 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
       ],
       outputs: [],
     },
-  },
-];
-
-const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasTypeScript,
-    key: Aggregate.typecheck,
-    value: { dependsOn: [typecheckTs.name] },
   },
 ];
 
@@ -216,92 +209,6 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
   ];
 };
 
-const generateAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasGenerate,
-    key: Aggregate.generate,
-    value: { dependsOn: [...flags.generateScripts] },
-  },
-];
-
-const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasPublished,
-    key: Aggregate.compile,
-    value: { dependsOn: [compileTs.name] },
-  },
-];
-
-const packAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasPublished,
-    key: Aggregate.pack,
-    value: { dependsOn: [packNpm.name] },
-  },
-];
-
-const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasLint,
-    key: Aggregate.lint,
-    value: {
-      dependsOn: [
-        ...(flags.hasEslint ? [lintEslint.name] : []),
-        ...(flags.hasOxlint ? [lintOxlint.name] : []),
-      ],
-    },
-  },
-];
-
-const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasCheck,
-    key: Aggregate.check,
-    value: {
-      dependsOn: [
-        ...(flags.hasTypeScript ? [Aggregate.typecheck] : []),
-        ...(flags.hasLint ? [Aggregate.lint] : []),
-        ...(flags.hasVitest ? [testVitestFast.name] : []),
-      ],
-    },
-  },
-];
-
-const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const testAggregates: readonly ConditionalEntry<TurboTask>[] = [
-    {
-      condition: flags.hasVitest,
-      key: Aggregate.testSlow,
-      value: { dependsOn: [testVitestSlow.name] },
-    },
-    {
-      condition: flags.hasE2e,
-      key: Aggregate.testE2e,
-      value: { dependsOn: [testVitestE2e.name] },
-    },
-    {
-      condition: flags.hasVitest,
-      key: Aggregate.coverageMerge,
-      value: { dependsOn: [coverageVitestMerge.name] },
-    },
-  ];
-  const ciDeps = [
-    ...(flags.hasCheck ? [Aggregate.check] : []),
-    ...(flags.hasPublished ? [Aggregate.compile, Aggregate.pack] : []),
-  ];
-  const fullDeps = [
-    ...ciDeps,
-    ...(flags.hasVitest ? [Aggregate.testSlow] : []),
-    ...(flags.hasE2e ? [Aggregate.testE2e] : []),
-  ];
-
-  return [
-    ...testAggregates,
-    { condition: ciDeps.length > 0, key: Aggregate.buildCi, value: { dependsOn: ciDeps } },
-    { condition: fullDeps.length > 0, key: Aggregate.build, value: { dependsOn: fullDeps } },
-  ];
-};
-
 /** Generates turbo.json from workspace discovery. */
 export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   const flags = resolveToolFlags(discovery);
@@ -311,13 +218,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...packTasks(flags),
     ...lintTasks(flags),
     ...testTasks(flags),
-    ...generateAggregate(flags),
-    ...typecheckAggregate(flags),
-    ...compileAggregate(flags),
-    ...packAggregate(flags),
-    ...lintAggregate(flags),
-    ...checkAggregate(flags),
-    ...buildAggregates(flags),
+    ...aggregateTasks(flags),
   ];
 
   const tasks = collect(entries);

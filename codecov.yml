@@ -1,0 +1,81 @@
+codecov:
+  require_ci_to_pass: true
+
+comment:
+  layout: condensed_header, condensed_files, condensed_footer
+  require_changes: true
+
+component_management:
+  default_rules:
+    statuses:
+      - target: auto
+        threshold: 1%
+        type: project
+  individual_components:
+    - component_id: cli
+      name: cli
+      paths:
+        - packages/cli/bin/**
+        - packages/cli/scripts/**
+        - packages/cli/src/**
+    - component_id: eslint-config
+      name: eslint-config
+      paths:
+        - packages/eslint-config/src/**
+    - component_id: oxfmt-config
+      name: oxfmt-config
+      paths:
+        - packages/oxfmt-config/src/**
+    - component_id: oxlint-config
+      name: oxlint-config
+      paths:
+        - packages/oxlint-config/src/**
+    - component_id: test-utils
+      name: test-utils
+      paths:
+        - packages/test-utils/src/**
+    - component_id: vitest-config
+      name: vitest-config
+      paths:
+        - packages/vitest-config/src/**
+
+coverage:
+  status:
+    patch:
+      default:
+        target: 80%
+    project:
+      default:
+        target: auto
+        threshold: 1%
+
+flags:
+  cli:
+    carryforward: true
+    paths:
+      - packages/cli/
+  eslint-config:
+    carryforward: true
+    paths:
+      - packages/eslint-config/
+  oxfmt-config:
+    carryforward: true
+    paths:
+      - packages/oxfmt-config/
+  oxlint-config:
+    carryforward: true
+    paths:
+      - packages/oxlint-config/
+  test-utils:
+    carryforward: true
+    paths:
+      - packages/test-utils/
+  vitest-config:
+    carryforward: true
+    paths:
+      - packages/vitest-config/
+
+ignore:
+  - '**/dist/**'
+  - '**/e2e/**'
+  - '**/test/**'

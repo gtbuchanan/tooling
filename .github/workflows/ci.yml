@@ -26,6 +26,44 @@ jobs:
           name: coverage
           path: packages/*/dist/coverage/vitest/fast/
 
+  codecov:
+    if: >-
+      !cancelled()
+      && needs.build.result == 'success'
+      && (needs.coverage.result == 'success'
+      || needs.coverage.result == 'skipped')
+    name: Codecov
+    needs: [build, coverage]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: coverage
+          path: packages
+
+      # Codecov distributes the CLI as a binary at cli.codecov.io with
+      # only a "latest" URL — no versioned downloads. SHA256 validates
+      # integrity per release; pin to a version if they add support.
+      - name: Install Codecov CLI
+        run: |
+          curl -Os https://cli.codecov.io/latest/linux/codecov
+          curl -Os https://cli.codecov.io/latest/linux/codecov.SHA256SUM
+          sha256sum -c codecov.SHA256SUM
+          chmod +x codecov
+          sudo mv codecov /usr/local/bin/
+        shell: bash
+
+      - uses: ./.github/actions/pnpm-tasks
+
+      - continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        name: Upload coverage
+        run: pnpm turbo run coverage:codecov:upload
+        shell: bash
+
   config-check:
     name: Config Check
     runs-on: ubuntu-latest
@@ -99,6 +137,12 @@ on:
         default: false
         description: Run slow source tests
         type: boolean
+    secrets:
+      CODECOV_TOKEN:
+        description: >-
+          Codecov upload token (required for private repos,
+          optional for public)
+        required: false
 
 permissions:
   contents: read

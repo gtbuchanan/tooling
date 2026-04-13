@@ -1,4 +1,5 @@
 export { def as compileTs } from './compile-ts.ts';
+export { def as coverageCodecovUpload } from './coverage-codecov-upload.ts';
 export { def as coverageVitestMerge } from './coverage-vitest-merge.ts';
 export { def as lintEslint } from './lint-eslint.ts';
 export { def as lintOxlint } from './lint-oxlint.ts';
