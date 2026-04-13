@@ -33,6 +33,7 @@ runs:
       run: |
         hit=false
         if dry=$(pnpm dlx "turbo@${TURBO_VERSION}" run "$TURBO_TASK" --dry=json); then
+          echo "$dry" | jq '[.tasks[] | {taskId, hash, cache}]' >&2
           misses=$(echo "$dry" \
             | jq '[.tasks[] | select(.cache.status != "HIT")] | length')
           if [ "$misses" -eq 0 ]; then
