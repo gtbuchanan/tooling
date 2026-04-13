@@ -33,11 +33,12 @@ runs:
       run: |
         hit=false
         if dry=$(pnpm dlx "turbo@${TURBO_VERSION}" run "$TURBO_TASK" --dry=json); then
-          # Only check tasks with outputs — turbo skips remote cache for
-          # output-less tasks (aggregates, outputs: []), so they always MISS.
-          echo "$dry" | jq '[.tasks[] | select(.cache.status != "HIT" and (.outputs | length > 0)) | {taskId, outputs, cache: .cache.status}]' >&2
-          misses=$(echo "$dry" \
-            | jq '[.tasks[] | select(.cache.status != "HIT" and (.outputs | length > 0))] | length')
+          # Only check tasks that produce cached artifacts: must have a
+          # command (excludes aggregates) and outputs (turbo skips remote
+          # cache for output-less tasks like test runners).
+          filter='.tasks[] | select(.command != "" and .command != "<NONEXISTENT>" and (.outputs | length > 0))'
+          echo "$dry" | jq "[${filter} | select(.cache.status != \"HIT\") | {taskId, cache: .cache.status}]" >&2
+          misses=$(echo "$dry" | jq "[${filter} | select(.cache.status != \"HIT\")] | length")
           echo "::notice::misses=$misses"
           if [ "$misses" -eq 0 ]; then
             hit=true
