@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   type ProjectFixture,
@@ -54,126 +54,117 @@ describe.concurrent('gtb CLI', () => {
   });
 });
 
-describe('gtb pack', () => {
-  it('produces tarballs for publishable packages', ({ expect }) => {
+describe.concurrent('gtb pack:npm', () => {
+  it('produces tarball for publishable package', ({ expect }) => {
     using fixture = createFixture();
-    writeFileSync(
-      join(fixture.projectDir, 'pnpm-workspace.yaml'),
-      "packages:\n  - 'packages/*'\n",
-    );
     writeJson(fixture.projectDir, 'package.json', {
-      private: true,
-    });
-    const pkgDir = join(fixture.projectDir, 'packages', 'my-lib');
-    mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
       name: '@test/my-lib',
+      publishConfig: { directory: 'dist/source' },
       version: '1.0.0',
     });
 
-    const result = fixture.run('gtb', ['pack']);
+    const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 
     const tarballs = readdirSync(
-      join(fixture.projectDir, 'dist', 'packages'),
+      join(fixture.projectDir, 'dist', 'packages', 'npm'),
     );
 
     expect(tarballs).toHaveLength(1);
     expect(tarballs[0]).toMatch(/^test-my-lib-.*\.tgz$/v);
   });
 
-  it('skips private packages', ({ expect }) => {
+  it('skips private package', ({ expect }) => {
     using fixture = createFixture();
-    writeFileSync(
-      join(fixture.projectDir, 'pnpm-workspace.yaml'),
-      "packages:\n  - 'packages/*'\n",
-    );
     writeJson(fixture.projectDir, 'package.json', {
-      private: true,
-    });
-    const publicDir = join(fixture.projectDir, 'packages', 'public-lib');
-    mkdirSync(publicDir, { recursive: true });
-    writeJson(publicDir, 'package.json', {
-      name: '@test/public-lib',
-      version: '1.0.0',
-    });
-    const privateDir = join(fixture.projectDir, 'packages', 'internal');
-    mkdirSync(privateDir, { recursive: true });
-    writeJson(privateDir, 'package.json', {
       name: '@test/internal',
       private: true,
+      publishConfig: { directory: 'dist/source' },
       version: '1.0.0',
     });
 
-    const result = fixture.run('gtb', ['pack']);
+    const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
-
-    const tarballs = readdirSync(
-      join(fixture.projectDir, 'dist', 'packages'),
+    expect(existsSync(join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
+      false,
     );
+  });
 
-    expect(tarballs).toHaveLength(1);
-    expect(tarballs[0]).toMatch(/^test-public-lib-.*\.tgz$/v);
+  it('skips package without publishConfig.directory', ({ expect }) => {
+    using fixture = createFixture();
+    writeJson(fixture.projectDir, 'package.json', {
+      name: '@test/my-lib',
+      version: '1.0.0',
+    });
+
+    const result = fixture.run('gtb', ['pack:npm']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(existsSync(join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
+      false,
+    );
   });
 
   it('generates dist/source manifests before packing', ({ expect }) => {
     using fixture = createFixture();
-    writeFileSync(
-      join(fixture.projectDir, 'pnpm-workspace.yaml'),
-      "packages:\n  - 'packages/*'\n",
-    );
     writeJson(fixture.projectDir, 'package.json', {
       bugs: 'https://github.com/test/repo/issues',
-      homepage: 'https://github.com/test/repo',
-      private: true,
-      repository: {
-        type: 'git',
-        url: 'https://github.com/test/repo.git',
-      },
-    });
-    const pkgDir = join(fixture.projectDir, 'packages', 'my-lib');
-    mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {
       dependencies: { valibot: '^1.0.0' },
       devDependencies: { vitest: '^4.0.0' },
       exports: { '.': './src/index.ts' },
+      homepage: 'https://github.com/test/repo',
       name: '@test/my-lib',
       publishConfig: {
         directory: 'dist/source',
         exports: { '.': './index.js' },
       },
+      repository: {
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
       scripts: { test: 'vitest' },
       version: '1.0.0',
     });
 
-    const result = fixture.run('gtb', ['pack']);
+    const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 
     const output = readJson(
-      join(pkgDir, 'dist', 'source', 'package.json'),
+      join(fixture.projectDir, 'dist', 'source', 'package.json'),
     );
 
     expect(output).toHaveProperty('name', '@test/my-lib');
     expect(output).toHaveProperty('exports', { '.': './index.js' });
+    expect(output).toHaveProperty('bugs', 'https://github.com/test/repo/issues');
+    expect(output).toHaveProperty(
+      'homepage',
+      'https://github.com/test/repo/tree/main/',
+    );
+    expect(output).toHaveProperty('repository', {
+      directory: '',
+      type: 'git',
+      url: 'https://github.com/test/repo.git',
+    });
     expect(output).not.toHaveProperty('devDependencies');
     expect(output).not.toHaveProperty('scripts');
     expect(output).not.toHaveProperty('publishConfig');
   });
 
-  it('cleans dist/packages before packing', ({ expect }) => {
+  it('cleans dist/packages/npm before packing', ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
       name: '@test/my-lib',
+      publishConfig: { directory: 'dist/source' },
       version: '1.0.0',
     });
-    const distDir = join(fixture.projectDir, 'dist', 'packages');
+    const distDir = join(fixture.projectDir, 'dist', 'packages', 'npm');
     mkdirSync(distDir, { recursive: true });
     writeFileSync(join(distDir, 'stale-0.0.0.tgz'), '');
 
-    const result = fixture.run('gtb', ['pack']);
+    const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 
