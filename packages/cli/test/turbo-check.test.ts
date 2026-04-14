@@ -68,6 +68,15 @@ const initProject = (root: string): void => {
       scripts: { ...manifest.scripts, ...scripts },
     });
   }
+
+  if (discovery.packages.some(pkg => pkg.hasVitestTests)) {
+    writeFileSync(
+      join(root, 'codecov.yml'),
+      'flags:\n  app:\n    carryforward: true\n    paths:\n      - packages/app/\n' +
+      'component_management:\n  individual_components:\n' +
+      '    - component_id: app\n      name: app\n      paths:\n        - packages/app/src/**\n',
+    );
+  }
 };
 
 const readTurboTasks = (root: string): Record<string, unknown> => {
@@ -236,5 +245,87 @@ describe(parseIgnoreArgs, () => {
     const result = parseIgnoreArgs(['--ignore']);
 
     expect(result.size).toBe(0);
+  });
+});
+
+describe('turbo:check codecov drift detection', () => {
+  const runInDir = (dir: string, fn: () => void): void => {
+    const origCwd = process.cwd();
+    const origExitCode = process.exitCode;
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      process.chdir(dir);
+      fn();
+    } finally {
+      process.chdir(origCwd);
+      process.exitCode = origExitCode;
+    }
+  };
+
+  it('passes with valid codecov.yml after init', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).not.toBe(1);
+    });
+  });
+
+  it('sets exitCode 1 when codecov.yml has invalid YAML', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(join(root, 'codecov.yml'), 'invalid: [}');
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
+  it('sets exitCode 1 when codecov.yml is missing', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(join(root, 'codecov.yml'), '');
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
+  it('sets exitCode 1 when flag is missing', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      join(root, 'codecov.yml'),
+      'flags: {}\ncomponent_management:\n  individual_components: []\n',
+    );
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
+  it('--ignore suppresses missing flag error', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      join(root, 'codecov.yml'),
+      'flags: {}\ncomponent_management:\n  individual_components: []\n',
+    );
+
+    runInDir(root, () => {
+      turboCheck(['--ignore', 'app']);
+
+      expect(process.exitCode).not.toBe(1);
+    });
   });
 });

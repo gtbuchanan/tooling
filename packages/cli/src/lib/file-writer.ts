@@ -1,5 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import * as v from 'valibot';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import type { CodecovSections } from './codecov-config.ts';
 import { ManifestSchema } from './manifest.ts';
 
 const jsonIndent = 2;
@@ -62,4 +64,47 @@ export const mergePackageScripts = (
   writeJsonFile(path, { ...manifest, scripts: merged });
 
   return { added, skipped };
+};
+
+/** Writes a YAML object to a file with a trailing newline. */
+export const writeYamlFile = (path: string, data: unknown): void => {
+  writeFileSync(path, stringifyYaml(data));
+};
+
+const ExistingCodecovSchema = v.nullable(
+  v.looseObject({
+    component_management: v.optional(v.nullable(v.looseObject({}))),
+  }),
+);
+
+/**
+ * Merges generated codecov sections into a `codecov.yml` file.
+ * Overwrites `flags` and `component_management.individual_components`
+ * with the generated values. Preserves all other keys, including
+ * `component_management.default_rules`.
+ * Creates the file if it does not exist.
+ * Throws if the existing file contains invalid YAML.
+ */
+export const mergeCodecovSections = (path: string, sections: CodecovSections): void => {
+  let rawYaml: unknown = null;
+  if (existsSync(path)) {
+    try {
+      rawYaml = parseYaml(readFileSync(path, 'utf-8'));
+    } catch {
+      throw new Error(`${path}: invalid YAML — fix or delete it and re-run gtb turbo:init`);
+    }
+  }
+  const existing = v.parse(ExistingCodecovSchema, rawYaml) ?? {};
+  const existingComponentMgmt = existing.component_management ?? {};
+
+  const merged = {
+    ...existing,
+    component_management: {
+      ...existingComponentMgmt,
+      individual_components: sections.component_management.individual_components,
+    },
+    flags: sections.flags,
+  };
+
+  writeYamlFile(path, merged);
 };

@@ -146,6 +146,26 @@ describe(discoverPackage, () => {
     expect(result.hasVitestE2e).toBe(true);
   });
 
+  it('detects bin directory', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    mkdirSync(join(dir, 'bin'));
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasBin).toBe(true);
+  });
+
+  it('detects scripts directory', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    mkdirSync(join(dir, 'scripts'));
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasScripts).toBe(true);
+  });
+
   it('detects generate via script prefix', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
@@ -194,10 +214,12 @@ describe(discoverPackage, () => {
     const result = discoverPackage(dir);
 
     expect(result).toMatchObject({
+      hasBin: false,
       hasE2e: false,
       hasEslint: false,
       hasGenerate: false,
       hasOxlint: false,
+      hasScripts: false,
       hasTest: false,
       hasTypeScript: false,
       hasVitest: false,

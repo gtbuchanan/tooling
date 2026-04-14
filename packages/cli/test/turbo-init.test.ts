@@ -194,6 +194,50 @@ describe('turbo:init integration', () => {
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
   });
 
+  it('turboInit generates codecov.yml when packages have vitest tests', ({ expect }) => {
+    const root = createConsumerProject();
+    const origCwd = process.cwd();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    try {
+      process.chdir(root);
+      turboInit([]);
+    } finally {
+      process.chdir(origCwd);
+    }
+
+    const codecovPath = join(root, 'codecov.yml');
+
+    expect(existsSync(codecovPath)).toBe(true);
+
+    const content = readFileSync(codecovPath, 'utf-8');
+
+    expect(content).toContain('app:');
+    expect(content).toContain('carryforward');
+  });
+
+  it('turboInit preserves existing codecov.yml user config', ({ expect }) => {
+    const root = createConsumerProject();
+    const origCwd = process.cwd();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    writeFileSync(
+      join(root, 'codecov.yml'),
+      'codecov:\n  require_ci_to_pass: true\n',
+    );
+
+    try {
+      process.chdir(root);
+      turboInit([]);
+    } finally {
+      process.chdir(origCwd);
+    }
+
+    const content = readFileSync(join(root, 'codecov.yml'), 'utf-8');
+
+    expect(content).toContain('require_ci_to_pass');
+    expect(content).toContain('carryforward');
+  });
+
   it('turboInit --force overwrites existing scripts', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
