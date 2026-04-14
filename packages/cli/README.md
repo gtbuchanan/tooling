@@ -54,21 +54,22 @@ All commands are leaf commands — they target a single tool and forward
 extra arguments. Turborepo handles orchestration (parallel groups,
 sequential pipelines, caching, dependency graphs).
 
-| Command                 | Tool                                       |
-| ----------------------- | ------------------------------------------ |
-| `compile:ts`            | `tsc -p tsconfig.build.json`               |
-| `coverage:vitest:merge` | `vitest --merge-reports` (fast + slow)     |
-| `typecheck:ts`          | `tsc --noEmit`                             |
-| `lint:eslint`           | `eslint --max-warnings=0`                  |
-| `lint:oxlint`           | `oxlint --disable-nested-config`           |
-| `pack:npm`              | Generate manifest + `pnpm pack` (per-pkg)  |
-| `prepare`               | `prek install`                             |
-| `test:vitest`           | `vitest run`                               |
-| `test:vitest:fast`      | `vitest run --tags-filter='!slow'`         |
-| `test:vitest:slow`      | `vitest run --tags-filter=slow`            |
-| `test:vitest:e2e`       | `vitest run --config vitest.config.e2e.ts` |
-| `turbo:init`            | Scaffold `turbo.json` and package scripts  |
-| `turbo:check`           | Validate config against workspace state    |
+| Command                   | Tool                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| `compile:ts`              | `tsc -p tsconfig.build.json`                                                                 |
+| `coverage:codecov:upload` | Upload lcov to Codecov (requires [`codecov` CLI](https://docs.codecov.com/docs/codecov-cli)) |
+| `coverage:vitest:merge`   | `vitest --merge-reports` (fast + slow)                                                       |
+| `typecheck:ts`            | `tsc --noEmit`                                                                               |
+| `lint:eslint`             | `eslint --max-warnings=0`                                                                    |
+| `lint:oxlint`             | `oxlint --disable-nested-config`                                                             |
+| `pack:npm`                | Generate manifest + `pnpm pack` (per-pkg)                                                    |
+| `prepare`                 | `prek install`                                                                               |
+| `test:vitest`             | `vitest run`                                                                                 |
+| `test:vitest:fast`        | `vitest run --tags-filter='!slow'`                                                           |
+| `test:vitest:slow`        | `vitest run --tags-filter=slow`                                                              |
+| `test:vitest:e2e`         | `vitest run --config vitest.config.e2e.ts`                                                   |
+| `turbo:init`              | Scaffold `turbo.json` and package scripts                                                    |
+| `turbo:check`             | Validate config against workspace state                                                      |
 
 Leaf commands forward extra arguments:
 

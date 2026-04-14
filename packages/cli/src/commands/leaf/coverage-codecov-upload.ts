@@ -1,13 +1,20 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, relative } from 'node:path';
+import { existsSync } from 'node:fs';
+import { basename, dirname } from 'node:path';
+import { findUpSync } from 'find-up-simple';
 import { run } from '../../lib/process.ts';
-import { resolveWorkspace } from '../../lib/workspace.ts';
 import type { CustomCommandDef } from '../types.ts';
 
 const mergedLcov = 'dist/coverage/vitest/merged/lcov.info';
 const fastLcov = 'dist/coverage/vitest/fast/lcov.info';
-const sfPrefixLength = 3;
-const dotPrefixLength = 2;
+
+/** Resolves the repo root for Codecov network file listing. */
+const resolveNetworkRoot = (): string => {
+  const cwd = process.cwd();
+  const gitPath = findUpSync('.git', { cwd });
+  return process.env['GITHUB_WORKSPACE'] ??
+    (gitPath === undefined ? undefined : dirname(gitPath)) ??
+    cwd;
+};
 
 /** Resolves the best available lcov file (merged over fast). */
 const resolveLcov = (): string | undefined => {
@@ -20,77 +27,6 @@ const resolveLcov = (): string | undefined => {
   return undefined;
 };
 
-const driveLetterPathPattern = /^[A-Za-z]:(?:\\|\/)/v;
-
-const normalizeSlashes = (path: string): string =>
-  path.replaceAll('\\', '/');
-
-const normalizeSourcePath = (
-  sourcePath: string,
-  packagePath: string,
-): string => {
-  const source = normalizeSlashes(sourcePath);
-  if (
-    source.startsWith('/') ||
-    driveLetterPathPattern.test(source) ||
-    source.startsWith(`${packagePath}/`)
-  ) {
-    return source;
-  }
-  const trimmed = source.startsWith('./') ? source.slice(dotPrefixLength) : source;
-  return `${packagePath}/${trimmed}`;
-};
-
-/** Rewrites relative `SF:` entries to repo-relative paths for Codecov mapping. */
-const prepareLcovForUpload = (file: string, packagePath: string): string => {
-  if (packagePath === '') {
-    return file;
-  }
-  const content = readFileSync(file, 'utf-8');
-  const rewritten = content
-    .split('\n')
-    .map((line) => {
-      if (!line.startsWith('SF:')) {
-        return line;
-      }
-      return `SF:${normalizeSourcePath(line.slice(sfPrefixLength), packagePath)}`;
-    })
-    .join('\n');
-  if (rewritten === content) {
-    return file;
-  }
-  const uploadFile = file.replace(/\.info$/v, '.codecov.info');
-  writeFileSync(uploadFile, rewritten);
-  return uploadFile;
-};
-
-const resolveUploadFile = (): string | undefined => {
-  const file = resolveLcov();
-  if (file === undefined) {
-    console.log('No coverage files found, skipping Codecov upload');
-    return undefined;
-  }
-  const cwd = process.cwd();
-  const { rootDir } = resolveWorkspace({ cwd });
-  const packagePath = normalizeSlashes(relative(rootDir, cwd));
-  return prepareLcovForUpload(file, packagePath);
-};
-
-const uploadCodecov = (
-  uploadFile: string,
-  flag: string,
-  args: readonly string[],
-): Promise<void> =>
-  run('codecov', {
-    args: [
-      'upload-process',
-      '--disable-search',
-      '-f', uploadFile,
-      '-F', flag,
-      ...args,
-    ],
-  });
-
 /** Uploads coverage to Codecov. No-ops outside CI. */
 export const def = {
   handler: async (args) => {
@@ -99,11 +35,25 @@ export const def = {
       return;
     }
 
-    const uploadFile = resolveUploadFile();
-    if (uploadFile === undefined) {
+    const file = resolveLcov();
+    if (file === undefined) {
+      console.log('No coverage files found, skipping Codecov upload');
       return;
     }
-    await uploadCodecov(uploadFile, basename(process.cwd()), args);
+
+    const flag = basename(process.cwd());
+    const networkRoot = resolveNetworkRoot();
+
+    await run('codecov', {
+      args: [
+        'upload-process',
+        '--disable-search',
+        '--network-root-folder', networkRoot,
+        '-f', file,
+        '-F', flag,
+        ...args,
+      ],
+    });
   },
   name: 'coverage:codecov:upload',
 } as const satisfies CustomCommandDef;

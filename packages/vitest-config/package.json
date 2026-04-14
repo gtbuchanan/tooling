@@ -37,7 +37,8 @@
     "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload"
   },
   "dependencies": {
-    "console-fail-test": "catalog:"
+    "console-fail-test": "catalog:",
+    "find-up-simple": "catalog:"
   },
   "devDependencies": {
     "@gtbuchanan/oxlint-config": "workspace:*",

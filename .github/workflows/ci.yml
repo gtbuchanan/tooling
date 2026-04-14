@@ -27,6 +27,7 @@ jobs:
           path: packages/*/dist/coverage/vitest/fast/
 
   codecov:
+    continue-on-error: true
     if: >-
       !cancelled()
       && needs.build.result == 'success'
@@ -57,8 +58,7 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
-      - continue-on-error: true
-        env:
+      - env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         name: Upload coverage
         run: pnpm turbo run coverage:codecov:upload

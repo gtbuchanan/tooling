@@ -150,6 +150,66 @@ describe('vitest CLI integration', () => {
     expect(existsSync(join(fixture.projectDir, 'dist/coverage'))).toBe(true);
   });
 
+  it('writes repo-relative lcov paths for package coverage', ({ fixture, expect }) => {
+    const appDir = join(fixture.projectDir, 'packages', 'app');
+    mkdirSync(join(appDir, 'src'), { recursive: true });
+    mkdirSync(join(appDir, 'test'), { recursive: true });
+    writeFileSync(
+      join(appDir, 'package.json'),
+      JSON.stringify({ name: '@test/app', private: true, type: 'module' }),
+    );
+    writeFileSync(
+      join(appDir, 'vitest.config.ts'),
+      [
+        'import { defineConfig } from "vitest/config";',
+        'import { configurePackage } from "@gtbuchanan/vitest-config/configure";',
+        'export default defineConfig(configurePackage());',
+      ].join('\n'),
+    );
+    writeFileSync(
+      join(appDir, 'src/add.ts'),
+      'export const add = (a: number, b: number) => a + b;\n',
+    );
+    writeFileSync(
+      join(appDir, 'test/cov.test.ts'),
+      [
+        'import { it } from "vitest";',
+        'import { add } from "../src/add";',
+        'it("adds", ({ expect }) => {',
+        '  expect(add(1, 2)).toBe(3);',
+        '});',
+      ].join('\n'),
+    );
+
+    const initResult = runCommand('git', ['init'], { cwd: fixture.projectDir });
+
+    expect(initResult).toMatchObject({ exitCode: 0 });
+
+    const { exitCode } = runCommand(
+      fixture.vitest,
+      ['run', '--reporter=verbose', '--coverage', 'test/cov.test.ts'],
+      {
+        cwd: appDir,
+        env: {
+          ...fixture.env,
+          GITHUB_WORKSPACE: fixture.projectDir,
+          INIT_CWD: appDir,
+        },
+      },
+    );
+
+    expect(exitCode).toBe(0);
+
+    const lcovPath = join(appDir, 'dist/coverage/vitest/all/lcov.info');
+
+    expect(existsSync(lcovPath)).toBe(true);
+
+    const lcov = readFileSync(lcovPath, 'utf-8');
+    const normalizedLcov = lcov.replaceAll('\\', '/');
+
+    expect(normalizedLcov).toContain('SF:packages/app/src/add.ts');
+  });
+
   it('auto-resets mocks between tests (mockReset: true)', ({ fixture, expect }) => {
     const { exitCode, stdout } = fixture.run({
       files: {

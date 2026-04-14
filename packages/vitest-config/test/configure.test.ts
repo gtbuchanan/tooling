@@ -161,8 +161,14 @@ describe('vitest configureGlobal', () => {
 
   it('uses lcov coverage reporter', ({ expect }) => {
     const config = configureGlobal();
+    const reporter = config.test?.coverage?.reporter?.[0];
 
-    expect(config.test?.coverage?.reporter).toEqual(['lcov']);
+    expect(reporter?.[0]).toBe('lcov');
+
+    const options = reporter?.[1];
+
+    expect(options).toBeTypeOf('object');
+    expect(options).toHaveProperty('projectRoot', expect.any(String));
   });
 
   it('configures slow tag with default timeout', ({ expect }) => {
