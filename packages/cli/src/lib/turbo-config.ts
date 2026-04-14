@@ -203,7 +203,7 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
         dependsOn: flags.hasPublished ? [Aggregate.pack, topo(Aggregate.pack)] : [],
         env: ['CI'],
         inputs: ['e2e/**', 'vitest.config.e2e.*'],
-        outputs: [],
+        outputs: ['dist/test-results/vitest/blob-e2e.json'],
       },
     },
   ];

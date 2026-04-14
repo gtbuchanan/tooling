@@ -78,7 +78,7 @@
       "dependsOn": ["pack", "^pack"],
       "env": ["CI"],
       "inputs": ["e2e/**", "vitest.config.e2e.*"],
-      "outputs": []
+      "outputs": ["dist/test-results/vitest/blob-e2e.json"]
     },
     "test:vitest:fast": {
       "dependsOn": ["^compile:ts"],
