@@ -280,6 +280,9 @@ importers:
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      '@gtbuchanan/vitest-config':
+        specifier: workspace:*
+        version: link:../vitest-config
     publishDirectory: dist/source
 
   packages/oxfmt-config:
@@ -352,6 +355,9 @@ importers:
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      '@gtbuchanan/vitest-config':
+        specifier: workspace:*
+        version: link:../vitest-config
       '@tsconfig/strictest':
         specifier: 'catalog:'
         version: 2.0.8

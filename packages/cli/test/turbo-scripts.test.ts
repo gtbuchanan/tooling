@@ -40,6 +40,14 @@ describe.concurrent(generatePackageScripts, () => {
     expect(result).toHaveProperty('test:vitest:slow', 'gtb test:vitest:slow');
   });
 
+  it('generates test:vitest:e2e for packages with e2e vitest config', ({ expect }) => {
+    const caps = makeCapabilities({ hasVitestE2e: true });
+
+    const result = generatePackageScripts(caps, false);
+
+    expect(result).toHaveProperty('test:vitest:e2e', 'gtb test:vitest:e2e');
+  });
+
   it('generates gtb shim for self-hosted packages', ({ expect }) => {
     const caps = makeCapabilities({ dir: '/root/packages/app', hasTypeScript: true });
 

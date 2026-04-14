@@ -78,7 +78,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   return {
     generateScripts,
     hasCheck: hasTypeScript || hasLint || hasVitest,
-    hasE2e: discovery.root.hasVitestE2e,
+    hasE2e: discovery.root.hasVitestE2e || discovery.packages.some(pkg => pkg.hasVitestE2e),
     hasEslint,
     hasGenerate: generateScripts.length > 0,
     hasLint,

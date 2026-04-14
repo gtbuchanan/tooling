@@ -34,7 +34,8 @@
     "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
     "typecheck:ts": "pnpm run gtb typecheck:ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
-    "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload"
+    "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload",
+    "test:vitest:e2e": "pnpm run gtb test:vitest:e2e"
   },
   "dependencies": {
     "console-fail-test": "catalog:",

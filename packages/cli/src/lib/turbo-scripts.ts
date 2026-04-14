@@ -1,8 +1,8 @@
 import { relative } from 'node:path';
 import {
   compileTs, coverageCodecovUpload, coverageVitestMerge, lintEslint,
-  lintOxlint, packNpm, prepare, testVitestFast, testVitestSlow,
-  turboCheck, typecheckTs,
+  lintOxlint, packNpm, prepare, testVitestE2e, testVitestFast,
+  testVitestSlow, turboCheck, typecheckTs,
 } from '../commands/leaf/index.ts';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
 import {
@@ -38,6 +38,11 @@ const packageScriptEntries = (
       condition: caps.hasVitestTests,
       key: testVitestSlow.name,
       value: cmd(testVitestSlow),
+    },
+    {
+      condition: caps.hasVitestE2e,
+      key: testVitestE2e.name,
+      value: cmd(testVitestE2e),
     },
     {
       condition: caps.hasVitestTests,
