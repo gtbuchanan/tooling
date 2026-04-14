@@ -56,13 +56,11 @@ jobs:
           sudo mv codecov /usr/local/bin/
         shell: bash
 
-      - uses: ./.github/actions/pnpm-tasks
-
       - env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        name: Upload coverage
-        run: pnpm turbo run coverage:codecov:upload
-        shell: bash
+        uses: ./.github/actions/turbo-run
+        with:
+          task: coverage:codecov:upload
 
   config-check:
     name: Config Check

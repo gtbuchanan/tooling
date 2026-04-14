@@ -1,11 +1,19 @@
-import { existsSync } from 'node:fs';
-import { basename, dirname } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import { run } from '../../lib/process.ts';
 import type { CustomCommandDef } from '../types.ts';
 
 const mergedLcov = 'dist/coverage/vitest/merged/lcov.info';
 const fastLcov = 'dist/coverage/vitest/fast/lcov.info';
+/*
+ * Turbo output sentinel. Writing this file after a successful upload
+ * lets turbo cache the task — on cache hit (same lcov inputs), turbo
+ * skips the upload entirely. Codecov flag carryforward covers the gap
+ * for unchanged packages. Must match the `outputs` in turbo.json.
+ */
+const sentinelDir = 'dist/coverage/codecov';
+const sentinelFile = join(sentinelDir, '.uploaded');
 
 /** Resolves the repo root for Codecov network file listing. */
 const resolveNetworkRoot = (): string => {
@@ -14,6 +22,12 @@ const resolveNetworkRoot = (): string => {
   return process.env['GITHUB_WORKSPACE'] ??
     (gitPath === undefined ? undefined : dirname(gitPath)) ??
     cwd;
+};
+
+/** Writes the turbo cache sentinel after a successful upload. */
+const writeSentinel = (): void => {
+  mkdirSync(sentinelDir, { recursive: true });
+  writeFileSync(sentinelFile, '');
 };
 
 /** Resolves the best available lcov file (merged over fast). */
@@ -41,19 +55,18 @@ export const def = {
       return;
     }
 
-    const flag = basename(process.cwd());
-    const networkRoot = resolveNetworkRoot();
-
     await run('codecov', {
       args: [
         'upload-process',
         '--disable-search',
-        '--network-root-folder', networkRoot,
+        '--network-root-folder', resolveNetworkRoot(),
         '-f', file,
-        '-F', flag,
+        '-F', basename(process.cwd()),
         ...args,
       ],
     });
+
+    writeSentinel();
   },
   name: 'coverage:codecov:upload',
 } as const satisfies CustomCommandDef;

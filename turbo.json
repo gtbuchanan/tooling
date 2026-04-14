@@ -29,7 +29,7 @@
     "coverage:codecov:upload": {
       "env": ["CI", "CODECOV_TOKEN"],
       "inputs": ["dist/coverage/vitest/**/lcov.info"],
-      "outputs": []
+      "outputs": ["dist/coverage/codecov/.uploaded"]
     },
     "coverage:merge": {
       "dependsOn": ["coverage:vitest:merge"]

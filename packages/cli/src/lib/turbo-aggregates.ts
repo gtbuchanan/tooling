@@ -113,7 +113,7 @@ const coverageTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[]
     value: {
       env: ['CI', 'CODECOV_TOKEN'],
       inputs: ['dist/coverage/vitest/**/lcov.info'],
-      outputs: [],
+      outputs: ['dist/coverage/codecov/.uploaded'],
     },
   },
 ];
