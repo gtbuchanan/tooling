@@ -87,7 +87,8 @@ This repo dogfoods via a `gtb` package.json script that runs the CLI
 source directly with `node --experimental-strip-types`, bypassing the
 compiled bin entry to avoid a bootstrapping dependency.
 
-Commands: `typecheck:ts`, `compile:ts`, `coverage:vitest:merge`,
+Commands: `typecheck:ts`, `compile:ts`, `coverage:codecov:upload`,
+`coverage:vitest:merge`,
 `lint:eslint`, `lint:oxlint`, `test:vitest`, `test:vitest:fast`,
 `test:vitest:slow`, `test:vitest:e2e`, `pack:npm`, `prepare`,
 `turbo:init`, `turbo:check`.

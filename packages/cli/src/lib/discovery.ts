@@ -11,6 +11,8 @@ import {
 export interface PackageCapabilities {
   /** Package directory path. */
   readonly dir: string;
+  /** Has a `bin/` directory. */
+  readonly hasBin: boolean;
   /** Has an `e2e/` directory. */
   readonly hasE2e: boolean;
   /** Has one or more `generate:*` scripts in package.json. */
@@ -21,6 +23,8 @@ export interface PackageCapabilities {
   readonly hasEslint: boolean;
   /** Has oxlint config or `@gtbuchanan/oxlint-config` dependency. */
   readonly hasOxlint: boolean;
+  /** Has a `scripts/` directory. */
+  readonly hasScripts: boolean;
   /** Has a `test/` directory. */
   readonly hasTest: boolean;
   /** Has `@gtbuchanan/tsconfig` dependency or `tsconfig.json`. */
@@ -99,10 +103,12 @@ const buildCapabilities = (
   return {
     dir,
     generateScripts,
+    hasBin: hasDir(dir, 'bin'),
     hasE2e: hasDir(dir, 'e2e'),
     hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasFilePrefix(files, 'eslint.config'),
     hasGenerate: generateScripts.length > 0,
     hasOxlint: hasDep(deps, '@gtbuchanan/oxlint-config') || hasFilePrefix(files, 'oxlint.config'),
+    hasScripts: hasDir(dir, 'scripts'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),
     hasVitest,

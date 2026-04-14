@@ -1,9 +1,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'vitest';
+import { parse as parseYaml } from 'yaml';
 import {
+  mergeCodecovSections,
   mergePackageScripts,
   writeJsonFile,
+  writeYamlFile,
 } from '#src/lib/file-writer.js';
 import { createTempDir } from './helpers.ts';
 
@@ -118,5 +121,98 @@ describe(mergePackageScripts, () => {
       name: 'test',
       version: '1.0.0',
     });
+  });
+});
+
+describe(writeYamlFile, () => {
+  it('writes valid YAML with trailing newline', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'test.yml');
+
+    writeYamlFile(path, { key: 'value', list: [1, 2] });
+
+    const content = readFileSync(path, 'utf-8');
+    const parsed: unknown = parseYaml(content);
+
+    expect(parsed).toEqual({ key: 'value', list: [1, 2] });
+    expect(content.endsWith('\n')).toBe(true);
+  });
+});
+
+describe(mergeCodecovSections, () => {
+  const sections = {
+    component_management: {
+      individual_components: [
+        { component_id: 'app', name: 'app', paths: ['packages/app/src/**'] },
+      ],
+    },
+    flags: {
+      app: { carryforward: true, paths: ['packages/app/'] },
+    },
+  };
+
+  it('throws on malformed YAML in existing file', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'codecov.yml');
+    writeFileSync(path, 'invalid: [}');
+
+    expect(() => {
+      mergeCodecovSections(path, sections);
+    }).toThrow(/invalid YAML/v);
+  });
+
+  it('creates codecov.yml when file does not exist', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'codecov.yml');
+
+    mergeCodecovSections(path, sections);
+
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+
+    expect(parsed).toHaveProperty('flags');
+    expect(parsed).toHaveProperty('component_management');
+  });
+
+  it('overwrites flags and components in existing file', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'codecov.yml');
+    const existingYaml =
+      'flags:\n  old:\n    carryforward: true\n    paths:\n      - packages/old/\n';
+    writeFileSync(path, existingYaml);
+
+    mergeCodecovSections(path, sections);
+
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+
+    expect(parsed).toHaveProperty('flags.app');
+    expect(parsed).not.toHaveProperty('flags.old');
+  });
+
+  it('preserves user-configured keys', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'codecov.yml');
+    writeFileSync(path, 'codecov:\n  require_ci_to_pass: true\nflags: {}\n');
+
+    mergeCodecovSections(path, sections);
+
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+
+    expect(parsed).toHaveProperty('codecov');
+  });
+
+  it('preserves component_management.default_rules', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'codecov.yml');
+    writeFileSync(
+      path,
+      'component_management:\n  default_rules:\n    statuses:\n      - type: project\n',
+    );
+
+    mergeCodecovSections(path, sections);
+
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+
+    expect(parsed).toHaveProperty('component_management.default_rules');
+    expect(parsed).toHaveProperty('component_management.individual_components');
   });
 });

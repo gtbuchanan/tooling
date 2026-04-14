@@ -362,6 +362,9 @@ importers:
       console-fail-test:
         specifier: 'catalog:'
         version: 0.6.1
+      find-up-simple:
+        specifier: 'catalog:'
+        version: 1.0.1
       vitest:
         specifier: ^4.0.0
         version: 4.1.2(@types/node@25.5.2)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(jiti@2.6.1)(yaml@2.8.3))
@@ -1701,7 +1704,7 @@ packages:
     engines: {node: '>=8'}
 
   find-up-simple@1.0.1:
-    resolution: {integrity: sha512-afd4O7zpqHeRyg4PfDQsXmlDe2PfdHtJt6Akt8jOWaApLOZk5JXs6VMR29lz03pRe9mpykrRCYIYxaJYcfpncQ==}
+    resolution: {integrity: sha512-afd4O7zpqHeRyg4PfDQsXmlDe2PfdHtJt6Akt8jOWaApLOZk5JXs6VMR29lz03pRe9mpykrRCYIYxaJYcfpncQ==, tarball: https://registry.npmjs.org/find-up-simple/-/find-up-simple-1.0.1.tgz}
     engines: {node: '>=18'}
 
   find-up@4.1.0:

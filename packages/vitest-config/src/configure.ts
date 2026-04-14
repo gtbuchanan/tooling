@@ -1,5 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { basename, join, resolve as resolvePath } from 'node:path';
+import { basename, dirname, join, resolve as resolvePath } from 'node:path';
+import { findUpSync } from 'find-up-simple';
 import {
   type TestTagDefinition,
   type UserWorkspaceConfig,
@@ -121,6 +122,18 @@ const hasVitestConfig = (dir: string): boolean =>
   vitestConfigFiles.some(file => existsSync(join(dir, file)));
 
 const globSuffix = '/*';
+const findGitRoot = (cwd: string): string | undefined => {
+  const gitPath = findUpSync('.git', { cwd });
+  return gitPath === undefined ? undefined : dirname(gitPath);
+};
+
+const resolveCoverageProjectRoot = (cwd: string): string => {
+  const githubWorkspace = process.env['GITHUB_WORKSPACE'];
+  if (githubWorkspace !== undefined && githubWorkspace !== '') {
+    return githubWorkspace;
+  }
+  return findGitRoot(cwd) ?? cwd;
+};
 
 /**
  * Resolves glob patterns (e.g. `['packages/*']`) to absolute directory paths.
@@ -218,7 +231,8 @@ export const buildGlobalConfig = (
           exclude: [...excludeDefault],
           include: [...(spec.coverageInclude ?? coverageInclude)],
           provider: 'v8',
-          reporter: ['lcov'],
+          // Emit repo-relative SF paths so Codecov maps coverage across packages
+          reporter: [['lcov', { projectRoot: resolveCoverageProjectRoot(process.cwd()) }]],
           reportsDirectory: join(
             process.cwd(),
             spec.reportsDirectory,

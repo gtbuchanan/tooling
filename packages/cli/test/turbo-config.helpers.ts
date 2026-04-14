@@ -6,10 +6,12 @@ export const makeCapabilities = (
   const merged = {
     dir: '/fake/pkg',
     generateScripts: [] as readonly string[],
+    hasBin: false,
     hasE2e: false,
     hasEslint: false,
     hasGenerate: false,
     hasOxlint: false,
+    hasScripts: false,
     hasTest: false,
     hasTypeScript: false,
     hasVitest: false,

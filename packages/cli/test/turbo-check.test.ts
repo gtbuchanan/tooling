@@ -1,21 +1,16 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import * as v from 'valibot';
 import { describe, it, vi } from 'vitest';
 import { parseIgnoreArgs, turboCheck } from '#src/commands/turbo-check.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
-import { mergePackageScripts, writeJsonFile } from '#src/lib/file-writer.js';
-import { ManifestSchema } from '#src/lib/manifest.js';
+import { writeJsonFile } from '#src/lib/file-writer.js';
 import {
   generatePackageScripts,
-  generateRootScripts,
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
-import { createTempDir, writeJson, writeTsconfigs } from './helpers.ts';
-
-const TurboJsonSchema = v.looseObject({
-  tasks: v.optional(v.record(v.string(), v.unknown())),
-});
+import {
+  createTempDir, initProject, readScripts, readTurboTasks, writeJson,
+} from './helpers.ts';
 
 const createConsumerProject = (): string => {
   const root = createTempDir();
@@ -51,37 +46,6 @@ const createConsumerProject = (): string => {
   writeFileSync(join(pkg, 'vitest.config.ts'), '');
 
   return root;
-};
-
-const initProject = (root: string): void => {
-  const discovery = discoverWorkspace({ cwd: root });
-  writeJsonFile(join(root, 'turbo.json'), generateTurboJson(discovery));
-  writeTsconfigs(root, discovery.packages);
-  mergePackageScripts(join(root, 'package.json'), generateRootScripts(discovery), true);
-
-  for (const pkg of discovery.packages) {
-    const scripts = generatePackageScripts(pkg, discovery.isSelfHosted);
-    const pkgPath = join(pkg.dir, 'package.json');
-    const manifest = v.parse(ManifestSchema, JSON.parse(readFileSync(pkgPath, 'utf-8')));
-    writeJson(pkg.dir, 'package.json', {
-      ...manifest,
-      scripts: { ...manifest.scripts, ...scripts },
-    });
-  }
-};
-
-const readTurboTasks = (root: string): Record<string, unknown> => {
-  const raw: unknown = JSON.parse(readFileSync(join(root, 'turbo.json'), 'utf-8'));
-  const { tasks } = v.parse(TurboJsonSchema, raw);
-
-  return tasks ?? {};
-};
-
-const readScripts = (pkgDir: string): Record<string, string> => {
-  const raw: unknown = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf-8'));
-  const { scripts } = v.parse(ManifestSchema, raw);
-
-  return scripts ?? {};
 };
 
 describe('turbo:check drift detection', () => {
@@ -236,5 +200,87 @@ describe(parseIgnoreArgs, () => {
     const result = parseIgnoreArgs(['--ignore']);
 
     expect(result.size).toBe(0);
+  });
+});
+
+describe('turbo:check codecov drift detection', () => {
+  const runInDir = (dir: string, fn: () => void): void => {
+    const origCwd = process.cwd();
+    const origExitCode = process.exitCode;
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      process.chdir(dir);
+      fn();
+    } finally {
+      process.chdir(origCwd);
+      process.exitCode = origExitCode;
+    }
+  };
+
+  it('passes with valid codecov.yml after init', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).not.toBe(1);
+    });
+  });
+
+  it('sets exitCode 1 when codecov.yml has invalid YAML', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(join(root, 'codecov.yml'), 'invalid: [}');
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
+  it('sets exitCode 1 when codecov.yml is missing', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(join(root, 'codecov.yml'), '');
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
+  it('sets exitCode 1 when flag is missing', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      join(root, 'codecov.yml'),
+      'flags: {}\ncomponent_management:\n  individual_components: []\n',
+    );
+
+    runInDir(root, () => {
+      turboCheck([]);
+
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
+  it('--ignore suppresses missing flag error', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      join(root, 'codecov.yml'),
+      'flags: {}\ncomponent_management:\n  individual_components: []\n',
+    );
+
+    runInDir(root, () => {
+      turboCheck(['--ignore', 'app']);
+
+      expect(process.exitCode).not.toBe(1);
+    });
   });
 });

@@ -1,6 +1,8 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as v from 'valibot';
+import { parse as parseYaml } from 'yaml';
+import { type CodecovSections, generateCodecovSections } from '../lib/codecov-config.ts';
 import { type WorkspaceDiscovery, discoverWorkspace } from '../lib/discovery.ts';
 import { readJsonFile } from '../lib/file-writer.ts';
 import {
@@ -137,6 +139,80 @@ const checkTsconfigs = (
     checkTsconfigFile(path, generate(readUserCompilerOptions(path)), ownedKeys),
   );
 
+const CodecovYamlSchema = v.nullable(
+  v.looseObject({
+    component_management: v.optional(
+      v.looseObject({
+        individual_components: v.optional(
+          v.array(v.looseObject({ component_id: v.optional(v.string()) })),
+        ),
+      }),
+    ),
+    flags: v.optional(v.record(v.string(), v.unknown())),
+  }),
+);
+
+interface ActualComponent { readonly component_id?: string | undefined }
+
+type ReadCodecovResult =
+  | { readonly data: unknown; readonly errors?: undefined }
+  | { readonly errors: readonly string[] };
+
+const readCodecovYaml = (path: string): ReadCodecovResult => {
+  if (!existsSync(path)) {
+    return { errors: ['codecov.yml is missing (run gtb turbo:init)'] };
+  }
+  try {
+    return { data: parseYaml(readFileSync(path, 'utf-8')) };
+  } catch {
+    return { errors: ['codecov.yml: invalid YAML (run gtb turbo:init)'] };
+  }
+};
+
+const checkCodecovFlags = (
+  actualFlags: Record<string, unknown> | undefined,
+  expected: CodecovSections,
+  ignored: ReadonlySet<string>,
+): readonly string[] =>
+  Object.keys(expected.flags)
+    .filter(name => !ignored.has(name))
+    .filter(name => actualFlags === undefined || !(name in actualFlags))
+    .map(name => `codecov.yml: missing flag '${name}'`);
+
+const checkCodecovComponents = (
+  actualComponents: readonly ActualComponent[],
+  expected: CodecovSections,
+  ignored: ReadonlySet<string>,
+): readonly string[] => {
+  const actualIds = new Set(actualComponents.map(comp => comp.component_id));
+  return expected.component_management.individual_components
+    .filter(({ component_id: id }) => !ignored.has(id))
+    .filter(({ component_id: id }) => !actualIds.has(id))
+    .map(({ component_id: id }) => `codecov.yml: missing component '${id}'`);
+};
+
+const checkCodecovSections = (
+  rootDir: string,
+  discovery: WorkspaceDiscovery,
+  ignored: ReadonlySet<string>,
+): readonly string[] => {
+  const path = join(rootDir, 'codecov.yml');
+  const readResult = readCodecovYaml(path);
+  if (readResult.errors !== undefined) {
+    return readResult.errors;
+  }
+  const parseResult = v.safeParse(CodecovYamlSchema, readResult.data);
+  if (!parseResult.success || parseResult.output === null) {
+    return ['codecov.yml: failed to parse'];
+  }
+  const { flags: actualFlags, component_management: actualCm } = parseResult.output;
+  const expected = generateCodecovSections(discovery);
+  return [
+    ...checkCodecovFlags(actualFlags, expected, ignored),
+    ...checkCodecovComponents(actualCm?.individual_components ?? [], expected, ignored),
+  ];
+};
+
 /**
  * Validates project config against expected baseline from discovery.
  * Checks turbo tasks, package scripts, and tsconfig structure.
@@ -158,6 +234,9 @@ export const turboCheck = (args: readonly string[]): void => {
         ignored,
       ),
     ),
+    ...(discovery.packages.some(pkg => pkg.hasVitestTests)
+      ? checkCodecovSections(discovery.rootDir, discovery, ignored)
+      : []),
   ];
 
   if (drift.length === 0) {
