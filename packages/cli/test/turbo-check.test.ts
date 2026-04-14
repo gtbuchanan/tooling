@@ -1,21 +1,16 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import * as v from 'valibot';
 import { describe, it, vi } from 'vitest';
 import { parseIgnoreArgs, turboCheck } from '#src/commands/turbo-check.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
-import { mergePackageScripts, writeJsonFile } from '#src/lib/file-writer.js';
-import { ManifestSchema } from '#src/lib/manifest.js';
+import { writeJsonFile } from '#src/lib/file-writer.js';
 import {
   generatePackageScripts,
-  generateRootScripts,
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
-import { createTempDir, writeJson, writeTsconfigs } from './helpers.ts';
-
-const TurboJsonSchema = v.looseObject({
-  tasks: v.optional(v.record(v.string(), v.unknown())),
-});
+import {
+  createTempDir, initProject, readScripts, readTurboTasks, writeJson,
+} from './helpers.ts';
 
 const createConsumerProject = (): string => {
   const root = createTempDir();
@@ -51,46 +46,6 @@ const createConsumerProject = (): string => {
   writeFileSync(join(pkg, 'vitest.config.ts'), '');
 
   return root;
-};
-
-const initProject = (root: string): void => {
-  const discovery = discoverWorkspace({ cwd: root });
-  writeJsonFile(join(root, 'turbo.json'), generateTurboJson(discovery));
-  writeTsconfigs(root, discovery.packages);
-  mergePackageScripts(join(root, 'package.json'), generateRootScripts(discovery), true);
-
-  for (const pkg of discovery.packages) {
-    const scripts = generatePackageScripts(pkg, discovery.isSelfHosted);
-    const pkgPath = join(pkg.dir, 'package.json');
-    const manifest = v.parse(ManifestSchema, JSON.parse(readFileSync(pkgPath, 'utf-8')));
-    writeJson(pkg.dir, 'package.json', {
-      ...manifest,
-      scripts: { ...manifest.scripts, ...scripts },
-    });
-  }
-
-  if (discovery.packages.some(pkg => pkg.hasVitestTests)) {
-    writeFileSync(
-      join(root, 'codecov.yml'),
-      'flags:\n  app:\n    carryforward: true\n    paths:\n      - packages/app/\n' +
-      'component_management:\n  individual_components:\n' +
-      '    - component_id: app\n      name: app\n      paths:\n        - packages/app/src/**\n',
-    );
-  }
-};
-
-const readTurboTasks = (root: string): Record<string, unknown> => {
-  const raw: unknown = JSON.parse(readFileSync(join(root, 'turbo.json'), 'utf-8'));
-  const { tasks } = v.parse(TurboJsonSchema, raw);
-
-  return tasks ?? {};
-};
-
-const readScripts = (pkgDir: string): Record<string, string> => {
-  const raw: unknown = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf-8'));
-  const { scripts } = v.parse(ManifestSchema, raw);
-
-  return scripts ?? {};
 };
 
 describe('turbo:check drift detection', () => {
