@@ -2,6 +2,7 @@ import { describe, it } from 'vitest';
 import {
   configureEndToEnd,
   configureEndToEndGlobal,
+  configureEndToEndPackage,
   configureEndToEndProject,
 } from '#src/configure-e2e.js';
 import { excludeDefault } from '#src/configure.js';
@@ -108,6 +109,45 @@ describe('vitest configureEndToEndGlobal', () => {
     const config = configureEndToEndGlobal();
 
     expect(config.test).not.toHaveProperty('projects');
+  });
+});
+
+describe('vitest configureEndToEndPackage', () => {
+  it('includes e2e test patterns', ({ expect }) => {
+    const config = configureEndToEndPackage();
+
+    expect(config.test?.include).toEqual(['e2e/**/*.test.ts']);
+  });
+
+  it('includes global settings (setupFiles, mockReset)', ({ expect }) => {
+    const config = configureEndToEndPackage();
+
+    expect(config.test?.setupFiles).toBeDefined();
+    expect(config.test?.mockReset).toBe(true);
+  });
+
+  it('does not include coverage', ({ expect }) => {
+    const config = configureEndToEndPackage();
+
+    expect(config.test?.coverage).toBeUndefined();
+  });
+
+  it('includes testTimeout', ({ expect }) => {
+    const config = configureEndToEndPackage();
+
+    expect(config.test?.testTimeout).toBe(300_000);
+  });
+
+  it('accepts custom testTimeout', ({ expect }) => {
+    const config = configureEndToEndPackage({ testTimeout: 120_000 });
+
+    expect(config.test?.testTimeout).toBe(120_000);
+  });
+
+  it('includes default excludes', ({ expect }) => {
+    const config = configureEndToEndPackage();
+
+    expect(config.test?.exclude).toContain('**/dist/**');
   });
 });
 

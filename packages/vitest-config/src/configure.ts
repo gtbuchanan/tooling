@@ -111,15 +111,24 @@ export const resolveSetupFiles = (options: VitestConfigureOptions): string[] => 
   return setupFiles;
 };
 
-const vitestConfigFiles = [
-  'vitest.config.ts',
-  'vitest.config.js',
-  'vitest.config.mts',
-  'vitest.config.mjs',
-] as const;
+const configExtensions = ['.ts', '.js', '.mts', '.mjs'] as const;
+
+/**
+ * Finds a config file by prefix in a directory.
+ * Checks common extensions (.ts, .js, .mts, .mjs) and returns the first match.
+ */
+export const findConfigFile = (dir: string, prefix: string): string | undefined => {
+  for (const ext of configExtensions) {
+    const path = join(dir, `${prefix}${ext}`);
+    if (existsSync(path)) {
+      return path;
+    }
+  }
+  return undefined;
+};
 
 const hasVitestConfig = (dir: string): boolean =>
-  vitestConfigFiles.some(file => existsSync(join(dir, file)));
+  findConfigFile(dir, 'vitest.config') !== undefined;
 
 const globSuffix = '/*';
 const findGitRoot = (cwd: string): string | undefined => {

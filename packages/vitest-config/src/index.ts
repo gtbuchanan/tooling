@@ -20,6 +20,7 @@ export {
 export {
   configureEndToEnd,
   configureEndToEndGlobal,
+  configureEndToEndPackage,
   configureEndToEndProject,
   type VitestEndToEndConfigureGlobalOptions,
   type VitestEndToEndConfigureOptions,
