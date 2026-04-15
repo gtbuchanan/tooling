@@ -9,7 +9,7 @@ vi.mock(import('eslint-plugin-only-warn'), () => {
   return {};
 });
 
-describe('ESLint configure', () => {
+describe(configure, () => {
   it('imports eslint-plugin-only-warn when onlyWarn is true', async ({ expect }) => {
     onlyWarnImport.mockClear();
 

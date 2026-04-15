@@ -68,7 +68,7 @@ const createConsumerProject = (): string => {
   return root;
 };
 
-describe('turbo:init integration', () => {
+describe(turboInit, () => {
   it('generates turbo.json with correct tasks for consumer project', ({ expect }) => {
     const root = createConsumerProject();
     const discovery = discoverWorkspace({ cwd: root });
