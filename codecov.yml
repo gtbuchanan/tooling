@@ -26,6 +26,10 @@ component_management:
       name: oxfmt-config
       paths:
         - packages/oxfmt-config/src/**
+    - component_id: markdownlint-config
+      name: markdownlint-config
+      paths:
+        - packages/markdownlint-config/src/**
     - component_id: eslint-config
       name: eslint-config
       paths:
@@ -53,6 +57,10 @@ flags:
     carryforward: true
     paths:
       - packages/eslint-config/
+  markdownlint-config:
+    carryforward: true
+    paths:
+      - packages/markdownlint-config/
   oxfmt-config:
     carryforward: true
     paths:
