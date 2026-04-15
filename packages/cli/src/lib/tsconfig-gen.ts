@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import ts from 'typescript';
 import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
 import { readJsonFile } from './file-writer.ts';
@@ -7,7 +8,46 @@ import { readJsonFile } from './file-writer.ts';
 const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*.config.*'] as const;
 
 /** Directories included in tsconfig.build.json for compilation. */
-const buildInclude = ['bin', 'src'] as const;
+export const buildInclude = ['bin', 'src'] as const;
+
+const ReadConfigSchema = v.object({
+  config: v.unknown(),
+  error: v.optional(v.unknown()),
+});
+
+const ResolvedConfigSchema = v.object({
+  include: v.optional(v.array(v.string())),
+});
+
+const readFile = (path: string): string | undefined => ts.sys.readFile(path);
+
+/** Stub host that skips directory scanning — we only need the resolved config. */
+const parseHost: ts.ParseConfigHost = {
+  fileExists: path => ts.sys.fileExists(path),
+  readDirectory: () => [],
+  readFile,
+  useCaseSensitiveFileNames: ts.sys.useCaseSensitiveFileNames,
+};
+
+/**
+ * Resolves the effective `include` from a tsconfig.build.json using the
+ * TypeScript API. Lets `parseJsonConfigFileContent` handle extends
+ * resolution. Falls back to {@link buildInclude} if resolution fails.
+ */
+export const resolveBuildIncludes = (dir: string): readonly string[] => {
+  const configPath = join(dir, 'tsconfig.build.json');
+  const raw = v.safeParse(ReadConfigSchema, ts.readConfigFile(configPath, readFile));
+  if (!raw.success || raw.output.error !== undefined) {
+    return buildInclude;
+  }
+
+  const parsed = ts.parseJsonConfigFileContent(
+    raw.output.config, parseHost, dir, undefined, configPath,
+  );
+  const result = v.safeParse(ResolvedConfigSchema, parsed.raw);
+
+  return result.success ? result.output.include ?? buildInclude : buildInclude;
+};
 
 /** Shape of a generated tsconfig file. */
 export interface GeneratedTsconfig {

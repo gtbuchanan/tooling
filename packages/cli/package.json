@@ -51,6 +51,9 @@
     "@gtbuchanan/vitest-config": "workspace:*",
     "@types/cross-spawn": "catalog:"
   },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
   "engines": {
     "node": ">=22.17"
   }

@@ -287,4 +287,48 @@ describe.concurrent(generateTurboJson, () => {
 
     expect(result.$schema).toBe('https://turbo.build/schema.json');
   });
+
+  it('compile:ts inputs derive from resolved buildIncludes', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({
+        buildIncludes: ['bin', 'src', 'generated', '*.proto.ts'],
+        isPublished: true,
+      }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+    const inputs = result.tasks['compile:ts']?.inputs ?? [];
+
+    expect(inputs).toContain('bin/**');
+    expect(inputs).toContain('src/**');
+    expect(inputs).toContain('generated/**');
+    expect(inputs).toContain('*.proto.ts');
+    expect(inputs).toContain('tsconfig.build.json');
+    expect(inputs).not.toContain('tsconfig.json');
+    expect(inputs).not.toContain('scripts/**');
+  });
+
+  it('test:vitest:fast inputs use explicit vitest config filename', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasTest: true, hasVitest: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+    const inputs = result.tasks['test:vitest:fast']?.inputs ?? [];
+
+    expect(inputs).toContain('vitest.config.ts');
+    expect(inputs).not.toContain('vitest.config.*');
+  });
+
+  it('test:vitest:slow inputs use explicit vitest config filename', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasTest: true, hasVitest: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+    const inputs = result.tasks['test:vitest:slow']?.inputs ?? [];
+
+    expect(inputs).toContain('vitest.config.ts');
+    expect(inputs).not.toContain('vitest.config.*');
+  });
 });

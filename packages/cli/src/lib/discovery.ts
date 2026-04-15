@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Manifest } from './manifest.ts';
+import { buildInclude, resolveBuildIncludes } from './tsconfig-gen.ts';
 import {
   type ResolveWorkspaceOptions,
   readParsedManifest,
@@ -9,6 +10,8 @@ import {
 
 /** Capabilities detected for a single package. */
 export interface PackageCapabilities {
+  /** Resolved `include` directories from tsconfig.build.json (published packages only). */
+  readonly buildIncludes: readonly string[];
   /** Package directory path. */
   readonly dir: string;
   /** Has a `bin/` directory. */
@@ -99,8 +102,10 @@ const buildCapabilities = (
     hasFilePrefix(files, 'vitest.config');
   const hasTest = hasDir(dir, 'test');
   const generateScripts = collectGenerateScripts(manifest);
+  const isPublished = manifest.private !== true && manifest.publishConfig?.directory !== undefined;
 
   return {
+    buildIncludes: isPublished ? resolveBuildIncludes(dir) : buildInclude,
     dir,
     generateScripts,
     hasBin: hasDir(dir, 'bin'),
@@ -114,7 +119,7 @@ const buildCapabilities = (
     hasVitest,
     hasVitestE2e: hasFilePrefix(files, 'vitest.config.e2e'),
     hasVitestTests: hasVitest && hasTest,
-    isPublished: manifest.private !== true && manifest.publishConfig?.directory !== undefined,
+    isPublished,
   };
 };
 
