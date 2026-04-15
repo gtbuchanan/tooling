@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Shared markdownlint configuration",
   "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
   "exports": {
     ".": "./src/index.mjs"
   },
@@ -20,7 +23,11 @@
     "lint:oxlint": "pnpm run gtb lint:oxlint",
     "typecheck:ts": "pnpm run gtb typecheck:ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
-    "test:vitest:e2e": "pnpm run gtb test:vitest:e2e"
+    "test:vitest:e2e": "pnpm run gtb test:vitest:e2e",
+    "test:vitest:fast": "pnpm run gtb test:vitest:fast",
+    "test:vitest:slow": "pnpm run gtb test:vitest:slow",
+    "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload",
+    "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge"
   },
   "dependencies": {
     "markdownlint": "catalog:"

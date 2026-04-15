@@ -21,7 +21,7 @@ const identity = val => val;
  * @param {(defaults: Readonly<Configuration>) => Configuration} [fn]
  * @returns {Configuration}
  */
-export const configure = (fn = identity) => fn(defaults);
+export const configure = (fn = identity) => fn({ ...defaults });
 
 /** @typedef {{ ignores?: string[] }} Cli2Options */
 
@@ -37,4 +37,5 @@ const cli2Defaults = Object.freeze({
  * @param {(defaults: Readonly<Cli2Options>) => Cli2Options} [fn]
  * @returns {Cli2Options}
  */
-export const configureCli2 = (fn = identity) => fn(cli2Defaults);
+export const configureCli2 = (fn = identity) =>
+  fn({ ...cli2Defaults, ignores: [...(cli2Defaults.ignores ?? [])] });
