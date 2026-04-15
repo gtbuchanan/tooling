@@ -4,5 +4,8 @@
     "rootDir": "."
   },
   "extends": "../../tsconfig.build.json",
-  "include": ["bin", "src"]
+  "include": [
+    "bin",
+    "src"
+  ]
 }

@@ -56,13 +56,6 @@ export interface GeneratedTsconfig {
   readonly include?: readonly string[];
 }
 
-const sortRecord = (
-  obj: Record<string, unknown>,
-): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(obj).sort(([left], [right]) => left.localeCompare(right)),
-  );
-
 /**
  * Merges user compilerOptions with generated ones.
  * Generated keys take precedence; user-added keys are preserved.
@@ -71,7 +64,7 @@ const mergeCompilerOptions = (
   existing: Record<string, unknown> | undefined,
   generated: Record<string, unknown>,
 ): Record<string, unknown> =>
-  sortRecord({ ...existing, ...generated });
+  ({ ...existing, ...generated });
 
 const TsconfigSchema = v.object({
   compilerOptions: v.optional(v.record(v.string(), v.unknown())),

@@ -15,6 +15,21 @@ const config: Readonly<OxfmtConfig> = Object.freeze({
     '*.ts',
     '*.tsx',
   ],
+  overrides: [
+    {
+      files: ['*.json', '*.json5', '*.jsonc'],
+      options: {
+        /*
+         * Justification: Force JSON arrays to always expand (one element
+         * per line) so that JSON.stringify output is already
+         * oxfmt-compliant. Without this, oxfmt collapses short arrays to
+         * inline, causing turbo:init output to drift from the formatted
+         * result on every pre-commit run.
+         */
+        printWidth: 1,
+      },
+    },
+  ],
   singleQuote: true,
 });
 
@@ -26,4 +41,8 @@ const config: Readonly<OxfmtConfig> = Object.freeze({
  */
 export const configure = (
   fn: (defaultConfig: Readonly<OxfmtConfig>) => OxfmtConfig = id,
-): OxfmtConfig => defineConfig(fn({ ...config, ignorePatterns: [...config.ignorePatterns ?? []] }));
+): OxfmtConfig => defineConfig(fn({
+  ...config,
+  ignorePatterns: [...config.ignorePatterns ?? []],
+  overrides: [...config.overrides ?? []],
+}));

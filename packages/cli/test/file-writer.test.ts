@@ -5,6 +5,7 @@ import { parse as parseYaml } from 'yaml';
 import {
   mergeCodecovSections,
   mergePackageScripts,
+  sortKeysDeep,
   writeJsonFile,
   writeYamlFile,
 } from '#src/lib/file-writer.js';
@@ -137,6 +138,43 @@ describe(writeYamlFile, () => {
     expect(parsed).toEqual({ key: 'value', list: [1, 2] });
     expect(content.endsWith('\n')).toBe(true);
   });
+
+  it('uses single quotes for strings that need quoting', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'test.yml');
+
+    writeYamlFile(path, { pattern: '**/dist/**' });
+
+    const content = readFileSync(path, 'utf-8');
+
+    expect(content).toContain("'**/dist/**'");
+  });
+});
+
+describe(sortKeysDeep, () => {
+  it('sorts top-level keys alphabetically', ({ expect }) => {
+    // oxlint-disable-next-line sort-keys -- intentionally unsorted input
+    expect(sortKeysDeep({ zebra: 3, alpha: 1, mango: 2 }))
+      .toEqual({ alpha: 1, mango: 2, zebra: 3 });
+  });
+
+  it('sorts nested object keys recursively', ({ expect }) => {
+    // oxlint-disable-next-line sort-keys -- intentionally unsorted input
+    const input = { outer: { zz: 1, aa: 2 } };
+
+    expect(sortKeysDeep(input)).toEqual({ outer: { aa: 2, zz: 1 } });
+  });
+
+  it('preserves array element order', ({ expect }) => {
+    expect(sortKeysDeep({ items: [3, 1, 2] })).toEqual({ items: [3, 1, 2] });
+  });
+
+  it('returns primitives unchanged', ({ expect }) => {
+    expect(sortKeysDeep('hello')).toBe('hello');
+    expect(sortKeysDeep(42)).toBe(42);
+    expect(sortKeysDeep(null)).toBeNull();
+    expect(sortKeysDeep(true)).toBe(true);
+  });
 });
 
 describe(mergeCodecovSections, () => {
@@ -198,6 +236,21 @@ describe(mergeCodecovSections, () => {
     const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
 
     expect(parsed).toHaveProperty('codecov');
+  });
+
+  it('sorts keys and uses single quotes', ({ expect }) => {
+    const dir = createTempDir();
+    const path = join(dir, 'codecov.yml');
+    writeFileSync(path, "ignore:\n  - '**/dist/**'\n");
+
+    mergeCodecovSections(path, sections);
+
+    const content = readFileSync(path, 'utf-8');
+    const keys = [...content.matchAll(/^(?<key>\w[\w_]*):/gmv)]
+      .map(match => match.groups?.['key'] ?? '');
+
+    expect(keys).toEqual([...keys].sort((left, right) => left.localeCompare(right)));
+    expect(content).toContain("'**/dist/**'");
   });
 
   it('preserves component_management.default_rules', ({ expect }) => {

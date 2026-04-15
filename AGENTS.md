@@ -46,6 +46,10 @@ ordering, caching, and parallelism.
   `package.json` script values. No hooks or plugin system.
 - **`turbo:init`** — Generates `turbo.json` and per-package scripts from
   workspace discovery. Run after adding packages or changing the task graph.
+  Without `--force`, existing script values are preserved — this is how
+  packages keep custom overrides (e.g., `@gtbuchanan/tsconfig` uses a
+  custom `compile:ts` script). Only use `--force` when you intentionally
+  want to reset all scripts to their generated defaults.
 - **`turbo:check`** — Validates that generated `turbo.json` and per-package
   scripts have not drifted from the expected state.
 

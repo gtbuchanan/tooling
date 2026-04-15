@@ -239,12 +239,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...aggregateTasks(flags),
   ];
 
-  const tasks = collect(entries);
-  const sorted = Object.fromEntries(
-    Object.entries(tasks).sort(([left], [right]) => left.localeCompare(right)),
-  );
-
-  return { $schema: 'https://turbo.build/schema.json', tasks: sorted };
+  return { $schema: 'https://turbo.build/schema.json', tasks: collect(entries) };
 };
 
 export {
