@@ -3,7 +3,7 @@ import { configure, defaultEntryPoints } from '#src/index.js';
 
 const isAndroid = process.platform === 'android';
 
-describe('oxlint configure', () => {
+describe(configure, () => {
   it.runIf(!isAndroid)('includes jsPlugins with defaults', ({ expect }) => {
     const config = configure();
 

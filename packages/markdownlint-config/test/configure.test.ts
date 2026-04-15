@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { configure, configureCli2 } from '#src/index.mjs';
 
-describe('markdownlint configure', () => {
+describe(configure, () => {
   it('disables single-trailing-newline by default', ({ expect }) => {
     const config = configure();
 
@@ -36,7 +36,7 @@ describe('markdownlint configure', () => {
   });
 });
 
-describe('markdownlint configureCli2', () => {
+describe(configureCli2, () => {
   it('ignores .changeset by default', ({ expect }) => {
     const config = configureCli2();
 

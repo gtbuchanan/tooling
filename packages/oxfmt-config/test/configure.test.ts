@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { configure } from '#src/index.js';
 
-describe('oxfmt configure', () => {
+describe(configure, () => {
   it('enables singleQuote by default', ({ expect }) => {
     const config = configure();
 

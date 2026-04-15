@@ -9,7 +9,7 @@ import { excludeDefault } from '#src/configure.js';
 
 const packageName = '@gtbuchanan/vitest-config';
 
-describe('vitest configureEndToEndProject', () => {
+describe(configureEndToEndProject, () => {
   it('does not include resolve alias', ({ expect }) => {
     const config = configureEndToEndProject();
 
@@ -41,7 +41,7 @@ describe('vitest configureEndToEndProject', () => {
   });
 });
 
-describe('vitest configureEndToEndGlobal', () => {
+describe(configureEndToEndGlobal, () => {
   it('does not include coverage', ({ expect }) => {
     const config = configureEndToEndGlobal();
 
@@ -112,7 +112,7 @@ describe('vitest configureEndToEndGlobal', () => {
   });
 });
 
-describe('vitest configureEndToEndPackage', () => {
+describe(configureEndToEndPackage, () => {
   it('includes e2e test patterns', ({ expect }) => {
     const config = configureEndToEndPackage();
 
@@ -151,7 +151,7 @@ describe('vitest configureEndToEndPackage', () => {
   });
 });
 
-describe('vitest configureEndToEnd', () => {
+describe(configureEndToEnd, () => {
   it('merges global and project settings', ({ expect }) => {
     const config = configureEndToEnd();
 

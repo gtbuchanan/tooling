@@ -115,7 +115,7 @@ describe('turbo:check drift detection', () => {
   });
 });
 
-describe('turbo:check command', () => {
+describe(turboCheck, () => {
   const runInDir = (dir: string, fn: () => void): void => {
     const origCwd = process.cwd();
     const origExitCode = process.exitCode;

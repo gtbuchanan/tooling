@@ -13,7 +13,7 @@ import {
 
 const packageName = '@gtbuchanan/vitest-config';
 
-describe('vitest configure', () => {
+describe(configure, () => {
   it('enables mockReset by default', ({ expect }) => {
     const config = configure();
 
@@ -113,7 +113,7 @@ describe('vitest configure', () => {
   });
 });
 
-describe('vitest configureGlobal', () => {
+describe(configureGlobal, () => {
   it('includes setup files', ({ expect }) => {
     const config = configureGlobal();
 
@@ -266,7 +266,7 @@ describe(buildWorkspaceEntry, () => {
   });
 });
 
-describe('vitest configureProject', () => {
+describe(configureProject, () => {
   it('does not include resolve alias', ({ expect }) => {
     const config = configureProject();
 
@@ -286,7 +286,7 @@ describe('vitest configureProject', () => {
   });
 });
 
-describe('vitest configurePackage', () => {
+describe(configurePackage, () => {
   it('includes test patterns', ({ expect }) => {
     const config = configurePackage();
 
