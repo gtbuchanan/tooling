@@ -1,7 +1,7 @@
 # @gtbuchanan/oxfmt-config
 
 Shared oxfmt configuration. Formats non-JS/TS files (JSON, Markdown, YAML, etc.).
-JS/TS files are ignored because `@stylistic` handles formatting through oxlint.
+JS/TS files are ignored because `@stylistic` handles formatting through ESLint.
 
 ## Install
 

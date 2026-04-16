@@ -23,7 +23,6 @@ const createConsumerProject = (): string => {
     devDependencies: {
       '@gtbuchanan/cli': '^0.1.0',
       '@gtbuchanan/eslint-config': '^0.1.0',
-      '@gtbuchanan/oxlint-config': '^0.1.0',
       '@gtbuchanan/tsconfig': '^0.1.0',
       '@gtbuchanan/vitest-config': '^0.1.0',
     },
@@ -38,7 +37,6 @@ const createConsumerProject = (): string => {
   writeFileSync(join(app, 'package.json'), JSON.stringify({
     devDependencies: {
       '@gtbuchanan/eslint-config': '^0.1.0',
-      '@gtbuchanan/oxlint-config': '^0.1.0',
       '@gtbuchanan/tsconfig': '^0.1.0',
       '@gtbuchanan/vitest-config': '^0.1.0',
     },
@@ -48,7 +46,6 @@ const createConsumerProject = (): string => {
   }));
   writeFileSync(join(app, 'tsconfig.json'), '{}');
   writeFileSync(join(app, 'eslint.config.ts'), '');
-  writeFileSync(join(app, 'oxlint.config.ts'), '');
   writeFileSync(join(app, 'vitest.config.ts'), '');
 
   const lib = join(root, 'packages', 'lib');
@@ -78,7 +75,6 @@ describe(turboInit, () => {
     expect(turboJson.tasks).toHaveProperty('typecheck:ts');
     expect(turboJson.tasks).toHaveProperty('compile:ts');
     expect(turboJson.tasks).toHaveProperty('lint:eslint');
-    expect(turboJson.tasks).toHaveProperty('lint:oxlint');
     expect(turboJson.tasks).toHaveProperty('test:vitest:fast');
     expect(turboJson.tasks).toHaveProperty('test:vitest:slow');
     expect(turboJson.tasks).toHaveProperty('pack:npm');
@@ -97,7 +93,6 @@ describe(turboInit, () => {
     expect(scripts).toMatchObject({
       'compile:ts': 'gtb compile:ts',
       'lint:eslint': 'gtb lint:eslint',
-      'lint:oxlint': 'gtb lint:oxlint',
       'test:vitest:fast': 'gtb test:vitest:fast',
       'test:vitest:slow': 'gtb test:vitest:slow',
       'typecheck:ts': 'gtb typecheck:ts',
@@ -115,7 +110,6 @@ describe(turboInit, () => {
     expect(scripts).toHaveProperty('lint:eslint');
     expect(scripts).not.toHaveProperty('compile:ts');
     expect(scripts).not.toHaveProperty('test:vitest:fast');
-    expect(scripts).not.toHaveProperty('lint:oxlint');
   });
 
   it('generates root convenience scripts', ({ expect }) => {
@@ -176,7 +170,7 @@ describe(turboInit, () => {
   it('turboInit command writes turbo.json and scripts', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
 
     try {
       process.chdir(root);
@@ -197,7 +191,7 @@ describe(turboInit, () => {
   it('turboInit generates codecov.yml when packages have vitest tests', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
 
     try {
       process.chdir(root);
@@ -219,7 +213,7 @@ describe(turboInit, () => {
   it('turboInit preserves existing codecov.yml user config', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
     writeFileSync(
       join(root, 'codecov.yml'),
       'codecov:\n  require_ci_to_pass: true\n',
@@ -241,7 +235,7 @@ describe(turboInit, () => {
   it('turboInit --force overwrites existing scripts', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
 
     try {
       process.chdir(root);

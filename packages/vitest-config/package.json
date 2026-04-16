@@ -30,7 +30,6 @@
     "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb lint:eslint",
-    "lint:oxlint": "pnpm run gtb lint:oxlint",
     "pack:npm": "pnpm run gtb pack:npm",
     "test:vitest:e2e": "pnpm run gtb test:vitest:e2e",
     "test:vitest:fast": "pnpm run gtb test:vitest:fast",
@@ -42,7 +41,6 @@
     "find-up-simple": "catalog:"
   },
   "devDependencies": {
-    "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*"
   },
   "peerDependencies": {

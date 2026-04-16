@@ -153,13 +153,11 @@ describe(writeYamlFile, () => {
 
 describe(sortKeysDeep, () => {
   it('sorts top-level keys alphabetically', ({ expect }) => {
-    // oxlint-disable-next-line sort-keys -- intentionally unsorted input
     expect(sortKeysDeep({ zebra: 3, alpha: 1, mango: 2 }))
       .toEqual({ alpha: 1, mango: 2, zebra: 3 });
   });
 
   it('sorts nested object keys recursively', ({ expect }) => {
-    // oxlint-disable-next-line sort-keys -- intentionally unsorted input
     const input = { outer: { zz: 1, aa: 2 } };
 
     expect(sortKeysDeep(input)).toEqual({ outer: { aa: 2, zz: 1 } });

@@ -66,8 +66,11 @@ const createFixture = () => {
 
 type Fixture = ReturnType<typeof createFixture>;
 
+/* eslint-disable-next-line vitest/consistent-test-it --
+   False positive on .extend() factory:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/884 */
 const it = base.extend<{ fixture: Fixture }>({
-  // oxlint-disable-next-line no-empty-pattern -- Vitest fixture requires destructuring
+
   fixture: [async ({}, use) => {
     using fixture = createFixture();
     await use(fixture);
@@ -116,7 +119,7 @@ describe('vitest CLI integration', () => {
           '  expect(greet("World")).toBe("Hello, World!");',
           '});',
         ].join('\n'),
-        // oxlint-disable-next-line no-template-curly-in-string -- Template for generated file
+
         'src/greet.ts': 'export const greet = (name: string) => `Hello, ${name}!`;\n',
       },
     });

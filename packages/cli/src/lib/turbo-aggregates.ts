@@ -1,6 +1,6 @@
 import {
   compileTs, coverageCodecovUpload, coverageVitestMerge, lintEslint,
-  lintOxlint, packNpm, testVitestE2e, testVitestFast, testVitestSlow,
+  packNpm, testVitestE2e, testVitestFast, testVitestSlow,
   typecheckTs,
 } from '../commands/leaf/index.ts';
 import {
@@ -49,7 +49,6 @@ const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[]
     value: {
       dependsOn: [
         ...(flags.hasEslint ? [lintEslint.name] : []),
-        ...(flags.hasOxlint ? [lintOxlint.name] : []),
       ],
     },
   },

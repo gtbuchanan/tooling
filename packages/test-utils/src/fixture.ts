@@ -48,7 +48,7 @@ export const matchTarball = (files: readonly string[], packageName: string): str
   // Tarball names from pnpm pack: gtbuchanan-eslint-config-0.0.0.tgz
   // Convert @gtbuchanan/eslint-config -> gtbuchanan-eslint-config
   const needle = packageName.replace(/^@/v, '').replace(/\//v, '-');
-  const pattern = new RegExp(`^${needle}-\\d`, 'v');
+  const pattern = new RegExp(String.raw`^${needle}-\d`, 'v');
   const tarballs = files.filter(
     file => file.endsWith('.tgz') && pattern.test(file),
   );
@@ -291,7 +291,7 @@ export const createProjectFixture = (
 export const extendWithFixture = (
   create: () => ProjectFixture,
 ): TestAPI<{ fixture: ProjectFixture }> => base.extend<{ fixture: ProjectFixture }>({
-  // oxlint-disable-next-line no-empty-pattern -- Vitest fixture requires destructuring
+
   fixture: [async ({}, use) => {
     using fixture = create();
     await use(fixture);

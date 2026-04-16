@@ -34,7 +34,6 @@ describe.concurrent('gtb CLI', () => {
     expect(result.stdout).toContain('compile:ts');
     expect(result.stdout).toContain('typecheck:ts');
     expect(result.stdout).toContain('lint:eslint');
-    expect(result.stdout).toContain('lint:oxlint');
     expect(result.stdout).toContain('test:vitest:fast');
     expect(result.stdout).toContain('turbo:init');
     expect(result.stdout).toContain('turbo:check');

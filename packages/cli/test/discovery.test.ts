@@ -50,27 +50,6 @@ describe(discoverPackage, () => {
     expect(result.hasEslint).toBe(true);
   });
 
-  it('detects oxlint via config file', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'oxlint.config.ts');
-
-    const result = discoverPackage(dir);
-
-    expect(result.hasOxlint).toBe(true);
-  });
-
-  it('detects oxlint via dependency', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/oxlint-config': '^0.1.0' },
-    });
-
-    const result = discoverPackage(dir);
-
-    expect(result.hasOxlint).toBe(true);
-  });
-
   it('detects vitest via dependency', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
@@ -218,7 +197,6 @@ describe(discoverPackage, () => {
       hasE2e: false,
       hasEslint: false,
       hasGenerate: false,
-      hasOxlint: false,
       hasScripts: false,
       hasTest: false,
       hasTypeScript: false,

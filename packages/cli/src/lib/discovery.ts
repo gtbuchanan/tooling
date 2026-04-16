@@ -24,8 +24,6 @@ export interface PackageCapabilities {
   readonly generateScripts: readonly string[];
   /** Has ESLint config or `@gtbuchanan/eslint-config` dependency. */
   readonly hasEslint: boolean;
-  /** Has oxlint config or `@gtbuchanan/oxlint-config` dependency. */
-  readonly hasOxlint: boolean;
   /** Has a `scripts/` directory. */
   readonly hasScripts: boolean;
   /** Has a `test/` directory. */
@@ -112,7 +110,6 @@ const buildCapabilities = (
     hasE2e: hasDir(dir, 'e2e'),
     hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasFilePrefix(files, 'eslint.config'),
     hasGenerate: generateScripts.length > 0,
-    hasOxlint: hasDep(deps, '@gtbuchanan/oxlint-config') || hasFilePrefix(files, 'oxlint.config'),
     hasScripts: hasDir(dir, 'scripts'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),

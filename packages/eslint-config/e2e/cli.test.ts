@@ -52,7 +52,7 @@ const createFixture = () => {
     depsPackages: ['typescript'],
     hookPackages: ['eslint', 'jiti'],
     packageName: '@gtbuchanan/eslint-config',
-    workspaceDeps: ['@gtbuchanan/oxlint-config'],
+    workspaceDeps: [],
   });
 
   const eslint = join(fixture.hookDir, 'node_modules/.bin/eslint');
@@ -92,8 +92,11 @@ const createFixture = () => {
 
 type Fixture = ReturnType<typeof createFixture>;
 
+/* eslint-disable-next-line vitest/consistent-test-it --
+   False positive on .extend() factory:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/884 */
 const it = base.extend<{ fixture: Fixture }>({
-  // oxlint-disable-next-line no-empty-pattern -- Vitest fixture requires destructuring
+
   fixture: [async ({}, use) => {
     using fixture = createFixture();
     await use(fixture);

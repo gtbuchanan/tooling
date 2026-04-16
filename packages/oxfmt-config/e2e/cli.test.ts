@@ -27,7 +27,6 @@ const it = extendWithFixture(createFixture);
 
 describe('oxfmt CLI', () => {
   it('detects unsorted package.json keys', ({ fixture, expect }) => {
-    // oxlint-disable-next-line sort-keys -- Intentionally unsorted to test detection
     const unsorted = { version: '1.0.0', name: 'test' };
     fixture.writeFile(
       'sub/package.json',

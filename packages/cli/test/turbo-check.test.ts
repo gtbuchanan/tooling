@@ -119,8 +119,8 @@ describe(turboCheck, () => {
   const runInDir = (dir: string, fn: () => void): void => {
     const origCwd = process.cwd();
     const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
       process.chdir(dir);
@@ -183,11 +183,11 @@ describe(parseIgnoreArgs, () => {
   it('parses multiple --ignore flags', ({ expect }) => {
     const result = parseIgnoreArgs([
       '--ignore', 'test:vitest:slow',
-      '--ignore', 'lint:oxlint',
+      '--ignore', 'test:vitest:e2e',
     ]);
 
     expect(result.has('test:vitest:slow')).toBe(true);
-    expect(result.has('lint:oxlint')).toBe(true);
+    expect(result.has('test:vitest:e2e')).toBe(true);
   });
 
   it('returns empty set with no flags', ({ expect }) => {
@@ -207,8 +207,8 @@ describe('turbo:check codecov drift detection', () => {
   const runInDir = (dir: string, fn: () => void): void => {
     const origCwd = process.cwd();
     const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
       process.chdir(dir);

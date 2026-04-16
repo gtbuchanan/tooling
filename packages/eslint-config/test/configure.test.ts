@@ -15,7 +15,7 @@ describe(configure, () => {
 
     await configure({ onlyWarn: true });
 
-    expect(onlyWarnImport).toHaveBeenCalled();
+    expect(onlyWarnImport).toHaveBeenCalledWith();
   });
 
   it('does not import eslint-plugin-only-warn when onlyWarn is false', async ({ expect }) => {
@@ -46,13 +46,6 @@ describe(configure, () => {
     expect(withPnpm.length).toBeGreaterThan(withoutPnpm.length);
   });
 
-  it('includes oxlint overlay as last configs', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
-    const last = configs.at(-1);
-
-    expect(last?.name).toContain('oxlint');
-  });
-
   it('passes tsconfigRootDir to parser options', async ({ expect }) => {
     const configs = await configure({
       onlyWarn: false,
@@ -76,15 +69,16 @@ describe(configure, () => {
     expect(configs.length).toBeGreaterThan(0);
   });
 
-  it('applies extra configs before oxlint overlay', async ({ expect }) => {
+  it('applies extra configs before global ignores', async ({ expect }) => {
     const extra: Linter.Config = { name: 'test-extra' };
     const configs = await configure({ extraConfigs: [extra], onlyWarn: false });
     const extraIndex = configs.findIndex(cfg => cfg.name === 'test-extra');
-    const lastOxlint = configs.at(-1);
+    const ignoresIndex = configs.findIndex(
+      cfg => cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined,
+    );
 
     expect(extraIndex).toBeGreaterThan(-1);
-    expect(lastOxlint?.name).toContain('oxlint');
-    expect(extraIndex).toBeLessThan(configs.length - 1);
+    expect(extraIndex).toBeLessThan(ignoresIndex);
   });
 
   it('applies custom entryPoints to rule overrides', async ({ expect }) => {

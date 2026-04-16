@@ -1,7 +1,7 @@
 # @gtbuchanan/tooling
 
 Shared build configuration monorepo. Individual packages for ESLint, oxfmt,
-oxlint, TypeScript, Vitest configuration, and a shared build CLI.
+TypeScript, Vitest configuration, and a shared build CLI.
 
 ## Structure
 
@@ -23,7 +23,6 @@ packages/
   eslint-config/       — @gtbuchanan/eslint-config (ESLint configure())
   markdownlint-config/ — @gtbuchanan/markdownlint-config (markdownlint configure())
   oxfmt-config/        — @gtbuchanan/oxfmt-config (oxfmt configure())
-  oxlint-config/       — @gtbuchanan/oxlint-config (oxlint configure())
   tsconfig/            — @gtbuchanan/tsconfig (shared base tsconfig.json)
   vitest-config/       — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
   test-utils/          — private shared E2E fixture utilities
@@ -78,7 +77,6 @@ Consumers install it and wire scripts in `package.json`:
     "typecheck:ts": "gtb typecheck:ts",
     "compile:ts": "gtb compile:ts",
     "lint:eslint": "gtb lint:eslint",
-    "lint:oxlint": "gtb lint:oxlint",
     "test:vitest": "gtb test:vitest",
     "test:vitest:fast": "gtb test:vitest:fast",
     "test:vitest:slow": "gtb test:vitest:slow",
@@ -93,7 +91,7 @@ compiled bin entry to avoid a bootstrapping dependency.
 
 Commands: `typecheck:ts`, `compile:ts`, `coverage:codecov:upload`,
 `coverage:vitest:merge`,
-`lint:eslint`, `lint:oxlint`, `test:vitest`, `test:vitest:fast`,
+`lint:eslint`, `test:vitest`, `test:vitest:fast`,
 `test:vitest:slow`, `test:vitest:e2e`, `pack:npm`, `prepare`,
 `turbo:init`, `turbo:check`.
 
@@ -105,31 +103,25 @@ globs for monorepos, or falls back to single-package mode.
 - **ESLint** — Per-package `eslint.config.ts` importing `configure()`
   from `@gtbuchanan/eslint-config`. ESLint caching enabled via
   `--cache --cache-location dist/.eslintcache`.
-- **oxlint** — Per-package `oxlint.config.ts` importing `configure()`
-  from `@gtbuchanan/oxlint-config`. Pre-commit hook uses
-  `--disable-nested-config` to prevent parent config conflicts.
 - **Vitest** — Per-package `vitest.config.ts` using `configurePackage()`
   from `@gtbuchanan/vitest-config/configure`.
 
-### Linters
+### Linter
 
-Dual-linter setup:
-
-- **oxlint** — Primary linter. All categories at `warn` + `denyWarnings`.
-  Uses `@stylistic/eslint-plugin` via the jsPlugin loader for syntax-aware
-  formatting.
-- **ESLint** — Supplementary. `@eslint/json` (JSON linting),
-  `eslint-plugin-pnpm` (workspace validation), `eslint-plugin-n` (Node.js
-  rules not in oxlint), `eslint-plugin-yml` (YAML linting + key sorting),
-  `@vitest/eslint-plugin` (test rules), `typescript-eslint` (type-aware
-  linting), and `eslint-plugin-only-warn` (downgrades errors to warnings).
-  `eslint-plugin-oxlint` disables overlapping rules — must be last in config.
+- **ESLint** — Primary linter. `typescript-eslint` strictTypeChecked +
+  stylisticTypeChecked presets, `eslint-plugin-unicorn` (recommended),
+  `eslint-plugin-promise`, `@stylistic/eslint-plugin` (formatting),
+  `@eslint-community/eslint-plugin-eslint-comments`, `eslint-plugin-import-x`
+  (ordering), `@eslint/json` (JSON linting), `eslint-plugin-pnpm` (workspace
+  validation), `eslint-plugin-n` (Node.js rules), `eslint-plugin-yml` (YAML
+  linting + key sorting), `@vitest/eslint-plugin` (test rules), and
+  `eslint-plugin-only-warn` (downgrades errors to warnings).
 
 ### Formatter
 
 - **oxfmt** — Formats non-JS/TS files (JSON, Markdown, YAML, etc.).
   JS/TS files are ignored via `ignorePatterns` because `@stylistic` handles
-  formatting through oxlint.
+  formatting through ESLint.
 
 ### Markdown linter
 
@@ -143,6 +135,7 @@ Dual-linter setup:
   Python pre-commit). Installed automatically via `prepare` script on
   `pnpm install`. Hooks defined in `.pre-commit-config.yaml`:
   - `pre-commit-hooks` — file hygiene (large files, EOF newlines, BOM, trailing whitespace, no commit to branch)
+  - `eslint` — JS/TS linting with `--fix`
   - `markdownlint-cli2` — Markdown linting with `--fix`
   - `oxfmt` — JSON/Markdown/YAML formatting (local system hook)
 
@@ -215,9 +208,9 @@ Commands:
 Pipeline (Turborepo task graph):
 
 ```text
-generate:* → generate → typecheck:ts, compile:ts, lint:eslint, lint:oxlint
+generate:* → generate → typecheck:ts, compile:ts, lint:eslint
 typecheck:ts → typecheck → check
-typecheck:ts → lint:eslint, lint:oxlint → lint → check
+typecheck:ts → lint:eslint → lint → check
 ^compile:ts → test:vitest:fast → check
 test:vitest:fast → test:vitest:slow → test:slow → build
 compile:ts → pack:npm → pack → test:vitest:e2e → test:e2e → build
@@ -229,9 +222,9 @@ variable into the task cache key. This prevents local and CI caches from
 colliding — Vitest uses different reporters and coverage settings in CI.
 
 Lint tasks depend on `typecheck:ts` to prevent confusing linter output
-from type errors. Both ESLint (with `typescript-eslint`) and oxlint
-(with `typeAware`) run their own type resolution, so the dependency is
-not strictly required — consumers who prefer parallelism can remove it.
+from type errors. ESLint (with `typescript-eslint`) runs its own type
+resolution, so the dependency is not strictly required — consumers who
+prefer parallelism can remove it.
 Test tasks do not depend on `typecheck:ts` to maximize parallelism.
 
 Vitest configs:
@@ -260,8 +253,7 @@ Consumer guidance:
 ## Conventions
 
 - All lint violations report as warnings in IDEs (not errors) so TypeScript
-  diagnostics stand out. CI enforces via `denyWarnings` (oxlint) and
-  `--max-warnings=0` (ESLint).
+  diagnostics stand out. CI enforces via `--max-warnings=0`.
 - Inline suppressions require a `--` reason suffix.
 - All exported functions, types, interfaces, and constants must have JSDoc comments.
 - When asserting on `CommandResult` (exit code, stdout, stderr), use
@@ -293,7 +285,7 @@ file with YAML frontmatter listing affected packages and bump types:
 '@gtbuchanan/eslint-config': patch
 ---
 
-Fix rule conflict with oxlint
+Fix rule conflict
 ```
 
 For PRs that don't affect published packages, create an empty changeset
