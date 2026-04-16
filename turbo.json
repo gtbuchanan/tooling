@@ -20,9 +20,7 @@
         "$TURBO_ROOT$/tsconfig.build.json",
         "bin/**",
         "src/**",
-        "scripts/**",
-        "tsconfig.json",
-        "tsconfig.*.json"
+        "tsconfig.build.json"
       ],
       "outputs": ["dist/source/**"]
     },
@@ -83,13 +81,13 @@
     "test:vitest:fast": {
       "dependsOn": ["^compile:ts"],
       "env": ["CI"],
-      "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
+      "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.ts"],
       "outputs": ["dist/coverage/vitest/fast/**", "dist/test-results/vitest/merge/blob-fast.json"]
     },
     "test:vitest:slow": {
       "dependsOn": ["^compile:ts"],
       "env": ["CI"],
-      "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.*"],
+      "inputs": ["bin/**", "src/**", "test/**", "scripts/**", "vitest.config.ts"],
       "outputs": ["dist/coverage/vitest/slow/**", "dist/test-results/vitest/merge/blob-slow.json"]
     },
     "typecheck": {

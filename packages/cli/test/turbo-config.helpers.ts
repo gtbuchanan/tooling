@@ -1,9 +1,11 @@
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/lib/discovery.js';
+import { buildInclude } from '#src/lib/tsconfig-gen.js';
 
 export const makeCapabilities = (
   overrides: Partial<PackageCapabilities> = {},
 ): PackageCapabilities => {
   const merged = {
+    buildIncludes: [...buildInclude] as readonly string[],
     dir: '/fake/pkg',
     generateScripts: [] as readonly string[],
     hasBin: false,

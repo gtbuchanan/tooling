@@ -52,6 +52,8 @@ export const collect = <Value>(
 
 /** Flags summarizing which tool categories are active across all packages. */
 export interface ToolFlags {
+  /** Union of tsconfig.build.json `include` directories across published packages. */
+  readonly compileIncludes: readonly string[];
   readonly hasCheck: boolean;
   readonly hasE2e: boolean;
   readonly hasEslint: boolean;
@@ -74,8 +76,12 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   )].sort();
   const hasTypeScript = discovery.packages.some(pkg => pkg.hasTypeScript);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
+  const compileIncludes = [...new Set(
+    discovery.packages.filter(pkg => pkg.isPublished).flatMap(pkg => pkg.buildIncludes),
+  )].sort();
 
   return {
+    compileIncludes,
     generateScripts,
     hasCheck: hasTypeScript || hasLint || hasVitest,
     hasE2e: discovery.root.hasVitestE2e || discovery.packages.some(pkg => pkg.hasVitestE2e),
@@ -91,6 +97,12 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
 
 /** Creates a topological (cross-package) task dependency. */
 const topo = (task: string): string => `^${task}`;
+
+const isGlob = (pattern: string): boolean => /[*?\{]/v.test(pattern);
+
+/** Converts a tsconfig `include` entry to a turbo input glob. */
+const toTurboGlob = (include: string): string =>
+  isGlob(include) ? include : `${include}/**`;
 
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
@@ -116,7 +128,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
       dependsOn: [topo(compileTs.name), ...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
-        'bin/**', 'src/**', 'scripts/**', 'tsconfig.json', 'tsconfig.*.json',
+        ...flags.compileIncludes.map(toTurboGlob), 'tsconfig.build.json',
       ],
       outputs: ['dist/source/**'],
     },
@@ -160,11 +172,17 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
   ];
 };
 
+/*
+ * Unlike compile inputs, test inputs can't be resolved from vitest config —
+ * vitest configs are executable TypeScript, not statically parseable.
+ * Broadening beyond test directories is intentional: tests import source.
+ */
+const testInputs = ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.ts'];
+
 const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
     ...(flags.hasPublished ? [topo(compileTs.name)] : []),
   ];
-  const testInputs = ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.*'];
 
   return [
     {
