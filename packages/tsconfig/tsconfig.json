@@ -4,5 +4,12 @@
     "noEmit": true
   },
   "extends": "../../tsconfig.base.json",
-  "include": ["bin", "scripts", "src", "test", "e2e", "*.config.*"]
+  "include": [
+    "bin",
+    "scripts",
+    "src",
+    "test",
+    "e2e",
+    "*.config.*"
+  ]
 }

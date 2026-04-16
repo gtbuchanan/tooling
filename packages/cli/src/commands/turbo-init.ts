@@ -4,7 +4,7 @@ import {
   type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace,
 } from '../lib/discovery.ts';
 import {
-  type MergeResult, mergeCodecovSections, mergePackageScripts, writeJsonFile,
+  type MergeResult, mergeCodecovSections, mergePackageScripts, sortKeysDeep, writeJsonFile,
 } from '../lib/file-writer.ts';
 import { planTsconfigs, readUserCompilerOptions } from '../lib/tsconfig-gen.ts';
 import {
@@ -22,8 +22,8 @@ const logMergeResult = (label: string, result: MergeResult): void => {
   }
 };
 
-const writeAndLog = (path: string, data: object): void => {
-  writeJsonFile(path, data);
+const writeSortedAndLog = (path: string, data: object): void => {
+  writeJsonFile(path, sortKeysDeep(data));
   console.log(`wrote ${path}`);
 };
 
@@ -56,11 +56,11 @@ export const turboInit = (args: readonly string[]): void => {
   const force = args.includes('--force');
   const discovery = discoverWorkspace();
 
-  writeAndLog(join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery));
+  writeSortedAndLog(join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery));
 
   for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
     const userOpts = readUserCompilerOptions(descriptor.path);
-    writeAndLog(descriptor.path, descriptor.generate(userOpts));
+    writeSortedAndLog(descriptor.path, descriptor.generate(userOpts));
   }
 
   for (const pkg of discovery.packages) {

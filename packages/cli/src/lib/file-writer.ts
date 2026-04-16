@@ -6,6 +6,22 @@ import { ManifestSchema } from './manifest.ts';
 
 const jsonIndent = 2;
 
+/** Recursively sorts object keys alphabetically. Arrays and primitives are unchanged. */
+export const sortKeysDeep = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(sortKeysDeep);
+  }
+  if (value !== null && typeof value === 'object') {
+    const entries: [string, unknown][] = Object.entries(value);
+    return Object.fromEntries(
+      entries
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, val]) => [key, sortKeysDeep(val)]),
+    );
+  }
+  return value;
+};
+
 /** Result of merging scripts into a package.json. */
 export interface MergeResult {
   /** Script names that were added or overwritten. */
@@ -14,9 +30,9 @@ export interface MergeResult {
   readonly skipped: readonly string[];
 }
 
-/** Reads and parses a JSON file. */
-export const readJsonFile = (path: string): unknown =>
-  JSON.parse(readFileSync(path, 'utf-8'));
+/** Reads and parses a JSON file as a plain object. */
+export const readJsonFile = (path: string): Record<string, unknown> =>
+  v.parse(v.record(v.string(), v.unknown()), JSON.parse(readFileSync(path, 'utf-8')));
 
 /** Writes a JSON object to a file with formatting and trailing newline. */
 export const writeJsonFile = (path: string, data: unknown): void => {
@@ -61,14 +77,20 @@ export const mergePackageScripts = (
     manifest.scripts ?? {}, expected, force,
   );
 
-  writeJsonFile(path, { ...manifest, scripts: merged });
+  /*
+   * Write back to the raw parsed object instead of the valibot output.
+   * Valibot reorders keys (schema-defined first, rest after), but oxfmt
+   * expects conventional package.json key order to be preserved.
+   */
+  raw['scripts'] = sortKeysDeep(merged);
+  writeJsonFile(path, raw);
 
   return { added, skipped };
 };
 
-/** Writes a YAML object to a file with a trailing newline. */
+/** Writes a YAML object to a file with single-quoted strings and trailing newline. */
 export const writeYamlFile = (path: string, data: unknown): void => {
-  writeFileSync(path, stringifyYaml(data));
+  writeFileSync(path, stringifyYaml(data, { singleQuote: true }));
 };
 
 const ExistingCodecovSchema = v.nullable(
@@ -106,5 +128,5 @@ export const mergeCodecovSections = (path: string, sections: CodecovSections): v
     flags: sections.flags,
   };
 
-  writeYamlFile(path, merged);
+  writeYamlFile(path, sortKeysDeep(merged));
 };

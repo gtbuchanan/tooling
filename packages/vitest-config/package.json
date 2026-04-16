@@ -26,16 +26,16 @@
   },
   "scripts": {
     "compile:ts": "pnpm run gtb compile:ts",
-    "pack:npm": "pnpm run gtb pack:npm",
+    "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload",
+    "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb lint:eslint",
     "lint:oxlint": "pnpm run gtb lint:oxlint",
+    "pack:npm": "pnpm run gtb pack:npm",
+    "test:vitest:e2e": "pnpm run gtb test:vitest:e2e",
     "test:vitest:fast": "pnpm run gtb test:vitest:fast",
     "test:vitest:slow": "pnpm run gtb test:vitest:slow",
-    "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
-    "typecheck:ts": "pnpm run gtb typecheck:ts",
-    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
-    "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload",
-    "test:vitest:e2e": "pnpm run gtb test:vitest:e2e"
+    "typecheck:ts": "pnpm run gtb typecheck:ts"
   },
   "dependencies": {
     "console-fail-test": "catalog:",
