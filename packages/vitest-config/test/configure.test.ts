@@ -40,7 +40,7 @@ describe(configure, () => {
   it('includes both setup files by default', ({ expect }) => {
     const config = configure();
 
-    expect(config.test?.setupFiles).toEqual([
+    expect(config.test?.setupFiles).toStrictEqual([
       `${packageName}/console-fail-test`,
       `${packageName}/setup`,
     ]);
@@ -73,7 +73,7 @@ describe(configure, () => {
   it('excludes both setup files when both disabled', ({ expect }) => {
     const config = configure({ consoleFailTest: false, hasAssertions: false });
 
-    expect(config.test?.setupFiles).toEqual([]);
+    expect(config.test?.setupFiles).toStrictEqual([]);
   });
 
   it('does not include resolve alias', ({ expect }) => {
@@ -107,7 +107,7 @@ describe(configure, () => {
   it('configures slow tag', ({ expect }) => {
     const config = configure();
 
-    expect(config.test?.tags).toEqual([
+    expect(config.test?.tags).toStrictEqual([
       { name: 'slow', timeout: 300_000 },
     ]);
   });
@@ -117,7 +117,7 @@ describe(configureGlobal, () => {
   it('includes setup files', ({ expect }) => {
     const config = configureGlobal();
 
-    expect(config.test?.setupFiles).toEqual([
+    expect(config.test?.setupFiles).toStrictEqual([
       `${packageName}/console-fail-test`,
       `${packageName}/setup`,
     ]);
@@ -174,7 +174,7 @@ describe(configureGlobal, () => {
   it('configures slow tag with default timeout', ({ expect }) => {
     const config = configureGlobal();
 
-    expect(config.test?.tags).toEqual([
+    expect(config.test?.tags).toStrictEqual([
       { name: 'slow', timeout: 300_000 },
     ]);
   });
@@ -182,7 +182,7 @@ describe(configureGlobal, () => {
   it('accepts custom slow tag timeout', ({ expect }) => {
     const config = configureGlobal({ slow: { timeout: 600_000 } });
 
-    expect(config.test?.tags).toEqual([
+    expect(config.test?.tags).toStrictEqual([
       { name: 'slow', timeout: 600_000 },
     ]);
   });
@@ -192,7 +192,7 @@ describe(configureGlobal, () => {
       tags: [{ name: 'db', timeout: 60_000 }],
     });
 
-    expect(config.test?.tags).toEqual([
+    expect(config.test?.tags).toStrictEqual([
       { name: 'slow', timeout: 300_000 },
       { name: 'db', timeout: 60_000 },
     ]);
@@ -201,13 +201,13 @@ describe(configureGlobal, () => {
 
 describe(resolveCoverageInclude, () => {
   it('returns default patterns without projects', ({ expect }) => {
-    expect(resolveCoverageInclude()).toEqual([...coverageInclude]);
+    expect(resolveCoverageInclude()).toStrictEqual([...coverageInclude]);
   });
 
   it('includes per-project and root-level patterns', ({ expect }) => {
     const result = resolveCoverageInclude(['packages/*']);
 
-    expect(result).toEqual([
+    expect(result).toStrictEqual([
       ...coverageInclude.map(pattern => `packages/*/${pattern}`),
       ...coverageInclude,
     ]);
@@ -216,7 +216,7 @@ describe(resolveCoverageInclude, () => {
   it('handles multiple project patterns', ({ expect }) => {
     const result = resolveCoverageInclude(['apps/*', 'libs/*']);
 
-    expect(result).toEqual([
+    expect(result).toStrictEqual([
       ...coverageInclude.map(pattern => `apps/*/${pattern}`),
       ...coverageInclude.map(pattern => `libs/*/${pattern}`),
       ...coverageInclude,
@@ -230,7 +230,7 @@ describe(resolveCoverageInclude, () => {
   });
 
   it('includes all default dirs', ({ expect }) => {
-    expect(defaultCoverageDirs).toEqual(['bin', 'scripts', 'src']);
+    expect(defaultCoverageDirs).toStrictEqual(['bin', 'scripts', 'src']);
   });
 });
 
@@ -256,13 +256,13 @@ describe(buildWorkspaceEntry, () => {
   it('preserves includes from configure function', ({ expect }) => {
     const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
 
-    expect(entry.test?.include).toEqual(['test/**/*.test.ts']);
+    expect(entry.test?.include).toStrictEqual(['test/**/*.test.ts']);
   });
 
   it('preserves excludes from configure function', ({ expect }) => {
     const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
 
-    expect(entry.test?.exclude).toEqual([...excludeDefault]);
+    expect(entry.test?.exclude).toStrictEqual([...excludeDefault]);
   });
 });
 
@@ -290,7 +290,7 @@ describe(configurePackage, () => {
   it('includes test patterns', ({ expect }) => {
     const config = configurePackage();
 
-    expect(config.test?.include).toEqual(['test/**/*.test.ts']);
+    expect(config.test?.include).toStrictEqual(['test/**/*.test.ts']);
   });
 
   it('includes global settings (coverage, setupFiles)', ({ expect }) => {

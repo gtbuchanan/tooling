@@ -11,7 +11,7 @@ describe(configure, () => {
   it('ignores JavaScript and TypeScript files by default', ({ expect }) => {
     const config = configure();
 
-    expect(config.ignorePatterns).toEqual([
+    expect(config.ignorePatterns).toStrictEqual([
       '.claude/worktrees/**',
       '*.cjs',
       '*.cts',

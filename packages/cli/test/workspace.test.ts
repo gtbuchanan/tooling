@@ -32,7 +32,7 @@ describe(resolveWorkspace, () => {
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.rootDir).toBe(root);
-    expect(result.packageDirs).toEqual([root]);
+    expect(result.packageDirs).toStrictEqual([root]);
   });
 
   it('falls back to single-package when packages field is missing', ({ expect }) => {
@@ -45,7 +45,7 @@ describe(resolveWorkspace, () => {
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.rootDir).toBe(root);
-    expect(result.packageDirs).toEqual([root]);
+    expect(result.packageDirs).toStrictEqual([root]);
   });
 
   it('falls back to single-package when packages list is empty', ({ expect }) => {
@@ -58,7 +58,7 @@ describe(resolveWorkspace, () => {
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.rootDir).toBe(root);
-    expect(result.packageDirs).toEqual([root]);
+    expect(result.packageDirs).toStrictEqual([root]);
   });
 
   it('ignores files in packages directory', ({ expect }) => {
@@ -73,7 +73,7 @@ describe(resolveWorkspace, () => {
 
     const result = resolveWorkspace({ cwd: root });
 
-    expect(result.packageDirs).toEqual([
+    expect(result.packageDirs).toStrictEqual([
       join(root, 'packages', 'real-pkg'),
     ]);
   });
@@ -103,7 +103,7 @@ describe(resolveWorkspace, () => {
 
     const result = resolveWorkspace({ cwd: root });
 
-    expect(result.packageDirs).toEqual([join(root, 'apps', 'web')]);
+    expect(result.packageDirs).toStrictEqual([join(root, 'apps', 'web')]);
   });
 
   it('handles bare (unquoted) globs', ({ expect }) => {
@@ -116,7 +116,7 @@ describe(resolveWorkspace, () => {
 
     const result = resolveWorkspace({ cwd: root });
 
-    expect(result.packageDirs).toEqual([
+    expect(result.packageDirs).toStrictEqual([
       join(root, 'packages', 'lib'),
     ]);
   });
@@ -151,7 +151,7 @@ describe(resolveWorkspace, () => {
 
     const result = resolveWorkspace({ cwd: root });
 
-    expect(result.packageDirs).toEqual([join(root, 'tooling')]);
+    expect(result.packageDirs).toStrictEqual([join(root, 'tooling')]);
   });
 
   it('returns empty when glob directory does not exist', ({ expect }) => {
@@ -164,6 +164,6 @@ describe(resolveWorkspace, () => {
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.rootDir).toBe(root);
-    expect(result.packageDirs).toEqual([root]);
+    expect(result.packageDirs).toStrictEqual([root]);
   });
 });

@@ -37,7 +37,7 @@ describe(writeJsonFile, () => {
 
     writeJsonFile(path, { new: true });
 
-    expect(readJson(path)).toEqual({ new: true });
+    expect(readJson(path)).toStrictEqual({ new: true });
   });
 });
 
@@ -135,7 +135,7 @@ describe(writeYamlFile, () => {
     const content = readFileSync(path, 'utf-8');
     const parsed: unknown = parseYaml(content);
 
-    expect(parsed).toEqual({ key: 'value', list: [1, 2] });
+    expect(parsed).toStrictEqual({ key: 'value', list: [1, 2] });
     expect(content.endsWith('\n')).toBe(true);
   });
 
@@ -154,17 +154,17 @@ describe(writeYamlFile, () => {
 describe(sortKeysDeep, () => {
   it('sorts top-level keys alphabetically', ({ expect }) => {
     expect(sortKeysDeep({ zebra: 3, alpha: 1, mango: 2 }))
-      .toEqual({ alpha: 1, mango: 2, zebra: 3 });
+      .toStrictEqual({ alpha: 1, mango: 2, zebra: 3 });
   });
 
   it('sorts nested object keys recursively', ({ expect }) => {
     const input = { outer: { zz: 1, aa: 2 } };
 
-    expect(sortKeysDeep(input)).toEqual({ outer: { aa: 2, zz: 1 } });
+    expect(sortKeysDeep(input)).toStrictEqual({ outer: { aa: 2, zz: 1 } });
   });
 
   it('preserves array element order', ({ expect }) => {
-    expect(sortKeysDeep({ items: [3, 1, 2] })).toEqual({ items: [3, 1, 2] });
+    expect(sortKeysDeep({ items: [3, 1, 2] })).toStrictEqual({ items: [3, 1, 2] });
   });
 
   it('returns primitives unchanged', ({ expect }) => {
@@ -247,7 +247,7 @@ describe(mergeCodecovSections, () => {
     const keys = [...content.matchAll(/^(?<key>\w[\w_]*):/gmv)]
       .map(match => match.groups?.['key'] ?? '');
 
-    expect(keys).toEqual([...keys].sort((left, right) => left.localeCompare(right)));
+    expect(keys).toStrictEqual([...keys].sort((left, right) => left.localeCompare(right)));
     expect(content).toContain("'**/dist/**'");
   });
 

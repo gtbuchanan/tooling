@@ -90,7 +90,7 @@ describe(configure, () => {
       cfg => cfg.rules?.['n/no-process-exit'] === 'off',
     );
 
-    expect(entryConfig?.files).toEqual(['**/cli.ts']);
+    expect(entryConfig?.files).toStrictEqual(['**/cli.ts']);
   });
 
   it('applies custom ignores', async ({ expect }) => {
@@ -99,6 +99,6 @@ describe(configure, () => {
       cfg => cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined,
     );
 
-    expect(ignoresConfig?.ignores).toEqual(['vendor/**']);
+    expect(ignoresConfig?.ignores).toStrictEqual(['vendor/**']);
   });
 });

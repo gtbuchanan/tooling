@@ -22,7 +22,7 @@ describe(buildOutput, () => {
       },
     });
 
-    expect(result['exports']).toEqual({ '.': './index.js' });
+    expect(result['exports']).toStrictEqual({ '.': './index.js' });
   });
 
   it('remaps publishConfig.scripts to top-level scripts', ({ expect }) => {
@@ -33,7 +33,7 @@ describe(buildOutput, () => {
       scripts: { test: 'vitest' },
     });
 
-    expect(result.scripts).toEqual({ postinstall: 'echo done' });
+    expect(result.scripts).toStrictEqual({ postinstall: 'echo done' });
   });
 
   it('remaps publishConfig.bin to top-level bin', ({ expect }) => {
@@ -43,7 +43,7 @@ describe(buildOutput, () => {
       },
     });
 
-    expect(result['bin']).toEqual({ gtb: './bin.js' });
+    expect(result['bin']).toStrictEqual({ gtb: './bin.js' });
   });
 
   it('remaps publishConfig.imports to top-level imports', ({ expect }) => {
@@ -54,7 +54,7 @@ describe(buildOutput, () => {
       },
     });
 
-    expect(result['imports']).toEqual({ '#src/*.ts': './*.js' });
+    expect(result['imports']).toStrictEqual({ '#src/*.ts': './*.js' });
   });
 
   it('strips publishConfig from output', ({ expect }) => {
@@ -92,7 +92,7 @@ describe(buildRepoFields, () => {
       },
     }, 'packages/foo');
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       bugs: 'https://github.com/test/repo/issues',
       homepage: 'https://github.com/test/repo/tree/main/packages/foo',
       repository: {
@@ -104,7 +104,7 @@ describe(buildRepoFields, () => {
   });
 
   it('returns empty object when root has no fields', ({ expect }) => {
-    expect(buildRepoFields({}, 'packages/foo')).toEqual({});
+    expect(buildRepoFields({}, 'packages/foo')).toStrictEqual({});
   });
 
   it('includes only fields present in root', ({ expect }) => {
@@ -112,7 +112,7 @@ describe(buildRepoFields, () => {
       homepage: 'https://github.com/test/repo',
     }, 'packages/bar');
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       homepage: 'https://github.com/test/repo/tree/main/packages/bar',
     });
   });
