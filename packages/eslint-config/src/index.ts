@@ -4,7 +4,7 @@ import {
   defaultEntryPoints,
   eslintCommentsRuleOverrides,
   importOrderRules,
-  isAndroid,
+  jsPluginsSupported,
   stylisticCustomizeDefaults,
   stylisticRuleOverrides,
   vitestE2eRuleOverrides,
@@ -145,8 +145,9 @@ const resolveNodeConfig = (options: ESLintConfigureOptions): DefineConfigArg => 
 });
 
 const resolveJsPluginFallbacks = (): Linter.Config[] =>
-  isAndroid
-    ? [
+  jsPluginsSupported
+    ? []
+    : [
         { ...stylistic.configs.customize(stylisticCustomizeDefaults), files: ['**/*.ts'] },
         { files: ['**/*.ts'], rules: stylisticRuleOverrides },
         eslintCommentsConfigs.recommended,
@@ -156,8 +157,7 @@ const resolveJsPluginFallbacks = (): Linter.Config[] =>
           plugins: { 'import-x': importPlugin },
           rules: importOrderRules,
         },
-      ]
-    : [];
+      ];
 
 const testFiles = ['**/test/**/*.ts', '**/e2e/**/*.ts'];
 
@@ -191,9 +191,10 @@ const vitestConfigs: Linter.Config[] = [
 /**
  * Creates an ESLint flat config for TypeScript projects.
  * Supplementary to oxlint — covers `@eslint/json`, `eslint-plugin-pnpm`,
- * `eslint-plugin-n`, and `@vitest/eslint-plugin`. On Android, also runs
+ * `eslint-plugin-n`, and `@vitest/eslint-plugin`. On platforms where oxlint
+ * jsPlugins are unsupported (Windows, Android), also runs
  * `@stylistic/eslint-plugin`, `@eslint-community/eslint-plugin-eslint-comments`,
- * and `eslint-plugin-import-x` as fallbacks for oxlint jsPlugins.
+ * and `eslint-plugin-import-x` as fallbacks.
  * `eslint-plugin-oxlint` is applied last to disable overlapping rules.
  */
 export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {

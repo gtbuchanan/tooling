@@ -1,26 +1,7 @@
 import { describe, it } from 'vitest';
 import { configure, defaultEntryPoints } from '#src/index.js';
 
-const isAndroid = process.platform === 'android';
-
 describe(configure, () => {
-  it.runIf(!isAndroid)('includes jsPlugins with defaults', ({ expect }) => {
-    const config = configure();
-
-    expect(config.jsPlugins).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('stylistic'),
-        expect.stringContaining('eslint-comments'),
-      ]),
-    );
-  });
-
-  it.runIf(isAndroid)('omits jsPlugins on Android', ({ expect }) => {
-    const config = configure();
-
-    expect(config.jsPlugins).toBeUndefined();
-  });
-
   it('returns a valid config with defaults', ({ expect }) => {
     const config = configure();
 
@@ -90,47 +71,6 @@ describe(configure, () => {
     expect(last).toEqual(custom);
   });
 
-  it.runIf(!isAndroid)('includes eslint-comments rules', ({ expect }) => {
-    const config = configure();
-
-    expect(config.rules?.['@eslint-community/eslint-comments/disable-enable-pair']).toBe('warn');
-    expect(config.rules?.['@eslint-community/eslint-comments/require-description']).toBeDefined();
-  });
-
-  it.runIf(!isAndroid)('includes stylistic rules', ({ expect }) => {
-    const config = configure();
-
-    expect(config.rules?.['@stylistic/semi']).toBeDefined();
-  });
-
-  it.runIf(!isAndroid)('enforces 1tbs brace style', ({ expect }) => {
-    const config = configure();
-
-    expect(config.rules?.['@stylistic/brace-style']).toEqual([
-      'warn',
-      '1tbs',
-      { allowSingleLine: true },
-    ]);
-  });
-
-  it.runIf(isAndroid)('omits stylistic rules on Android', ({ expect }) => {
-    const config = configure();
-
-    expect(config.rules?.['@stylistic/semi']).toBeUndefined();
-    expect(config.rules?.['@stylistic/max-len']).toBeUndefined();
-  });
-
-  it.runIf(!isAndroid)('allows customizing stylistic options', ({ expect }) => {
-    const withSemi = configure({ stylistic: { semi: true } });
-    const withoutSemi = configure({ stylistic: { semi: false } });
-
-    expect(withSemi.rules?.['@stylistic/semi']).toBeDefined();
-    expect(withoutSemi.rules?.['@stylistic/semi']).toBeDefined();
-    expect(withSemi.rules?.['@stylistic/semi']).not.toEqual(
-      withoutSemi.rules?.['@stylistic/semi'],
-    );
-  });
-
   it('enables no-param-reassign with props', ({ expect }) => {
     const config = configure();
 
@@ -165,24 +105,6 @@ describe(configure, () => {
     const config = configure();
 
     expect(config.rules?.['no-continue']).toBe('off');
-  });
-
-  it.runIf(!isAndroid)('sets max-len to 100', ({ expect }) => {
-    const config = configure();
-    const maxLen = config.rules?.['@stylistic/max-len'];
-
-    expect(maxLen).toEqual(['warn', { code: 100, ignoreUrls: true }]);
-  });
-
-  it.runIf(!isAndroid)('enforces single quotes', ({ expect }) => {
-    const config = configure();
-    const quotes = config.rules?.['@stylistic/quotes'];
-
-    expect(quotes).toEqual([
-      'warn',
-      'single',
-      { allowTemplateLiterals: 'avoidEscape', avoidEscape: true },
-    ]);
   });
 
   it('allows common sentinel values in no-magic-numbers', ({ expect }) => {

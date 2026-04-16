@@ -49,13 +49,31 @@ const { configure } = await importModule('@gtbuchanan/oxlint-config');
 export default configure();
 ```
 
-## Android / Termux
+## Suppression comments
 
-oxlint has two known issues on Android:
+oxlint jsPlugins (`@stylistic`, `eslint-plugin-import-x`,
+`@eslint-community/eslint-plugin-eslint-comments`) use `eslint-disable`
+directives — not `oxlint-disable`. Always use `eslint-disable` for ESLint
+plugin rules regardless of whether oxlint or ESLint is running the rule.
+Use `oxlint-disable` only for oxlint-native rules (e.g., `no-debugger`,
+`typescript/*`).
 
-- **jsPlugins crash** — `@stylistic/eslint-plugin` triggers a panic in
-  `oxc_allocator` ([oxc#21045](https://github.com/oxc-project/oxc/issues/21045)).
-  `configure()` auto-detects Android and omits jsPlugins + stylistic rules.
+## Platform limitations
+
+oxlint jsPlugins (`@stylistic/eslint-plugin`, `eslint-plugin-import-x`,
+`@eslint-community/eslint-plugin-eslint-comments`) crash on certain
+platforms. `configure()` auto-detects these platforms and omits jsPlugins +
+stylistic rules. The exported ESLint fallback rules (`stylisticRuleOverrides`,
+`importOrderRules`, `eslintCommentsRuleOverrides`) can be used to restore
+coverage via ESLint on affected platforms.
+
+- **Windows** — intermittent failures
+  ([oxc#19395](https://github.com/oxc-project/oxc/issues/19395))
+- **Android / Termux** — `oxc_allocator` thread-local pool panic
+  ([oxc#21045](https://github.com/oxc-project/oxc/issues/21045))
+
+### Android / Termux additional issues
+
 - **Missing tsgolint binary** — `oxlint-tsgolint` has no `android-arm64`
   package ([tsgolint#866](https://github.com/oxc-project/tsgolint/issues/866)).
   The `linux-arm64` binary works. To use it:

@@ -8,6 +8,7 @@ import {
   type OxlintOverride,
   defineConfig,
 } from 'oxlint';
+import { jsPluginsSupported } from './platform.ts';
 
 /** Options for the shared oxlint configuration. */
 export interface OxlintConfigureOptions {
@@ -182,11 +183,7 @@ const eslintCommentsRecommendedRules: DummyRuleMap = {
   '@eslint-community/eslint-comments/no-unused-enable': 'warn',
 };
 
-// Oxlint jsPlugins crash on Android/Termux (oxc_allocator thread-local pool panic).
-// Stylistic rules require the jsPlugin so they must be omitted together.
-// https://github.com/oxc-project/oxc/issues/21045
-/** Whether the current platform is Android (Termux). */
-export const isAndroid = process.platform === 'android';
+export { jsPluginsSupported } from './platform.ts';
 
 /** Default file patterns for entry points (bin and scripts directories). */
 export const defaultEntryPoints: readonly string[] = [
@@ -420,10 +417,10 @@ export const configure = (opts: OxlintConfigureOptions = {}): OxlintConfig => {
       ...categoryOverrides,
     },
     ignorePatterns,
-    ...(!isAndroid && { jsPlugins: resolveJsPlugins() }),
+    ...(jsPluginsSupported && { jsPlugins: resolveJsPlugins() }),
     options: { denyWarnings: true, typeAware: true, ...optionOverrides },
     overrides: [testOverride, ...targetOverrides, ...overrides],
     plugins: ['typescript', 'import', 'node', 'promise'],
-    rules: isAndroid ? ruleOverrides : resolveRules(stylisticOptions),
+    rules: jsPluginsSupported ? resolveRules(stylisticOptions) : ruleOverrides,
   });
 };

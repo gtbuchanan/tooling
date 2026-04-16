@@ -117,7 +117,8 @@ Dual-linter setup:
 
 - **oxlint** — Primary linter. All categories at `warn` + `denyWarnings`.
   Uses `@stylistic/eslint-plugin` via the jsPlugin loader for syntax-aware
-  formatting.
+  formatting. jsPlugins are disabled on Windows and Android due to upstream
+  bugs; ESLint picks up those rules as fallbacks.
 - **ESLint** — Supplementary. `@eslint/json` (JSON linting),
   `eslint-plugin-pnpm` (workspace validation), `eslint-plugin-n` (Node.js
   rules not in oxlint), `eslint-plugin-yml` (YAML linting + key sorting),
@@ -263,6 +264,10 @@ Consumer guidance:
   diagnostics stand out. CI enforces via `denyWarnings` (oxlint) and
   `--max-warnings=0` (ESLint).
 - Inline suppressions require a `--` reason suffix.
+- oxlint jsPlugins use `eslint-disable` directives (not `oxlint-disable`).
+  Always use `eslint-disable` for ESLint plugin rules regardless of whether
+  the rule runs in ESLint or oxlint. Use `oxlint-disable` only for
+  oxlint-native rules (e.g., `no-debugger`, `typescript/*`).
 - All exported functions, types, interfaces, and constants must have JSDoc comments.
 - When asserting on `CommandResult` (exit code, stdout, stderr), use
   `expect(result).toMatchObject({ exitCode: 0 })` instead of

@@ -9,7 +9,9 @@ import {
 } from '@gtbuchanan/test-utils';
 import { it as baseIt, describe } from 'vitest';
 
-const isAndroid = process.platform === 'android';
+// Duplicated from src/index.ts — e2e tests must not import source directly
+const jsPluginsSupported =
+  process.platform !== 'android' && process.platform !== 'win32';
 
 const oxlintConfig = [
   "import { configure } from '@gtbuchanan/oxlint-config';",
@@ -53,8 +55,8 @@ describe('oxlint CLI', () => {
     expect(result.stdout).toContain('debugger');
   });
 
-  // JsPlugins crash on Android/Termux; stylistic rules require the plugin
-  baseIt.runIf(!isAndroid)(
+  // JsPlugins crash on certain platforms; stylistic rules require the plugin
+  baseIt.runIf(jsPluginsSupported)(
     'includes stylistic rules via @stylistic/eslint-plugin',
     ({ expect }) => {
       const fixture = createFixture();
@@ -65,6 +67,21 @@ describe('oxlint CLI', () => {
       expect(result.stdout).toContain('semi');
     },
   );
+
+  it('allows eslint-disable for jsPlugin rules', ({ fixture, expect }) => {
+    fixture.writeFile(
+      'style.js',
+      '// eslint-disable-next-line @stylistic/semi -- cross-platform\nconst _x = 0\n',
+    );
+
+    const result = fixture.run('oxlint', ['style.js']);
+
+    expect(result).toMatchObject({
+      exitCode: 0,
+      stderr: '',
+      stdout: expect.stringContaining('Found 0 warnings') as unknown,
+    });
+  });
 
   it('relaxes no-magic-numbers in test files', ({ fixture, expect }) => {
     fixture.writeFile('test/example.test.ts', 'export const answer = 42;\n');
