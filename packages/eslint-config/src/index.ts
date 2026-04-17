@@ -275,6 +275,8 @@ const tsRuleOverrides: Linter.Config = {
       ignoreNumericLiteralTypes: true,
       ignoreTypeIndexes: true,
     }],
+    // Justification: Rest siblings are the idiomatic way to omit properties
+    '@typescript-eslint/no-unused-vars': ['warn', { ignoreRestSiblings: true }],
     // Justification: Allow constant loop conditions (e.g. while(true))
     '@typescript-eslint/no-unnecessary-condition': [
       'warn', { allowConstantLoopConditions: true },

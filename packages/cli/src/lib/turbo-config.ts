@@ -71,12 +71,12 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasLint = hasEslint;
   const generateScripts = [...new Set(
     discovery.packages.flatMap(pkg => pkg.generateScripts),
-  )].sort();
+  )].toSorted();
   const hasTypeScript = discovery.packages.some(pkg => pkg.hasTypeScript);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
   const compileIncludes = [...new Set(
     discovery.packages.filter(pkg => pkg.isPublished).flatMap(pkg => pkg.buildIncludes),
-  )].sort();
+  )].toSorted();
 
   return {
     compileIncludes,

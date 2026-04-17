@@ -15,7 +15,7 @@ export const sortKeysDeep = (value: unknown): unknown => {
     const entries: [string, unknown][] = Object.entries(value);
     return Object.fromEntries(
       entries
-        .sort(([left], [right]) => left.localeCompare(right))
+        .toSorted(([left], [right]) => left.localeCompare(right))
         .map(([key, val]) => [key, sortKeysDeep(val)]),
     );
   }

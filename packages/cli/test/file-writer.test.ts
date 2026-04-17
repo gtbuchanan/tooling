@@ -248,7 +248,7 @@ describe(mergeCodecovSections, () => {
     const keys = [...content.matchAll(/^(?<key>\w[\w_]*):/gmv)]
       .map(match => match.groups?.['key'] ?? '');
 
-    expect(keys).toStrictEqual([...keys].sort((left, right) => left.localeCompare(right)));
+    expect(keys).toStrictEqual([...keys].toSorted((left, right) => left.localeCompare(right)));
     expect(content).toContain("'**/dist/**'");
   });
 

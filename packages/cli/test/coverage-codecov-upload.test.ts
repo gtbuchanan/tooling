@@ -33,7 +33,7 @@ const getRunArgs = (): readonly string[] => {
 describe(def.name, () => {
   it('skips when CI is not set', async ({ expect }) => {
     vi.stubEnv('CI', '');
-    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockReturnValue();
 
     await def.handler([]);
 
@@ -43,7 +43,7 @@ describe(def.name, () => {
 
   it('skips when no coverage files exist', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
-    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockReturnValue();
 
     await def.handler([]);
 

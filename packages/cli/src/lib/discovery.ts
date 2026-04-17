@@ -88,7 +88,7 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
     .filter(name => name.startsWith('generate:'))
-    .sort();
+    .toSorted();
 
 const buildCapabilities = (
   dir: string,

@@ -167,7 +167,7 @@ describe(turboInit, () => {
   it('turboInit command writes turbo.json and scripts', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockReturnValue();
 
     try {
       process.chdir(root);
@@ -188,7 +188,7 @@ describe(turboInit, () => {
   it('turboInit generates codecov.yml when packages have vitest tests', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockReturnValue();
 
     try {
       process.chdir(root);
@@ -210,7 +210,7 @@ describe(turboInit, () => {
   it('turboInit preserves existing codecov.yml user config', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockReturnValue();
     writeFileSync(
       path.join(root, 'codecov.yml'),
       'codecov:\n  require_ci_to_pass: true\n',
@@ -232,7 +232,7 @@ describe(turboInit, () => {
   it('turboInit --force overwrites existing scripts', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockReturnValue();
 
     try {
       process.chdir(root);

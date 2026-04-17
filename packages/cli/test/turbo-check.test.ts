@@ -119,8 +119,8 @@ describe(turboCheck, () => {
   const runInDir = (dir: string, fn: () => void): void => {
     const origCwd = process.cwd();
     const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockReturnValue();
+    vi.spyOn(console, 'error').mockReturnValue();
 
     try {
       process.chdir(dir);
@@ -207,8 +207,8 @@ describe('turbo:check codecov drift detection', () => {
   const runInDir = (dir: string, fn: () => void): void => {
     const origCwd = process.cwd();
     const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockReturnValue();
+    vi.spyOn(console, 'error').mockReturnValue();
 
     try {
       process.chdir(dir);
