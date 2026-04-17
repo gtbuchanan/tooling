@@ -26,6 +26,9 @@ const readPublishedTsconfig = (projectDir: string): string =>
     'utf8',
   );
 
+/* eslint-disable vitest/require-hook --
+   False positive with extendWithFixture indirection:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe('tsconfig flattening', () => {
   it('has no extends field', ({ fixture, expect }) => {
     const raw = readPublishedTsconfig(fixture.projectDir);
@@ -64,3 +67,4 @@ describe('tsconfig flattening', () => {
     expect(result).toMatchObject({ exitCode: 0 });
   });
 });
+/* eslint-enable vitest/require-hook */

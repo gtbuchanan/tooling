@@ -52,22 +52,21 @@ describe(prepack, () => {
       path.join(pkgDir, 'dist', 'source', 'package.json'),
     );
 
-    expect(output).toHaveProperty('name', '@test/my-lib');
-    expect(output).toHaveProperty('version', '1.0.0');
-    expect(output).toHaveProperty('exports', { '.': './index.js' });
-    expect(output).toHaveProperty('dependencies', { valibot: '^1.0.0' });
+    expect(output).toMatchObject({
+      dependencies: { valibot: '^1.0.0' },
+      exports: { '.': './index.js' },
+      homepage: 'https://github.com/test/repo/tree/main/packages/my-lib',
+      name: '@test/my-lib',
+      repository: {
+        directory: 'packages/my-lib',
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
+      version: '1.0.0',
+    });
     expect(output).not.toHaveProperty('devDependencies');
     expect(output).not.toHaveProperty('scripts');
     expect(output).not.toHaveProperty('publishConfig');
-    expect(output).toHaveProperty(
-      'homepage',
-      'https://github.com/test/repo/tree/main/packages/my-lib',
-    );
-    expect(output).toHaveProperty('repository', {
-      directory: 'packages/my-lib',
-      type: 'git',
-      url: 'https://github.com/test/repo.git',
-    });
   });
 
   it('generates .npmignore', ({ expect }) => {

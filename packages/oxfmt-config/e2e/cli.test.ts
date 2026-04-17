@@ -25,6 +25,9 @@ const createFixture = (): ProjectFixture => {
 
 const it = extendWithFixture(createFixture);
 
+/* eslint-disable vitest/require-hook --
+   False positive with extendWithFixture indirection:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe('oxfmt CLI', () => {
   it('detects unsorted package.json keys', ({ fixture, expect }) => {
     const unsorted = { version: '1.0.0', name: 'test' };
@@ -112,3 +115,4 @@ describe('pre-commit isolation', () => {
     expect(result).toMatchObject({ exitCode: 0 });
   });
 });
+/* eslint-enable vitest/require-hook */

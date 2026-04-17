@@ -25,6 +25,9 @@ const writeJson = (dir: string, name: string, data: unknown): void => {
   writeFileSync(filePath, `${JSON.stringify(data, null, jsonIndent)}\n`);
 };
 
+/* eslint-disable vitest/require-hook --
+   False positive with extendWithFixture indirection:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe.concurrent('gtb CLI', () => {
   it('prints help with --help', ({ fixture, expect }) => {
     const result = fixture.run('gtb', ['--help']);
@@ -52,7 +55,11 @@ describe.concurrent('gtb CLI', () => {
     expect(result.exitCode).not.toBe(0);
   });
 });
+/* eslint-enable vitest/require-hook */
 
+/* eslint-disable vitest/max-expects, vitest/no-standalone-expect, vitest/require-hook --
+   False positive when callback omits custom fixture properties:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe.concurrent('gtb pack:npm', () => {
   it('produces tarball for publishable package', ({ expect }) => {
     using fixture = createFixture();
@@ -135,17 +142,16 @@ describe.concurrent('gtb pack:npm', () => {
       path.join(fixture.projectDir, 'dist', 'source', 'package.json'),
     );
 
-    expect(output).toHaveProperty('name', '@test/my-lib');
-    expect(output).toHaveProperty('exports', { '.': './index.js' });
-    expect(output).toHaveProperty('bugs', 'https://github.com/test/repo/issues');
-    expect(output).toHaveProperty(
-      'homepage',
-      'https://github.com/test/repo/tree/main/',
-    );
-    expect(output).toHaveProperty('repository', {
-      directory: '',
-      type: 'git',
-      url: 'https://github.com/test/repo.git',
+    expect(output).toMatchObject({
+      bugs: 'https://github.com/test/repo/issues',
+      exports: { '.': './index.js' },
+      homepage: 'https://github.com/test/repo/tree/main/',
+      name: '@test/my-lib',
+      repository: {
+        directory: '',
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
     });
     expect(output).not.toHaveProperty('devDependencies');
     expect(output).not.toHaveProperty('scripts');
@@ -173,3 +179,4 @@ describe.concurrent('gtb pack:npm', () => {
     expect(tarballs).toHaveLength(1);
   });
 });
+/* eslint-enable vitest/max-expects, vitest/no-standalone-expect, vitest/require-hook */

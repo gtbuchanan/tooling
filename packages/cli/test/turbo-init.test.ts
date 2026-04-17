@@ -72,15 +72,12 @@ describe(turboInit, () => {
 
     const turboJson = generateTurboJson(discovery);
 
-    expect(turboJson.tasks).toHaveProperty('typecheck:ts');
-    expect(turboJson.tasks).toHaveProperty('compile:ts');
-    expect(turboJson.tasks).toHaveProperty('lint:eslint');
-    expect(turboJson.tasks).toHaveProperty('test:vitest:fast');
-    expect(turboJson.tasks).toHaveProperty('test:vitest:slow');
-    expect(turboJson.tasks).toHaveProperty('pack:npm');
-    expect(turboJson.tasks).toHaveProperty('check');
-    expect(turboJson.tasks).toHaveProperty('build');
-    expect(turboJson.tasks).toHaveProperty('build:ci');
+    expect(Object.keys(turboJson.tasks)).toStrictEqual(
+      expect.arrayContaining([
+        'build', 'build:ci', 'check', 'compile:ts', 'lint:eslint',
+        'pack:npm', 'test:vitest:fast', 'test:vitest:slow', 'typecheck:ts',
+      ]),
+    );
   });
 
   it('generates per-package scripts with gtb commands', ({ expect }) => {
