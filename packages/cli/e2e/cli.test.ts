@@ -22,7 +22,7 @@ const readJson = (path: string): unknown =>
 const writeJson = (dir: string, name: string, data: unknown): void => {
   const filePath = path.join(dir, name);
   mkdirSync(path.join(filePath, '..'), { recursive: true });
-  writeFileSync(filePath, `${JSON.stringify(data, null, jsonIndent)}\n`);
+  writeFileSync(filePath, `${JSON.stringify(data, undefined, jsonIndent)}\n`);
 };
 
 /* eslint-disable vitest/require-hook --

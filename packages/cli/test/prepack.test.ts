@@ -10,7 +10,7 @@ const jsonIndent = 2;
 const writeFormattedJson = (dir: string, name: string, data: unknown): void => {
   writeFileSync(
     path.join(dir, name),
-    `${JSON.stringify(data, null, jsonIndent)}\n`,
+    `${JSON.stringify(data, undefined, jsonIndent)}\n`,
   );
 };
 

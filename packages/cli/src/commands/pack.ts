@@ -44,7 +44,7 @@ const writeSourceManifest = (
   mkdirSync(target, { recursive: true });
   const json = JSON.stringify(
     { ...buildOutput(manifest), ...buildRepoFields(root, directory) },
-    null,
+    undefined,
     jsonIndent,
   );
   writeFileSync(path.join(target, 'package.json'), `${json}\n`);

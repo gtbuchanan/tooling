@@ -33,7 +33,7 @@ describe('oxfmt CLI', () => {
     const unsorted = { version: '1.0.0', name: 'test' };
     fixture.writeFile(
       'sub/package.json',
-      `${JSON.stringify(unsorted, null, 2)}\n`,
+      `${JSON.stringify(unsorted, undefined, 2)}\n`,
     );
 
     const result = fixture.run('oxfmt', ['--check', 'sub/package.json']);

@@ -26,7 +26,7 @@ describe(writeJsonFile, () => {
     const content = readFileSync(filePath, 'utf8');
 
     expect(content).toBe(
-      `${JSON.stringify({ alpha: 1, beta: 2 }, null, jsonIndent)}\n`,
+      `${JSON.stringify({ alpha: 1, beta: 2 }, undefined, jsonIndent)}\n`,
     );
   });
 
@@ -170,6 +170,7 @@ describe(sortKeysDeep, () => {
   it('returns primitives unchanged', ({ expect }) => {
     expect(sortKeysDeep('hello')).toBe('hello');
     expect(sortKeysDeep(42)).toBe(42);
+    // eslint-disable-next-line unicorn/no-null -- Testing null input handling
     expect(sortKeysDeep(null)).toBeNull();
     expect(sortKeysDeep(true)).toBe(true);
   });

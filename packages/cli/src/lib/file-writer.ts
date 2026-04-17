@@ -36,7 +36,7 @@ export const readJsonFile = (path: string): Record<string, unknown> =>
 
 /** Writes a JSON object to a file with formatting and trailing newline. */
 export const writeJsonFile = (path: string, data: unknown): void => {
-  writeFileSync(path, `${JSON.stringify(data, null, jsonIndent)}\n`);
+  writeFileSync(path, `${JSON.stringify(data, undefined, jsonIndent)}\n`);
 };
 
 const classifyScripts = (
@@ -108,7 +108,7 @@ const ExistingCodecovSchema = v.nullable(
  * Throws if the existing file contains invalid YAML.
  */
 export const mergeCodecovSections = (path: string, sections: CodecovSections): void => {
-  let rawYaml: unknown = null;
+  let rawYaml: unknown;
   if (existsSync(path)) {
     try {
       rawYaml = parseYaml(readFileSync(path, 'utf8'));
