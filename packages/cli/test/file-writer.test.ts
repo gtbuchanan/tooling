@@ -12,7 +12,7 @@ import {
 import { createTempDir } from './helpers.ts';
 
 const readJson = (path: string): unknown =>
-  JSON.parse(readFileSync(path, 'utf-8'));
+  JSON.parse(readFileSync(path, 'utf8'));
 
 const jsonIndent = 2;
 
@@ -23,7 +23,7 @@ describe(writeJsonFile, () => {
 
     writeJsonFile(path, { alpha: 1, beta: 2 });
 
-    const content = readFileSync(path, 'utf-8');
+    const content = readFileSync(path, 'utf8');
 
     expect(content).toBe(
       `${JSON.stringify({ alpha: 1, beta: 2 }, null, jsonIndent)}\n`,
@@ -132,7 +132,7 @@ describe(writeYamlFile, () => {
 
     writeYamlFile(path, { key: 'value', list: [1, 2] });
 
-    const content = readFileSync(path, 'utf-8');
+    const content = readFileSync(path, 'utf8');
     const parsed: unknown = parseYaml(content);
 
     expect(parsed).toStrictEqual({ key: 'value', list: [1, 2] });
@@ -145,7 +145,7 @@ describe(writeYamlFile, () => {
 
     writeYamlFile(path, { pattern: '**/dist/**' });
 
-    const content = readFileSync(path, 'utf-8');
+    const content = readFileSync(path, 'utf8');
 
     expect(content).toContain("'**/dist/**'");
   });
@@ -203,7 +203,7 @@ describe(mergeCodecovSections, () => {
 
     mergeCodecovSections(path, sections);
 
-    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf8'));
 
     expect(parsed).toHaveProperty('flags');
     expect(parsed).toHaveProperty('component_management');
@@ -218,7 +218,7 @@ describe(mergeCodecovSections, () => {
 
     mergeCodecovSections(path, sections);
 
-    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf8'));
 
     expect(parsed).toHaveProperty('flags.app');
     expect(parsed).not.toHaveProperty('flags.old');
@@ -231,7 +231,7 @@ describe(mergeCodecovSections, () => {
 
     mergeCodecovSections(path, sections);
 
-    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf8'));
 
     expect(parsed).toHaveProperty('codecov');
   });
@@ -243,7 +243,7 @@ describe(mergeCodecovSections, () => {
 
     mergeCodecovSections(path, sections);
 
-    const content = readFileSync(path, 'utf-8');
+    const content = readFileSync(path, 'utf8');
     const keys = [...content.matchAll(/^(?<key>\w[\w_]*):/gmv)]
       .map(match => match.groups?.['key'] ?? '');
 
@@ -261,7 +261,7 @@ describe(mergeCodecovSections, () => {
 
     mergeCodecovSections(path, sections);
 
-    const parsed: unknown = parseYaml(readFileSync(path, 'utf-8'));
+    const parsed: unknown = parseYaml(readFileSync(path, 'utf8'));
 
     expect(parsed).toHaveProperty('component_management.default_rules');
     expect(parsed).toHaveProperty('component_management.individual_components');

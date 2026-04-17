@@ -137,7 +137,7 @@ describe(turboInit, () => {
 
     expect(existsSync(turboPath)).toBe(true);
 
-    const parsed: unknown = JSON.parse(readFileSync(turboPath, 'utf-8'));
+    const parsed: unknown = JSON.parse(readFileSync(turboPath, 'utf8'));
 
     expect(parsed).toHaveProperty('$schema');
     expect(parsed).toHaveProperty('tasks');
@@ -182,7 +182,7 @@ describe(turboInit, () => {
     expect(existsSync(join(root, 'turbo.json'))).toBe(true);
 
     const scripts: unknown = JSON.parse(
-      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf-8'),
+      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf8'),
     );
 
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
@@ -204,7 +204,7 @@ describe(turboInit, () => {
 
     expect(existsSync(codecovPath)).toBe(true);
 
-    const content = readFileSync(codecovPath, 'utf-8');
+    const content = readFileSync(codecovPath, 'utf8');
 
     expect(content).toContain('app:');
     expect(content).toContain('carryforward');
@@ -226,7 +226,7 @@ describe(turboInit, () => {
       process.chdir(origCwd);
     }
 
-    const content = readFileSync(join(root, 'codecov.yml'), 'utf-8');
+    const content = readFileSync(join(root, 'codecov.yml'), 'utf8');
 
     expect(content).toContain('require_ci_to_pass');
     expect(content).toContain('carryforward');
@@ -252,7 +252,7 @@ describe(turboInit, () => {
     }
 
     const result: unknown = JSON.parse(
-      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf-8'),
+      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf8'),
     );
 
     expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb typecheck:ts');

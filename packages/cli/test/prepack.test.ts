@@ -15,7 +15,7 @@ const writeFormattedJson = (dir: string, name: string, data: unknown): void => {
 };
 
 const readJson = (path: string): unknown =>
-  JSON.parse(readFileSync(path, 'utf-8'));
+  JSON.parse(readFileSync(path, 'utf8'));
 
 describe(prepack, () => {
   it('generates dist/source/package.json for publishable package', ({ expect }) => {
@@ -88,7 +88,7 @@ describe(prepack, () => {
 
     const npmignore = readFileSync(
       join(pkgDir, 'dist', 'source', '.npmignore'),
-      'utf-8',
+      'utf8',
     );
 
     expect(npmignore).toBe('*.tsbuildinfo\n');

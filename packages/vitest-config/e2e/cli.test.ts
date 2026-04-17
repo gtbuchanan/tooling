@@ -23,7 +23,7 @@ const createFixture = () => {
   const pkgJsonPath = join(fixture.projectDir, 'package.json');
   const pkg = v.parse(
     v.looseObject({ imports: v.optional(v.record(v.string(), v.string())) }),
-    JSON.parse(readFileSync(pkgJsonPath, 'utf-8')),
+    JSON.parse(readFileSync(pkgJsonPath, 'utf8')),
   );
   pkg.imports = { '#src/*': './src/*' };
   writeFileSync(pkgJsonPath, JSON.stringify(pkg, undefined, 2));
@@ -207,7 +207,7 @@ describe('vitest CLI integration', () => {
 
     expect(existsSync(lcovPath)).toBe(true);
 
-    const lcov = readFileSync(lcovPath, 'utf-8');
+    const lcov = readFileSync(lcovPath, 'utf8');
     const normalizedLcov = lcov.replaceAll('\\', '/');
 
     expect(normalizedLcov).toContain('SF:packages/app/src/add.ts');

@@ -32,7 +32,7 @@ export interface MergeResult {
 
 /** Reads and parses a JSON file as a plain object. */
 export const readJsonFile = (path: string): Record<string, unknown> =>
-  v.parse(v.record(v.string(), v.unknown()), JSON.parse(readFileSync(path, 'utf-8')));
+  v.parse(v.record(v.string(), v.unknown()), JSON.parse(readFileSync(path, 'utf8')));
 
 /** Writes a JSON object to a file with formatting and trailing newline. */
 export const writeJsonFile = (path: string, data: unknown): void => {
@@ -111,7 +111,7 @@ export const mergeCodecovSections = (path: string, sections: CodecovSections): v
   let rawYaml: unknown = null;
   if (existsSync(path)) {
     try {
-      rawYaml = parseYaml(readFileSync(path, 'utf-8'));
+      rawYaml = parseYaml(readFileSync(path, 'utf8'));
     } catch {
       throw new Error(`${path}: invalid YAML — fix or delete it and re-run gtb turbo:init`);
     }

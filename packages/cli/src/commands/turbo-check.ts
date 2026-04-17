@@ -163,7 +163,7 @@ const readCodecovYaml = (path: string): ReadCodecovResult => {
     return { errors: ['codecov.yml is missing (run gtb turbo:init)'] };
   }
   try {
-    return { data: parseYaml(readFileSync(path, 'utf-8')) };
+    return { data: parseYaml(readFileSync(path, 'utf8')) };
   } catch {
     return { errors: ['codecov.yml: invalid YAML (run gtb turbo:init)'] };
   }

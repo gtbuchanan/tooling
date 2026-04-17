@@ -38,14 +38,14 @@ const TurboJsonSchema = v.looseObject({
 
 /** Reads the tasks from a project's turbo.json. */
 export const readTurboTasks = (root: string): Record<string, unknown> => {
-  const raw: unknown = JSON.parse(readFileSync(join(root, 'turbo.json'), 'utf-8'));
+  const raw: unknown = JSON.parse(readFileSync(join(root, 'turbo.json'), 'utf8'));
   const { tasks } = v.parse(TurboJsonSchema, raw);
   return tasks ?? {};
 };
 
 /** Reads the scripts from a package's package.json. */
 export const readScripts = (pkgDir: string): Record<string, string> => {
-  const raw: unknown = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf-8'));
+  const raw: unknown = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8'));
   const { scripts } = v.parse(ManifestSchema, raw);
   return scripts ?? {};
 };
@@ -60,7 +60,7 @@ export const initProject = (root: string): void => {
   for (const pkg of discovery.packages) {
     const scripts = generatePackageScripts(pkg, discovery.isSelfHosted);
     const pkgPath = join(pkg.dir, 'package.json');
-    const manifest = v.parse(ManifestSchema, JSON.parse(readFileSync(pkgPath, 'utf-8')));
+    const manifest = v.parse(ManifestSchema, JSON.parse(readFileSync(pkgPath, 'utf8')));
     writeJson(pkg.dir, 'package.json', {
       ...manifest,
       scripts: { ...manifest.scripts, ...scripts },

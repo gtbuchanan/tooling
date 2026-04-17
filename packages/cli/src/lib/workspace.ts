@@ -48,7 +48,7 @@ const WorkspaceSchema = v.object({
 
 /** Extracts package glob patterns from pnpm-workspace.yaml. */
 const parsePackageGlobs = (workspaceFile: string): readonly string[] => {
-  const content = readFileSync(workspaceFile, 'utf-8');
+  const content = readFileSync(workspaceFile, 'utf8');
   const { packages } = v.parse(WorkspaceSchema, parse(content));
   return packages ?? [];
 };

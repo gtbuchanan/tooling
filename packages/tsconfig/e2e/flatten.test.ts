@@ -23,7 +23,7 @@ const TsconfigSchema = v.looseObject({
 const readPublishedTsconfig = (projectDir: string): string =>
   readFileSync(
     join(projectDir, 'node_modules/@gtbuchanan/tsconfig/node.json'),
-    'utf-8',
+    'utf8',
   );
 
 describe('tsconfig flattening', () => {

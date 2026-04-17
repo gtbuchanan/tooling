@@ -17,7 +17,7 @@ const it = extendWithFixture(createFixture);
 const jsonIndent = 2;
 
 const readJson = (path: string): unknown =>
-  JSON.parse(readFileSync(path, 'utf-8'));
+  JSON.parse(readFileSync(path, 'utf8'));
 
 const writeJson = (dir: string, name: string, data: unknown): void => {
   const filePath = join(dir, name);

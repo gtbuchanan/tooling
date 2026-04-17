@@ -36,7 +36,7 @@ export const pinned = (name: string): string => {
   if (pkgPath === undefined) {
     throw new Error(`Could not find package.json for ${name}`);
   }
-  const { version } = v.parse(PackageJson, JSON.parse(readFileSync(pkgPath, 'utf-8')));
+  const { version } = v.parse(PackageJson, JSON.parse(readFileSync(pkgPath, 'utf8')));
   return `${name}@${version}`;
 };
 
@@ -135,7 +135,7 @@ export const runCommand = (
 ): CommandResult => {
   const result = crossSpawn.sync(command, [...args], {
     ...options,
-    encoding: 'utf-8',
+    encoding: 'utf8',
     stdio: 'pipe',
   });
   if (result.error) {
