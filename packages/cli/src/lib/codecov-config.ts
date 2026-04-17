@@ -1,4 +1,4 @@
-import { basename, relative } from 'node:path';
+import path from 'node:path';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
 
 /** Codecov per-package flag configuration. */
@@ -61,8 +61,8 @@ const buildCoverageEntries = (
   const flags: Record<string, CodecovFlag> = {};
   const components: CodecovComponent[] = [];
   for (const pkg of packages) {
-    const name = basename(pkg.dir);
-    const relDir = relative(rootDir, pkg.dir).replaceAll('\\', '/');
+    const name = path.basename(pkg.dir);
+    const relDir = path.relative(rootDir, pkg.dir).replaceAll('\\', '/');
     flags[name] = { carryforward: true, paths: [`${relDir}/`] };
     components.push({ component_id: name, name, paths: buildComponentPaths(pkg, relDir) });
   }
@@ -78,7 +78,7 @@ const buildCoverageEntries = (
  */
 export const generateCodecovSections = (discovery: WorkspaceDiscovery): CodecovSections => {
   const coveragePackages = discovery.packages.filter(pkg => pkg.hasVitestTests);
-  const names = coveragePackages.map(pkg => basename(pkg.dir));
+  const names = coveragePackages.map(pkg => path.basename(pkg.dir));
   checkForDuplicateBasenames(names);
   const { flags, components } = buildCoverageEntries(coveragePackages, discovery.rootDir);
   return { component_management: { individual_components: components }, flags };

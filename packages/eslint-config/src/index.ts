@@ -407,9 +407,10 @@ export const configure = async (
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
     { languageOptions: { parserOptions: resolveParserOptions(options) } },
-    // Unicorn recommended
-    unicornPlugin.configs['flat/recommended'],
+    // Unicorn recommended (scoped to TS — unicorn crashes on JSON/YAML parsers)
+    { ...unicornPlugin.configs['flat/recommended'], files: ['**/*.ts'] },
     {
+      files: ['**/*.ts'],
       rules: {
         // TODO: Re-enable and configure allowlist in a separate PR
         'unicorn/prevent-abbreviations': 'off',

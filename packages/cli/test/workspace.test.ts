@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { describe, it } from 'vitest';
 import { resolveWorkspace } from '#src/lib/workspace.js';
 import { createTempDir } from './helpers.ts';
@@ -8,21 +8,21 @@ describe(resolveWorkspace, () => {
   it('detects monorepo with packages glob', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    mkdirSync(join(root, 'packages', 'alpha'), { recursive: true });
-    mkdirSync(join(root, 'packages', 'beta'), { recursive: true });
+    mkdirSync(path.join(root, 'packages', 'alpha'), { recursive: true });
+    mkdirSync(path.join(root, 'packages', 'beta'), { recursive: true });
 
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.rootDir).toBe(root);
     expect(result.packageDirs).toHaveLength(2);
     expect(result.packageDirs).toContainEqual(
-      join(root, 'packages', 'alpha'),
+      path.join(root, 'packages', 'alpha'),
     );
     expect(result.packageDirs).toContainEqual(
-      join(root, 'packages', 'beta'),
+      path.join(root, 'packages', 'beta'),
     );
   });
 
@@ -38,7 +38,7 @@ describe(resolveWorkspace, () => {
   it('falls back to single-package when packages field is missing', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       'hoist: false\n',
     );
 
@@ -51,7 +51,7 @@ describe(resolveWorkspace, () => {
   it('falls back to single-package when packages list is empty', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       'packages:\n',
     );
 
@@ -64,27 +64,27 @@ describe(resolveWorkspace, () => {
   it('ignores files in packages directory', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    mkdirSync(join(root, 'packages'), { recursive: true });
-    writeFileSync(join(root, 'packages', 'not-a-package.txt'), '');
-    mkdirSync(join(root, 'packages', 'real-pkg'), { recursive: true });
+    mkdirSync(path.join(root, 'packages'), { recursive: true });
+    writeFileSync(path.join(root, 'packages', 'not-a-package.txt'), '');
+    mkdirSync(path.join(root, 'packages', 'real-pkg'), { recursive: true });
 
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.packageDirs).toStrictEqual([
-      join(root, 'packages', 'real-pkg'),
+      path.join(root, 'packages', 'real-pkg'),
     ]);
   });
 
   it('resolves from a subdirectory', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    const subDir = join(root, 'packages', 'alpha');
+    const subDir = path.join(root, 'packages', 'alpha');
     mkdirSync(subDir, { recursive: true });
 
     const result = resolveWorkspace({ cwd: subDir });
@@ -96,68 +96,68 @@ describe(resolveWorkspace, () => {
   it('handles double-quoted globs', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       'packages:\n  - "apps/*"\n',
     );
-    mkdirSync(join(root, 'apps', 'web'), { recursive: true });
+    mkdirSync(path.join(root, 'apps', 'web'), { recursive: true });
 
     const result = resolveWorkspace({ cwd: root });
 
-    expect(result.packageDirs).toStrictEqual([join(root, 'apps', 'web')]);
+    expect(result.packageDirs).toStrictEqual([path.join(root, 'apps', 'web')]);
   });
 
   it('handles bare (unquoted) globs', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       'packages:\n  - packages/*\n',
     );
-    mkdirSync(join(root, 'packages', 'lib'), { recursive: true });
+    mkdirSync(path.join(root, 'packages', 'lib'), { recursive: true });
 
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.packageDirs).toStrictEqual([
-      join(root, 'packages', 'lib'),
+      path.join(root, 'packages', 'lib'),
     ]);
   });
 
   it('handles multiple glob patterns', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n  - 'apps/*'\n",
     );
-    mkdirSync(join(root, 'packages', 'lib'), { recursive: true });
-    mkdirSync(join(root, 'apps', 'web'), { recursive: true });
+    mkdirSync(path.join(root, 'packages', 'lib'), { recursive: true });
+    mkdirSync(path.join(root, 'apps', 'web'), { recursive: true });
 
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.packageDirs).toHaveLength(2);
     expect(result.packageDirs).toContainEqual(
-      join(root, 'packages', 'lib'),
+      path.join(root, 'packages', 'lib'),
     );
     expect(result.packageDirs).toContainEqual(
-      join(root, 'apps', 'web'),
+      path.join(root, 'apps', 'web'),
     );
   });
 
   it('handles literal directory (no wildcard)', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'tooling'\n",
     );
-    mkdirSync(join(root, 'tooling'), { recursive: true });
+    mkdirSync(path.join(root, 'tooling'), { recursive: true });
 
     const result = resolveWorkspace({ cwd: root });
 
-    expect(result.packageDirs).toStrictEqual([join(root, 'tooling')]);
+    expect(result.packageDirs).toStrictEqual([path.join(root, 'tooling')]);
   });
 
   it('returns empty when glob directory does not exist', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'nonexistent/*'\n",
     );
 

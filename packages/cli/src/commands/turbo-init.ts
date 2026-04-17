@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import path from 'node:path';
 import { generateCodecovSections } from '../lib/codecov-config.ts';
 import {
   type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace,
@@ -28,7 +28,7 @@ const writeSortedAndLog = (path: string, data: object): void => {
 };
 
 const writeRootScripts = (discovery: WorkspaceDiscovery, force: boolean): void => {
-  const rootPkgPath = join(discovery.rootDir, 'package.json');
+  const rootPkgPath = path.join(discovery.rootDir, 'package.json');
   logMergeResult('root', mergePackageScripts(rootPkgPath, generateRootScripts(discovery), force));
 };
 
@@ -39,16 +39,16 @@ const writePackageScripts = (
   if (Object.keys(scripts).length === 0) {
     return;
   }
-  logMergeResult(pkg.dir, mergePackageScripts(join(pkg.dir, 'package.json'), scripts, force));
+  logMergeResult(pkg.dir, mergePackageScripts(path.join(pkg.dir, 'package.json'), scripts, force));
 };
 
 const writeCodecovConfig = (discovery: WorkspaceDiscovery): void => {
   if (!discovery.packages.some(pkg => pkg.hasVitestTests)) {
     return;
   }
-  const path = join(discovery.rootDir, 'codecov.yml');
-  mergeCodecovSections(path, generateCodecovSections(discovery));
-  console.log(`wrote ${path}`);
+  const filePath = path.join(discovery.rootDir, 'codecov.yml');
+  mergeCodecovSections(filePath, generateCodecovSections(discovery));
+  console.log(`wrote ${filePath}`);
 };
 
 /** Generates turbo.json, tsconfigs, and per-package scripts from project discovery. */
@@ -56,7 +56,7 @@ export const turboInit = (args: readonly string[]): void => {
   const force = args.includes('--force');
   const discovery = discoverWorkspace();
 
-  writeSortedAndLog(join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery));
+  writeSortedAndLog(path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery));
 
   for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
     const userOpts = readUserCompilerOptions(descriptor.path);

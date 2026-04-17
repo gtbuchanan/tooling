@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { createProjectFixture, runCommand } from '@gtbuchanan/test-utils';
 import * as v from 'valibot';
 import { it as base, describe } from 'vitest';
@@ -16,11 +16,11 @@ const createFixture = () => {
     packages: ['vitest', '@vitest/coverage-v8', 'console-fail-test'],
   });
 
-  writeFileSync(join(fixture.projectDir, 'vitest.config.ts'), vitestConfig);
-  mkdirSync(join(fixture.projectDir, 'src'), { recursive: true });
+  writeFileSync(path.join(fixture.projectDir, 'vitest.config.ts'), vitestConfig);
+  mkdirSync(path.join(fixture.projectDir, 'src'), { recursive: true });
 
   // Add subpath imports for #src/* resolution
-  const pkgJsonPath = join(fixture.projectDir, 'package.json');
+  const pkgJsonPath = path.join(fixture.projectDir, 'package.json');
   const pkg = v.parse(
     v.looseObject({ imports: v.optional(v.record(v.string(), v.string())) }),
     JSON.parse(readFileSync(pkgJsonPath, 'utf8')),
@@ -28,7 +28,7 @@ const createFixture = () => {
   pkg.imports = { '#src/*': './src/*' };
   writeFileSync(pkgJsonPath, JSON.stringify(pkg, undefined, 2));
 
-  const vitest = join(fixture.projectDir, 'node_modules/.bin/vitest');
+  const vitest = path.join(fixture.projectDir, 'node_modules/.bin/vitest');
 
   const env = {
     ...process.env,
@@ -37,8 +37,8 @@ const createFixture = () => {
 
   const run = ({ files }: { files: Record<string, string> }) => {
     for (const [name, content] of Object.entries(files)) {
-      const filePath = join(fixture.projectDir, name);
-      mkdirSync(join(filePath, '..'), { recursive: true });
+      const filePath = path.join(fixture.projectDir, name);
+      mkdirSync(path.join(filePath, '..'), { recursive: true });
       writeFileSync(filePath, content);
     }
 
@@ -129,11 +129,11 @@ describe('vitest CLI integration', () => {
 
   it('uses v8 coverage provider', ({ fixture, expect }) => {
     writeFileSync(
-      join(fixture.projectDir, 'src/add.ts'),
+      path.join(fixture.projectDir, 'src/add.ts'),
       'export const add = (a: number, b: number) => a + b;\n',
     );
     writeFileSync(
-      join(fixture.projectDir, 'cov.test.ts'),
+      path.join(fixture.projectDir, 'cov.test.ts'),
       [
         'import { it } from "vitest";',
         'import { add } from "#src/add";',
@@ -150,19 +150,19 @@ describe('vitest CLI integration', () => {
     );
 
     expect(exitCode).toBe(0);
-    expect(existsSync(join(fixture.projectDir, 'dist/coverage'))).toBe(true);
+    expect(existsSync(path.join(fixture.projectDir, 'dist/coverage'))).toBe(true);
   });
 
   it('writes repo-relative lcov paths for package coverage', ({ fixture, expect }) => {
-    const appDir = join(fixture.projectDir, 'packages', 'app');
-    mkdirSync(join(appDir, 'src'), { recursive: true });
-    mkdirSync(join(appDir, 'test'), { recursive: true });
+    const appDir = path.join(fixture.projectDir, 'packages', 'app');
+    mkdirSync(path.join(appDir, 'src'), { recursive: true });
+    mkdirSync(path.join(appDir, 'test'), { recursive: true });
     writeFileSync(
-      join(appDir, 'package.json'),
+      path.join(appDir, 'package.json'),
       JSON.stringify({ name: '@test/app', private: true, type: 'module' }),
     );
     writeFileSync(
-      join(appDir, 'vitest.config.ts'),
+      path.join(appDir, 'vitest.config.ts'),
       [
         'import { defineConfig } from "vitest/config";',
         'import { configurePackage } from "@gtbuchanan/vitest-config/configure";',
@@ -170,11 +170,11 @@ describe('vitest CLI integration', () => {
       ].join('\n'),
     );
     writeFileSync(
-      join(appDir, 'src/add.ts'),
+      path.join(appDir, 'src/add.ts'),
       'export const add = (a: number, b: number) => a + b;\n',
     );
     writeFileSync(
-      join(appDir, 'test/cov.test.ts'),
+      path.join(appDir, 'test/cov.test.ts'),
       [
         'import { it } from "vitest";',
         'import { add } from "../src/add";',
@@ -203,7 +203,7 @@ describe('vitest CLI integration', () => {
 
     expect(exitCode).toBe(0);
 
-    const lcovPath = join(appDir, 'dist/coverage/vitest/all/lcov.info');
+    const lcovPath = path.join(appDir, 'dist/coverage/vitest/all/lcov.info');
 
     expect(existsSync(lcovPath)).toBe(true);
 

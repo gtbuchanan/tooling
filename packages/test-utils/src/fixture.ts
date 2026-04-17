@@ -5,7 +5,7 @@ import {
 } from 'node:fs';
 import { createRequire } from 'node:module';
 import { devNull, tmpdir } from 'node:os';
-import { delimiter, dirname, join } from 'node:path';
+import path from 'node:path';
 import crossSpawn from 'cross-spawn';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
@@ -31,7 +31,7 @@ const require = createRequire(import.meta.url);
  * to the exact versions tested during development.
  */
 export const pinned = (name: string): string => {
-  const entryDir = dirname(require.resolve(name));
+  const entryDir = path.dirname(require.resolve(name));
   const pkgPath = findUpSync('package.json', { cwd: entryDir });
   if (pkgPath === undefined) {
     throw new Error(`Could not find package.json for ${name}`);
@@ -69,7 +69,7 @@ interface TarballEntry {
 
 const collectTarballs = (): readonly TarballEntry[] => {
   const wsFile = findUpSync('pnpm-workspace.yaml', { cwd: process.cwd() });
-  const wsRoot = wsFile === undefined ? process.cwd() : dirname(wsFile);
+  const wsRoot = wsFile === undefined ? process.cwd() : path.dirname(wsFile);
   const packDirs = [
     // Monorepo: per-package tarballs
     ...globSync('packages/*/dist/packages/npm', { cwd: wsRoot }),
@@ -77,7 +77,7 @@ const collectTarballs = (): readonly TarballEntry[] => {
     ...globSync('dist/packages/npm', { cwd: wsRoot }),
   ];
   return packDirs.flatMap((packDir) => {
-    const abs = join(wsRoot, packDir);
+    const abs = path.join(wsRoot, packDir);
     return readdirSync(abs).map(file => ({ dir: abs, name: file }));
   });
 };
@@ -91,7 +91,7 @@ const locateTarballFrom = (
   if (match === undefined) {
     throw new Error(`Tarball ${name} not found`);
   }
-  return join(match.dir, match.name);
+  return path.join(match.dir, match.name);
 };
 
 /** Result of a synchronous child process execution. */
@@ -179,7 +179,7 @@ const npmInit = (cwd: string, packages: readonly string[]): void => {
 };
 
 const createSubdir = (parent: string, name: string): string => {
-  const dir = join(parent, name);
+  const dir = path.join(parent, name);
   mkdirSync(dir);
   return dir;
 };
@@ -198,8 +198,8 @@ const resolveTarballs = (
  */
 export const createIsolatedFixture = (options: IsolatedFixtureOptions): IsolatedFixture => {
   const tarballs = resolveTarballs(options);
-  const baseDir = mkdtempSync(join(tmpdir(), 'e2e-isolated-'));
-  const projectDir = mkdtempSync(join(tmpdir(), 'e2e-project-'));
+  const baseDir = mkdtempSync(path.join(tmpdir(), 'e2e-isolated-'));
+  const projectDir = mkdtempSync(path.join(tmpdir(), 'e2e-project-'));
 
   const hookDir = createSubdir(baseDir, 'hook');
   const depsDir = createSubdir(baseDir, 'deps');
@@ -208,9 +208,9 @@ export const createIsolatedFixture = (options: IsolatedFixtureOptions): Isolated
   npmInit(depsDir, [...tarballs, ...(options.depsPackages ?? []).map(pinned)]);
 
   const nodePath = [
-    join(hookDir, 'node_modules'),
-    join(depsDir, 'node_modules'),
-  ].join(delimiter);
+    path.join(hookDir, 'node_modules'),
+    path.join(depsDir, 'node_modules'),
+  ].join(path.delimiter);
 
   return {
     depsDir,
@@ -255,21 +255,21 @@ export const createProjectFixture = (
   options: ProjectFixtureOptions,
 ): ProjectFixture => {
   const tarballs = resolveTarballs(options);
-  const projectDir = mkdtempSync(join(tmpdir(), 'e2e-build-'));
+  const projectDir = mkdtempSync(path.join(tmpdir(), 'e2e-build-'));
 
   const pinnedPkgs = (options.packages ?? []).map(pinned);
   exec('npm', ['init', '-y', '--init-type', 'module'], { cwd: projectDir });
   exec('npm', ['install', ...tarballs, ...pinnedPkgs], { cwd: projectDir });
 
   const writeFile = (name: string, content: string): string => {
-    const filePath = join(projectDir, name);
-    mkdirSync(dirname(filePath), { recursive: true });
+    const filePath = path.join(projectDir, name);
+    mkdirSync(path.dirname(filePath), { recursive: true });
     writeFileSync(filePath, content);
     return filePath;
   };
 
   const run = (command: string, args: readonly string[]): CommandResult => {
-    const binPath = join(projectDir, 'node_modules', '.bin', command);
+    const binPath = path.join(projectDir, 'node_modules', '.bin', command);
     return runCommand(binPath, args, { cwd: projectDir });
   };
 

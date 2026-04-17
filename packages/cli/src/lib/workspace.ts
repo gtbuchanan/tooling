@@ -1,5 +1,5 @@
 import { globSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import path from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
 import { parse } from 'yaml';
@@ -29,10 +29,10 @@ export const resolveWorkspace = (
   const cwd = options?.cwd ?? process.cwd();
   const workspaceFile = findUpSync('pnpm-workspace.yaml', { cwd });
   if (workspaceFile !== undefined) {
-    const rootDir = dirname(workspaceFile);
+    const rootDir = path.dirname(workspaceFile);
     const globs = parsePackageGlobs(workspaceFile);
     const packageDirs = globs.flatMap(pattern =>
-      globSync(`${pattern}/`, { cwd: rootDir }).map(dir => resolve(rootDir, dir)),
+      globSync(`${pattern}/`, { cwd: rootDir }).map(dir => path.resolve(rootDir, dir)),
     );
     if (packageDirs.length > 0) {
       return { packageDirs, rootDir };
@@ -55,7 +55,7 @@ const parsePackageGlobs = (workspaceFile: string): readonly string[] => {
 
 /** Reads and parses a package.json from the given directory. */
 export const readManifest = (dir: string): unknown =>
-  readJsonFile(join(dir, 'package.json'));
+  readJsonFile(path.join(dir, 'package.json'));
 
 /** Reads and validates a package.json as a {@link Manifest}. */
 export const readParsedManifest = (dir: string): Manifest =>

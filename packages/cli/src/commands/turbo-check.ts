@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import * as v from 'valibot';
 import { parse as parseYaml } from 'yaml';
 import { type CodecovSections, generateCodecovSections } from '../lib/codecov-config.ts';
@@ -40,12 +40,12 @@ const checkTurboTasks = (
   expected: TurboJson,
   ignored: ReadonlySet<string>,
 ): readonly string[] => {
-  const path = join(rootDir, 'turbo.json');
-  if (!existsSync(path)) {
+  const filePath = path.join(rootDir, 'turbo.json');
+  if (!existsSync(filePath)) {
     return ['turbo.json is missing (run gtb turbo:init)'];
   }
 
-  const raw = readJsonFile(path);
+  const raw = readJsonFile(filePath);
   const result = v.safeParse(TurboJsonSchema, raw);
   if (!result.success) {
     return ['turbo.json: failed to parse'];
@@ -196,8 +196,8 @@ const checkCodecovSections = (
   discovery: WorkspaceDiscovery,
   ignored: ReadonlySet<string>,
 ): readonly string[] => {
-  const path = join(rootDir, 'codecov.yml');
-  const readResult = readCodecovYaml(path);
+  const filePath = path.join(rootDir, 'codecov.yml');
+  const readResult = readCodecovYaml(filePath);
   if (readResult.errors !== undefined) {
     return readResult.errors;
   }

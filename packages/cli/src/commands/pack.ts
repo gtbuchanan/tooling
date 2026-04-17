@@ -1,5 +1,5 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import path from 'node:path';
 import crossSpawn from 'cross-spawn';
 import * as v from 'valibot';
 import {
@@ -18,7 +18,7 @@ import {
 
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';
-const packDestination = join('dist', 'packages', 'npm');
+const packDestination = path.join('dist', 'packages', 'npm');
 
 const readRootManifest = (rootDir: string): RootManifest =>
   v.parse(RootManifestSchema, readManifest(rootDir));
@@ -47,8 +47,8 @@ const writeSourceManifest = (
     null,
     jsonIndent,
   );
-  writeFileSync(join(target, 'package.json'), `${json}\n`);
-  writeFileSync(join(target, '.npmignore'), npmignoreContent);
+  writeFileSync(path.join(target, 'package.json'), `${json}\n`);
+  writeFileSync(path.join(target, '.npmignore'), npmignoreContent);
 };
 
 const preparePackage = (
@@ -62,8 +62,8 @@ const preparePackage = (
     return;
   }
 
-  const target = join(pkgDir, dir);
-  const directory = relative(rootDir, pkgDir).replaceAll('\\', '/');
+  const target = path.join(pkgDir, dir);
+  const directory = path.relative(rootDir, pkgDir).replaceAll('\\', '/');
   writeSourceManifest(manifest, root, target, directory);
 };
 
@@ -97,10 +97,10 @@ const prepareAndPack = (
     return;
   }
 
-  const target = join(pkgDir, dir);
-  const directory = relative(rootDir, pkgDir).replaceAll('\\', '/');
+  const target = path.join(pkgDir, dir);
+  const directory = path.relative(rootDir, pkgDir).replaceAll('\\', '/');
   writeSourceManifest(manifest, root, target, directory);
-  execPnpmPack(pkgDir, join(pkgDir, packDestination));
+  execPnpmPack(pkgDir, path.join(pkgDir, packDestination));
 };
 
 /**

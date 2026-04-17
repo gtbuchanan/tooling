@@ -1,5 +1,5 @@
 import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import {
   type ProjectFixture,
   createIsolatedFixture,
@@ -81,9 +81,9 @@ describe('pre-commit isolation', () => {
       packageName: '@gtbuchanan/oxfmt-config',
     });
 
-    const oxfmt = join(fixture.hookDir, 'node_modules/.bin/oxfmt');
-    writeFileSync(join(fixture.projectDir, 'oxfmt.config.ts'), oxfmtConfig);
-    writeFileSync(join(fixture.projectDir, 'data.json'), '{}\n');
+    const oxfmt = path.join(fixture.hookDir, 'node_modules/.bin/oxfmt');
+    writeFileSync(path.join(fixture.projectDir, 'oxfmt.config.ts'), oxfmtConfig);
+    writeFileSync(path.join(fixture.projectDir, 'data.json'), '{}\n');
 
     const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
     const result = runCommand(oxfmt, ['--check', 'data.json'], {
@@ -100,9 +100,9 @@ describe('pre-commit isolation', () => {
       packageName: '@gtbuchanan/oxfmt-config',
     });
 
-    const oxfmt = join(fixture.hookDir, 'node_modules/.bin/oxfmt');
-    writeFileSync(join(fixture.projectDir, 'oxfmt.config.ts'), createRequireConfig);
-    writeFileSync(join(fixture.projectDir, 'data.json'), '{}\n');
+    const oxfmt = path.join(fixture.hookDir, 'node_modules/.bin/oxfmt');
+    writeFileSync(path.join(fixture.projectDir, 'oxfmt.config.ts'), createRequireConfig);
+    writeFileSync(path.join(fixture.projectDir, 'data.json'), '{}\n');
 
     const result = runCommand(oxfmt, ['--check', 'data.json'], {
       cwd: fixture.projectDir,

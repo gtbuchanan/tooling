@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import path from 'node:path';
 import ts from 'typescript';
 import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
@@ -35,7 +35,7 @@ const parseHost: ts.ParseConfigHost = {
  * resolution. Falls back to {@link buildInclude} if resolution fails.
  */
 export const resolveBuildIncludes = (dir: string): readonly string[] => {
-  const configPath = join(dir, 'tsconfig.build.json');
+  const configPath = path.join(dir, 'tsconfig.build.json');
   const raw = v.safeParse(ReadConfigSchema, ts.readConfigFile(configPath, readFile));
   if (!raw.success || raw.output.error !== undefined) {
     return buildInclude;
@@ -153,12 +153,12 @@ export const planTsconfigs = (
     {
       generate: opts => generateTypeCheckConfig('./tsconfig.base.json', opts),
       ownedKeys: typeCheckOwned,
-      path: join(rootDir, 'tsconfig.json'),
+      path: path.join(rootDir, 'tsconfig.json'),
     },
     {
       generate: opts => generateRootBuildConfig('./tsconfig.base.json', opts),
       ownedKeys: rootBuildOwned,
-      path: join(rootDir, 'tsconfig.build.json'),
+      path: path.join(rootDir, 'tsconfig.build.json'),
     },
   ];
 
@@ -170,14 +170,14 @@ export const planTsconfigs = (
     descriptors.push({
       generate: opts => generateTypeCheckConfig('../../tsconfig.base.json', opts),
       ownedKeys: typeCheckOwned,
-      path: join(pkg.dir, 'tsconfig.json'),
+      path: path.join(pkg.dir, 'tsconfig.json'),
     });
 
     if (pkg.isPublished) {
       descriptors.push({
         generate: opts => generateBuildConfig('../../tsconfig.build.json', opts),
         ownedKeys: buildOwned,
-        path: join(pkg.dir, 'tsconfig.build.json'),
+        path: path.join(pkg.dir, 'tsconfig.build.json'),
       });
     }
   }

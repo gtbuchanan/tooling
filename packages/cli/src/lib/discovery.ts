@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import type { Manifest } from './manifest.ts';
 import { buildInclude, resolveBuildIncludes } from './tsconfig-gen.ts';
 import {
@@ -55,7 +55,7 @@ export interface WorkspaceDiscovery {
 }
 
 const hasDir = (base: string, name: string): boolean =>
-  existsSync(join(base, name));
+  existsSync(path.join(base, name));
 
 /** Lists files in a directory (returns empty array if dir doesn't exist). */
 const listFiles = (dir: string): readonly string[] => {

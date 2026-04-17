@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import {
   type ProjectFixture,
   createProjectFixture,
@@ -22,7 +22,7 @@ const TsconfigSchema = v.looseObject({
 
 const readPublishedTsconfig = (projectDir: string): string =>
   readFileSync(
-    join(projectDir, 'node_modules/@gtbuchanan/tsconfig/node.json'),
+    path.join(projectDir, 'node_modules/@gtbuchanan/tsconfig/node.json'),
     'utf8',
   );
 

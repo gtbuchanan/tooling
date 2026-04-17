@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import path from 'node:path';
 import {
   compileTs, coverageCodecovUpload, coverageVitestMerge, lintEslint,
   packNpm, prepare, testVitestE2e, testVitestFast,
@@ -58,7 +58,7 @@ const packageScriptEntries = (
 
 /** Generates the gtb shim script for self-hosted packages. */
 const gtbShim = (pkgDir: string, rootDir: string): string => {
-  const rel = relative(pkgDir, rootDir).replaceAll('\\', '/');
+  const rel = path.relative(pkgDir, rootDir).replaceAll('\\', '/');
 
   return `node --experimental-strip-types ${rel}/packages/cli/bin/gtb.ts`;
 };

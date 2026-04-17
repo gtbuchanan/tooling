@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import {
   type ProjectFixture,
   createProjectFixture,
@@ -20,8 +20,8 @@ const readJson = (path: string): unknown =>
   JSON.parse(readFileSync(path, 'utf8'));
 
 const writeJson = (dir: string, name: string, data: unknown): void => {
-  const filePath = join(dir, name);
-  mkdirSync(join(filePath, '..'), { recursive: true });
+  const filePath = path.join(dir, name);
+  mkdirSync(path.join(filePath, '..'), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(data, null, jsonIndent)}\n`);
 };
 
@@ -67,7 +67,7 @@ describe.concurrent('gtb pack:npm', () => {
     expect(result).toMatchObject({ exitCode: 0 });
 
     const tarballs = readdirSync(
-      join(fixture.projectDir, 'dist', 'packages', 'npm'),
+      path.join(fixture.projectDir, 'dist', 'packages', 'npm'),
     );
 
     expect(tarballs).toHaveLength(1);
@@ -86,7 +86,7 @@ describe.concurrent('gtb pack:npm', () => {
     const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(existsSync(join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
+    expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
       false,
     );
   });
@@ -101,7 +101,7 @@ describe.concurrent('gtb pack:npm', () => {
     const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(existsSync(join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
+    expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
       false,
     );
   });
@@ -132,7 +132,7 @@ describe.concurrent('gtb pack:npm', () => {
     expect(result).toMatchObject({ exitCode: 0 });
 
     const output = readJson(
-      join(fixture.projectDir, 'dist', 'source', 'package.json'),
+      path.join(fixture.projectDir, 'dist', 'source', 'package.json'),
     );
 
     expect(output).toHaveProperty('name', '@test/my-lib');
@@ -159,9 +159,9 @@ describe.concurrent('gtb pack:npm', () => {
       publishConfig: { directory: 'dist/source' },
       version: '1.0.0',
     });
-    const distDir = join(fixture.projectDir, 'dist', 'packages', 'npm');
+    const distDir = path.join(fixture.projectDir, 'dist', 'packages', 'npm');
     mkdirSync(distDir, { recursive: true });
-    writeFileSync(join(distDir, 'stale-0.0.0.tgz'), '');
+    writeFileSync(path.join(distDir, 'stale-0.0.0.tgz'), '');
 
     const result = fixture.run('gtb', ['pack:npm']);
 

@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { basename, dirname, join, resolve as resolvePath } from 'node:path';
+import path from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import {
   type TestTagDefinition,
@@ -119,9 +119,9 @@ const configExtensions = ['.ts', '.js', '.mts', '.mjs'] as const;
  */
 export const findConfigFile = (dir: string, prefix: string): string | undefined => {
   for (const ext of configExtensions) {
-    const path = join(dir, `${prefix}${ext}`);
-    if (existsSync(path)) {
-      return path;
+    const filePath = path.join(dir, `${prefix}${ext}`);
+    if (existsSync(filePath)) {
+      return filePath;
     }
   }
   return undefined;
@@ -133,7 +133,7 @@ const hasVitestConfig = (dir: string): boolean =>
 const globSuffix = '/*';
 const findGitRoot = (cwd: string): string | undefined => {
   const gitPath = findUpSync('.git', { cwd });
-  return gitPath === undefined ? undefined : dirname(gitPath);
+  return gitPath === undefined ? undefined : path.dirname(gitPath);
 };
 
 const resolveCoverageProjectRoot = (cwd: string): string => {
@@ -153,15 +153,15 @@ export const resolveProjectDirs = (
 ): string[] =>
   patterns.flatMap((pattern) => {
     if (pattern.endsWith(globSuffix)) {
-      const parent = resolvePath(
+      const parent = path.resolve(
         process.cwd(),
         pattern.slice(0, -globSuffix.length),
       );
       return readdirSync(parent, { withFileTypes: true })
         .filter(entry => entry.isDirectory())
-        .map(entry => join(parent, entry.name));
+        .map(entry => path.join(parent, entry.name));
     }
-    return [resolvePath(process.cwd(), pattern)];
+    return [path.resolve(process.cwd(), pattern)];
   });
 
 /**
@@ -178,7 +178,7 @@ export const buildWorkspaceEntry = (
     ...config,
     test: {
       ...config.test,
-      name: basename(dir),
+      name: path.basename(dir),
       root: dir,
     },
   };
@@ -242,7 +242,7 @@ export const buildGlobalConfig = (
           provider: 'v8',
           // Emit repo-relative SF paths so Codecov maps coverage across packages
           reporter: [['lcov', { projectRoot: resolveCoverageProjectRoot(process.cwd()) }]],
-          reportsDirectory: join(
+          reportsDirectory: path.join(
             process.cwd(),
             spec.reportsDirectory,
           ),

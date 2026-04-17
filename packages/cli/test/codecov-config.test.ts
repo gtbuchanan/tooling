@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { describe, it } from 'vitest';
 import { generateCodecovSections } from '#src/lib/codecov-config.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
@@ -7,31 +7,31 @@ import { createTempDir, writeJson } from './helpers.ts';
 
 const createMonorepo = (): string => {
   const root = createTempDir();
-  writeFileSync(join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
+  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
   writeJson(root, 'package.json', { name: 'root', private: true });
 
-  const alpha = join(root, 'packages', 'alpha');
-  mkdirSync(join(alpha, 'src'), { recursive: true });
-  mkdirSync(join(alpha, 'test'));
+  const alpha = path.join(root, 'packages', 'alpha');
+  mkdirSync(path.join(alpha, 'src'), { recursive: true });
+  mkdirSync(path.join(alpha, 'test'));
   writeJson(alpha, 'package.json', {
     devDependencies: { '@gtbuchanan/vitest-config': '^0.1.0' },
     name: '@test/alpha',
   });
-  writeFileSync(join(alpha, 'vitest.config.ts'), '');
+  writeFileSync(path.join(alpha, 'vitest.config.ts'), '');
 
-  const beta = join(root, 'packages', 'beta');
-  mkdirSync(join(beta, 'src'), { recursive: true });
-  mkdirSync(join(beta, 'test'));
-  mkdirSync(join(beta, 'bin'));
-  mkdirSync(join(beta, 'scripts'));
+  const beta = path.join(root, 'packages', 'beta');
+  mkdirSync(path.join(beta, 'src'), { recursive: true });
+  mkdirSync(path.join(beta, 'test'));
+  mkdirSync(path.join(beta, 'bin'));
+  mkdirSync(path.join(beta, 'scripts'));
   writeJson(beta, 'package.json', {
     devDependencies: { '@gtbuchanan/vitest-config': '^0.1.0' },
     name: '@test/beta',
   });
-  writeFileSync(join(beta, 'vitest.config.ts'), '');
+  writeFileSync(path.join(beta, 'vitest.config.ts'), '');
 
-  const gamma = join(root, 'packages', 'gamma');
-  mkdirSync(join(gamma, 'src'), { recursive: true });
+  const gamma = path.join(root, 'packages', 'gamma');
+  mkdirSync(path.join(gamma, 'src'), { recursive: true });
   writeJson(gamma, 'package.json', { name: '@test/gamma', private: true });
 
   return root;
@@ -104,9 +104,9 @@ describe(generateCodecovSections, () => {
   it('returns empty sections when no package has vitest tests', ({ expect }) => {
     const root = createTempDir();
     writeJson(root, 'package.json', { name: 'root', private: true });
-    writeFileSync(join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
-    const pkg = join(root, 'packages', 'lib');
-    mkdirSync(join(pkg, 'src'), { recursive: true });
+    writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
+    const pkg = path.join(root, 'packages', 'lib');
+    mkdirSync(path.join(pkg, 'src'), { recursive: true });
     writeJson(pkg, 'package.json', { name: '@test/lib', private: true });
 
     const discovery = discoverWorkspace({ cwd: root });
@@ -118,18 +118,18 @@ describe(generateCodecovSections, () => {
 
   it('throws on duplicate package directory basenames', ({ expect }) => {
     const root = createTempDir();
-    writeFileSync(join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'apps/*'\n  - 'packages/*'\n");
+    writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'apps/*'\n  - 'packages/*'\n");
     writeJson(root, 'package.json', { name: 'root', private: true });
 
     for (const base of ['apps', 'packages']) {
-      const pkg = join(root, base, 'app');
-      mkdirSync(join(pkg, 'src'), { recursive: true });
-      mkdirSync(join(pkg, 'test'));
+      const pkg = path.join(root, base, 'app');
+      mkdirSync(path.join(pkg, 'src'), { recursive: true });
+      mkdirSync(path.join(pkg, 'test'));
       writeJson(pkg, 'package.json', {
         devDependencies: { '@gtbuchanan/vitest-config': '^0.1.0' },
         name: `@test/${base}-app`,
       });
-      writeFileSync(join(pkg, 'vitest.config.ts'), '');
+      writeFileSync(path.join(pkg, 'vitest.config.ts'), '');
     }
 
     const discovery = discoverWorkspace({ cwd: root });

@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
 import { it as base, describe } from 'vitest';
 
@@ -55,17 +55,17 @@ const createFixture = () => {
     workspaceDeps: [],
   });
 
-  const eslint = join(fixture.hookDir, 'node_modules/.bin/eslint');
+  const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
 
   const run = ({ config, env, files }: RunOptions) => {
-    writeFileSync(join(fixture.projectDir, 'eslint.config.ts'), config ?? createRequireConfig);
-    writeFileSync(join(fixture.projectDir, 'tsconfig.json'), tsconfig);
-    writeFileSync(join(fixture.projectDir, 'tsconfig.root.json'), tsconfigRoot);
+    writeFileSync(path.join(fixture.projectDir, 'eslint.config.ts'), config ?? createRequireConfig);
+    writeFileSync(path.join(fixture.projectDir, 'tsconfig.json'), tsconfig);
+    writeFileSync(path.join(fixture.projectDir, 'tsconfig.root.json'), tsconfigRoot);
 
     const fileNames = Object.keys(files);
     for (const [name, content] of Object.entries(files)) {
-      const filePath = join(fixture.projectDir, name);
-      mkdirSync(join(filePath, '..'), { recursive: true });
+      const filePath = path.join(fixture.projectDir, name);
+      mkdirSync(path.join(filePath, '..'), { recursive: true });
       writeFileSync(filePath, content);
     }
 
@@ -113,9 +113,9 @@ describe.concurrent('eslint CLI integration', () => {
       '});',
     ].join('\n');
 
-    writeFileSync(join(fixture.projectDir, 'eslint.config.ts'), bareConfig);
+    writeFileSync(path.join(fixture.projectDir, 'eslint.config.ts'), bareConfig);
 
-    const filePath = join(fixture.projectDir, 'clean.mjs');
+    const filePath = path.join(fixture.projectDir, 'clean.mjs');
     writeFileSync(filePath, "export const greeting = 'hello';\n");
 
     const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
