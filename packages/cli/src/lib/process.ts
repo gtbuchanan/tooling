@@ -11,7 +11,6 @@ export const run = async (
   command: string,
   options?: RunOptions,
 ): Promise<void> => {
-  // oxlint-disable-next-line promise/avoid-new -- wrapping event-based API
   await new Promise<void>((resolve, reject) => {
     const child = crossSpawn(command, options?.args?.slice() ?? [], {
       cwd: options?.cwd,

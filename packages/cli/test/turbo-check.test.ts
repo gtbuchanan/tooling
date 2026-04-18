@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { describe, it, vi } from 'vitest';
 import { parseIgnoreArgs, turboCheck } from '#src/commands/turbo-check.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
@@ -12,10 +12,25 @@ import {
   createTempDir, initProject, readScripts, readTurboTasks, writeJson,
 } from './helpers.ts';
 
+const runInDir = (dir: string, fn: () => void): void => {
+  const origCwd = process.cwd();
+  const origExitCode = process.exitCode;
+  vi.spyOn(console, 'log').mockReturnValue();
+  vi.spyOn(console, 'error').mockReturnValue();
+
+  try {
+    process.chdir(dir);
+    fn();
+  } finally {
+    process.chdir(origCwd);
+    process.exitCode = origExitCode;
+  }
+};
+
 const createConsumerProject = (): string => {
   const root = createTempDir();
   writeFileSync(
-    join(root, 'pnpm-workspace.yaml'),
+    path.join(root, 'pnpm-workspace.yaml'),
     "packages:\n  - 'packages/*'\n",
   );
   writeJson(root, 'package.json', {
@@ -29,9 +44,9 @@ const createConsumerProject = (): string => {
     scripts: {},
   });
 
-  const pkg = join(root, 'packages', 'app');
-  mkdirSync(join(pkg, 'src'), { recursive: true });
-  mkdirSync(join(pkg, 'test'), { recursive: true });
+  const pkg = path.join(root, 'packages', 'app');
+  mkdirSync(path.join(pkg, 'src'), { recursive: true });
+  mkdirSync(path.join(pkg, 'test'), { recursive: true });
   writeJson(pkg, 'package.json', {
     devDependencies: {
       '@gtbuchanan/eslint-config': '^0.1.0',
@@ -41,9 +56,9 @@ const createConsumerProject = (): string => {
     name: '@test/app',
     scripts: {},
   });
-  writeFileSync(join(pkg, 'tsconfig.json'), '{}');
-  writeFileSync(join(pkg, 'eslint.config.ts'), '');
-  writeFileSync(join(pkg, 'vitest.config.ts'), '');
+  writeFileSync(path.join(pkg, 'tsconfig.json'), '{}');
+  writeFileSync(path.join(pkg, 'eslint.config.ts'), '');
+  writeFileSync(path.join(pkg, 'vitest.config.ts'), '');
 
   return root;
 };
@@ -68,7 +83,7 @@ describe('turbo:check drift detection', () => {
 
     const tasks = readTurboTasks(root);
     delete tasks['typecheck:ts'];
-    writeJsonFile(join(root, 'turbo.json'), { $schema: '', tasks });
+    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
 
     const discovery = discoverWorkspace({ cwd: root });
     const expected = generateTurboJson(discovery);
@@ -82,7 +97,7 @@ describe('turbo:check drift detection', () => {
     const root = createConsumerProject();
     initProject(root);
 
-    const pkgDir = join(root, 'packages', 'app');
+    const pkgDir = path.join(root, 'packages', 'app');
     const scripts = readScripts(pkgDir);
     delete scripts['typecheck:ts'];
     writeJson(pkgDir, 'package.json', { name: '@test/app', scripts });
@@ -100,7 +115,7 @@ describe('turbo:check drift detection', () => {
     const root = createConsumerProject();
     initProject(root);
 
-    const pkgDir = join(root, 'packages', 'app');
+    const pkgDir = path.join(root, 'packages', 'app');
     const scripts = readScripts(pkgDir);
     scripts['typecheck:ts'] = 'vue-tsc --noEmit';
     writeJson(pkgDir, 'package.json', { name: '@test/app', scripts });
@@ -116,21 +131,6 @@ describe('turbo:check drift detection', () => {
 });
 
 describe(turboCheck, () => {
-  const runInDir = (dir: string, fn: () => void): void => {
-    const origCwd = process.cwd();
-    const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    try {
-      process.chdir(dir);
-      fn();
-    } finally {
-      process.chdir(origCwd);
-      process.exitCode = origExitCode;
-    }
-  };
-
   it('passes with no drift', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
@@ -148,7 +148,7 @@ describe(turboCheck, () => {
 
     const tasks = readTurboTasks(root);
     delete tasks['typecheck:ts'];
-    writeJsonFile(join(root, 'turbo.json'), { $schema: '', tasks });
+    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
 
     runInDir(root, () => {
       turboCheck([]);
@@ -163,7 +163,7 @@ describe(turboCheck, () => {
 
     const tasks = readTurboTasks(root);
     delete tasks['typecheck:ts'];
-    writeJsonFile(join(root, 'turbo.json'), { $schema: '', tasks });
+    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
 
     runInDir(root, () => {
       turboCheck(['--ignore', 'typecheck:ts']);
@@ -183,11 +183,11 @@ describe(parseIgnoreArgs, () => {
   it('parses multiple --ignore flags', ({ expect }) => {
     const result = parseIgnoreArgs([
       '--ignore', 'test:vitest:slow',
-      '--ignore', 'lint:oxlint',
+      '--ignore', 'test:vitest:e2e',
     ]);
 
     expect(result.has('test:vitest:slow')).toBe(true);
-    expect(result.has('lint:oxlint')).toBe(true);
+    expect(result.has('test:vitest:e2e')).toBe(true);
   });
 
   it('returns empty set with no flags', ({ expect }) => {
@@ -204,21 +204,6 @@ describe(parseIgnoreArgs, () => {
 });
 
 describe('turbo:check codecov drift detection', () => {
-  const runInDir = (dir: string, fn: () => void): void => {
-    const origCwd = process.cwd();
-    const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    try {
-      process.chdir(dir);
-      fn();
-    } finally {
-      process.chdir(origCwd);
-      process.exitCode = origExitCode;
-    }
-  };
-
   it('passes with valid codecov.yml after init', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
@@ -233,7 +218,7 @@ describe('turbo:check codecov drift detection', () => {
   it('sets exitCode 1 when codecov.yml has invalid YAML', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
-    writeFileSync(join(root, 'codecov.yml'), 'invalid: [}');
+    writeFileSync(path.join(root, 'codecov.yml'), 'invalid: [}');
 
     runInDir(root, () => {
       turboCheck([]);
@@ -245,7 +230,7 @@ describe('turbo:check codecov drift detection', () => {
   it('sets exitCode 1 when codecov.yml is missing', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
-    writeFileSync(join(root, 'codecov.yml'), '');
+    writeFileSync(path.join(root, 'codecov.yml'), '');
 
     runInDir(root, () => {
       turboCheck([]);
@@ -258,7 +243,7 @@ describe('turbo:check codecov drift detection', () => {
     const root = createConsumerProject();
     initProject(root);
     writeFileSync(
-      join(root, 'codecov.yml'),
+      path.join(root, 'codecov.yml'),
       'flags: {}\ncomponent_management:\n  individual_components: []\n',
     );
 
@@ -273,7 +258,7 @@ describe('turbo:check codecov drift detection', () => {
     const root = createConsumerProject();
     initProject(root);
     writeFileSync(
-      join(root, 'codecov.yml'),
+      path.join(root, 'codecov.yml'),
       'flags: {}\ncomponent_management:\n  individual_components: []\n',
     );
 

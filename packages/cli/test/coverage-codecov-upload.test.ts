@@ -1,4 +1,4 @@
-import { basename } from 'node:path';
+import path from 'node:path';
 import { describe, it, vi } from 'vitest';
 
 vi.mock(import('node:fs'), async (importOriginal) => {
@@ -33,7 +33,7 @@ const getRunArgs = (): readonly string[] => {
 describe(def.name, () => {
   it('skips when CI is not set', async ({ expect }) => {
     vi.stubEnv('CI', '');
-    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockReturnValue();
 
     await def.handler([]);
 
@@ -43,7 +43,7 @@ describe(def.name, () => {
 
   it('skips when no coverage files exist', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
-    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockReturnValue();
 
     await def.handler([]);
 
@@ -74,7 +74,7 @@ describe(def.name, () => {
   it('passes directory basename as flag', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
     mockExistsSync.mockReturnValue(true);
-    const expected = basename(process.cwd());
+    const expected = path.basename(process.cwd());
 
     await def.handler([]);
 

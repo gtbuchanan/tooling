@@ -12,7 +12,6 @@ export const makeCapabilities = (
     hasE2e: false,
     hasEslint: false,
     hasGenerate: false,
-    hasOxlint: false,
     hasScripts: false,
     hasTest: false,
     hasTypeScript: false,

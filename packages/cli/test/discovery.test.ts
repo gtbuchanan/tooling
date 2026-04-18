@@ -1,18 +1,18 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { describe, it } from 'vitest';
 import { discoverPackage, discoverWorkspace } from '#src/lib/discovery.js';
 import { createTempDir, writeJson } from './helpers.ts';
 
 const writeFile = (dir: string, name: string, content = ''): void => {
-  writeFileSync(join(dir, name), content);
+  writeFileSync(path.join(dir, name), content);
 };
 
 describe(discoverPackage, () => {
   it('detects test directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
-    mkdirSync(join(dir, 'test'));
+    mkdirSync(path.join(dir, 'test'));
 
     const result = discoverPackage(dir);
 
@@ -22,7 +22,7 @@ describe(discoverPackage, () => {
   it('detects e2e directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
-    mkdirSync(join(dir, 'e2e'));
+    mkdirSync(path.join(dir, 'e2e'));
 
     const result = discoverPackage(dir);
 
@@ -48,27 +48,6 @@ describe(discoverPackage, () => {
     const result = discoverPackage(dir);
 
     expect(result.hasEslint).toBe(true);
-  });
-
-  it('detects oxlint via config file', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'oxlint.config.ts');
-
-    const result = discoverPackage(dir);
-
-    expect(result.hasOxlint).toBe(true);
-  });
-
-  it('detects oxlint via dependency', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/oxlint-config': '^0.1.0' },
-    });
-
-    const result = discoverPackage(dir);
-
-    expect(result.hasOxlint).toBe(true);
   });
 
   it('detects vitest via dependency', ({ expect }) => {
@@ -149,7 +128,7 @@ describe(discoverPackage, () => {
   it('detects bin directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
-    mkdirSync(join(dir, 'bin'));
+    mkdirSync(path.join(dir, 'bin'));
 
     const result = discoverPackage(dir);
 
@@ -159,7 +138,7 @@ describe(discoverPackage, () => {
   it('detects scripts directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
-    mkdirSync(join(dir, 'scripts'));
+    mkdirSync(path.join(dir, 'scripts'));
 
     const result = discoverPackage(dir);
 
@@ -218,7 +197,6 @@ describe(discoverPackage, () => {
       hasE2e: false,
       hasEslint: false,
       hasGenerate: false,
-      hasOxlint: false,
       hasScripts: false,
       hasTest: false,
       hasTypeScript: false,
@@ -233,16 +211,16 @@ describe(discoverWorkspace, () => {
   it('discovers monorepo packages', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
     writeJson(root, 'package.json', {});
-    const alpha = join(root, 'packages', 'alpha');
+    const alpha = path.join(root, 'packages', 'alpha');
     mkdirSync(alpha, { recursive: true });
     writeJson(alpha, 'package.json', {
       devDependencies: { '@gtbuchanan/eslint-config': '^0.1.0' },
     });
-    mkdirSync(join(alpha, 'src'));
+    mkdirSync(path.join(alpha, 'src'));
 
     const result = discoverWorkspace({ cwd: root });
 
@@ -257,7 +235,7 @@ describe(discoverWorkspace, () => {
     writeJson(root, 'package.json', {
       devDependencies: { '@gtbuchanan/tsconfig': '^0.1.0' },
     });
-    mkdirSync(join(root, 'src'));
+    mkdirSync(path.join(root, 'src'));
 
     const result = discoverWorkspace({ cwd: root });
 
@@ -269,13 +247,13 @@ describe(discoverWorkspace, () => {
   it('includes root capabilities', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
     writeJson(root, 'package.json', {
       devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
     });
-    const pkg = join(root, 'packages', 'lib');
+    const pkg = path.join(root, 'packages', 'lib');
     mkdirSync(pkg, { recursive: true });
     writeJson(pkg, 'package.json', {});
 

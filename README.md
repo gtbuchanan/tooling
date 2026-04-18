@@ -10,7 +10,6 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 | [@gtbuchanan/eslint-config](packages/eslint-config)             | Shared ESLint configuration          |
 | [@gtbuchanan/markdownlint-config](packages/markdownlint-config) | Shared markdownlint configuration    |
 | [@gtbuchanan/oxfmt-config](packages/oxfmt-config)               | Shared oxfmt configuration           |
-| [@gtbuchanan/oxlint-config](packages/oxlint-config)             | Shared oxlint configuration          |
 | [@gtbuchanan/tsconfig](packages/tsconfig)                       | Shared TypeScript base configuration |
 | [@gtbuchanan/vitest-config](packages/vitest-config)             | Shared Vitest configuration          |
 
@@ -85,8 +84,7 @@ Turborepo manages task orchestration. The task graph is defined in
 between leaf tasks:
 
 ```text
-typecheck:ts ─┬─ lint:eslint  ─┐
-              ├─ lint:oxlint  ─┤ lint ─┐
+typecheck:ts ─┬─ lint:eslint ── lint ──┐
               └─ test:vitest:fast ─────┤ check ─┬─ compile:ts → pack
                                        │        ├─ test:vitest:slow
                                        │        └─ test:vitest:e2e
@@ -136,7 +134,7 @@ Top-level scripts delegate to Turborepo:
 Turbo tasks can also be run individually:
 
 - `turbo run typecheck:ts` — TypeScript type-checking
-- `turbo run lint` — oxlint + ESLint (aggregate)
+- `turbo run lint` — ESLint
 - `turbo run test:vitest:fast` — Fast source tests only
 - `turbo run test:vitest:slow` — Slow source tests only (tagged `slow`)
 

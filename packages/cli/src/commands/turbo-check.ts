@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import * as v from 'valibot';
 import { parse as parseYaml } from 'yaml';
 import { type CodecovSections, generateCodecovSections } from '../lib/codecov-config.ts';
@@ -26,8 +26,9 @@ const TurboJsonSchema = v.looseObject({
 export const parseIgnoreArgs = (args: readonly string[]): ReadonlySet<string> => {
   const ignored = new Set<string>();
   for (let idx = 0; idx < args.length; idx++) {
-    if (args[idx] === '--ignore' && idx + 1 < args.length) {
-      ignored.add(args[idx + 1]!);
+    const next = args[idx + 1];
+    if (args[idx] === '--ignore' && next !== undefined) {
+      ignored.add(next);
       idx++;
     }
   }
@@ -40,12 +41,12 @@ const checkTurboTasks = (
   expected: TurboJson,
   ignored: ReadonlySet<string>,
 ): readonly string[] => {
-  const path = join(rootDir, 'turbo.json');
-  if (!existsSync(path)) {
+  const filePath = path.join(rootDir, 'turbo.json');
+  if (!existsSync(filePath)) {
     return ['turbo.json is missing (run gtb turbo:init)'];
   }
 
-  const raw = readJsonFile(path);
+  const raw = readJsonFile(filePath);
   const result = v.safeParse(TurboJsonSchema, raw);
   if (!result.success) {
     return ['turbo.json: failed to parse'];
@@ -163,7 +164,7 @@ const readCodecovYaml = (path: string): ReadCodecovResult => {
     return { errors: ['codecov.yml is missing (run gtb turbo:init)'] };
   }
   try {
-    return { data: parseYaml(readFileSync(path, 'utf-8')) };
+    return { data: parseYaml(readFileSync(path, 'utf8')) };
   } catch {
     return { errors: ['codecov.yml: invalid YAML (run gtb turbo:init)'] };
   }
@@ -196,8 +197,8 @@ const checkCodecovSections = (
   discovery: WorkspaceDiscovery,
   ignored: ReadonlySet<string>,
 ): readonly string[] => {
-  const path = join(rootDir, 'codecov.yml');
-  const readResult = readCodecovYaml(path);
+  const filePath = path.join(rootDir, 'codecov.yml');
+  const readResult = readCodecovYaml(filePath);
   if (readResult.errors !== undefined) {
     return readResult.errors;
   }

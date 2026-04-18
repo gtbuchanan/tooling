@@ -19,13 +19,13 @@ describe(configureEndToEndProject, () => {
   it('includes e2e test pattern', ({ expect }) => {
     const config = configureEndToEndProject();
 
-    expect(config.test?.include).toEqual(['e2e/**/*.test.ts']);
+    expect(config.test?.include).toStrictEqual(['e2e/**/*.test.ts']);
   });
 
   it('excludes defaults', ({ expect }) => {
     const config = configureEndToEndProject();
 
-    expect(config.test?.exclude).toEqual([...excludeDefault]);
+    expect(config.test?.exclude).toStrictEqual([...excludeDefault]);
   });
 
   it('does not include setup files', ({ expect }) => {
@@ -51,7 +51,7 @@ describe(configureEndToEndGlobal, () => {
   it('includes both setup files by default', ({ expect }) => {
     const config = configureEndToEndGlobal();
 
-    expect(config.test?.setupFiles).toEqual([
+    expect(config.test?.setupFiles).toStrictEqual([
       `${packageName}/console-fail-test`,
       `${packageName}/setup`,
     ]);
@@ -116,7 +116,7 @@ describe(configureEndToEndPackage, () => {
   it('includes e2e test patterns', ({ expect }) => {
     const config = configureEndToEndPackage();
 
-    expect(config.test?.include).toEqual(['e2e/**/*.test.ts']);
+    expect(config.test?.include).toStrictEqual(['e2e/**/*.test.ts']);
   });
 
   it('includes global settings (setupFiles, mockReset)', ({ expect }) => {

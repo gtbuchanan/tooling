@@ -18,10 +18,6 @@ component_management:
       name: test-utils
       paths:
         - packages/test-utils/src/**
-    - component_id: oxlint-config
-      name: oxlint-config
-      paths:
-        - packages/oxlint-config/src/**
     - component_id: oxfmt-config
       name: oxfmt-config
       paths:
@@ -65,10 +61,6 @@ flags:
     carryforward: true
     paths:
       - packages/oxfmt-config/
-  oxlint-config:
-    carryforward: true
-    paths:
-      - packages/oxlint-config/
   test-utils:
     carryforward: true
     paths:

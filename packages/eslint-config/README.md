@@ -1,7 +1,6 @@
 # @gtbuchanan/eslint-config
 
-Shared ESLint configuration for TypeScript projects. Supplementary linter
-alongside oxlint.
+Shared ESLint configuration for TypeScript projects.
 
 ## Install
 
@@ -55,11 +54,15 @@ export default configure({
 
 ## Included plugins
 
+- `typescript-eslint` — strictTypeChecked + stylisticTypeChecked presets
+- `eslint-plugin-unicorn` — Recommended modern JS/TS rules
+- `eslint-plugin-promise` — Promise best practices
+- `@stylistic/eslint-plugin` — Formatting rules (semicolons, quotes, etc.)
+- `@eslint-community/eslint-plugin-eslint-comments` — Suppression comment hygiene
+- `eslint-plugin-import-x` — Import ordering
 - `@eslint/json` — JSON file linting
 - `@vitest/eslint-plugin` — Vitest test-specific rules
 - `eslint-plugin-n` — Node.js best practices
 - `eslint-plugin-pnpm` — pnpm workspace validation (opt-in)
 - `eslint-plugin-yml` — YAML linting and key sorting
 - `eslint-plugin-only-warn` — Downgrades errors to warnings (opt-in)
-- `typescript-eslint` — TypeScript parser and type-aware linting
-- `eslint-plugin-oxlint` — Disables rules already covered by oxlint (applied last)

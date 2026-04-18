@@ -40,7 +40,7 @@ describe(configureCli2, () => {
   it('ignores .changeset by default', ({ expect }) => {
     const config = configureCli2();
 
-    expect(config.ignores).toEqual(['.changeset/**']);
+    expect(config.ignores).toStrictEqual(['.changeset/**']);
   });
 
   it('passes defaults to transform function', ({ expect }) => {
@@ -49,7 +49,7 @@ describe(configureCli2, () => {
       ignores: [...(defaults.ignores ?? []), 'vendor/**'],
     }));
 
-    expect(config.ignores).toEqual(['.changeset/**', 'vendor/**']);
+    expect(config.ignores).toStrictEqual(['.changeset/**', 'vendor/**']);
   });
 
   it('allows replacing defaults via transform', ({ expect }) => {
@@ -57,7 +57,7 @@ describe(configureCli2, () => {
       ignores: ['custom/**'],
     }));
 
-    expect(config.ignores).toEqual(['custom/**']);
+    expect(config.ignores).toStrictEqual(['custom/**']);
   });
 
   it('does not share state between calls', ({ expect }) => {

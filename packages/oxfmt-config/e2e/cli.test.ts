@@ -1,5 +1,5 @@
 import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import {
   type ProjectFixture,
   createIsolatedFixture,
@@ -25,13 +25,15 @@ const createFixture = (): ProjectFixture => {
 
 const it = extendWithFixture(createFixture);
 
+/* eslint-disable vitest/require-hook --
+   False positive with extendWithFixture indirection:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe('oxfmt CLI', () => {
   it('detects unsorted package.json keys', ({ fixture, expect }) => {
-    // oxlint-disable-next-line sort-keys -- Intentionally unsorted to test detection
     const unsorted = { version: '1.0.0', name: 'test' };
     fixture.writeFile(
       'sub/package.json',
-      `${JSON.stringify(unsorted, null, 2)}\n`,
+      `${JSON.stringify(unsorted, undefined, 2)}\n`,
     );
 
     const result = fixture.run('oxfmt', ['--check', 'sub/package.json']);
@@ -82,9 +84,9 @@ describe('pre-commit isolation', () => {
       packageName: '@gtbuchanan/oxfmt-config',
     });
 
-    const oxfmt = join(fixture.hookDir, 'node_modules/.bin/oxfmt');
-    writeFileSync(join(fixture.projectDir, 'oxfmt.config.ts'), oxfmtConfig);
-    writeFileSync(join(fixture.projectDir, 'data.json'), '{}\n');
+    const oxfmt = path.join(fixture.hookDir, 'node_modules/.bin/oxfmt');
+    writeFileSync(path.join(fixture.projectDir, 'oxfmt.config.ts'), oxfmtConfig);
+    writeFileSync(path.join(fixture.projectDir, 'data.json'), '{}\n');
 
     const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
     const result = runCommand(oxfmt, ['--check', 'data.json'], {
@@ -101,9 +103,9 @@ describe('pre-commit isolation', () => {
       packageName: '@gtbuchanan/oxfmt-config',
     });
 
-    const oxfmt = join(fixture.hookDir, 'node_modules/.bin/oxfmt');
-    writeFileSync(join(fixture.projectDir, 'oxfmt.config.ts'), createRequireConfig);
-    writeFileSync(join(fixture.projectDir, 'data.json'), '{}\n');
+    const oxfmt = path.join(fixture.hookDir, 'node_modules/.bin/oxfmt');
+    writeFileSync(path.join(fixture.projectDir, 'oxfmt.config.ts'), createRequireConfig);
+    writeFileSync(path.join(fixture.projectDir, 'data.json'), '{}\n');
 
     const result = runCommand(oxfmt, ['--check', 'data.json'], {
       cwd: fixture.projectDir,
@@ -113,3 +115,4 @@ describe('pre-commit isolation', () => {
     expect(result).toMatchObject({ exitCode: 0 });
   });
 });
+/* eslint-enable vitest/require-hook */

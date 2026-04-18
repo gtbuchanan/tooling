@@ -15,16 +15,15 @@ catalog:
   eslint-plugin-import-x: 4.16.2
   eslint-plugin-n: 17.24.0
   eslint-plugin-only-warn: 1.2.1
-  eslint-plugin-oxlint: 1.58.0
   eslint-plugin-pnpm: 1.6.0
+  eslint-plugin-promise: ^7.2.1
+  eslint-plugin-unicorn: ^64.0.0
   eslint-plugin-yml: 3.3.1
   find-up-simple: ^1.0.1
   jiti: ^2.6.1
   markdownlint: '>=0.36.1'
   markdownlint-cli2: ^0.22.0
   oxfmt: '>=0.43.0'
-  oxlint: ^1.58.0
-  oxlint-tsgolint: '>=0.19.0'
   turbo: ^2.5.4
   typescript: ^5.9.3
   typescript-eslint: 8.58.0
@@ -40,5 +39,10 @@ onlyBuiltDependencies:
 
 packages:
   - 'packages/*'
+
+peerDependencyRules:
+  allowedVersions:
+    # https://github.com/eslint-community/eslint-plugin-promise/issues/616
+    eslint-plugin-promise>eslint: '>=10'
 
 strictPeerDependencies: true

@@ -75,8 +75,7 @@
     },
     "lint": {
       "dependsOn": [
-        "lint:eslint",
-        "lint:oxlint"
+        "lint:eslint"
       ]
     },
     "lint:eslint": {
@@ -95,20 +94,6 @@
       "outputs": [
         "dist/.eslintcache"
       ]
-    },
-    "lint:oxlint": {
-      "dependsOn": [
-        "typecheck:ts"
-      ],
-      "inputs": [
-        "bin/**",
-        "src/**",
-        "test/**",
-        "e2e/**",
-        "scripts/**",
-        "oxlint.config.*"
-      ],
-      "outputs": []
     },
     "pack": {
       "dependsOn": [

@@ -22,7 +22,6 @@
     "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb lint:eslint",
-    "lint:oxlint": "pnpm run gtb lint:oxlint",
     "pack:npm": "pnpm run gtb pack:npm",
     "test:vitest:e2e": "pnpm run gtb test:vitest:e2e",
     "test:vitest:fast": "pnpm run gtb test:vitest:fast",
@@ -32,19 +31,18 @@
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@eslint/json": "catalog:",
-    "@gtbuchanan/oxlint-config": "workspace:*",
     "@stylistic/eslint-plugin": "catalog:",
     "@vitest/eslint-plugin": "catalog:",
     "eslint-plugin-import-x": "catalog:",
     "eslint-plugin-n": "catalog:",
     "eslint-plugin-only-warn": "catalog:",
-    "eslint-plugin-oxlint": "catalog:",
     "eslint-plugin-pnpm": "catalog:",
+    "eslint-plugin-promise": "catalog:",
+    "eslint-plugin-unicorn": "catalog:",
     "eslint-plugin-yml": "catalog:",
     "typescript-eslint": "catalog:"
   },
   "devDependencies": {
-    "@gtbuchanan/oxlint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*"
   },

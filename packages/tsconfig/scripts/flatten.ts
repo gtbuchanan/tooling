@@ -1,14 +1,14 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import path from 'node:path';
 import * as v from 'valibot';
 
 const { resolve } = createRequire(import.meta.url);
 
 const jsonIndent = 2;
 
-const pkgDir = join(import.meta.dirname, '..');
-const outDir = join(pkgDir, 'dist', 'source');
+const pkgDir = path.join(import.meta.dirname, '..');
+const outDir = path.join(pkgDir, 'dist', 'source');
 
 const TsconfigSchema = v.looseObject({
   compilerOptions: v.optional(v.record(v.string(), v.unknown()), {}),
@@ -16,9 +16,9 @@ const TsconfigSchema = v.looseObject({
 });
 
 const readTsconfig = (path: string): v.InferOutput<typeof TsconfigSchema> =>
-  v.parse(TsconfigSchema, JSON.parse(readFileSync(path, 'utf-8')));
+  v.parse(TsconfigSchema, JSON.parse(readFileSync(path, 'utf8')));
 
-const source = readTsconfig(join(pkgDir, 'node.json'));
+const source = readTsconfig(path.join(pkgDir, 'node.json'));
 
 const extendsList = v.parse(
   v.array(v.string()),
@@ -49,6 +49,6 @@ const flattened = {
 
 mkdirSync(outDir, { recursive: true });
 writeFileSync(
-  join(outDir, 'node.json'),
-  `${JSON.stringify(flattened, null, jsonIndent)}\n`,
+  path.join(outDir, 'node.json'),
+  `${JSON.stringify(flattened, undefined, jsonIndent)}\n`,
 );

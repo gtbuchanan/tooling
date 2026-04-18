@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { describe, it } from 'vitest';
 import { prepack } from '#src/commands/pack.js';
 import { createTempDir } from './helpers.ts';
@@ -9,19 +9,19 @@ const jsonIndent = 2;
 /** Writes formatted JSON (matches prepack output for assertion). */
 const writeFormattedJson = (dir: string, name: string, data: unknown): void => {
   writeFileSync(
-    join(dir, name),
-    `${JSON.stringify(data, null, jsonIndent)}\n`,
+    path.join(dir, name),
+    `${JSON.stringify(data, undefined, jsonIndent)}\n`,
   );
 };
 
 const readJson = (path: string): unknown =>
-  JSON.parse(readFileSync(path, 'utf-8'));
+  JSON.parse(readFileSync(path, 'utf8'));
 
 describe(prepack, () => {
   it('generates dist/source/package.json for publishable package', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
     writeFormattedJson(root, 'package.json', {
@@ -32,7 +32,7 @@ describe(prepack, () => {
         url: 'https://github.com/test/repo.git',
       },
     });
-    const pkgDir = join(root, 'packages', 'my-lib');
+    const pkgDir = path.join(root, 'packages', 'my-lib');
     mkdirSync(pkgDir, { recursive: true });
     writeFormattedJson(pkgDir, 'package.json', {
       dependencies: { valibot: '^1.0.0' },
@@ -49,35 +49,34 @@ describe(prepack, () => {
 
     prepack({ cwd: root });
     const output = readJson(
-      join(pkgDir, 'dist', 'source', 'package.json'),
+      path.join(pkgDir, 'dist', 'source', 'package.json'),
     );
 
-    expect(output).toHaveProperty('name', '@test/my-lib');
-    expect(output).toHaveProperty('version', '1.0.0');
-    expect(output).toHaveProperty('exports', { '.': './index.js' });
-    expect(output).toHaveProperty('dependencies', { valibot: '^1.0.0' });
+    expect(output).toMatchObject({
+      dependencies: { valibot: '^1.0.0' },
+      exports: { '.': './index.js' },
+      homepage: 'https://github.com/test/repo/tree/main/packages/my-lib',
+      name: '@test/my-lib',
+      repository: {
+        directory: 'packages/my-lib',
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
+      version: '1.0.0',
+    });
     expect(output).not.toHaveProperty('devDependencies');
     expect(output).not.toHaveProperty('scripts');
     expect(output).not.toHaveProperty('publishConfig');
-    expect(output).toHaveProperty(
-      'homepage',
-      'https://github.com/test/repo/tree/main/packages/my-lib',
-    );
-    expect(output).toHaveProperty('repository', {
-      directory: 'packages/my-lib',
-      type: 'git',
-      url: 'https://github.com/test/repo.git',
-    });
   });
 
   it('generates .npmignore', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
     writeFormattedJson(root, 'package.json', {});
-    const pkgDir = join(root, 'packages', 'my-lib');
+    const pkgDir = path.join(root, 'packages', 'my-lib');
     mkdirSync(pkgDir, { recursive: true });
     writeFormattedJson(pkgDir, 'package.json', {
       name: '@test/my-lib',
@@ -87,8 +86,8 @@ describe(prepack, () => {
     prepack({ cwd: root });
 
     const npmignore = readFileSync(
-      join(pkgDir, 'dist', 'source', '.npmignore'),
-      'utf-8',
+      path.join(pkgDir, 'dist', 'source', '.npmignore'),
+      'utf8',
     );
 
     expect(npmignore).toBe('*.tsbuildinfo\n');
@@ -97,11 +96,11 @@ describe(prepack, () => {
   it('promotes publishConfig.bin', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
     writeFormattedJson(root, 'package.json', {});
-    const pkgDir = join(root, 'packages', 'cli');
+    const pkgDir = path.join(root, 'packages', 'cli');
     mkdirSync(pkgDir, { recursive: true });
     writeFormattedJson(pkgDir, 'package.json', {
       bin: { mycli: './dist/source/bin.js' },
@@ -114,7 +113,7 @@ describe(prepack, () => {
 
     prepack({ cwd: root });
     const output = readJson(
-      join(pkgDir, 'dist', 'source', 'package.json'),
+      path.join(pkgDir, 'dist', 'source', 'package.json'),
     );
 
     expect(output).toHaveProperty('bin', { mycli: './bin.js' });
@@ -123,11 +122,11 @@ describe(prepack, () => {
   it('skips private packages', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
     writeFormattedJson(root, 'package.json', {});
-    const pkgDir = join(root, 'packages', 'internal');
+    const pkgDir = path.join(root, 'packages', 'internal');
     mkdirSync(pkgDir, { recursive: true });
     writeFormattedJson(pkgDir, 'package.json', {
       name: '@test/internal',
@@ -138,18 +137,18 @@ describe(prepack, () => {
     prepack({ cwd: root });
 
     expect(() =>
-      readFileSync(join(pkgDir, 'dist', 'source', 'package.json')),
-    ).toThrow();
+      readFileSync(path.join(pkgDir, 'dist', 'source', 'package.json')),
+    ).toThrow(/ENOENT/v);
   });
 
   it('skips packages without publishConfig.directory', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
-      join(root, 'pnpm-workspace.yaml'),
+      path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
     writeFormattedJson(root, 'package.json', {});
-    const pkgDir = join(root, 'packages', 'no-publish');
+    const pkgDir = path.join(root, 'packages', 'no-publish');
     mkdirSync(pkgDir, { recursive: true });
     writeFormattedJson(pkgDir, 'package.json', {
       name: '@test/no-publish',
@@ -158,8 +157,8 @@ describe(prepack, () => {
     prepack({ cwd: root });
 
     expect(() =>
-      readFileSync(join(pkgDir, 'dist', 'source', 'package.json')),
-    ).toThrow();
+      readFileSync(path.join(pkgDir, 'dist', 'source', 'package.json')),
+    ).toThrow(/ENOENT/v);
   });
 
   it('works in single-package mode', ({ expect }) => {
@@ -175,7 +174,7 @@ describe(prepack, () => {
     prepack({ cwd: root });
 
     const output = readJson(
-      join(root, 'dist', 'source', 'package.json'),
+      path.join(root, 'dist', 'source', 'package.json'),
     );
 
     expect(output).toHaveProperty('name', '@test/single');

@@ -1,5 +1,5 @@
 import {
-  compileTs, coverageVitestMerge, lintEslint, lintOxlint,
+  compileTs, coverageVitestMerge, lintEslint,
   packNpm, testVitestE2e, testVitestFast, testVitestSlow,
   typecheckTs,
 } from '../commands/leaf/index.ts';
@@ -60,7 +60,6 @@ export interface ToolFlags {
   readonly hasGenerate: boolean;
   readonly generateScripts: readonly string[];
   readonly hasLint: boolean;
-  readonly hasOxlint: boolean;
   readonly hasPublished: boolean;
   readonly hasTypeScript: boolean;
   readonly hasVitest: boolean;
@@ -69,16 +68,15 @@ export interface ToolFlags {
 /** @internal Exported for script generation. */
 export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasEslint = discovery.packages.some(pkg => pkg.hasEslint);
-  const hasOxlint = discovery.packages.some(pkg => pkg.hasOxlint);
-  const hasLint = hasEslint || hasOxlint;
+  const hasLint = hasEslint;
   const generateScripts = [...new Set(
     discovery.packages.flatMap(pkg => pkg.generateScripts),
-  )].sort();
+  )].toSorted();
   const hasTypeScript = discovery.packages.some(pkg => pkg.hasTypeScript);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
   const compileIncludes = [...new Set(
     discovery.packages.filter(pkg => pkg.isPublished).flatMap(pkg => pkg.buildIncludes),
-  )].sort();
+  )].toSorted();
 
   return {
     compileIncludes,
@@ -88,7 +86,6 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     hasEslint,
     hasGenerate: generateScripts.length > 0,
     hasLint,
-    hasOxlint,
     hasPublished: discovery.packages.some(pkg => pkg.isPublished),
     hasTypeScript,
     hasVitest,
@@ -163,11 +160,6 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
         inputs: ['$TURBO_ROOT$/eslint.config.*', ...inputs, 'eslint.config.*'],
         outputs: ['dist/.eslintcache'],
       },
-    },
-    {
-      condition: flags.hasOxlint,
-      key: lintOxlint.name,
-      value: { dependsOn: deps, inputs: [...inputs, 'oxlint.config.*'], outputs: [] },
     },
   ];
 };

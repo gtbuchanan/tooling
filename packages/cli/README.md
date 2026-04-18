@@ -61,7 +61,6 @@ sequential pipelines, caching, dependency graphs).
 | `coverage:vitest:merge`   | `vitest --merge-reports` (fast + slow)                                                       |
 | `typecheck:ts`            | `tsc --noEmit`                                                                               |
 | `lint:eslint`             | `eslint --max-warnings=0`                                                                    |
-| `lint:oxlint`             | `oxlint --disable-nested-config`                                                             |
 | `pack:npm`                | Generate manifest + `pnpm pack` (per-pkg)                                                    |
 | `prepare`                 | `prek install`                                                                               |
 | `test:vitest`             | `vitest run`                                                                                 |

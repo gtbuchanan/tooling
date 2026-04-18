@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import type { Manifest } from './manifest.ts';
 import { buildInclude, resolveBuildIncludes } from './tsconfig-gen.ts';
 import {
@@ -24,8 +24,6 @@ export interface PackageCapabilities {
   readonly generateScripts: readonly string[];
   /** Has ESLint config or `@gtbuchanan/eslint-config` dependency. */
   readonly hasEslint: boolean;
-  /** Has oxlint config or `@gtbuchanan/oxlint-config` dependency. */
-  readonly hasOxlint: boolean;
   /** Has a `scripts/` directory. */
   readonly hasScripts: boolean;
   /** Has a `test/` directory. */
@@ -57,7 +55,7 @@ export interface WorkspaceDiscovery {
 }
 
 const hasDir = (base: string, name: string): boolean =>
-  existsSync(join(base, name));
+  existsSync(path.join(base, name));
 
 /** Lists files in a directory (returns empty array if dir doesn't exist). */
 const listFiles = (dir: string): readonly string[] => {
@@ -90,7 +88,7 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
     .filter(name => name.startsWith('generate:'))
-    .sort();
+    .toSorted();
 
 const buildCapabilities = (
   dir: string,
@@ -112,7 +110,6 @@ const buildCapabilities = (
     hasE2e: hasDir(dir, 'e2e'),
     hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasFilePrefix(files, 'eslint.config'),
     hasGenerate: generateScripts.length > 0,
-    hasOxlint: hasDep(deps, '@gtbuchanan/oxlint-config') || hasFilePrefix(files, 'oxlint.config'),
     hasScripts: hasDir(dir, 'scripts'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),

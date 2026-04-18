@@ -1,26 +1,15 @@
-import json from '@eslint/json';
-import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
-import {
-  defaultEntryPoints,
-  eslintCommentsRuleOverrides,
-  importOrderRules,
-  isAndroid,
-  stylisticCustomizeDefaults,
-  stylisticRuleOverrides,
-  vitestE2eRuleOverrides,
-  vitestRuleOverrides,
-} from '@gtbuchanan/oxlint-config';
-import stylistic from '@stylistic/eslint-plugin';
-import vitestPlugin from '@vitest/eslint-plugin';
+/* eslint-disable-next-line @typescript-eslint/triple-slash-reference --
+   Cross-package tsc needs this to resolve the .d.ts */
+/// <reference path="./eslint-plugin-promise.d.ts" />
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
-import importPlugin from 'eslint-plugin-import-x';
-import nodePlugin from 'eslint-plugin-n';
-import oxlint from 'eslint-plugin-oxlint';
-// oxlint-disable-next-line import/max-dependencies -- Config aggregator
-import { configs as pnpmPluginConfigs } from 'eslint-plugin-pnpm';
-import { configs as ymlConfigs } from 'eslint-plugin-yml';
-import tseslint from 'typescript-eslint';
+import { plugins } from './plugins/index.ts';
+
+/** Default file patterns for entry points (bin and scripts directories). */
+export const defaultEntryPoints: readonly string[] = [
+  '**/bin/**/*.ts',
+  '**/scripts/**/*.ts',
+];
 
 /** Options for the shared ESLint configuration. */
 export interface ESLintConfigureOptions {
@@ -33,8 +22,8 @@ export interface ESLintConfigureOptions {
   readonly ignores?: string[];
   /**
    * File patterns for entry points exempt from `process.exit` and hashbang
-   * restrictions.
-   * @defaultValue {@link defaultEntryPoints}
+   * restrictions. In browser mode, also exempt from `no-console`.
+   * @defaultValue Bin directories and scripts directories
    */
   readonly entryPoints?: string[];
   /**
@@ -50,196 +39,41 @@ export interface ESLintConfigureOptions {
    */
   readonly pnpm?: boolean;
   /**
-   * Applied before the global ignores and oxlint overlay. Consumer configs
-   * that re-enable oxlint-covered rules will be silently overridden.
-   */
-  readonly extraConfigs?: Linter.Config[];
-  /**
-   * Target environment. Matches oxlint-config's target option.
-   * Server targets enable require-unicode-regexp with `/v` flag.
+   * Target environment. Server targets enable require-unicode-regexp with
+   * `/v` flag. Browser targets enable `no-console` and `no-alert`; entry
+   * points are exempt from `no-console`.
    * @defaultValue 'server'
    */
   readonly target?: 'browser' | 'server';
 }
 
-const jsonRules: Linter.RulesRecord = {
-  ...json.configs.recommended.rules,
-  // Justification: Alphabetical keys reduce merge conflicts in shared JSON configs
-  'json/sort-keys': 'warn',
-};
+/** Options with all defaults resolved. Passed to plugin factories. */
+export type ResolvedOptions =
+  Required<Omit<ESLintConfigureOptions, 'tsconfigRootDir'>>
+  & Pick<ESLintConfigureOptions, 'tsconfigRootDir'>;
 
-const jsonConfigs: Linter.Config[] = [
-  {
-    files: ['**/*.json'],
-    ignores: ['**/package.json', '**/package-lock.json'],
-    language: 'json/json',
-    plugins: { json },
-    rules: jsonRules,
-  },
-  {
-    files: ['**/*.jsonc', '**/tsconfig.json', '**/tsconfig.*.json'],
-    language: 'json/jsonc',
-    plugins: { json },
-    rules: jsonRules,
-  },
-];
+/** Factory function that produces ESLint configs from resolved options. */
+export type PluginFactory = (options: ResolvedOptions) => Linter.Config[];
 
-const yamlConfigs: Linter.Config[] = [
-  ...ymlConfigs['flat/recommended'],
-  ...ymlConfigs['flat/prettier'],
-  {
-    files: ['**/*.yaml', '**/*.yml'],
-    // Justification: Alphabetical keys reduce merge conflicts in shared YAML configs
-    rules: { 'yml/sort-keys': 'warn' },
-  },
-];
+/** Creates an ESLint flat config for TypeScript projects. */
+export const configure = async (
+  options: ESLintConfigureOptions = {},
+): Promise<Linter.Config[]> => {
+  const resolved: ResolvedOptions = {
+    entryPoints: options.entryPoints ?? [...defaultEntryPoints],
+    ignores: options.ignores ?? ['.claude/worktrees/**', '**/dist/**', '**/pnpm-lock.yaml'],
+    onlyWarn: options.onlyWarn ?? true,
+    pnpm: options.pnpm ?? true,
+    target: options.target ?? 'server',
+    ...(options.tsconfigRootDir !== undefined && { tsconfigRootDir: options.tsconfigRootDir }),
+  };
 
-const resolvePnpmConfigs = (options: ESLintConfigureOptions): Linter.Config[] => {
-  if (options.pnpm === false) {
-    return [];
-  }
-  return [...pnpmPluginConfigs.json, ...pnpmPluginConfigs.yaml];
-};
-
-const resolveParserOptions = (options: ESLintConfigureOptions): Linter.ParserOptions => ({
-  projectService: true,
-  ...(options.tsconfigRootDir && {
-    tsconfigRootDir: options.tsconfigRootDir,
-  }),
-});
-
-type DefineConfigArg = Parameters<typeof defineConfig>[number];
-
-const resolveNodeConfig = (options: ESLintConfigureOptions): DefineConfigArg => ({
-  /*
-   * HACK: eslint-plugin-n belongs in oxlint-config as a jsPlugin, but
-   * oxlint jsPlugins don't support type-awareness yet. Move it there
-   * when oxlint jsPlugins exit alpha.
-   */
-  extends: [nodePlugin.configs['flat/recommended-module']],
-  files: ['**/*.ts', '**/*.mts', '**/*.cts'],
-  languageOptions: {
-    parser: tseslint.parser,
-    parserOptions: resolveParserOptions(options),
-  },
-  plugins: { '@typescript-eslint': tseslint.plugin },
-  rules: {
-    // Justification: Property syntax is contravariant (safe); method syntax is bivariant (unsafe)
-    '@typescript-eslint/method-signature-style': 'warn',
-    // Justification: Prevents snake_case drift from agents and API boundaries
-    '@typescript-eslint/naming-convention': [
-      'warn', {
-        format: ['camelCase', 'PascalCase'],
-        leadingUnderscore: 'allow',
-        selector: 'variableLike',
-        trailingUnderscore: 'allow',
-      },
-    ],
-    // Justification: Redundant with oxlint native import plugin
-    'n/no-extraneous-import': 'off' as const,
-    // Justification: Redundant with oxlint native import plugin
-    'n/no-missing-import': 'off' as const,
-    // Justification: Redundant with oxlint native import plugin
-    'n/no-unpublished-import': 'off' as const,
-  },
-});
-
-const resolveJsPluginFallbacks = (): Linter.Config[] =>
-  isAndroid
-    ? [
-        { ...stylistic.configs.customize(stylisticCustomizeDefaults), files: ['**/*.ts'] },
-        { files: ['**/*.ts'], rules: stylisticRuleOverrides },
-        eslintCommentsConfigs.recommended,
-        { rules: eslintCommentsRuleOverrides },
-        {
-          files: ['**/*.ts'],
-          plugins: { 'import-x': importPlugin },
-          rules: importOrderRules,
-        },
-      ]
-    : [];
-
-const testFiles = ['**/test/**/*.ts', '**/e2e/**/*.ts'];
-
-// Core ESLint rules not implemented in oxlint
-const coreRuleConfig: Linter.Config = {
-  files: ['**/*.ts'],
-  rules: {
-    // Justification: Pushes toward const and expressions over statements
-    'init-declarations': 'warn',
-    // Justification: Enforces modern JS idiom (x ??= y over x = x ?? y)
-    'logical-assignment-operators': [
-      'warn', 'always', { enforceForIfStatements: true },
-    ],
-    // Justification: Prefer arrow functions for callbacks when `this` is unused
-    'prefer-arrow-callback': [
-      'warn', { allowNamedFunctions: true, allowUnboundThis: true },
-    ],
-    // Justification: Self-documenting regex capture groups
-    'prefer-named-capture-group': 'warn',
-    // Justification: Catches race conditions from async mutations in loops
-    'require-atomic-updates': 'warn',
-  },
-};
-
-const vitestConfigs: Linter.Config[] = [
-  { ...vitestPlugin.configs.all, files: testFiles },
-  { files: testFiles, rules: vitestRuleOverrides },
-  { files: ['**/e2e/**/*.ts'], rules: vitestE2eRuleOverrides },
-];
-
-/**
- * Creates an ESLint flat config for TypeScript projects.
- * Supplementary to oxlint — covers `@eslint/json`, `eslint-plugin-pnpm`,
- * `eslint-plugin-n`, and `@vitest/eslint-plugin`. On Android, also runs
- * `@stylistic/eslint-plugin`, `@eslint-community/eslint-plugin-eslint-comments`,
- * and `eslint-plugin-import-x` as fallbacks for oxlint jsPlugins.
- * `eslint-plugin-oxlint` is applied last to disable overlapping rules.
- */
-export const configure = async (options: ESLintConfigureOptions = {}): Promise<Linter.Config[]> => {
-  const {
-    entryPoints = [...defaultEntryPoints],
-    extraConfigs = [],
-    ignores = ['.claude/worktrees/**', '**/dist/**', '**/pnpm-lock.yaml'],
-    onlyWarn = true,
-    target = 'server',
-  } = options;
-
-  if (onlyWarn) {
+  if (resolved.onlyWarn) {
     await import('eslint-plugin-only-warn');
   }
 
-  const unicodeFlag = target === 'server' ? 'v' : 'u';
-
-  const targetRules: Linter.Config = {
-    files: ['**/*.ts'],
-    rules: {
-      // Justification: Prevents subtle unicode bugs; /v for server, /u for browser compat
-      'require-unicode-regexp': ['warn', { requireFlag: unicodeFlag }],
-    },
-  };
-
   return defineConfig(
-    ...jsonConfigs,
-    ...yamlConfigs,
-    ...resolvePnpmConfigs(options),
-    resolveNodeConfig(options),
-    coreRuleConfig,
-    targetRules,
-    {
-      files: entryPoints,
-      rules: {
-        // Justification: Entry points use process.exit() for controlled shutdown
-        'n/hashbang': 'off',
-        // Justification: Entry points use process.exit() for controlled shutdown
-        'n/no-process-exit': 'off',
-      },
-    },
-    ...vitestConfigs,
-    ...extraConfigs,
-    ...resolveJsPluginFallbacks(),
-    { ignores },
-    // Must be last — disables ESLint rules already covered by oxlint
-    ...oxlint.configs['flat/all'],
+    ...plugins.flatMap(plugin => plugin(resolved)),
+    { ignores: resolved.ignores },
   );
 };

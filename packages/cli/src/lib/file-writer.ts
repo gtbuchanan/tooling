@@ -15,7 +15,7 @@ export const sortKeysDeep = (value: unknown): unknown => {
     const entries: [string, unknown][] = Object.entries(value);
     return Object.fromEntries(
       entries
-        .sort(([left], [right]) => left.localeCompare(right))
+        .toSorted(([left], [right]) => left.localeCompare(right))
         .map(([key, val]) => [key, sortKeysDeep(val)]),
     );
   }
@@ -32,11 +32,11 @@ export interface MergeResult {
 
 /** Reads and parses a JSON file as a plain object. */
 export const readJsonFile = (path: string): Record<string, unknown> =>
-  v.parse(v.record(v.string(), v.unknown()), JSON.parse(readFileSync(path, 'utf-8')));
+  v.parse(v.record(v.string(), v.unknown()), JSON.parse(readFileSync(path, 'utf8')));
 
 /** Writes a JSON object to a file with formatting and trailing newline. */
 export const writeJsonFile = (path: string, data: unknown): void => {
-  writeFileSync(path, `${JSON.stringify(data, null, jsonIndent)}\n`);
+  writeFileSync(path, `${JSON.stringify(data, undefined, jsonIndent)}\n`);
 };
 
 const classifyScripts = (
@@ -108,15 +108,15 @@ const ExistingCodecovSchema = v.nullable(
  * Throws if the existing file contains invalid YAML.
  */
 export const mergeCodecovSections = (path: string, sections: CodecovSections): void => {
-  let rawYaml: unknown = null;
+  let rawYaml: unknown = undefined;
   if (existsSync(path)) {
     try {
-      rawYaml = parseYaml(readFileSync(path, 'utf-8'));
+      rawYaml = parseYaml(readFileSync(path, 'utf8'));
     } catch {
       throw new Error(`${path}: invalid YAML — fix or delete it and re-run gtb turbo:init`);
     }
   }
-  const existing = v.parse(ExistingCodecovSchema, rawYaml) ?? {};
+  const existing = v.parse(v.optional(ExistingCodecovSchema), rawYaml) ?? {};
   const existingComponentMgmt = existing.component_management ?? {};
 
   const merged = {

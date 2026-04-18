@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import {
   type ProjectFixture,
   createProjectFixture,
@@ -17,14 +17,17 @@ const it = extendWithFixture(createFixture);
 const jsonIndent = 2;
 
 const readJson = (path: string): unknown =>
-  JSON.parse(readFileSync(path, 'utf-8'));
+  JSON.parse(readFileSync(path, 'utf8'));
 
 const writeJson = (dir: string, name: string, data: unknown): void => {
-  const filePath = join(dir, name);
-  mkdirSync(join(filePath, '..'), { recursive: true });
-  writeFileSync(filePath, `${JSON.stringify(data, null, jsonIndent)}\n`);
+  const filePath = path.join(dir, name);
+  mkdirSync(path.join(filePath, '..'), { recursive: true });
+  writeFileSync(filePath, `${JSON.stringify(data, undefined, jsonIndent)}\n`);
 };
 
+/* eslint-disable vitest/require-hook --
+   False positive with extendWithFixture indirection:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe.concurrent('gtb CLI', () => {
   it('prints help with --help', ({ fixture, expect }) => {
     const result = fixture.run('gtb', ['--help']);
@@ -34,7 +37,6 @@ describe.concurrent('gtb CLI', () => {
     expect(result.stdout).toContain('compile:ts');
     expect(result.stdout).toContain('typecheck:ts');
     expect(result.stdout).toContain('lint:eslint');
-    expect(result.stdout).toContain('lint:oxlint');
     expect(result.stdout).toContain('test:vitest:fast');
     expect(result.stdout).toContain('turbo:init');
     expect(result.stdout).toContain('turbo:check');
@@ -53,7 +55,11 @@ describe.concurrent('gtb CLI', () => {
     expect(result.exitCode).not.toBe(0);
   });
 });
+/* eslint-enable vitest/require-hook */
 
+/* eslint-disable vitest/max-expects, vitest/no-standalone-expect, vitest/require-hook --
+   False positive when callback omits custom fixture properties:
+   https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe.concurrent('gtb pack:npm', () => {
   it('produces tarball for publishable package', ({ expect }) => {
     using fixture = createFixture();
@@ -68,7 +74,7 @@ describe.concurrent('gtb pack:npm', () => {
     expect(result).toMatchObject({ exitCode: 0 });
 
     const tarballs = readdirSync(
-      join(fixture.projectDir, 'dist', 'packages', 'npm'),
+      path.join(fixture.projectDir, 'dist', 'packages', 'npm'),
     );
 
     expect(tarballs).toHaveLength(1);
@@ -87,7 +93,7 @@ describe.concurrent('gtb pack:npm', () => {
     const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(existsSync(join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
+    expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
       false,
     );
   });
@@ -102,7 +108,7 @@ describe.concurrent('gtb pack:npm', () => {
     const result = fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(existsSync(join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
+    expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
       false,
     );
   });
@@ -133,20 +139,19 @@ describe.concurrent('gtb pack:npm', () => {
     expect(result).toMatchObject({ exitCode: 0 });
 
     const output = readJson(
-      join(fixture.projectDir, 'dist', 'source', 'package.json'),
+      path.join(fixture.projectDir, 'dist', 'source', 'package.json'),
     );
 
-    expect(output).toHaveProperty('name', '@test/my-lib');
-    expect(output).toHaveProperty('exports', { '.': './index.js' });
-    expect(output).toHaveProperty('bugs', 'https://github.com/test/repo/issues');
-    expect(output).toHaveProperty(
-      'homepage',
-      'https://github.com/test/repo/tree/main/',
-    );
-    expect(output).toHaveProperty('repository', {
-      directory: '',
-      type: 'git',
-      url: 'https://github.com/test/repo.git',
+    expect(output).toMatchObject({
+      bugs: 'https://github.com/test/repo/issues',
+      exports: { '.': './index.js' },
+      homepage: 'https://github.com/test/repo/tree/main/',
+      name: '@test/my-lib',
+      repository: {
+        directory: '',
+        type: 'git',
+        url: 'https://github.com/test/repo.git',
+      },
     });
     expect(output).not.toHaveProperty('devDependencies');
     expect(output).not.toHaveProperty('scripts');
@@ -160,9 +165,9 @@ describe.concurrent('gtb pack:npm', () => {
       publishConfig: { directory: 'dist/source' },
       version: '1.0.0',
     });
-    const distDir = join(fixture.projectDir, 'dist', 'packages', 'npm');
+    const distDir = path.join(fixture.projectDir, 'dist', 'packages', 'npm');
     mkdirSync(distDir, { recursive: true });
-    writeFileSync(join(distDir, 'stale-0.0.0.tgz'), '');
+    writeFileSync(path.join(distDir, 'stale-0.0.0.tgz'), '');
 
     const result = fixture.run('gtb', ['pack:npm']);
 
@@ -174,3 +179,4 @@ describe.concurrent('gtb pack:npm', () => {
     expect(tarballs).toHaveLength(1);
   });
 });
+/* eslint-enable vitest/max-expects, vitest/no-standalone-expect, vitest/require-hook */

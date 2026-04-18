@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
 import { describe, it } from 'vitest';
 
@@ -31,9 +31,9 @@ const runMarkdownlint = (
   config: string,
   markdown: string,
 ): ReturnType<typeof runCommand> => {
-  const cli2 = join(fixture.hookDir, 'node_modules/.bin/markdownlint-cli2');
-  writeFileSync(join(fixture.projectDir, '.markdownlint.mjs'), config);
-  writeFileSync(join(fixture.projectDir, 'test.md'), markdown);
+  const cli2 = path.join(fixture.hookDir, 'node_modules/.bin/markdownlint-cli2');
+  writeFileSync(path.join(fixture.projectDir, '.markdownlint.mjs'), config);
+  writeFileSync(path.join(fixture.projectDir, 'test.md'), markdown);
   return runCommand(cli2, ['test.md'], {
     cwd: fixture.projectDir,
     env: { ...process.env, NODE_PATH: fixture.nodePath },
@@ -47,9 +47,9 @@ describe('pre-commit isolation', () => {
       packageName: '@gtbuchanan/markdownlint-config',
     });
 
-    const cli2 = join(fixture.hookDir, 'node_modules/.bin/markdownlint-cli2');
-    writeFileSync(join(fixture.projectDir, '.markdownlint.mjs'), bareImportConfig);
-    writeFileSync(join(fixture.projectDir, 'test.md'), '# Hello\n\nTest.\n');
+    const cli2 = path.join(fixture.hookDir, 'node_modules/.bin/markdownlint-cli2');
+    writeFileSync(path.join(fixture.projectDir, '.markdownlint.mjs'), bareImportConfig);
+    writeFileSync(path.join(fixture.projectDir, 'test.md'), '# Hello\n\nTest.\n');
 
     const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
     const result = runCommand(cli2, ['test.md'], {
@@ -111,17 +111,17 @@ describe('pre-commit isolation', () => {
       packageName: '@gtbuchanan/markdownlint-config',
     });
 
-    const cli2 = join(fixture.hookDir, 'node_modules/.bin/markdownlint-cli2');
-    writeFileSync(join(fixture.projectDir, '.markdownlint.mjs'), createRequireConfig);
-    writeFileSync(join(fixture.projectDir, '.markdownlint-cli2.mjs'), createRequireCli2Config);
+    const cli2 = path.join(fixture.hookDir, 'node_modules/.bin/markdownlint-cli2');
+    writeFileSync(path.join(fixture.projectDir, '.markdownlint.mjs'), createRequireConfig);
+    writeFileSync(path.join(fixture.projectDir, '.markdownlint-cli2.mjs'), createRequireCli2Config);
 
     // Changeset file without a heading — would fail MD041 if not ignored
-    const changesetDir = join(fixture.projectDir, '.changeset');
+    const changesetDir = path.join(fixture.projectDir, '.changeset');
     mkdirSync(changesetDir);
-    writeFileSync(join(changesetDir, 'test-changeset.md'), 'No heading here\n');
+    writeFileSync(path.join(changesetDir, 'test-changeset.md'), 'No heading here\n');
 
     // Also create a valid file so markdownlint has something to lint
-    writeFileSync(join(fixture.projectDir, 'test.md'), '# Valid\n\nContent.\n');
+    writeFileSync(path.join(fixture.projectDir, 'test.md'), '# Valid\n\nContent.\n');
 
     const result = runCommand(cli2, ['**/*.md'], {
       cwd: fixture.projectDir,

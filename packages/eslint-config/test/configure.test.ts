@@ -1,4 +1,3 @@
-import type { Linter } from 'eslint';
 import { describe, it, vi } from 'vitest';
 import { configure } from '#src/index.js';
 
@@ -15,7 +14,7 @@ describe(configure, () => {
 
     await configure({ onlyWarn: true });
 
-    expect(onlyWarnImport).toHaveBeenCalled();
+    expect(onlyWarnImport).toHaveBeenCalledWith();
   });
 
   it('does not import eslint-plugin-only-warn when onlyWarn is false', async ({ expect }) => {
@@ -46,13 +45,6 @@ describe(configure, () => {
     expect(withPnpm.length).toBeGreaterThan(withoutPnpm.length);
   });
 
-  it('includes oxlint overlay as last configs', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
-    const last = configs.at(-1);
-
-    expect(last?.name).toContain('oxlint');
-  });
-
   it('passes tsconfigRootDir to parser options', async ({ expect }) => {
     const configs = await configure({
       onlyWarn: false,
@@ -76,17 +68,6 @@ describe(configure, () => {
     expect(configs.length).toBeGreaterThan(0);
   });
 
-  it('applies extra configs before oxlint overlay', async ({ expect }) => {
-    const extra: Linter.Config = { name: 'test-extra' };
-    const configs = await configure({ extraConfigs: [extra], onlyWarn: false });
-    const extraIndex = configs.findIndex(cfg => cfg.name === 'test-extra');
-    const lastOxlint = configs.at(-1);
-
-    expect(extraIndex).toBeGreaterThan(-1);
-    expect(lastOxlint?.name).toContain('oxlint');
-    expect(extraIndex).toBeLessThan(configs.length - 1);
-  });
-
   it('applies custom entryPoints to rule overrides', async ({ expect }) => {
     const configs = await configure({
       entryPoints: ['**/cli.ts'],
@@ -96,7 +77,7 @@ describe(configure, () => {
       cfg => cfg.rules?.['n/no-process-exit'] === 'off',
     );
 
-    expect(entryConfig?.files).toEqual(['**/cli.ts']);
+    expect(entryConfig?.files).toStrictEqual(['**/cli.ts']);
   });
 
   it('applies custom ignores', async ({ expect }) => {
@@ -105,6 +86,6 @@ describe(configure, () => {
       cfg => cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined,
     );
 
-    expect(ignoresConfig?.ignores).toEqual(['vendor/**']);
+    expect(ignoresConfig?.ignores).toStrictEqual(['vendor/**']);
   });
 });

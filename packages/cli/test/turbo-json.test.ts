@@ -81,16 +81,6 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks['lint:eslint']?.dependsOn).toContain('generate');
   });
 
-  it('lint:oxlint depends on generate when generate exists', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ generateScripts: ['generate:test'], hasOxlint: true }),
-    ]);
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.tasks['lint:oxlint']?.dependsOn).toContain('generate');
-  });
-
   it('includes typecheck:ts when any package has TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ hasTypeScript: true }),
@@ -149,16 +139,6 @@ describe.concurrent(generateTurboJson, () => {
     const task = result.tasks['lint:eslint'];
 
     expect(task?.outputs).toContain('dist/.eslintcache');
-  });
-
-  it('includes lint:oxlint when any package has oxlint', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ hasOxlint: true }),
-    ]);
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.tasks).toHaveProperty('lint:oxlint');
   });
 
   it('includes test:vitest:fast when any package has Vitest + test/', ({ expect }) => {
@@ -229,7 +209,6 @@ describe.concurrent(generateTurboJson, () => {
     const discovery = makeDiscovery([
       makeCapabilities({
         hasEslint: true,
-        hasOxlint: true,
         hasTest: true,
         hasTypeScript: true,
         hasVitest: true,
@@ -244,13 +223,12 @@ describe.concurrent(generateTurboJson, () => {
 
   it('generates lint aggregate from discovered linters', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true, hasOxlint: true }),
+      makeCapabilities({ hasEslint: true }),
     ]);
 
     const result = generateTurboJson(discovery);
 
     expect(result.tasks['lint']?.dependsOn).toContain('lint:eslint');
-    expect(result.tasks['lint']?.dependsOn).toContain('lint:oxlint');
   });
 
   it('omits lint aggregate when no linters', ({ expect }) => {
@@ -265,7 +243,6 @@ describe.concurrent(generateTurboJson, () => {
     const discovery = makeDiscovery([
       makeCapabilities({
         hasEslint: true,
-        hasOxlint: true,
         hasTest: true,
         hasTypeScript: true,
         hasVitest: true,
@@ -299,11 +276,9 @@ describe.concurrent(generateTurboJson, () => {
     const result = generateTurboJson(discovery);
     const inputs = result.tasks['compile:ts']?.inputs ?? [];
 
-    expect(inputs).toContain('bin/**');
-    expect(inputs).toContain('src/**');
-    expect(inputs).toContain('generated/**');
-    expect(inputs).toContain('*.proto.ts');
-    expect(inputs).toContain('tsconfig.build.json');
+    expect(inputs).toStrictEqual(expect.arrayContaining([
+      'bin/**', 'src/**', 'generated/**', '*.proto.ts', 'tsconfig.build.json',
+    ]));
     expect(inputs).not.toContain('tsconfig.json');
     expect(inputs).not.toContain('scripts/**');
   });

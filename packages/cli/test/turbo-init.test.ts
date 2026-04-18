@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 import * as v from 'valibot';
 import { describe, it, vi } from 'vitest';
 import { turboInit } from '#src/commands/turbo-init.js';
@@ -14,16 +14,15 @@ import {
 } from '#src/lib/turbo-config.js';
 
 const createConsumerProject = (): string => {
-  const root = mkdtempSync(join(tmpdir(), 'gtb-turbo-init-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'gtb-turbo-init-'));
   writeFileSync(
-    join(root, 'pnpm-workspace.yaml'),
+    path.join(root, 'pnpm-workspace.yaml'),
     "packages:\n  - 'packages/*'\n",
   );
-  writeFileSync(join(root, 'package.json'), JSON.stringify({
+  writeFileSync(path.join(root, 'package.json'), JSON.stringify({
     devDependencies: {
       '@gtbuchanan/cli': '^0.1.0',
       '@gtbuchanan/eslint-config': '^0.1.0',
-      '@gtbuchanan/oxlint-config': '^0.1.0',
       '@gtbuchanan/tsconfig': '^0.1.0',
       '@gtbuchanan/vitest-config': '^0.1.0',
     },
@@ -32,13 +31,12 @@ const createConsumerProject = (): string => {
     scripts: { prepare: 'gtb prepare' },
   }));
 
-  const app = join(root, 'packages', 'app');
-  mkdirSync(join(app, 'src'), { recursive: true });
-  mkdirSync(join(app, 'test'), { recursive: true });
-  writeFileSync(join(app, 'package.json'), JSON.stringify({
+  const app = path.join(root, 'packages', 'app');
+  mkdirSync(path.join(app, 'src'), { recursive: true });
+  mkdirSync(path.join(app, 'test'), { recursive: true });
+  writeFileSync(path.join(app, 'package.json'), JSON.stringify({
     devDependencies: {
       '@gtbuchanan/eslint-config': '^0.1.0',
-      '@gtbuchanan/oxlint-config': '^0.1.0',
       '@gtbuchanan/tsconfig': '^0.1.0',
       '@gtbuchanan/vitest-config': '^0.1.0',
     },
@@ -46,14 +44,13 @@ const createConsumerProject = (): string => {
     publishConfig: { directory: 'dist/source' },
     version: '1.0.0',
   }));
-  writeFileSync(join(app, 'tsconfig.json'), '{}');
-  writeFileSync(join(app, 'eslint.config.ts'), '');
-  writeFileSync(join(app, 'oxlint.config.ts'), '');
-  writeFileSync(join(app, 'vitest.config.ts'), '');
+  writeFileSync(path.join(app, 'tsconfig.json'), '{}');
+  writeFileSync(path.join(app, 'eslint.config.ts'), '');
+  writeFileSync(path.join(app, 'vitest.config.ts'), '');
 
-  const lib = join(root, 'packages', 'lib');
-  mkdirSync(join(lib, 'src'), { recursive: true });
-  writeFileSync(join(lib, 'package.json'), JSON.stringify({
+  const lib = path.join(root, 'packages', 'lib');
+  mkdirSync(path.join(lib, 'src'), { recursive: true });
+  writeFileSync(path.join(lib, 'package.json'), JSON.stringify({
     devDependencies: {
       '@gtbuchanan/eslint-config': '^0.1.0',
       '@gtbuchanan/tsconfig': '^0.1.0',
@@ -62,8 +59,8 @@ const createConsumerProject = (): string => {
     private: true,
     version: '1.0.0',
   }));
-  writeFileSync(join(lib, 'tsconfig.json'), '{}');
-  writeFileSync(join(lib, 'eslint.config.ts'), '');
+  writeFileSync(path.join(lib, 'tsconfig.json'), '{}');
+  writeFileSync(path.join(lib, 'eslint.config.ts'), '');
 
   return root;
 };
@@ -75,16 +72,12 @@ describe(turboInit, () => {
 
     const turboJson = generateTurboJson(discovery);
 
-    expect(turboJson.tasks).toHaveProperty('typecheck:ts');
-    expect(turboJson.tasks).toHaveProperty('compile:ts');
-    expect(turboJson.tasks).toHaveProperty('lint:eslint');
-    expect(turboJson.tasks).toHaveProperty('lint:oxlint');
-    expect(turboJson.tasks).toHaveProperty('test:vitest:fast');
-    expect(turboJson.tasks).toHaveProperty('test:vitest:slow');
-    expect(turboJson.tasks).toHaveProperty('pack:npm');
-    expect(turboJson.tasks).toHaveProperty('check');
-    expect(turboJson.tasks).toHaveProperty('build');
-    expect(turboJson.tasks).toHaveProperty('build:ci');
+    expect(Object.keys(turboJson.tasks)).toStrictEqual(
+      expect.arrayContaining([
+        'build', 'build:ci', 'check', 'compile:ts', 'lint:eslint',
+        'pack:npm', 'test:vitest:fast', 'test:vitest:slow', 'typecheck:ts',
+      ]),
+    );
   });
 
   it('generates per-package scripts with gtb commands', ({ expect }) => {
@@ -97,7 +90,6 @@ describe(turboInit, () => {
     expect(scripts).toMatchObject({
       'compile:ts': 'gtb compile:ts',
       'lint:eslint': 'gtb lint:eslint',
-      'lint:oxlint': 'gtb lint:oxlint',
       'test:vitest:fast': 'gtb test:vitest:fast',
       'test:vitest:slow': 'gtb test:vitest:slow',
       'typecheck:ts': 'gtb typecheck:ts',
@@ -115,7 +107,6 @@ describe(turboInit, () => {
     expect(scripts).toHaveProperty('lint:eslint');
     expect(scripts).not.toHaveProperty('compile:ts');
     expect(scripts).not.toHaveProperty('test:vitest:fast');
-    expect(scripts).not.toHaveProperty('lint:oxlint');
   });
 
   it('generates root convenience scripts', ({ expect }) => {
@@ -138,12 +129,12 @@ describe(turboInit, () => {
     const root = createConsumerProject();
     const discovery = discoverWorkspace({ cwd: root });
 
-    const turboPath = join(root, 'turbo.json');
+    const turboPath = path.join(root, 'turbo.json');
     writeJsonFile(turboPath, generateTurboJson(discovery));
 
     expect(existsSync(turboPath)).toBe(true);
 
-    const parsed: unknown = JSON.parse(readFileSync(turboPath, 'utf-8'));
+    const parsed: unknown = JSON.parse(readFileSync(turboPath, 'utf8'));
 
     expect(parsed).toHaveProperty('$schema');
     expect(parsed).toHaveProperty('tasks');
@@ -155,7 +146,7 @@ describe(turboInit, () => {
     const rootScripts = generateRootScripts(discovery);
 
     const result = mergePackageScripts(
-      join(root, 'package.json'), rootScripts, false,
+      path.join(root, 'package.json'), rootScripts, false,
     );
 
     expect(result.skipped).toContain('prepare');
@@ -163,8 +154,8 @@ describe(turboInit, () => {
   });
 
   it('detects self-hosted workspace', ({ expect }) => {
-    const root = mkdtempSync(join(tmpdir(), 'gtb-selfhost-'));
-    writeFileSync(join(root, 'package.json'), JSON.stringify({
+    const root = mkdtempSync(path.join(tmpdir(), 'gtb-selfhost-'));
+    writeFileSync(path.join(root, 'package.json'), JSON.stringify({
       devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
     }));
 
@@ -176,7 +167,7 @@ describe(turboInit, () => {
   it('turboInit command writes turbo.json and scripts', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockReturnValue();
 
     try {
       process.chdir(root);
@@ -185,10 +176,10 @@ describe(turboInit, () => {
       process.chdir(origCwd);
     }
 
-    expect(existsSync(join(root, 'turbo.json'))).toBe(true);
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
 
     const scripts: unknown = JSON.parse(
-      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf-8'),
+      readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
     );
 
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
@@ -197,7 +188,7 @@ describe(turboInit, () => {
   it('turboInit generates codecov.yml when packages have vitest tests', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockReturnValue();
 
     try {
       process.chdir(root);
@@ -206,11 +197,11 @@ describe(turboInit, () => {
       process.chdir(origCwd);
     }
 
-    const codecovPath = join(root, 'codecov.yml');
+    const codecovPath = path.join(root, 'codecov.yml');
 
     expect(existsSync(codecovPath)).toBe(true);
 
-    const content = readFileSync(codecovPath, 'utf-8');
+    const content = readFileSync(codecovPath, 'utf8');
 
     expect(content).toContain('app:');
     expect(content).toContain('carryforward');
@@ -219,9 +210,9 @@ describe(turboInit, () => {
   it('turboInit preserves existing codecov.yml user config', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockReturnValue();
     writeFileSync(
-      join(root, 'codecov.yml'),
+      path.join(root, 'codecov.yml'),
       'codecov:\n  require_ci_to_pass: true\n',
     );
 
@@ -232,7 +223,7 @@ describe(turboInit, () => {
       process.chdir(origCwd);
     }
 
-    const content = readFileSync(join(root, 'codecov.yml'), 'utf-8');
+    const content = readFileSync(path.join(root, 'codecov.yml'), 'utf8');
 
     expect(content).toContain('require_ci_to_pass');
     expect(content).toContain('carryforward');
@@ -241,13 +232,13 @@ describe(turboInit, () => {
   it('turboInit --force overwrites existing scripts', ({ expect }) => {
     const root = createConsumerProject();
     const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockReturnValue();
 
     try {
       process.chdir(root);
       turboInit([]);
 
-      const appPkg = join(root, 'packages', 'app', 'package.json');
+      const appPkg = path.join(root, 'packages', 'app', 'package.json');
       const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
       const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
       writeJsonFile(appPkg, { ...manifest, scripts });
@@ -258,22 +249,22 @@ describe(turboInit, () => {
     }
 
     const result: unknown = JSON.parse(
-      readFileSync(join(root, 'packages', 'app', 'package.json'), 'utf-8'),
+      readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
     );
 
     expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb typecheck:ts');
   });
 
   it('generates gtb shim for self-hosted', ({ expect }) => {
-    const root = mkdtempSync(join(tmpdir(), 'gtb-selfhost-'));
-    writeFileSync(join(root, 'package.json'), JSON.stringify({
+    const root = mkdtempSync(path.join(tmpdir(), 'gtb-selfhost-'));
+    writeFileSync(path.join(root, 'package.json'), JSON.stringify({
       devDependencies: {
         '@gtbuchanan/cli': 'workspace:*',
         '@gtbuchanan/tsconfig': 'workspace:*',
       },
     }));
-    mkdirSync(join(root, 'src'));
-    writeFileSync(join(root, 'tsconfig.json'), '{}');
+    mkdirSync(path.join(root, 'src'));
+    writeFileSync(path.join(root, 'tsconfig.json'), '{}');
 
     const discovery = discoverWorkspace({ cwd: root });
     const scripts = generatePackageScripts(

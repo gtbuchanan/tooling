@@ -14,7 +14,6 @@
     "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb lint:eslint",
-    "lint:oxlint": "pnpm run gtb lint:oxlint",
     "test:vitest:fast": "pnpm run gtb test:vitest:fast",
     "test:vitest:slow": "pnpm run gtb test:vitest:slow",
     "typecheck:ts": "pnpm run gtb typecheck:ts"

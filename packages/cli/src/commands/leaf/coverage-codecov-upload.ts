@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import path from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import { run } from '../../lib/process.ts';
 import type { CustomCommandDef } from '../types.ts';
@@ -13,14 +13,14 @@ const fastLcov = 'dist/coverage/vitest/fast/lcov.info';
  * for unchanged packages. Must match the `outputs` in turbo.json.
  */
 const sentinelDir = 'dist/coverage/codecov';
-const sentinelFile = join(sentinelDir, '.uploaded');
+const sentinelFile = path.join(sentinelDir, '.uploaded');
 
 /** Resolves the repo root for Codecov network file listing. */
 const resolveNetworkRoot = (): string => {
   const cwd = process.cwd();
   const gitPath = findUpSync('.git', { cwd });
   return process.env['GITHUB_WORKSPACE'] ??
-    (gitPath === undefined ? undefined : dirname(gitPath)) ??
+    (gitPath === undefined ? undefined : path.dirname(gitPath)) ??
     cwd;
 };
 
@@ -61,7 +61,7 @@ export const def = {
         '--disable-search',
         '--network-root-folder', resolveNetworkRoot(),
         '-f', file,
-        '-F', basename(process.cwd()),
+        '-F', path.basename(process.cwd()),
         ...args,
       ],
     });
