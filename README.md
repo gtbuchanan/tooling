@@ -131,6 +131,10 @@ Top-level scripts delegate to Turborepo:
 - `pnpm build` — Full pipeline: check + test:slow + pack + test:e2e
 - `pnpm build:ci` — CI pipeline: check + pack (slow/e2e run as separate jobs)
 
+On platforms where Turborepo is unavailable (e.g., Android/Termux), use
+`pnpm pipeline <task>` instead (`gtb pipeline`). See the
+[CLI package](packages/cli/README.md#usage) for details.
+
 Turbo tasks can also be run individually:
 
 - `turbo run typecheck:ts` — TypeScript type-checking
