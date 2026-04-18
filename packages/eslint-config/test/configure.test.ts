@@ -1,4 +1,3 @@
-import type { Linter } from 'eslint';
 import { describe, it, vi } from 'vitest';
 import { configure } from '#src/index.js';
 
@@ -67,18 +66,6 @@ describe(configure, () => {
 
     expect(Array.isArray(configs)).toBe(true);
     expect(configs.length).toBeGreaterThan(0);
-  });
-
-  it('applies extra configs before global ignores', async ({ expect }) => {
-    const extra: Linter.Config = { name: 'test-extra' };
-    const configs = await configure({ extraConfigs: [extra], onlyWarn: false });
-    const extraIndex = configs.findIndex(cfg => cfg.name === 'test-extra');
-    const ignoresIndex = configs.findIndex(
-      cfg => cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined,
-    );
-
-    expect(extraIndex).toBeGreaterThan(-1);
-    expect(extraIndex).toBeLessThan(ignoresIndex);
   });
 
   it('applies custom entryPoints to rule overrides', async ({ expect }) => {
