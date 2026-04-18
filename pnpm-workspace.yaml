@@ -43,7 +43,6 @@ packages:
 peerDependencyRules:
   allowedVersions:
     # https://github.com/eslint-community/eslint-plugin-promise/issues/616
-    eslint-plugin-promise:
-      eslint: '>=10'
+    eslint-plugin-promise>eslint: '>=10'
 
 strictPeerDependencies: true
