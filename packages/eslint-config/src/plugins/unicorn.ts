@@ -12,6 +12,8 @@ const plugin: PluginFactory = () => [
     rules: {
       // Justification: Cannot distinguish intentional from accidental arity matches
       'unicorn/no-array-callback-reference': 'off',
+      // Justification: reduce is a valid functional fold; banning it pushes toward mutable loops
+      'unicorn/no-array-reduce': 'off',
       // TODO: Re-enable and configure allowlist in a separate PR
       'unicorn/prevent-abbreviations': 'off',
     },

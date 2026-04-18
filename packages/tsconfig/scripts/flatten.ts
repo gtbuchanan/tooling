@@ -50,5 +50,5 @@ const flattened = {
 mkdirSync(outDir, { recursive: true });
 writeFileSync(
   path.join(outDir, 'node.json'),
-  `${JSON.stringify(flattened, null, jsonIndent)}\n`,
+  `${JSON.stringify(flattened, undefined, jsonIndent)}\n`,
 );

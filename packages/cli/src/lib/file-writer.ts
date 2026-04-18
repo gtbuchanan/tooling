@@ -116,7 +116,7 @@ export const mergeCodecovSections = (path: string, sections: CodecovSections): v
       throw new Error(`${path}: invalid YAML — fix or delete it and re-run gtb turbo:init`);
     }
   }
-  const existing = v.parse(ExistingCodecovSchema, rawYaml) ?? {};
+  const existing = v.parse(v.optional(ExistingCodecovSchema), rawYaml) ?? {};
   const existingComponentMgmt = existing.component_management ?? {};
 
   const merged = {

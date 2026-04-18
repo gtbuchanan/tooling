@@ -130,11 +130,11 @@ describe.concurrent('eslint CLI integration', () => {
   });
 
   it('passes for a clean file', ({ fixture, expect }) => {
-    const { exitCode } = fixture.run({
-      files: { 'clean.mjs': "export const greeting = 'hello';\n" },
+    const result = fixture.run({
+      files: { 'clean.ts': "export const greeting = 'hello';\n" },
     });
 
-    expect(exitCode).toBe(0);
+    expect(result).toMatchObject({ exitCode: 0 });
   });
 
   it('detects process.exit via eslint-plugin-n', ({ fixture, expect }) => {

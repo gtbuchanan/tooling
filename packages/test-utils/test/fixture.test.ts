@@ -109,6 +109,6 @@ describe(pinned, () => {
   });
 
   it('throws for unresolvable package', ({ expect }) => {
-    expect(() => pinned('nonexistent-pkg-xyz')).toThrow();
+    expect(() => pinned('nonexistent-pkg-xyz')).toThrow(/nonexistent-pkg-xyz/v);
   });
 });
