@@ -118,7 +118,10 @@ describe(generateCodecovSections, () => {
 
   it('throws on duplicate package directory basenames', ({ expect }) => {
     const root = createTempDir();
-    writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'apps/*'\n  - 'packages/*'\n");
+    writeFileSync(
+      path.join(root, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'apps/*'\n  - 'packages/*'\n",
+    );
     writeJson(root, 'package.json', { name: 'root', private: true });
 
     for (const base of ['apps', 'packages']) {

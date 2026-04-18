@@ -26,8 +26,9 @@ const TurboJsonSchema = v.looseObject({
 export const parseIgnoreArgs = (args: readonly string[]): ReadonlySet<string> => {
   const ignored = new Set<string>();
   for (let idx = 0; idx < args.length; idx++) {
-    if (args[idx] === '--ignore' && idx + 1 < args.length) {
-      ignored.add(args[idx + 1]!);
+    const next = args[idx + 1];
+    if (args[idx] === '--ignore' && next !== undefined) {
+      ignored.add(next);
       idx++;
     }
   }

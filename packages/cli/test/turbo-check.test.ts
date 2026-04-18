@@ -12,6 +12,21 @@ import {
   createTempDir, initProject, readScripts, readTurboTasks, writeJson,
 } from './helpers.ts';
 
+const runInDir = (dir: string, fn: () => void): void => {
+  const origCwd = process.cwd();
+  const origExitCode = process.exitCode;
+  vi.spyOn(console, 'log').mockReturnValue();
+  vi.spyOn(console, 'error').mockReturnValue();
+
+  try {
+    process.chdir(dir);
+    fn();
+  } finally {
+    process.chdir(origCwd);
+    process.exitCode = origExitCode;
+  }
+};
+
 const createConsumerProject = (): string => {
   const root = createTempDir();
   writeFileSync(
@@ -116,21 +131,6 @@ describe('turbo:check drift detection', () => {
 });
 
 describe(turboCheck, () => {
-  const runInDir = (dir: string, fn: () => void): void => {
-    const origCwd = process.cwd();
-    const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockReturnValue();
-    vi.spyOn(console, 'error').mockReturnValue();
-
-    try {
-      process.chdir(dir);
-      fn();
-    } finally {
-      process.chdir(origCwd);
-      process.exitCode = origExitCode;
-    }
-  };
-
   it('passes with no drift', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
@@ -204,21 +204,6 @@ describe(parseIgnoreArgs, () => {
 });
 
 describe('turbo:check codecov drift detection', () => {
-  const runInDir = (dir: string, fn: () => void): void => {
-    const origCwd = process.cwd();
-    const origExitCode = process.exitCode;
-    vi.spyOn(console, 'log').mockReturnValue();
-    vi.spyOn(console, 'error').mockReturnValue();
-
-    try {
-      process.chdir(dir);
-      fn();
-    } finally {
-      process.chdir(origCwd);
-      process.exitCode = origExitCode;
-    }
-  };
-
   it('passes with valid codecov.yml after init', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);

@@ -1,3 +1,5 @@
+/* eslint-disable-next-line @typescript-eslint/triple-slash-reference --
+   Cross-package tsc needs this to resolve the .d.ts */
 /// <reference path="./eslint-plugin-promise.d.ts" />
 import json from '@eslint/json';
 import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
@@ -344,8 +346,8 @@ const vitestConfigs: Linter.Config[] = [
       'vitest/require-test-timeout': 'off',
       // Justification: Top-level it() is valid in vitest
       'vitest/require-top-level-describe': 'off',
-      // Justification: Allow variable references in test titles
-      'vitest/valid-title': ['warn', { allowArguments: true }],
+      // Justification: Dynamic titles keep test names in sync with definitions
+      'vitest/valid-title': 'off',
     },
   },
   {
@@ -410,10 +412,12 @@ export const configure = async (
     ...tseslint.configs.stylisticTypeChecked,
     { languageOptions: { parserOptions: resolveParserOptions(options) } },
     // Unicorn recommended (scoped to TS — unicorn crashes on JSON/YAML parsers)
-    { ...unicornPlugin.configs['flat/recommended'], files: ['**/*.ts'] },
+    { ...unicornPlugin.configs.recommended, files: ['**/*.ts'] },
     {
       files: ['**/*.ts'],
       rules: {
+        // Justification: Cannot distinguish intentional from accidental arity matches
+        'unicorn/no-array-callback-reference': 'off',
         // TODO: Re-enable and configure allowlist in a separate PR
         'unicorn/prevent-abbreviations': 'off',
       },

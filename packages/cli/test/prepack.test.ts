@@ -138,7 +138,7 @@ describe(prepack, () => {
 
     expect(() =>
       readFileSync(path.join(pkgDir, 'dist', 'source', 'package.json')),
-    ).toThrow();
+    ).toThrow(/ENOENT/v);
   });
 
   it('skips packages without publishConfig.directory', ({ expect }) => {
@@ -158,7 +158,7 @@ describe(prepack, () => {
 
     expect(() =>
       readFileSync(path.join(pkgDir, 'dist', 'source', 'package.json')),
-    ).toThrow();
+    ).toThrow(/ENOENT/v);
   });
 
   it('works in single-package mode', ({ expect }) => {
