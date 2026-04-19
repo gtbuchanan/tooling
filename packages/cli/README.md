@@ -30,6 +30,15 @@ turbo run build       # full pipeline
 turbo run test:fast   # fast source tests only
 ```
 
+On platforms where Turborepo is unavailable (e.g., Android/Termux), use
+`gtb pipeline` instead. It reads `turbo.json`, resolves the dependency
+graph, and runs leaf tasks level-by-level via `pnpm -r`:
+
+```sh
+gtb pipeline check    # same task graph, no turbo binary needed
+gtb pipeline build
+```
+
 The `prepare` script must be declared so pnpm runs it on install to set
 up pre-commit hooks via prek:
 
@@ -62,6 +71,7 @@ sequential pipelines, caching, dependency graphs).
 | `typecheck:ts`            | `tsc --noEmit`                                                                               |
 | `lint:eslint`             | `eslint --max-warnings=0`                                                                    |
 | `pack:npm`                | Generate manifest + `pnpm pack` (per-pkg)                                                    |
+| `pipeline`                | Run turbo task graph without turbo binary                                                    |
 | `prepare`                 | `prek install`                                                                               |
 | `test:vitest`             | `vitest run`                                                                                 |
 | `test:vitest:fast`        | `vitest run --tags-filter='!slow'`                                                           |

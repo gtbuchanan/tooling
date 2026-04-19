@@ -92,8 +92,8 @@ compiled bin entry to avoid a bootstrapping dependency.
 Commands: `typecheck:ts`, `compile:ts`, `coverage:codecov:upload`,
 `coverage:vitest:merge`,
 `lint:eslint`, `test:vitest`, `test:vitest:fast`,
-`test:vitest:slow`, `test:vitest:e2e`, `pack:npm`, `prepare`,
-`turbo:init`, `turbo:check`.
+`test:vitest:slow`, `test:vitest:e2e`, `pack:npm`, `pipeline`,
+`prepare`, `turbo:init`, `turbo:check`.
 
 Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
 globs for monorepos, or falls back to single-package mode.
@@ -271,6 +271,10 @@ pnpm check     # turbo run check
 pnpm build:ci  # turbo run check compile:ts && pack
 pnpm build     # turbo run check compile:ts test:vitest:slow && pack && test:e2e
 ```
+
+On platforms where Turborepo is unavailable (e.g., Android/Termux), use
+`pnpm pipeline <task>` instead (`gtb pipeline`). See the
+[CLI package](packages/cli/README.md#usage) for details.
 
 This repo dogfoods `gtb` via a package.json script that runs the CLI
 source directly with `node --experimental-strip-types`.

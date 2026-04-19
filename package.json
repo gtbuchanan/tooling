@@ -15,6 +15,7 @@
     "coverage:merge": "turbo run coverage:merge",
     "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
     "pack": "turbo run pack",
+    "pipeline": "node --experimental-strip-types packages/cli/bin/gtb.ts pipeline",
     "prepare": "pnpm run gtb prepare",
     "test:e2e": "turbo run test:e2e",
     "test:slow": "turbo run test:slow",
