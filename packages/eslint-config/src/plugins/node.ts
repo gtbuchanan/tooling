@@ -8,7 +8,6 @@ import { resolveParserOptions } from './typescript.ts';
 
 const nodeFiles = ['**/*.ts', '**/*.mts', '**/*.cts'];
 
-/** Node.js plugin factory. */
 const plugin: PluginFactory = options => [
   ...defineConfig({
     extends: [nodePlugin.configs['flat/recommended-module']],

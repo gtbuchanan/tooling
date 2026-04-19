@@ -21,14 +21,9 @@ repos:
   # language: system because the config packages aren't published yet.
   # Consumers should use language: node with additional_dependencies.
   - hooks:
-      # oxfmt must run before markdownlint so tables are formatted first.
-      - entry: pnpm exec oxfmt --write
-        files: \.(json[5c]?|md|ya?ml)$
-        id: oxfmt
-        language: system
-        name: oxfmt
+      # ESLint handles both linting and formatting (via eslint-plugin-format).
+      # Must run before markdownlint so tables are formatted first.
       - entry: pnpm exec eslint --fix --max-warnings=0
-        files: \.(ts|mts|cts|js|mjs|cjs|json|ya?ml)$
         id: eslint
         language: system
         name: eslint

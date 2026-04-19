@@ -39,7 +39,9 @@ interface ModuleMap {
 // createRequire bridges ESM→CJS resolution, which respects NODE_PATH (set by pre-commit)
 const { resolve } = createRequire(import.meta.url);
 
-async function importModule<S extends keyof ModuleMap>(specifier: S): Promise<ModuleMap[S]> {
+async function importModule<S extends keyof ModuleMap>(
+  specifier: S,
+): Promise<ModuleMap[S]> {
   const { href } = pathToFileURL(resolve(specifier));
   const module: ModuleMap[S] = await import(href);
   return module;

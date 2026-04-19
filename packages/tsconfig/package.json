@@ -2,17 +2,13 @@
   "name": "@gtbuchanan/tsconfig",
   "version": "0.1.0",
   "description": "Shared TypeScript configuration",
-  "files": [
-    "node.json"
-  ],
   "type": "module",
   "exports": {
     "./node.json": "./node.json"
   },
-  "publishConfig": {
-    "directory": "dist/source",
-    "linkDirectory": false
-  },
+  "files": [
+    "node.json"
+  ],
   "scripts": {
     "compile:ts": "node --experimental-strip-types scripts/flatten.ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
@@ -29,5 +25,9 @@
   },
   "engines": {
     "node": ">=22.17"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "linkDirectory": false
   }
 }

@@ -2,9 +2,6 @@
   "name": "@gtbuchanan/cli",
   "version": "0.1.0",
   "description": "Shared build CLI",
-  "bin": {
-    "gtb": "./dist/source/bin/gtb.js"
-  },
   "type": "module",
   "imports": {
     "#src/*": "./src/*"
@@ -12,18 +9,8 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "publishConfig": {
-    "bin": {
-      "gtb": "./bin/gtb.js"
-    },
-    "directory": "dist/source",
-    "exports": {
-      ".": "./src/index.js"
-    },
-    "imports": {
-      "#src/*.ts": "./src/*.js"
-    },
-    "linkDirectory": false
+  "bin": {
+    "gtb": "./dist/source/bin/gtb.js"
   },
   "scripts": {
     "compile:ts": "pnpm run gtb compile:ts",
@@ -54,5 +41,18 @@
   },
   "engines": {
     "node": ">=22.17"
+  },
+  "publishConfig": {
+    "bin": {
+      "gtb": "./bin/gtb.js"
+    },
+    "directory": "dist/source",
+    "exports": {
+      ".": "./src/index.js"
+    },
+    "imports": {
+      "#src/*.ts": "./src/*.js"
+    },
+    "linkDirectory": false
   }
 }

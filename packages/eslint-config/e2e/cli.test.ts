@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
 import { it as base, describe } from 'vitest';
@@ -45,6 +45,7 @@ interface RunOptions {
   config?: string;
   env?: Record<string, string | undefined>;
   files: Record<string, string>;
+  flags?: readonly string[];
 }
 
 const createFixture = () => {
@@ -57,7 +58,7 @@ const createFixture = () => {
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
 
-  const run = ({ config, env, files }: RunOptions) => {
+  const run = ({ config, env, files, flags = [] }: RunOptions) => {
     writeFileSync(path.join(fixture.projectDir, 'eslint.config.ts'), config ?? createRequireConfig);
     writeFileSync(path.join(fixture.projectDir, 'tsconfig.json'), tsconfig);
     writeFileSync(path.join(fixture.projectDir, 'tsconfig.root.json'), tsconfigRoot);
@@ -69,7 +70,7 @@ const createFixture = () => {
       writeFileSync(filePath, content);
     }
 
-    return runCommand(eslint, fileNames, {
+    return runCommand(eslint, [...flags, ...fileNames], {
       cwd: fixture.projectDir,
       env: {
         ...process.env,
@@ -79,10 +80,14 @@ const createFixture = () => {
     });
   };
 
+  const readFile = (name: string): string =>
+    readFileSync(path.join(fixture.projectDir, name), 'utf8');
+
   return {
     eslint,
     nodePath: fixture.nodePath,
     projectDir: fixture.projectDir,
+    readFile,
     run,
     [Symbol.dispose]() {
       fixture[Symbol.dispose]();
@@ -211,5 +216,52 @@ describe.concurrent('eslint CLI integration', () => {
     // Warnings don't cause a non-zero exit code
     expect(exitCode).toBe(0);
     expect(stdout).toContain('n/no-process-exit');
+  });
+
+  it('formats JSON, Markdown, YAML, and CSS via Prettier plugins', ({ fixture, expect }) => {
+    const unsortedJson = '{\n  "z": 1,\n  "a": [1, 2]\n}\n';
+    const longMarkdown = `# Title\n\n${'word '.repeat(40).trim()}\n`;
+    const doubleQuotedYaml = 'key: "value"\n';
+    const unsortedCss = '.box {\n  display: flex;\n  color: red;\n}\n';
+
+    const result = fixture.run({
+      files: {
+        'config.yml': doubleQuotedYaml,
+        'data.json': unsortedJson,
+        'doc.md': longMarkdown,
+        'style.css': unsortedCss,
+      },
+      flags: ['--fix'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
+
+    // JSON: sort-json sorts keys, multiline-arrays expands arrays
+    expect(fixture.readFile('data.json')).toBe(
+      ['{', '  "a": [', '    1,', '    2', '  ],', '  "z": 1', '}', ''].join('\n'),
+    );
+
+    // Markdown: proseWrap 'preserve' keeps long lines unwrapped
+    expect(fixture.readFile('doc.md')).toBe(longMarkdown);
+
+    // YAML: singleQuote from prettierDefaults converts double quotes
+    expect(fixture.readFile('config.yml')).toBe("key: 'value'\n");
+
+    // CSS: alphabetical property sorting (color before display)
+    expect(fixture.readFile('style.css')).toBe(
+      '.box {\n  color: red;\n  display: flex;\n}\n',
+    );
+  });
+
+  it('formats XML with whitespace-insensitive mode', ({ fixture, expect }) => {
+    const uglyXml = '<Project><PropertyGroup><Version>1.0</Version></PropertyGroup></Project>';
+
+    const result = fixture.run({
+      files: { 'app.csproj': uglyXml },
+      flags: ['--fix'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(fixture.readFile('app.csproj')).toContain('<PropertyGroup>\n');
   });
 });

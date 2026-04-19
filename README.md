@@ -9,7 +9,6 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 | [@gtbuchanan/cli](packages/cli)                                 | Shared build CLI (`gtb`)             |
 | [@gtbuchanan/eslint-config](packages/eslint-config)             | Shared ESLint configuration          |
 | [@gtbuchanan/markdownlint-config](packages/markdownlint-config) | Shared markdownlint configuration    |
-| [@gtbuchanan/oxfmt-config](packages/oxfmt-config)               | Shared oxfmt configuration           |
 | [@gtbuchanan/tsconfig](packages/tsconfig)                       | Shared TypeScript base configuration |
 | [@gtbuchanan/vitest-config](packages/vitest-config)             | Shared Vitest configuration          |
 

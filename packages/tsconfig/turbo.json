@@ -1,8 +1,12 @@
 {
-  "extends": ["//"],
+  "extends": [
+    "//"
+  ],
   "tasks": {
     "compile:ts": {
-      "inputs": ["node.json"]
+      "inputs": [
+        "node.json"
+      ]
     }
   }
 }

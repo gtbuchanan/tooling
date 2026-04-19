@@ -1,6 +1,6 @@
 # @gtbuchanan/tooling
 
-Shared build configuration monorepo. Individual packages for ESLint, oxfmt,
+Shared build configuration monorepo. Individual packages for ESLint,
 TypeScript, Vitest configuration, and a shared build CLI.
 
 ## Structure
@@ -22,7 +22,6 @@ packages/
   cli/                 — @gtbuchanan/cli (gtb build CLI for consumers)
   eslint-config/       — @gtbuchanan/eslint-config (ESLint configure())
   markdownlint-config/ — @gtbuchanan/markdownlint-config (markdownlint configure())
-  oxfmt-config/        — @gtbuchanan/oxfmt-config (oxfmt configure())
   tsconfig/            — @gtbuchanan/tsconfig (shared base tsconfig.json)
   vitest-config/       — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
   test-utils/          — private shared E2E fixture utilities
@@ -108,26 +107,35 @@ globs for monorepos, or falls back to single-package mode.
 
 ### Linter
 
-- **ESLint** — Primary linter. `typescript-eslint` strictTypeChecked +
-  stylisticTypeChecked presets, `eslint-plugin-unicorn` (recommended),
-  `eslint-plugin-promise`, `@stylistic/eslint-plugin` (formatting),
-  `@eslint-community/eslint-plugin-eslint-comments`, `eslint-plugin-import-x`
-  (ordering), `@eslint/json` (JSON linting), `eslint-plugin-pnpm` (workspace
-  validation), `eslint-plugin-n` (Node.js rules), `eslint-plugin-yml` (YAML
-  linting + key sorting), `@vitest/eslint-plugin` (test rules), and
-  `eslint-plugin-only-warn` (downgrades errors to warnings).
+- **ESLint** — Primary linter and formatter. `typescript-eslint`
+  strictTypeChecked + stylisticTypeChecked presets, `eslint-plugin-unicorn`
+  (recommended), `eslint-plugin-promise`, `eslint-plugin-regexp` (regex
+  safety), `eslint-plugin-jsdoc` (JSDoc/TSDoc validation),
+  `@stylistic/eslint-plugin` (JS/TS formatting), `eslint-plugin-format`
+  (Prettier formatting for JSON, Markdown, YAML, CSS, XML via ESLint
+  rules), `@eslint-community/eslint-plugin-eslint-comments`,
+  `eslint-plugin-import-x` (ordering), `@eslint/json` (JSON linting),
+  `eslint-plugin-pnpm` (workspace validation), `eslint-plugin-n` (Node.js
+  rules), `eslint-plugin-yml` (YAML linting + key sorting),
+  `@vitest/eslint-plugin` (test rules), and `eslint-plugin-only-warn`
+  (downgrades errors to warnings).
 
 ### Formatter
 
-- **oxfmt** — Formats non-JS/TS files (JSON, Markdown, YAML, etc.).
-  JS/TS files are ignored via `ignorePatterns` because `@stylistic` handles
-  formatting through ESLint.
+- **Prettier (via eslint-plugin-format)** — Formats non-JS/TS files
+  (JSON, Markdown, YAML, CSS/SCSS/Less, XML) through ESLint rules.
+  JS/TS formatting is handled by `@stylistic/eslint-plugin`. Prettier
+  plugins (`prettier-plugin-sort-json`, `prettier-plugin-multiline-arrays`,
+  `prettier-plugin-packagejson`, `prettier-plugin-css-order`,
+  `@prettier/plugin-xml`) are resolved as `file://` URLs from this
+  package's dependencies for reliable resolution under pnpm strict
+  hoisting.
 
 ### Markdown linter
 
 - **markdownlint-cli2** — Structural linting for Markdown files.
   `@gtbuchanan/markdownlint-config` extends `markdownlint/style/prettier` to
-  disable rules that conflict with oxfmt formatting.
+  disable rules that conflict with Prettier formatting.
 
 ### Pre-commit hooks
 
@@ -135,9 +143,8 @@ globs for monorepos, or falls back to single-package mode.
   Python pre-commit). Installed automatically via `prepare` script on
   `pnpm install`. Hooks defined in `.pre-commit-config.yaml`:
   - `pre-commit-hooks` — file hygiene (large files, EOF newlines, BOM, trailing whitespace, no commit to branch)
-  - `eslint` — JS/TS linting with `--fix`
-  - `markdownlint-cli2` — Markdown linting with `--fix`
-  - `oxfmt` — JSON/Markdown/YAML formatting (local system hook)
+  - `eslint` — linting and formatting with `--fix` (JS/TS/JSON/Markdown/YAML)
+  - `markdownlint-cli2` — Markdown structural linting with `--fix`
 
 ### CI/CD workflows
 
