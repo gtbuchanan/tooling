@@ -9,6 +9,7 @@ import {
   defineConfig,
   mergeConfig,
 } from 'vitest/config';
+import { scriptFileExtensions } from './files.ts';
 
 /** Shared options for all Vitest configuration layers. */
 export interface VitestConfigureOptions {
@@ -61,7 +62,7 @@ export const excludeDefault = [
 
 const packageName = '@gtbuchanan/vitest-config';
 
-const coverageExtensions = '*.{cjs,cts,js,mjs,mts,ts,tsx}';
+const coverageExtensions = `*.{${scriptFileExtensions.join(',')}}`;
 
 /** Default directories included in coverage reports. */
 export const defaultCoverageDirs = [
@@ -263,7 +264,9 @@ export const buildGlobalConfig = (
     },
   });
 
-const unitTestInclude = ['test/**/*.test.ts'] as const;
+const unitTestInclude = scriptFileExtensions.map(
+  ext => `test/**/*.test.${ext}`,
+);
 
 const defaultSlowTimeout = 300_000;
 

@@ -1,22 +1,14 @@
 import type { Linter } from 'eslint';
 import tseslint from 'typescript-eslint';
+import { scriptFiles, tsOnlyFiles } from '../files.ts';
 import type { PluginFactory, ResolvedOptions } from '../index.ts';
 
 // --- TypeScript rule overrides (on top of strictTypeChecked + stylisticTypeChecked) ---
 
-/** TypeScript rule overrides on top of strictTypeChecked + stylisticTypeChecked. */
-const tsRuleOverrides: Linter.Config = {
-  files: ['**/*.ts'],
+/** Rule overrides that apply to all script files (JS + TS). */
+const scriptRuleOverrides: Linter.Config = {
+  files: [...scriptFiles],
   rules: {
-    // Justification: Enforces export type for type-only re-exports
-    '@typescript-eslint/consistent-type-exports': 'warn',
-    // Justification: Stable return types; catches accidental API changes
-    '@typescript-eslint/explicit-function-return-type': ['warn', {
-      allowDirectConstAssertionInArrowFunctions: true,
-      allowExpressions: true,
-      allowHigherOrderFunctions: true,
-      allowTypedFunctionExpressions: true,
-    }],
     // Justification: Property syntax is contravariant (safe); method syntax is bivariant (unsafe)
     '@typescript-eslint/method-signature-style': 'warn',
     // Justification: Prevents snake_case drift from agents and API boundaries
@@ -28,8 +20,6 @@ const tsRuleOverrides: Linter.Config = {
         trailingUnderscore: 'allow',
       },
     ],
-    // Justification: Prevents runtime imports for type-only specifiers
-    '@typescript-eslint/no-import-type-side-effects': 'warn',
     // Justification: Common sentinel values that are universally understood
     '@typescript-eslint/no-magic-numbers': ['warn', {
       ignore: [-1, 0, 1, 100],
@@ -53,6 +43,24 @@ const tsRuleOverrides: Linter.Config = {
   },
 };
 
+/** Rule overrides that require TypeScript syntax (export type, : ReturnType, import type). */
+const tsOnlyRuleOverrides: Linter.Config = {
+  files: [...tsOnlyFiles],
+  rules: {
+    // Justification: Enforces export type for type-only re-exports
+    '@typescript-eslint/consistent-type-exports': 'warn',
+    // Justification: Stable return types; catches accidental API changes
+    '@typescript-eslint/explicit-function-return-type': ['warn', {
+      allowDirectConstAssertionInArrowFunctions: true,
+      allowExpressions: true,
+      allowHigherOrderFunctions: true,
+      allowTypedFunctionExpressions: true,
+    }],
+    // Justification: Prevents runtime imports for type-only specifiers
+    '@typescript-eslint/no-import-type-side-effects': 'warn',
+  },
+};
+
 /** Resolves TypeScript parser options from the shared config options. */
 export const resolveParserOptions = (
   options: ResolvedOptions,
@@ -67,10 +75,11 @@ const plugin: PluginFactory = options => [
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   { languageOptions: { parserOptions: resolveParserOptions(options) } },
-  tsRuleOverrides,
+  scriptRuleOverrides,
+  tsOnlyRuleOverrides,
   {
     files: ['**/*'],
-    ignores: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
+    ignores: [...scriptFiles],
     ...tseslint.configs.disableTypeChecked,
   },
 ];

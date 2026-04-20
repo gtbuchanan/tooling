@@ -1,12 +1,13 @@
 import type { Linter } from 'eslint';
 import importPlugin from 'eslint-plugin-import-x';
+import { scriptFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 // --- import-x (ordering only) ---
 
 /** Import ordering rules via eslint-plugin-import-x. */
 const importConfig: Linter.Config = {
-  files: ['**/*.ts'],
+  files: [...scriptFiles],
   plugins: { 'import-x': importPlugin },
   rules: {
     // Justification: Case-insensitive alphabetical grouping by import type

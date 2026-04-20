@@ -13,6 +13,7 @@ import {
   findConfigFile,
   resolveProjectDirs,
 } from './configure.ts';
+import { scriptFileExtensions } from './files.ts';
 
 /** Options for combined e2e configuration ({@link configureEndToEnd}). */
 export interface VitestEndToEndConfigureOptions extends VitestConfigureOptions {
@@ -32,7 +33,9 @@ export interface VitestEndToEndConfigureGlobalOptions extends VitestConfigureGlo
   readonly testTimeout?: number;
 }
 
-const e2eTestInclude = ['e2e/**/*.test.ts'] as const;
+const e2eTestInclude = scriptFileExtensions.map(
+  ext => `e2e/**/*.test.${ext}`,
+);
 
 const e2eConfigPrefix = 'vitest.config.e2e';
 

@@ -152,7 +152,8 @@
         "src/**",
         "test/**",
         "scripts/**",
-        "vitest.config.ts"
+        "vitest.config.*",
+        "!vitest.config.e2e.*"
       ],
       "outputs": [
         "dist/coverage/vitest/fast/**",
@@ -171,7 +172,8 @@
         "src/**",
         "test/**",
         "scripts/**",
-        "vitest.config.ts"
+        "vitest.config.*",
+        "!vitest.config.e2e.*"
       ],
       "outputs": [
         "dist/coverage/vitest/slow/**",
@@ -188,10 +190,26 @@
       "inputs": [
         "$TURBO_ROOT$/tsconfig.base.json",
         "bin/**",
+        "scripts/**",
         "src/**",
         "test/**",
         "e2e/**",
-        "scripts/**",
+        "*.cjs",
+        "*.cts",
+        "*.js",
+        "*.jsx",
+        "*.mjs",
+        "*.mts",
+        "*.ts",
+        "*.tsx",
+        ".*.cjs",
+        ".*.cts",
+        ".*.js",
+        ".*.jsx",
+        ".*.mjs",
+        ".*.mts",
+        ".*.ts",
+        ".*.tsx",
         "tsconfig.json",
         "tsconfig.*.json"
       ],

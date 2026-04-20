@@ -1,17 +1,16 @@
 import { defineConfig } from 'eslint/config';
 import nodePlugin from 'eslint-plugin-n';
 import tseslint from 'typescript-eslint';
+import { scriptFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 import { resolveParserOptions } from './typescript.ts';
 
 // --- Node.js ---
 
-const nodeFiles = ['**/*.ts', '**/*.mts', '**/*.cts'];
-
 const plugin: PluginFactory = options => [
   ...defineConfig({
     extends: [nodePlugin.configs['flat/recommended-module']],
-    files: nodeFiles,
+    files: [...scriptFiles],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: resolveParserOptions(options),

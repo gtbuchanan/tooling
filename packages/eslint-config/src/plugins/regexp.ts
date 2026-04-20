@@ -1,4 +1,5 @@
 import regexpPlugin from 'eslint-plugin-regexp';
+import { scriptFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 // --- Regexp ---
@@ -7,7 +8,7 @@ import type { PluginFactory } from '../index.ts';
 const plugin: PluginFactory = () => [
   {
     ...regexpPlugin.configs['flat/recommended'],
-    files: ['**/*.ts'],
+    files: [...scriptFiles],
   },
 ];
 

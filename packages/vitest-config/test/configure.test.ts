@@ -11,6 +11,11 @@ import {
   resolveCoverageInclude,
 } from '#src/index.js';
 
+const allScriptExtensions = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx'];
+const expectedUnitTestInclude = allScriptExtensions.map(
+  ext => `test/**/*.test.${ext}`,
+);
+
 const packageName = '@gtbuchanan/vitest-config';
 
 describe(configure, () => {
@@ -226,7 +231,7 @@ describe(resolveCoverageInclude, () => {
   it('respects custom coverage dirs', ({ expect }) => {
     const result = resolveCoverageInclude(undefined, ['src']);
 
-    expect(result).toStrictEqual(['src/**/*.{cjs,cts,js,mjs,mts,ts,tsx}']);
+    expect(result).toStrictEqual(['src/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}']);
   });
 
   it('includes all default dirs', ({ expect }) => {
@@ -256,7 +261,7 @@ describe(buildWorkspaceEntry, () => {
   it('preserves includes from configure function', ({ expect }) => {
     const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
 
-    expect(entry.test?.include).toStrictEqual(['test/**/*.test.ts']);
+    expect(entry.test?.include).toStrictEqual(expectedUnitTestInclude);
   });
 
   it('preserves excludes from configure function', ({ expect }) => {
@@ -290,7 +295,7 @@ describe(configurePackage, () => {
   it('includes test patterns', ({ expect }) => {
     const config = configurePackage();
 
-    expect(config.test?.include).toStrictEqual(['test/**/*.test.ts']);
+    expect(config.test?.include).toStrictEqual(expectedUnitTestInclude);
   });
 
   it('includes global settings (coverage, setupFiles)', ({ expect }) => {

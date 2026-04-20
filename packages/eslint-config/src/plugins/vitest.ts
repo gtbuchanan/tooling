@@ -1,10 +1,15 @@
 import vitestPlugin from '@vitest/eslint-plugin';
+import { scriptFileExtensions } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 // --- Vitest ---
 
+const testDirs = ['**/test', '**/e2e'] as const;
+
 /** File patterns for test files. */
-const testFiles = ['**/test/**/*.ts', '**/e2e/**/*.ts'];
+const testFiles = testDirs.flatMap(
+  dir => scriptFileExtensions.map(ext => `${dir}/**/*.${ext}`),
+);
 
 /** Vitest plugin configs with rule overrides for test files. */
 const plugin: PluginFactory = () => [
@@ -50,7 +55,7 @@ const plugin: PluginFactory = () => [
     },
   },
   {
-    files: ['**/e2e/**/*.ts'],
+    files: scriptFileExtensions.map(ext => `**/e2e/**/*.${ext}`),
     rules: {
       // Justification: E2e tests need beforeAll/afterAll for fixture setup/teardown
       'vitest/no-hooks': 'off',

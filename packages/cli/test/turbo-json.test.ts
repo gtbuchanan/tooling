@@ -91,6 +91,19 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks).toHaveProperty('typecheck:ts');
   });
 
+  it('typecheck:ts inputs include root-level script files', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasTypeScript: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+    const inputs = result.tasks['typecheck:ts']?.inputs ?? [];
+
+    expect(inputs).toStrictEqual(expect.arrayContaining([
+      '*.ts', '*.mjs', '.*.ts', '.*.mjs',
+    ]));
+  });
+
   it('excludes typecheck:ts when no package has TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([makeCapabilities()]);
 
@@ -283,7 +296,7 @@ describe.concurrent(generateTurboJson, () => {
     expect(inputs).not.toContain('scripts/**');
   });
 
-  it('test:vitest:fast inputs use explicit vitest config filename', ({ expect }) => {
+  it('test:vitest:fast inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ hasTest: true, hasVitest: true }),
     ]);
@@ -291,11 +304,12 @@ describe.concurrent(generateTurboJson, () => {
     const result = generateTurboJson(discovery);
     const inputs = result.tasks['test:vitest:fast']?.inputs ?? [];
 
-    expect(inputs).toContain('vitest.config.ts');
-    expect(inputs).not.toContain('vitest.config.*');
+    expect(inputs).toStrictEqual(expect.arrayContaining([
+      'vitest.config.*', '!vitest.config.e2e.*',
+    ]));
   });
 
-  it('test:vitest:slow inputs use explicit vitest config filename', ({ expect }) => {
+  it('test:vitest:slow inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ hasTest: true, hasVitest: true }),
     ]);
@@ -303,7 +317,8 @@ describe.concurrent(generateTurboJson, () => {
     const result = generateTurboJson(discovery);
     const inputs = result.tasks['test:vitest:slow']?.inputs ?? [];
 
-    expect(inputs).toContain('vitest.config.ts');
-    expect(inputs).not.toContain('vitest.config.*');
+    expect(inputs).toStrictEqual(expect.arrayContaining([
+      'vitest.config.*', '!vitest.config.e2e.*',
+    ]));
   });
 });

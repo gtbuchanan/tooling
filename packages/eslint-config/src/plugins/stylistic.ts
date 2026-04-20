@@ -1,16 +1,17 @@
 import stylistic from '@stylistic/eslint-plugin';
+import { scriptFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 // --- Stylistic ---
 
-/** Stylistic formatting rules for TypeScript files. */
+/** Stylistic formatting rules for script files. */
 const plugin: PluginFactory = () => [
   {
     ...stylistic.configs.customize({ braceStyle: '1tbs', semi: true, severity: 'warn' }),
-    files: ['**/*.ts'],
+    files: [...scriptFiles],
   },
   {
-    files: ['**/*.ts'],
+    files: [...scriptFiles],
     rules: {
       /*
        * Justification: 100 is a compromise between full-screen monitors and

@@ -1,14 +1,14 @@
 import unicornPlugin from 'eslint-plugin-unicorn';
+import { scriptFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 // --- Unicorn ---
 
-/** Unicorn recommended preset (scoped to TS) with rule overrides. */
+/** Unicorn recommended preset with rule overrides (scoped to script files). */
 const plugin: PluginFactory = () => [
-  // Unicorn recommended (scoped to TS — unicorn crashes on JSON/YAML parsers)
-  { ...unicornPlugin.configs.recommended, files: ['**/*.ts'] },
+  { ...unicornPlugin.configs.recommended, files: [...scriptFiles] },
   {
-    files: ['**/*.ts'],
+    files: [...scriptFiles],
     rules: {
       // Justification: Cannot distinguish intentional from accidental arity matches
       'unicorn/no-array-callback-reference': 'off',
