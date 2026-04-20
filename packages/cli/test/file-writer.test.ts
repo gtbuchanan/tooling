@@ -245,7 +245,7 @@ describe(mergeCodecovSections, () => {
     mergeCodecovSections(filePath, sections);
 
     const content = readFileSync(filePath, 'utf8');
-    const keys = [...content.matchAll(/^(?<key>\w[\w_]*):/gmv)]
+    const keys = [...content.matchAll(/^(?<key>\w+):/gmv)]
       .map(match => match.groups?.['key'] ?? '');
 
     expect(keys).toStrictEqual([...keys].toSorted((left, right) => left.localeCompare(right)));

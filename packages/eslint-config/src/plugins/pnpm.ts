@@ -3,7 +3,6 @@ import type { PluginFactory } from '../index.ts';
 
 // --- pnpm ---
 
-/** Resolves pnpm plugin configs when enabled. */
 const plugin: PluginFactory = (options) => {
   if (!options.pnpm) {
     return [];

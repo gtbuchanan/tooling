@@ -79,8 +79,8 @@ export const mergePackageScripts = (
 
   /*
    * Write back to the raw parsed object instead of the valibot output.
-   * Valibot reorders keys (schema-defined first, rest after), but oxfmt
-   * expects conventional package.json key order to be preserved.
+   * Valibot reorders keys (schema-defined first, rest after), but
+   * Prettier expects conventional package.json key order to be preserved.
    */
   raw['scripts'] = sortKeysDeep(merged);
   writeJsonFile(path, raw);

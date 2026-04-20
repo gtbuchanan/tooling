@@ -63,16 +63,16 @@ export const resolveParserOptions = (
   }),
 });
 
-/** Non-TS file patterns that need type-checked rules disabled. */
-const nonTsFiles = ['**/*.json', '**/*.jsonc', '**/*.yaml', '**/*.yml'];
-
-/** TypeScript plugin factory (presets + core rules + overrides + disableTypeChecked). */
 const plugin: PluginFactory = options => [
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   { languageOptions: { parserOptions: resolveParserOptions(options) } },
   tsRuleOverrides,
-  { files: nonTsFiles, ...tseslint.configs.disableTypeChecked },
+  {
+    files: ['**/*'],
+    ignores: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
+    ...tseslint.configs.disableTypeChecked,
+  },
 ];
 
 export default plugin;

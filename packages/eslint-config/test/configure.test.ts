@@ -88,4 +88,21 @@ describe(configure, () => {
 
     expect(ignoresConfig?.ignores).toStrictEqual(['vendor/**']);
   });
+
+  it('includes format/prettier for all supported file types', async ({ expect }) => {
+    const configs = await configure({ onlyWarn: false });
+
+    const formatConfigs = configs.filter(
+      cfg => cfg.rules?.['format/prettier'] !== undefined,
+    );
+    const targetedFiles = formatConfigs.flatMap(
+      cfg => cfg.files ?? [],
+    );
+
+    expect(targetedFiles).toStrictEqual(expect.arrayContaining([
+      '**/*.css', '**/*.json', '**/*.md',
+      '**/*.scss', '**/*.xml', '**/*.yaml',
+      '**/package.json',
+    ]));
+  });
 });

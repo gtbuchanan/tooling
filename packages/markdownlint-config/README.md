@@ -1,7 +1,7 @@
 # @gtbuchanan/markdownlint-config
 
 Shared markdownlint configuration. Extends `markdownlint/style/prettier` to
-disable rules that conflict with Prettier-style formatters (e.g. oxfmt).
+disable rules that conflict with Prettier formatting (via `eslint-plugin-format`).
 
 ## Install
 

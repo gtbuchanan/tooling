@@ -9,13 +9,6 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "publishConfig": {
-    "directory": "dist/source",
-    "exports": {
-      ".": "./src/index.js"
-    },
-    "linkDirectory": false
-  },
   "scripts": {
     "compile:ts": "pnpm run gtb compile:ts",
     "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload",
@@ -31,15 +24,24 @@
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@eslint/json": "catalog:",
+    "@prettier/plugin-xml": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "@vitest/eslint-plugin": "catalog:",
+    "eslint-plugin-format": "catalog:",
     "eslint-plugin-import-x": "catalog:",
+    "eslint-plugin-jsdoc": "catalog:",
     "eslint-plugin-n": "catalog:",
     "eslint-plugin-only-warn": "catalog:",
     "eslint-plugin-pnpm": "catalog:",
     "eslint-plugin-promise": "catalog:",
+    "eslint-plugin-regexp": "catalog:",
     "eslint-plugin-unicorn": "catalog:",
     "eslint-plugin-yml": "catalog:",
+    "prettier": "catalog:",
+    "prettier-plugin-css-order": "catalog:",
+    "prettier-plugin-multiline-arrays": "catalog:",
+    "prettier-plugin-packagejson": "catalog:",
+    "prettier-plugin-sort-json": "catalog:",
     "typescript-eslint": "catalog:"
   },
   "devDependencies": {
@@ -51,5 +53,12 @@
   },
   "engines": {
     "node": ">=22.17"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "exports": {
+      ".": "./src/index.js"
+    },
+    "linkDirectory": false
   }
 }

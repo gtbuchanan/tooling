@@ -13,17 +13,6 @@
     "./setup": "./src/setup.ts",
     "./console-fail-test": "./src/console-fail-test.ts"
   },
-  "publishConfig": {
-    "directory": "dist/source",
-    "exports": {
-      ".": "./src/index.js",
-      "./configure": "./src/configure.js",
-      "./configure-e2e": "./src/configure-e2e.js",
-      "./setup": "./src/setup.js",
-      "./console-fail-test": "./src/console-fail-test.js"
-    },
-    "linkDirectory": false
-  },
   "scripts": {
     "compile:ts": "pnpm run gtb compile:ts",
     "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload",
@@ -48,5 +37,16 @@
   },
   "engines": {
     "node": ">=22.17"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "exports": {
+      ".": "./src/index.js",
+      "./configure": "./src/configure.js",
+      "./configure-e2e": "./src/configure-e2e.js",
+      "./setup": "./src/setup.js",
+      "./console-fail-test": "./src/console-fail-test.js"
+    },
+    "linkDirectory": false
   }
 }

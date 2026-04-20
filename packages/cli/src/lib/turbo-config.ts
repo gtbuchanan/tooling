@@ -65,7 +65,10 @@ export interface ToolFlags {
   readonly hasVitest: boolean;
 }
 
-/** @internal Exported for script generation. */
+/**
+ * Exported for script generation.
+ * @internal
+ */
 export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasEslint = discovery.packages.some(pkg => pkg.hasEslint);
   const hasLint = hasEslint;

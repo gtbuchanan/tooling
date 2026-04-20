@@ -64,7 +64,6 @@ const browserConfigs = (
   },
 ];
 
-/** Core ESLint rules plugin factory. */
 const plugin: PluginFactory = (options) => {
   const unicodeFlag = options.target === 'server' ? 'v' : 'u';
 

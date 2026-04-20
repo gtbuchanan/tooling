@@ -3,5 +3,7 @@
   "compilerOptions": {
     "rewriteRelativeImportExtensions": true
   },
-  "extends": ["@gtbuchanan/tsconfig/node.json"]
+  "extends": [
+    "@gtbuchanan/tsconfig/node.json"
+  ]
 }

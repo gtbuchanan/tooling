@@ -2,11 +2,17 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "allowJs": true,
-    "lib": ["ES2024"],
+    "lib": [
+      "ES2024"
+    ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "ES2024",
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "extends": ["@tsconfig/strictest/tsconfig.json"]
+  "extends": [
+    "@tsconfig/strictest/tsconfig.json"
+  ]
 }
