@@ -53,7 +53,7 @@ const createFixture = () => {
     depsPackages: ['typescript'],
     hookPackages: ['eslint', 'jiti'],
     packageName: '@gtbuchanan/eslint-config',
-    workspaceDeps: [],
+    workspaceDeps: ['@gtbuchanan/eslint-plugin-markdownlint'],
   });
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
@@ -252,6 +252,67 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result.readFile('style.css')).toBe(
       '.box {\n  color: red;\n  display: flex;\n}\n',
     );
+  });
+
+  it('detects markdownlint violations in markdown files', async ({ fixture, expect }) => {
+    const result = await fixture.run({
+      files: { 'doc.md': '# Title\n\n# Title\n' },
+    });
+
+    expect(result.stdout).toContain('markdownlint/lint');
+    expect(result.stdout).toMatch(/MD024/v);
+  });
+
+  it('suppresses markdownlint rules disabled by prettier style', async ({ fixture, expect }) => {
+    // heading-style (md003) is disabled — mixed ATX/setext should pass
+    const result = await fixture.run({
+      files: { 'doc.md': '# ATX heading\n\nSetext heading\n---\n' },
+    });
+
+    expect(result.stdout).not.toMatch(/MD003/v);
+  });
+
+  it('runs both Prettier formatting and markdownlint on markdown', async ({ fixture, expect }) => {
+    /*
+     * Prettier (format/prettier) and markdownlint (markdownlint/lint)
+     * both target *.md. The markdownlint parser must override
+     * format.parserPlain so both rule sets work on the same file.
+     * Misformatted table triggers Prettier, duplicate heading triggers MD024.
+     */
+    const result = await fixture.run({
+      files: {
+        'doc.md': '# Title\n\n| a|b |\n|---|---|\n| 1|2 |\n\n# Title\n',
+      },
+    });
+
+    expect(result.stdout).toContain('format/prettier');
+    expect(result.stdout).toContain('markdownlint/lint');
+  });
+
+  it('applies markdownlint autofix via --fix', async ({ fixture, expect }) => {
+    // MD034: no-bare-urls (fixable, not disabled by prettier conflicts)
+    const result = await fixture.run({
+      config: createRequireOnlyWarnConfig,
+      files: { 'doc.md': '# Title\n\nVisit https://example.com today.\n' },
+      flags: ['--fix'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.readFile('doc.md')).toBe(
+      '# Title\n\nVisit <https://example.com> today.\n',
+    );
+  });
+
+  it('ignores .changeset/ files for markdownlint', async ({ fixture, expect }) => {
+    // Changeset file without a heading — would fail MD041 if not ignored
+    const result = await fixture.run({
+      files: {
+        '.changeset/test-changeset.md': 'No heading here\n',
+        'doc.md': '# Valid\n\nContent.\n',
+      },
+    });
+
+    expect(result.stdout).not.toMatch(/MD041/v);
   });
 
   it('formats XML with whitespace-insensitive mode', async ({ fixture, expect }) => {

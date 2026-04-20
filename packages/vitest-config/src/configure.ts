@@ -218,6 +218,7 @@ export const buildProjectConfig = (
 
 interface GlobalConfigSpec {
   readonly coverageInclude?: readonly string[];
+  readonly hookTimeout?: number;
   readonly reportsDirectory?: string;
   readonly tags?: readonly TestTagDefinition[];
   readonly testTimeout?: number;
@@ -254,6 +255,9 @@ export const buildGlobalConfig = (
       reporters: ['default', 'blob'],
       setupFiles: resolveSetupFiles(setupOptions),
       ...(spec.tags && { tags: [...spec.tags] }),
+      ...(spec.hookTimeout && {
+        hookTimeout: spec.hookTimeout,
+      }),
       ...(spec.testTimeout && {
         testTimeout: spec.testTimeout,
       }),

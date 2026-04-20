@@ -37,7 +37,6 @@
     "eslint": "catalog:",
     "find-up-simple": "catalog:",
     "jiti": "catalog:",
-    "markdownlint-cli2": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
