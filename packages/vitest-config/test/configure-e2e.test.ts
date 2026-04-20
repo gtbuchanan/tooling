@@ -7,6 +7,11 @@ import {
 } from '#src/configure-e2e.js';
 import { excludeDefault } from '#src/configure.js';
 
+const allScriptExtensions = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx'];
+const expectedE2eTestInclude = allScriptExtensions.map(
+  ext => `e2e/**/*.test.${ext}`,
+);
+
 const packageName = '@gtbuchanan/vitest-config';
 
 describe(configureEndToEndProject, () => {
@@ -19,7 +24,7 @@ describe(configureEndToEndProject, () => {
   it('includes e2e test pattern', ({ expect }) => {
     const config = configureEndToEndProject();
 
-    expect(config.test?.include).toStrictEqual(['e2e/**/*.test.ts']);
+    expect(config.test?.include).toStrictEqual(expectedE2eTestInclude);
   });
 
   it('excludes defaults', ({ expect }) => {
@@ -116,7 +121,7 @@ describe(configureEndToEndPackage, () => {
   it('includes e2e test patterns', ({ expect }) => {
     const config = configureEndToEndPackage();
 
-    expect(config.test?.include).toStrictEqual(['e2e/**/*.test.ts']);
+    expect(config.test?.include).toStrictEqual(expectedE2eTestInclude);
   });
 
   it('includes global settings (setupFiles, mockReset)', ({ expect }) => {

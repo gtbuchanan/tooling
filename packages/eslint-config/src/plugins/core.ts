@@ -1,11 +1,12 @@
 import type { Linter } from 'eslint';
+import { scriptFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 // --- Core ESLint rules not covered by presets ---
 
 /** Core ESLint rules not covered by presets. */
 const coreRuleConfig: Linter.Config = {
-  files: ['**/*.ts'],
+  files: [...scriptFiles],
   rules: {
     // Justification: Methods that don't use this should be static or extracted
     'class-methods-use-this': 'warn',
@@ -48,7 +49,7 @@ const browserConfigs = (
   entryPoints: readonly string[],
 ): Linter.Config[] => [
   {
-    files: ['**/*.ts'],
+    files: [...scriptFiles],
     rules: {
       // Justification: Browser code should use a logger, not console
       'no-alert': 'warn',
@@ -70,7 +71,7 @@ const plugin: PluginFactory = (options) => {
   return [
     coreRuleConfig,
     {
-      files: ['**/*.ts'],
+      files: [...scriptFiles],
       rules: {
         // Justification: Prevents subtle unicode bugs; /v for server, /u for browser compat
         'require-unicode-regexp': ['warn', { requireFlag: unicodeFlag }],

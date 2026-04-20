@@ -1,5 +1,6 @@
 import type { Linter } from 'eslint';
 import jsdoc from 'eslint-plugin-jsdoc';
+import { tsOnlyFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 // --- JSDoc ---
@@ -14,7 +15,7 @@ const tsdocConfig = jsdoc.configs['flat/recommended-tsdoc'] as unknown as Linter
 
 const plugin: PluginFactory = () => [
   {
-    files: ['**/*.ts'],
+    files: [...tsOnlyFiles],
     plugins: tsdocConfig.plugins ?? {},
     rules: {
       ...tsdocConfig.rules,

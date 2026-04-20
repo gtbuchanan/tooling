@@ -3,13 +3,22 @@
 /// <reference path="./eslint-plugin-promise.d.ts" />
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
+import { scriptFileExtensions } from './files.ts';
 import { plugins } from './plugins/index.ts';
 
+export {
+  scriptFileExtensions,
+  scriptFiles,
+  tsOnlyExtensions,
+  tsOnlyFiles,
+} from './files.ts';
+
+const entryPointDirs = ['**/bin', '**/scripts'] as const;
+
 /** Default file patterns for entry points (bin and scripts directories). */
-export const defaultEntryPoints: readonly string[] = [
-  '**/bin/**/*.ts',
-  '**/scripts/**/*.ts',
-];
+export const defaultEntryPoints: readonly string[] = entryPointDirs.flatMap(
+  dir => scriptFileExtensions.map(ext => `${dir}/**/*.${ext}`),
+);
 
 /** Options for the shared ESLint configuration. */
 export interface ESLintConfigureOptions {

@@ -4,8 +4,8 @@ import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
 import { readJsonFile } from './file-writer.ts';
 
-/** Directories included in tsconfig.json for type-checking. */
-const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*.config.*'] as const;
+/** Directories and file patterns included in tsconfig.json for type-checking. */
+export const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*', '.*'] as const;
 
 /** Directories included in tsconfig.build.json for compilation. */
 export const buildInclude = ['bin', 'src'] as const;

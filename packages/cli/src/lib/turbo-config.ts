@@ -4,6 +4,7 @@ import {
   typecheckTs,
 } from '../commands/leaf/index.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import { typeCheckInclude } from './tsconfig-gen.ts';
 import { aggregateTasks } from './turbo-aggregates.ts';
 
 /** Turbo-only aggregate task names (no CLI handler). */
@@ -98,11 +99,23 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
 /** Creates a topological (cross-package) task dependency. */
 const topo = (task: string): string => `^${task}`;
 
+/** Script file extensions for turbo input globs. Sorted alphabetically. */
+const scriptExts = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx'] as const;
+
 const isGlob = (pattern: string): boolean => /[*?\{]/v.test(pattern);
 
-/** Converts a tsconfig `include` entry to a turbo input glob. */
-const toTurboGlob = (include: string): string =>
-  isGlob(include) ? include : `${include}/**`;
+/**
+ * Converts a tsconfig `include` entry to turbo input glob(s).
+ * Directories become recursive (`src` → `src/**`).
+ * Root-level globs (`*`, `.*`) expand to per-extension patterns
+ * since turbo globs are extension-agnostic unlike tsconfig.
+ */
+const toTurboGlobs = (include: string): readonly string[] => {
+  if (include === '*') return scriptExts.map(ext => `*.${ext}`);
+  if (include === '.*') return scriptExts.map(ext => `.*.${ext}`);
+  if (isGlob(include)) return [include];
+  return [`${include}/**`];
+};
 
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
@@ -112,7 +125,7 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
       dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json',
-        'bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**',
+        ...typeCheckInclude.flatMap(toTurboGlobs),
         'tsconfig.json', 'tsconfig.*.json',
       ],
       outputs: [],
@@ -128,7 +141,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
       dependsOn: [topo(compileTs.name), ...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
-        ...flags.compileIncludes.map(toTurboGlob), 'tsconfig.build.json',
+        ...flags.compileIncludes.flatMap(toTurboGlobs), 'tsconfig.build.json',
       ],
       outputs: ['dist/source/**'],
     },
@@ -172,7 +185,10 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
  * vitest configs are executable TypeScript, not statically parseable.
  * Broadening beyond test directories is intentional: tests import source.
  */
-const testInputs = ['bin/**', 'src/**', 'test/**', 'scripts/**', 'vitest.config.ts'];
+const testInputs = [
+  'bin/**', 'src/**', 'test/**', 'scripts/**',
+  'vitest.config.*', '!vitest.config.e2e.*',
+];
 
 const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
