@@ -78,8 +78,8 @@ const it = base.extend<{ fixture: Fixture }>({
 });
 
 describe('vitest CLI integration', () => {
-  it('enforces hasAssertions via setup file', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('enforces hasAssertions via setup file', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       files: {
         'no-assert.test.ts': [
           'import { it } from "vitest";',
@@ -92,8 +92,8 @@ describe('vitest CLI integration', () => {
     expect(stdout).toMatch(/expected .*? assertion/v);
   });
 
-  it('enforces console-fail-test via setup file', ({ fixture, expect }) => {
-    const { exitCode, stderr, stdout } = fixture.run({
+  it('enforces console-fail-test via setup file', async ({ fixture, expect }) => {
+    const { exitCode, stderr, stdout } = await fixture.run({
       files: {
         'console.test.ts': [
           'import { it } from "vitest";',
@@ -109,8 +109,8 @@ describe('vitest CLI integration', () => {
     expect(stdout + stderr).toMatch(/console method/v);
   });
 
-  it('resolves #src/ subpath imports', ({ fixture, expect }) => {
-    const { exitCode } = fixture.run({
+  it('resolves #src/ subpath imports', async ({ fixture, expect }) => {
+    const { exitCode } = await fixture.run({
       files: {
         'alias.test.ts': [
           'import { it } from "vitest";',
@@ -127,7 +127,7 @@ describe('vitest CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('uses v8 coverage provider', ({ fixture, expect }) => {
+  it('uses v8 coverage provider', async ({ fixture, expect }) => {
     writeFileSync(
       path.join(fixture.projectDir, 'src/add.ts'),
       'export const add = (a: number, b: number) => a + b;\n',
@@ -143,7 +143,7 @@ describe('vitest CLI integration', () => {
       ].join('\n'),
     );
 
-    const { exitCode } = runCommand(
+    const { exitCode } = await runCommand(
       fixture.vitest,
       ['run', '--reporter=verbose', '--coverage', 'cov.test.ts'],
       { cwd: fixture.projectDir, env: fixture.env },
@@ -153,7 +153,7 @@ describe('vitest CLI integration', () => {
     expect(existsSync(path.join(fixture.projectDir, 'dist/coverage'))).toBe(true);
   });
 
-  it('writes repo-relative lcov paths for package coverage', ({ fixture, expect }) => {
+  it('writes repo-relative lcov paths for package coverage', async ({ fixture, expect }) => {
     const appDir = path.join(fixture.projectDir, 'packages', 'app');
     mkdirSync(path.join(appDir, 'src'), { recursive: true });
     mkdirSync(path.join(appDir, 'test'), { recursive: true });
@@ -184,11 +184,11 @@ describe('vitest CLI integration', () => {
       ].join('\n'),
     );
 
-    const initResult = runCommand('git', ['init'], { cwd: fixture.projectDir });
+    const initResult = await runCommand('git', ['init'], { cwd: fixture.projectDir });
 
     expect(initResult).toMatchObject({ exitCode: 0 });
 
-    const { exitCode } = runCommand(
+    const { exitCode } = await runCommand(
       fixture.vitest,
       ['run', '--reporter=verbose', '--coverage', 'test/cov.test.ts'],
       {
@@ -213,8 +213,8 @@ describe('vitest CLI integration', () => {
     expect(normalizedLcov).toContain('SF:packages/app/src/add.ts');
   });
 
-  it('auto-resets mocks between tests (mockReset: true)', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('auto-resets mocks between tests (mockReset: true)', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       files: {
         'mock-reset.test.ts': [
           'import { vi, it, describe } from "vitest";',
@@ -239,8 +239,8 @@ describe('vitest CLI integration', () => {
     expect(stdout).toContain('2 passed');
   });
 
-  it('auto-unstubs env vars between tests (unstubEnvs: true)', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('auto-unstubs env vars between tests (unstubEnvs: true)', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       files: {
         'unstub-envs.test.ts': [
           'import { vi, it, describe } from "vitest";',

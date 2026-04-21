@@ -49,7 +49,7 @@ describe('tsconfig flattening', () => {
     });
   });
 
-  it('works without @tsconfig/strictest installed', ({ fixture, expect }) => {
+  it('works without @tsconfig/strictest installed', async ({ fixture, expect }) => {
     fixture.writeFile(
       'tsconfig.json',
       JSON.stringify({
@@ -62,7 +62,7 @@ describe('tsconfig flattening', () => {
       'export const add = (a: number, b: number): number => a + b;\n',
     );
 
-    const result = fixture.run('tsc', ['--noEmit']);
+    const result = await fixture.run('tsc', ['--noEmit']);
 
     expect(result).toMatchObject({ exitCode: 0 });
   });

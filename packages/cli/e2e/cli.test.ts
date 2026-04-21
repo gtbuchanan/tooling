@@ -29,8 +29,8 @@ const writeJson = (dir: string, name: string, data: unknown): void => {
    False positive with extendWithFixture indirection:
    https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe.concurrent('gtb CLI', () => {
-  it('prints help with --help', ({ fixture, expect }) => {
-    const result = fixture.run('gtb', ['--help']);
+  it('prints help with --help', async ({ fixture, expect }) => {
+    const result = await fixture.run('gtb', ['--help']);
 
     expect(result).toMatchObject({ exitCode: 0 });
     expect(result.stdout).toContain('Usage: gtb');
@@ -42,15 +42,15 @@ describe.concurrent('gtb CLI', () => {
     expect(result.stdout).toContain('turbo:check');
   });
 
-  it('prints help with no arguments', ({ fixture, expect }) => {
-    const result = fixture.run('gtb', []);
+  it('prints help with no arguments', async ({ fixture, expect }) => {
+    const result = await fixture.run('gtb', []);
 
     expect(result).toMatchObject({ exitCode: 0 });
     expect(result.stdout).toContain('Usage: gtb');
   });
 
-  it('exits non-zero for unknown command', ({ fixture, expect }) => {
-    const result = fixture.run('gtb', ['nonexistent']);
+  it('exits non-zero for unknown command', async ({ fixture, expect }) => {
+    const result = await fixture.run('gtb', ['nonexistent']);
 
     expect(result.exitCode).not.toBe(0);
   });
@@ -61,7 +61,7 @@ describe.concurrent('gtb CLI', () => {
    False positive when callback omits custom fixture properties:
    https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
 describe.concurrent('gtb pack:npm', () => {
-  it('produces tarball for publishable package', ({ expect }) => {
+  it('produces tarball for publishable package', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
       name: '@test/my-lib',
@@ -69,7 +69,7 @@ describe.concurrent('gtb pack:npm', () => {
       version: '1.0.0',
     });
 
-    const result = fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 
@@ -81,7 +81,7 @@ describe.concurrent('gtb pack:npm', () => {
     expect(tarballs[0]).toMatch(/^test-my-lib-.*\.tgz$/v);
   });
 
-  it('skips private package', ({ expect }) => {
+  it('skips private package', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
       name: '@test/internal',
@@ -90,7 +90,7 @@ describe.concurrent('gtb pack:npm', () => {
       version: '1.0.0',
     });
 
-    const result = fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
     expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
@@ -98,14 +98,14 @@ describe.concurrent('gtb pack:npm', () => {
     );
   });
 
-  it('skips package without publishConfig.directory', ({ expect }) => {
+  it('skips package without publishConfig.directory', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
       name: '@test/my-lib',
       version: '1.0.0',
     });
 
-    const result = fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
     expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
@@ -113,7 +113,7 @@ describe.concurrent('gtb pack:npm', () => {
     );
   });
 
-  it('generates dist/source manifests before packing', ({ expect }) => {
+  it('generates dist/source manifests before packing', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
       bugs: 'https://github.com/test/repo/issues',
@@ -134,7 +134,7 @@ describe.concurrent('gtb pack:npm', () => {
       version: '1.0.0',
     });
 
-    const result = fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 
@@ -158,7 +158,7 @@ describe.concurrent('gtb pack:npm', () => {
     expect(output).not.toHaveProperty('publishConfig');
   });
 
-  it('cleans dist/packages/npm before packing', ({ expect }) => {
+  it('cleans dist/packages/npm before packing', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
       name: '@test/my-lib',
@@ -169,7 +169,7 @@ describe.concurrent('gtb pack:npm', () => {
     mkdirSync(distDir, { recursive: true });
     writeFileSync(path.join(distDir, 'stale-0.0.0.tgz'), '');
 
-    const result = fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 

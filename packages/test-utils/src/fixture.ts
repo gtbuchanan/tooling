@@ -1,4 +1,4 @@
-import type { SpawnSyncOptions } from 'node:child_process';
+import type { SpawnOptions, SpawnSyncOptions } from 'node:child_process';
 import {
   globSync, mkdirSync, mkdtempSync, readFileSync,
   readdirSync, rmSync, writeFileSync,
@@ -94,7 +94,7 @@ const locateTarballFrom = (
   return path.join(match.dir, match.name);
 };
 
-/** Result of a synchronous child process execution. */
+/** Result of a child process execution. */
 export interface CommandResult {
   readonly exitCode: number;
   readonly stderr: string;
@@ -127,26 +127,36 @@ export const createGitEnv = (identity?: { email: string; name: string }): GitEnv
   }),
 });
 
-/** Spawns a command synchronously, captures stdout/stderr, and returns the result. */
+/** Spawns a command, captures stdout/stderr, and returns the result. */
 export const runCommand = (
   command: string,
   args: readonly string[],
-  options: SpawnSyncOptions,
-): CommandResult => {
-  const result = crossSpawn.sync(command, [...args], {
+  options: SpawnOptions,
+): Promise<CommandResult> => new Promise((resolve, reject) => {
+  const child = crossSpawn(command, args, {
     ...options,
-    encoding: 'utf8',
     stdio: 'pipe',
   });
-  if (result.error) {
-    throw result.error;
-  }
-  return {
-    exitCode: result.status ?? 1,
-    stderr: result.stderr,
-    stdout: result.stdout,
-  };
-};
+
+  let stdout = '';
+  let stderr = '';
+
+  child.stdout?.setEncoding('utf8').on('data', (chunk: string) => {
+    stdout += chunk;
+  });
+  child.stderr?.setEncoding('utf8').on('data', (chunk: string) => {
+    stderr += chunk;
+  });
+
+  child.on('error', reject);
+  child.on('close', (code) => {
+    resolve({
+      exitCode: code ?? 1,
+      stderr,
+      stdout,
+    });
+  });
+});
 
 // --- Isolated fixture (split hook/deps/project dirs via NODE_PATH) ---
 
@@ -242,7 +252,7 @@ interface ProjectFixtureOptions {
  */
 export interface ProjectFixture {
   readonly projectDir: string;
-  readonly run: (command: string, args: readonly string[]) => CommandResult;
+  readonly run: (command: string, args: readonly string[]) => Promise<CommandResult>;
   readonly writeFile: (name: string, content: string) => string;
   readonly [Symbol.dispose]: () => void;
 }
@@ -268,7 +278,7 @@ export const createProjectFixture = (
     return filePath;
   };
 
-  const run = (command: string, args: readonly string[]): CommandResult => {
+  const run = (command: string, args: readonly string[]): Promise<CommandResult> => {
     const binPath = path.join(projectDir, 'node_modules', '.bin', command);
     return runCommand(binPath, args, { cwd: projectDir });
   };

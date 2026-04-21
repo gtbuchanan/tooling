@@ -79,23 +79,23 @@ describe(createGitEnv, () => {
 });
 
 describe(runCommand, () => {
-  it('captures stdout', ({ expect }) => {
-    const result = runCommand('node', ['-e', 'console.log("hello")'], {});
+  it('captures stdout', async ({ expect }) => {
+    const result = await runCommand('node', ['-e', 'console.log("hello")'], {});
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout.trim()).toBe('hello');
   });
 
-  it('captures stderr separately', ({ expect }) => {
-    const result = runCommand('node', ['-e', 'console.error("oops")'], {});
+  it('captures stderr separately', async ({ expect }) => {
+    const result = await runCommand('node', ['-e', 'console.error("oops")'], {});
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr.trim()).toBe('oops');
     expect(result.stdout.trim()).toBe('');
   });
 
-  it('captures non-zero exit code', ({ expect }) => {
-    const result = runCommand('node', ['-e', 'process.exit(42)'], {});
+  it('captures non-zero exit code', async ({ expect }) => {
+    const result = await runCommand('node', ['-e', 'process.exit(42)'], {});
 
     expect(result.exitCode).toBe(42);
   });

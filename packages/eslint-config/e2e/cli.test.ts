@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
 import { it as base, describe } from 'vitest';
@@ -58,36 +58,38 @@ const createFixture = () => {
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
 
-  const run = ({ config, env, files, flags = [] }: RunOptions) => {
-    writeFileSync(path.join(fixture.projectDir, 'eslint.config.ts'), config ?? createRequireConfig);
-    writeFileSync(path.join(fixture.projectDir, 'tsconfig.json'), tsconfig);
-    writeFileSync(path.join(fixture.projectDir, 'tsconfig.root.json'), tsconfigRoot);
+  const run = async ({ config, env, files, flags = [] }: RunOptions) => {
+    const runDir = mkdtempSync(path.join(fixture.projectDir, 'run-'));
+    writeFileSync(path.join(runDir, 'eslint.config.ts'), config ?? createRequireConfig);
+    writeFileSync(path.join(runDir, 'tsconfig.json'), tsconfig);
+    writeFileSync(path.join(runDir, 'tsconfig.root.json'), tsconfigRoot);
 
     const fileNames = Object.keys(files);
     for (const [name, content] of Object.entries(files)) {
-      const filePath = path.join(fixture.projectDir, name);
+      const filePath = path.join(runDir, name);
       mkdirSync(path.join(filePath, '..'), { recursive: true });
       writeFileSync(filePath, content);
     }
 
-    return runCommand(eslint, [...flags, ...fileNames], {
-      cwd: fixture.projectDir,
+    const result = await runCommand(eslint, [...flags, ...fileNames], {
+      cwd: runDir,
       env: {
         ...process.env,
         NODE_PATH: fixture.nodePath,
         ...env,
       },
     });
-  };
 
-  const readFile = (name: string): string =>
-    readFileSync(path.join(fixture.projectDir, name), 'utf8');
+    return {
+      ...result,
+      readFile: (name: string) => readFileSync(path.join(runDir, name), 'utf8'),
+    };
+  };
 
   return {
     eslint,
     nodePath: fixture.nodePath,
     projectDir: fixture.projectDir,
-    readFile,
     run,
     [Symbol.dispose]() {
       fixture[Symbol.dispose]();
@@ -109,7 +111,8 @@ const it = base.extend<{ fixture: Fixture }>({
 });
 
 describe.concurrent('eslint CLI integration', () => {
-  it('fails with bare import (proves isolation works)', ({ fixture, expect }) => {
+  it('fails with bare import (proves isolation works)', async ({ fixture, expect }) => {
+    const runDir = mkdtempSync(path.join(fixture.projectDir, 'run-'));
     const bareConfig = [
       'import { configure } from "@gtbuchanan/eslint-config";',
       'export default configure({',
@@ -118,32 +121,30 @@ describe.concurrent('eslint CLI integration', () => {
       '});',
     ].join('\n');
 
-    writeFileSync(path.join(fixture.projectDir, 'eslint.config.ts'), bareConfig);
-
-    const filePath = path.join(fixture.projectDir, 'clean.mjs');
-    writeFileSync(filePath, "export const greeting = 'hello';\n");
+    writeFileSync(path.join(runDir, 'eslint.config.ts'), bareConfig);
+    writeFileSync(path.join(runDir, 'clean.mjs'), "export const greeting = 'hello';\n");
 
     const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
-    const { exitCode, stderr } = runCommand(
+    const { exitCode, stderr } = await runCommand(
       fixture.eslint,
       ['clean.mjs'],
-      { cwd: fixture.projectDir, env: envWithoutNodePath },
+      { cwd: runDir, env: envWithoutNodePath },
     );
 
     expect(exitCode).not.toBe(0);
     expect(stderr).toContain('@gtbuchanan/eslint-config');
   });
 
-  it('passes for a clean file', ({ fixture, expect }) => {
-    const result = fixture.run({
+  it('passes for a clean file', async ({ fixture, expect }) => {
+    const result = await fixture.run({
       files: { 'clean.ts': "export const greeting = 'hello';\n" },
     });
 
     expect(result).toMatchObject({ exitCode: 0 });
   });
 
-  it('detects process.exit via eslint-plugin-n', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('detects process.exit via eslint-plugin-n', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       files: { 'bad.ts': 'process.exit(0);\n' },
     });
 
@@ -151,8 +152,8 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('n/no-process-exit');
   });
 
-  it('applies oxlint overlay as last config', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('applies oxlint overlay as last config', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       files: { 'test.ts': 'export const greeting = 42;\n' },
     });
 
@@ -161,17 +162,17 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).not.toContain('Error');
   });
 
-  it('respects global ignores for dist/', ({ fixture, expect }) => {
+  it('respects global ignores for dist/', async ({ fixture, expect }) => {
     const longLine = `export const x = '${'a'.repeat(101)}';\n`;
-    const { exitCode } = fixture.run({
+    const { exitCode } = await fixture.run({
       files: { 'dist/bad.mjs': longLine },
     });
 
     expect(exitCode).toBe(0);
   });
 
-  it('detects duplicate keys in JSON files', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('detects duplicate keys in JSON files', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       files: { 'bad.json': '{\n  "key": 1,\n  "key": 2\n}\n' },
     });
 
@@ -179,16 +180,16 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('json/no-duplicate-keys');
   });
 
-  it('passes for a valid JSON file', ({ fixture, expect }) => {
-    const { exitCode } = fixture.run({
+  it('passes for a valid JSON file', async ({ fixture, expect }) => {
+    const { exitCode } = await fixture.run({
       files: { 'valid.json': '{\n  "key": "value"\n}\n' },
     });
 
     expect(exitCode).toBe(0);
   });
 
-  it('warns on unsorted keys in JSON files', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('warns on unsorted keys in JSON files', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       files: { 'unsorted.json': '{\n  "beta": 1,\n  "alpha": 2\n}\n' },
     });
 
@@ -197,8 +198,8 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('json/sort-keys');
   });
 
-  it('allows comments in tsconfig.json via JSONC', ({ fixture, expect }) => {
-    const { exitCode } = fixture.run({
+  it('allows comments in tsconfig.json via JSONC', async ({ fixture, expect }) => {
+    const { exitCode } = await fixture.run({
       files: {
         'tsconfig.json': '{\n  // A comment\n  "compilerOptions": {}\n}\n',
       },
@@ -207,8 +208,8 @@ describe.concurrent('eslint CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('downgrades errors to warnings with onlyWarn', ({ fixture, expect }) => {
-    const { exitCode, stdout } = fixture.run({
+  it('downgrades errors to warnings with onlyWarn', async ({ fixture, expect }) => {
+    const { exitCode, stdout } = await fixture.run({
       config: createRequireOnlyWarnConfig,
       files: { 'bad.ts': 'process.exit(0);\n' },
     });
@@ -218,13 +219,13 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('n/no-process-exit');
   });
 
-  it('formats JSON, Markdown, YAML, and CSS via Prettier plugins', ({ fixture, expect }) => {
+  it('formats JSON, Markdown, YAML, and CSS via Prettier plugins', async ({ fixture, expect }) => {
     const unsortedJson = '{\n  "z": 1,\n  "a": [1, 2]\n}\n';
     const longMarkdown = `# Title\n\n${'word '.repeat(40).trim()}\n`;
     const doubleQuotedYaml = 'key: "value"\n';
     const unsortedCss = '.box {\n  display: flex;\n  color: red;\n}\n';
 
-    const result = fixture.run({
+    const result = await fixture.run({
       files: {
         'config.yml': doubleQuotedYaml,
         'data.json': unsortedJson,
@@ -237,31 +238,31 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result).toMatchObject({ exitCode: 0 });
 
     // JSON: sort-json sorts keys, multiline-arrays expands arrays
-    expect(fixture.readFile('data.json')).toBe(
+    expect(result.readFile('data.json')).toBe(
       ['{', '  "a": [', '    1,', '    2', '  ],', '  "z": 1', '}', ''].join('\n'),
     );
 
     // Markdown: proseWrap 'preserve' keeps long lines unwrapped
-    expect(fixture.readFile('doc.md')).toBe(longMarkdown);
+    expect(result.readFile('doc.md')).toBe(longMarkdown);
 
     // YAML: singleQuote from prettierDefaults converts double quotes
-    expect(fixture.readFile('config.yml')).toBe("key: 'value'\n");
+    expect(result.readFile('config.yml')).toBe("key: 'value'\n");
 
     // CSS: alphabetical property sorting (color before display)
-    expect(fixture.readFile('style.css')).toBe(
+    expect(result.readFile('style.css')).toBe(
       '.box {\n  color: red;\n  display: flex;\n}\n',
     );
   });
 
-  it('formats XML with whitespace-insensitive mode', ({ fixture, expect }) => {
+  it('formats XML with whitespace-insensitive mode', async ({ fixture, expect }) => {
     const uglyXml = '<Project><PropertyGroup><Version>1.0</Version></PropertyGroup></Project>';
 
-    const result = fixture.run({
+    const result = await fixture.run({
       files: { 'app.csproj': uglyXml },
       flags: ['--fix'],
     });
 
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(fixture.readFile('app.csproj')).toContain('<PropertyGroup>\n');
+    expect(result.readFile('app.csproj')).toContain('<PropertyGroup>\n');
   });
 });

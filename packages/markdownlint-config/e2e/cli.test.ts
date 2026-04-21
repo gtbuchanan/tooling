@@ -41,7 +41,7 @@ const runMarkdownlint = (
 };
 
 describe('pre-commit isolation', () => {
-  it('fails with bare import (proves isolation works)', ({ expect }) => {
+  it('fails with bare import (proves isolation works)', async ({ expect }) => {
     using fixture = createIsolatedFixture({
       hookPackages: ['markdownlint-cli2'],
       packageName: '@gtbuchanan/markdownlint-config',
@@ -52,7 +52,7 @@ describe('pre-commit isolation', () => {
     writeFileSync(path.join(fixture.projectDir, 'test.md'), '# Hello\n\nTest.\n');
 
     const { NODE_PATH: _nodePath, ...envWithoutNodePath } = process.env;
-    const result = runCommand(cli2, ['test.md'], {
+    const result = await runCommand(cli2, ['test.md'], {
       cwd: fixture.projectDir,
       env: envWithoutNodePath,
     });
@@ -60,13 +60,13 @@ describe('pre-commit isolation', () => {
     expect(result).not.toMatchObject({ exitCode: 0 });
   });
 
-  it('passes for a clean markdown file', ({ expect }) => {
+  it('passes for a clean markdown file', async ({ expect }) => {
     using fixture = createIsolatedFixture({
       hookPackages: ['markdownlint-cli2'],
       packageName: '@gtbuchanan/markdownlint-config',
     });
 
-    const result = runMarkdownlint(
+    const result = await runMarkdownlint(
       fixture,
       createRequireConfig,
       '# Hello\n\nThis is a test.\n',
@@ -75,14 +75,14 @@ describe('pre-commit isolation', () => {
     expect(result).toMatchObject({ exitCode: 0 });
   });
 
-  it('detects violations not suppressed by prettier style', ({ expect }) => {
+  it('detects violations not suppressed by prettier style', async ({ expect }) => {
     using fixture = createIsolatedFixture({
       hookPackages: ['markdownlint-cli2'],
       packageName: '@gtbuchanan/markdownlint-config',
     });
 
     // MD024: no-duplicate-heading (not disabled by prettier style)
-    const result = runMarkdownlint(
+    const result = await runMarkdownlint(
       fixture,
       createRequireConfig,
       '# Duplicate\n\n# Duplicate\n',
@@ -92,7 +92,7 @@ describe('pre-commit isolation', () => {
     expect(result.stderr).toMatch(/MD024/v);
   });
 
-  it('suppresses rules disabled by prettier style', ({ expect }) => {
+  it('suppresses rules disabled by prettier style', async ({ expect }) => {
     using fixture = createIsolatedFixture({
       hookPackages: ['markdownlint-cli2'],
       packageName: '@gtbuchanan/markdownlint-config',
@@ -100,12 +100,12 @@ describe('pre-commit isolation', () => {
 
     // Heading-style is disabled — mixed styles should not error
     const markdown = ['# ATX heading', '', 'Setext heading', '--------------', ''].join('\n');
-    const result = runMarkdownlint(fixture, createRequireConfig, markdown);
+    const result = await runMarkdownlint(fixture, createRequireConfig, markdown);
 
     expect(result).toMatchObject({ exitCode: 0 });
   });
 
-  it('ignores .changeset/ files with configureCli2', ({ expect }) => {
+  it('ignores .changeset/ files with configureCli2', async ({ expect }) => {
     using fixture = createIsolatedFixture({
       hookPackages: ['markdownlint-cli2'],
       packageName: '@gtbuchanan/markdownlint-config',
@@ -123,7 +123,7 @@ describe('pre-commit isolation', () => {
     // Also create a valid file so markdownlint has something to lint
     writeFileSync(path.join(fixture.projectDir, 'test.md'), '# Valid\n\nContent.\n');
 
-    const result = runCommand(cli2, ['**/*.md'], {
+    const result = await runCommand(cli2, ['**/*.md'], {
       cwd: fixture.projectDir,
       env: { ...process.env, NODE_PATH: fixture.nodePath },
     });
