@@ -53,7 +53,10 @@ const createFixture = () => {
     depsPackages: ['typescript'],
     hookPackages: ['eslint', 'jiti'],
     packageName: '@gtbuchanan/eslint-config',
-    workspaceDeps: ['@gtbuchanan/eslint-plugin-markdownlint'],
+    workspaceDeps: [
+      '@gtbuchanan/eslint-plugin-markdownlint',
+      '@gtbuchanan/eslint-plugin-yamllint',
+    ],
   });
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
