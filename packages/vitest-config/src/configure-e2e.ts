@@ -80,7 +80,15 @@ export const configureEndToEndGlobal = (
     ? undefined
     : resolveEndToEndProjects(projectPatterns, testTimeout);
   return buildGlobalConfig(
-    { testTimeout },
+    {
+      /*
+       * E2E tests spawn child processes. On resource-constrained CI
+       * runners, concurrent spawns can delay hook scheduling past the
+       * default 10s hookTimeout.
+       */
+      hookTimeout: testTimeout,
+      testTimeout,
+    },
     setupOptions,
     resolved,
   );

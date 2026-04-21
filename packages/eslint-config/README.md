@@ -67,4 +67,23 @@ export default configure({
 - `eslint-plugin-n` — Node.js best practices
 - `eslint-plugin-pnpm` — pnpm workspace validation (opt-in)
 - `eslint-plugin-yml` — YAML linting and key sorting
+- `@gtbuchanan/eslint-plugin-markdownlint` — Markdown structural linting via markdownlint
 - `eslint-plugin-only-warn` — Downgrades errors to warnings (opt-in)
+
+## Markdown suppression
+
+Markdown structural rules run as a single `markdownlint/lint` ESLint rule.
+To suppress a specific markdownlint rule, use markdownlint's own comment
+syntax (not ESLint comments):
+
+```markdown
+<!-- markdownlint-disable-next-line MD024 -->
+
+# Duplicate heading allowed here
+```
+
+ESLint's `<!-- eslint-disable markdownlint/lint -->` suppresses all
+markdownlint rules at once. Use markdownlint directives for per-rule
+control. See the
+[markdownlint docs](https://github.com/DavidAnson/markdownlint#configuration)
+for the full inline directive syntax.

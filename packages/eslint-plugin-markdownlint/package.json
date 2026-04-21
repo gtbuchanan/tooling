@@ -1,13 +1,14 @@
 {
-  "name": "@gtbuchanan/markdownlint-config",
+  "name": "@gtbuchanan/eslint-plugin-markdownlint",
   "version": "0.1.0",
-  "description": "Shared markdownlint configuration",
+  "description": "ESLint plugin wrapping markdownlint for structural Markdown linting",
   "type": "module",
   "imports": {
     "#src/*": "./src/*"
   },
   "exports": {
-    ".": "./src/index.mjs"
+    ".": "./src/index.ts",
+    "./parser": "./src/parser.ts"
   },
   "scripts": {
     "compile:ts": "pnpm run gtb compile:ts",
@@ -16,7 +17,6 @@
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb lint:eslint",
     "pack:npm": "pnpm run gtb pack:npm",
-    "test:vitest:e2e": "pnpm run gtb test:vitest:e2e",
     "test:vitest:fast": "pnpm run gtb test:vitest:fast",
     "test:vitest:slow": "pnpm run gtb test:vitest:slow",
     "typecheck:ts": "pnpm run gtb typecheck:ts"
@@ -25,9 +25,10 @@
     "markdownlint": "catalog:"
   },
   "devDependencies": {
-    "@gtbuchanan/eslint-config": "workspace:*",
-    "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "eslint": "^10.0.0"
   },
   "engines": {
     "node": ">=22.17"
@@ -35,7 +36,8 @@
   "publishConfig": {
     "directory": "dist/source",
     "exports": {
-      ".": "./src/index.mjs"
+      ".": "./src/index.js",
+      "./parser": "./src/parser.js"
     },
     "linkDirectory": false
   }

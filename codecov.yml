@@ -18,10 +18,10 @@ component_management:
       name: test-utils
       paths:
         - packages/test-utils/src/**
-    - component_id: markdownlint-config
-      name: markdownlint-config
+    - component_id: eslint-plugin-markdownlint
+      name: eslint-plugin-markdownlint
       paths:
-        - packages/markdownlint-config/src/**
+        - packages/eslint-plugin-markdownlint/src/**
     - component_id: eslint-config
       name: eslint-config
       paths:
@@ -49,10 +49,10 @@ flags:
     carryforward: true
     paths:
       - packages/eslint-config/
-  markdownlint-config:
+  eslint-plugin-markdownlint:
     carryforward: true
     paths:
-      - packages/markdownlint-config/
+      - packages/eslint-plugin-markdownlint/
   test-utils:
     carryforward: true
     paths:

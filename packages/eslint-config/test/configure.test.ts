@@ -97,6 +97,39 @@ describe(configure, () => {
     expect(ignoresConfig?.ignores).toStrictEqual(['vendor/**']);
   });
 
+  it('includes markdownlint/lint for markdown files', async ({ expect }) => {
+    const configs = await configure({ onlyWarn: false });
+
+    const mdlConfig = configs.find(
+      cfg => cfg.rules?.['markdownlint/lint'] !== undefined,
+    );
+
+    expect(mdlConfig?.files).toStrictEqual(['**/*.md']);
+  });
+
+  it('disables Prettier-conflicting markdownlint rules', async ({ expect }) => {
+    const configs = await configure({ onlyWarn: false });
+
+    const mdlConfig = configs.find(
+      cfg => cfg.rules?.['markdownlint/lint'] !== undefined,
+    );
+    const [, ruleConfig] = mdlConfig?.rules?.['markdownlint/lint'] as
+      [string, Record<string, unknown>];
+
+    expect(ruleConfig['line-length']).toBe(false);
+    expect(ruleConfig['single-trailing-newline']).toBe(false);
+  });
+
+  it('ignores .changeset files for markdownlint', async ({ expect }) => {
+    const configs = await configure({ onlyWarn: false });
+
+    const mdlConfig = configs.find(
+      cfg => cfg.rules?.['markdownlint/lint'] !== undefined,
+    );
+
+    expect(mdlConfig?.ignores).toContain('.changeset/**');
+  });
+
   it('includes format/prettier for all supported file types', async ({ expect }) => {
     const configs = await configure({ onlyWarn: false });
 

@@ -19,12 +19,12 @@ README.md              — Consumer-facing documentation
     pre-commit.yml       — Run prek hooks on PR changed files
     pre-commit-seed.yml  — Seed prek cache on push to main
 packages/
-  cli/                 — @gtbuchanan/cli (gtb build CLI for consumers)
-  eslint-config/       — @gtbuchanan/eslint-config (ESLint configure())
-  markdownlint-config/ — @gtbuchanan/markdownlint-config (markdownlint configure())
-  tsconfig/            — @gtbuchanan/tsconfig (shared base tsconfig.json)
-  vitest-config/       — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
-  test-utils/          — private shared E2E fixture utilities
+  cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
+  eslint-config/                — @gtbuchanan/eslint-config (ESLint configure())
+  eslint-plugin-markdownlint/   — @gtbuchanan/eslint-plugin-markdownlint (markdownlint via ESLint)
+  tsconfig/                     — @gtbuchanan/tsconfig (shared base tsconfig.json)
+  vitest-config/                — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
+  test-utils/                   — private shared E2E fixture utilities
 ```
 
 ## Architecture
@@ -117,6 +117,7 @@ globs for monorepos, or falls back to single-package mode.
   `eslint-plugin-import-x` (ordering), `@eslint/json` (JSON linting),
   `eslint-plugin-pnpm` (workspace validation), `eslint-plugin-n` (Node.js
   rules), `eslint-plugin-yml` (YAML linting + key sorting),
+  `eslint-plugin-markdownlint` (Markdown structural linting),
   `@vitest/eslint-plugin` (test rules), and `eslint-plugin-only-warn`
   (downgrades errors to warnings).
 
@@ -131,20 +132,13 @@ globs for monorepos, or falls back to single-package mode.
   package's dependencies for reliable resolution under pnpm strict
   hoisting.
 
-### Markdown linter
-
-- **markdownlint-cli2** — Structural linting for Markdown files.
-  `@gtbuchanan/markdownlint-config` extends `markdownlint/style/prettier` to
-  disable rules that conflict with Prettier formatting.
-
 ### Pre-commit hooks
 
 - **prek** — Rust-based pre-commit hook manager (drop-in replacement for
   Python pre-commit). Installed automatically via `prepare` script on
   `pnpm install`. Hooks defined in `.pre-commit-config.yaml`:
   - `pre-commit-hooks` — file hygiene (large files, EOF newlines, BOM, trailing whitespace, no commit to branch)
-  - `eslint` — linting and formatting with `--fix` (JS/TS/JSON/Markdown/YAML)
-  - `markdownlint-cli2` — Markdown structural linting with `--fix`
+  - `eslint` — linting, formatting, and Markdown structural checks with `--fix`
 
 ### CI/CD workflows
 
@@ -262,6 +256,10 @@ Consumer guidance:
 - All lint violations report as warnings in IDEs (not errors) so TypeScript
   diagnostics stand out. CI enforces via `--max-warnings=0`.
 - Inline suppressions require a `--` reason suffix.
+- Markdown structural rules (`markdownlint/lint`) use markdownlint's
+  own comment syntax for per-rule suppression, not ESLint comments:
+  `<!-- markdownlint-disable-next-line MD024 -->`. This keeps the
+  plugin compatible with standalone markdownlint usage.
 - All exported functions, types, interfaces, and constants must have JSDoc comments.
 - When asserting on `CommandResult` (exit code, stdout, stderr), use
   `expect(result).toMatchObject({ exitCode: 0 })` instead of

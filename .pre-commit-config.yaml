@@ -21,16 +21,10 @@ repos:
   # language: system because the config packages aren't published yet.
   # Consumers should use language: node with additional_dependencies.
   - hooks:
-      # ESLint handles both linting and formatting (via eslint-plugin-format).
-      # Must run before markdownlint so tables are formatted first.
+      # ESLint handles linting, formatting (via eslint-plugin-format),
+      # and markdown structural checks (via eslint-plugin-markdownlint).
       - entry: pnpm exec eslint --fix --max-warnings=0
         id: eslint
         language: system
         name: eslint
     repo: local
-  - hooks:
-      - args: [--fix]
-        id: markdownlint-cli2
-        name: '[Markdown] Lint/Fix'
-    repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.22.0
