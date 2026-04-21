@@ -257,6 +257,16 @@ describe.concurrent('eslint CLI integration', () => {
     );
   });
 
+  it('detects yamllint violations in YAML files', async ({ fixture, expect }) => {
+    const yaml = '---\ncountry: NO\nperms: 0777\n';
+    const result = await fixture.run({
+      files: { 'config.yml': yaml },
+    });
+
+    expect(result.stdout).toContain('yamllint/truthy');
+    expect(result.stdout).toContain('yamllint/octal-values');
+  });
+
   it('detects markdownlint violations in markdown files', async ({ fixture, expect }) => {
     const result = await fixture.run({
       files: { 'doc.md': '# Title\n\n# Title\n' },
