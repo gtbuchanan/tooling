@@ -1,3 +1,4 @@
+---
 description: Set up pnpm and Node.js, restore cache, and install dependencies
 inputs:
   commands:

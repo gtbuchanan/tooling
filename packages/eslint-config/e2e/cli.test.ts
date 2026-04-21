@@ -53,7 +53,10 @@ const createFixture = () => {
     depsPackages: ['typescript'],
     hookPackages: ['eslint', 'jiti'],
     packageName: '@gtbuchanan/eslint-config',
-    workspaceDeps: ['@gtbuchanan/eslint-plugin-markdownlint'],
+    workspaceDeps: [
+      '@gtbuchanan/eslint-plugin-markdownlint',
+      '@gtbuchanan/eslint-plugin-yamllint',
+    ],
   });
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
@@ -222,7 +225,7 @@ describe.concurrent('eslint CLI integration', () => {
   it('formats JSON, Markdown, YAML, and CSS via Prettier plugins', async ({ fixture, expect }) => {
     const unsortedJson = '{\n  "z": 1,\n  "a": [1, 2]\n}\n';
     const longMarkdown = `# Title\n\n${'word '.repeat(40).trim()}\n`;
-    const doubleQuotedYaml = 'key: "value"\n';
+    const doubleQuotedYaml = '---\nkey: "value"\n';
     const unsortedCss = '.box {\n  display: flex;\n  color: red;\n}\n';
 
     const result = await fixture.run({
@@ -246,12 +249,22 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result.readFile('doc.md')).toBe(longMarkdown);
 
     // YAML: singleQuote from prettierDefaults converts double quotes
-    expect(result.readFile('config.yml')).toBe("key: 'value'\n");
+    expect(result.readFile('config.yml')).toBe("---\nkey: 'value'\n");
 
     // CSS: alphabetical property sorting (color before display)
     expect(result.readFile('style.css')).toBe(
       '.box {\n  color: red;\n  display: flex;\n}\n',
     );
+  });
+
+  it('detects yamllint violations in YAML files', async ({ fixture, expect }) => {
+    const yaml = '---\ncountry: NO\nperms: 0777\n';
+    const result = await fixture.run({
+      files: { 'config.yml': yaml },
+    });
+
+    expect(result.stdout).toContain('yamllint/truthy');
+    expect(result.stdout).toContain('yamllint/octal-values');
   });
 
   it('detects markdownlint violations in markdown files', async ({ fixture, expect }) => {
