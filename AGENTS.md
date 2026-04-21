@@ -22,6 +22,7 @@ packages/
   cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
   eslint-config/                — @gtbuchanan/eslint-config (ESLint configure())
   eslint-plugin-markdownlint/   — @gtbuchanan/eslint-plugin-markdownlint (markdownlint via ESLint)
+  eslint-plugin-yamllint/       — @gtbuchanan/eslint-plugin-yamllint (yamllint gap rules via ESLint)
   tsconfig/                     — @gtbuchanan/tsconfig (shared base tsconfig.json)
   vitest-config/                — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
   test-utils/                   — private shared E2E fixture utilities
@@ -117,6 +118,8 @@ globs for monorepos, or falls back to single-package mode.
   `eslint-plugin-import-x` (ordering), `@eslint/json` (JSON linting),
   `eslint-plugin-pnpm` (workspace validation), `eslint-plugin-n` (Node.js
   rules), `eslint-plugin-yml` (YAML linting + key sorting),
+  `eslint-plugin-yamllint` (yamllint gap rules: truthy, octal-values,
+  anchors, document-start/end),
   `eslint-plugin-markdownlint` (Markdown structural linting),
   `@vitest/eslint-plugin` (test rules), and `eslint-plugin-only-warn`
   (downgrades errors to warnings).
@@ -261,6 +264,9 @@ Consumer guidance:
   `<!-- markdownlint-disable-next-line MD024 -->`. This keeps the
   plugin compatible with standalone markdownlint usage.
 - All exported functions, types, interfaces, and constants must have JSDoc comments.
+- When adding or removing a package, update the packages table in
+  `README.md`, the structure tree above, and the linter/formatter
+  sections as applicable.
 - When asserting on `CommandResult` (exit code, stdout, stderr), use
   `expect(result).toMatchObject({ exitCode: 0 })` instead of
   `expect(result.exitCode).toBe(0)`. On failure, `toMatchObject` shows
