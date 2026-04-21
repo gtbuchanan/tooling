@@ -21,7 +21,13 @@ const exec = (command: string, args: readonly string[], options: SpawnSyncOption
   }
 };
 
-const PackageJson = v.object({ version: v.string() });
+const PackageJson = v.object({
+  dependencies: v.optional(v.record(v.string(), v.string())),
+  name: v.optional(v.string()),
+  version: v.string(),
+});
+
+type PackageJson = v.InferOutput<typeof PackageJson>;
 
 const require = createRequire(import.meta.url);
 
@@ -67,9 +73,37 @@ interface TarballEntry {
   readonly name: string;
 }
 
-const collectTarballs = (): readonly TarballEntry[] => {
+/*
+ * Workspace layout is coupled to the `packages/*` convention documented in
+ * AGENTS.md. If the layout ever changes, update both this helper and
+ * `buildWorkspaceIndex` — or drive them from `pnpm-workspace.yaml` globs.
+ */
+const findWorkspaceRoot = (): string => {
   const wsFile = findUpSync('pnpm-workspace.yaml', { cwd: process.cwd() });
-  const wsRoot = wsFile === undefined ? process.cwd() : path.dirname(wsFile);
+  return wsFile === undefined ? process.cwd() : path.dirname(wsFile);
+};
+
+/*
+ * Workspace state is stable across test fixtures within a single worker.
+ * Memoize the derived values so each additional fixture is O(1).
+ */
+const cache: {
+  index?: ReadonlyMap<string, PackageJson>;
+  root?: string;
+  tarballs?: readonly TarballEntry[];
+} = {};
+
+const getWorkspaceRoot = (): string =>
+  cache.root ??= findWorkspaceRoot();
+
+const getTarballs = (): readonly TarballEntry[] =>
+  cache.tarballs ??= collectTarballs();
+
+const getIndex = (): ReadonlyMap<string, PackageJson> =>
+  cache.index ??= buildWorkspaceIndex();
+
+const collectTarballs = (): readonly TarballEntry[] => {
+  const wsRoot = getWorkspaceRoot();
   const packDirs = [
     // Monorepo: per-package tarballs
     ...globSync('packages/*/dist/packages/npm', { cwd: wsRoot }),
@@ -164,11 +198,6 @@ interface IsolatedFixtureOptions {
   readonly depsPackages?: readonly string[];
   readonly hookPackages: readonly string[];
   readonly packageName: string;
-  /**
-   * Additional workspace package names whose tarballs should be installed
-   * alongside the primary package (e.g. unpublished workspace dependencies).
-   */
-  readonly workspaceDeps?: readonly string[];
 }
 
 /**
@@ -194,11 +223,51 @@ const createSubdir = (parent: string, name: string): string => {
   return dir;
 };
 
-const resolveTarballs = (
-  options: Pick<ProjectFixtureOptions, 'packageName' | 'workspaceDeps'>,
+const buildWorkspaceIndex = (): ReadonlyMap<string, PackageJson> => {
+  const wsRoot = getWorkspaceRoot();
+  const index = new Map<string, PackageJson>();
+
+  for (const pkgJsonPath of globSync('packages/*/package.json', { cwd: wsRoot })) {
+    const abs = path.join(wsRoot, pkgJsonPath);
+    const pkg = v.parse(PackageJson, JSON.parse(readFileSync(abs, 'utf8')));
+    if (pkg.name !== undefined) index.set(pkg.name, pkg);
+  }
+
+  return index;
+};
+
+/**
+ * Recursively collects all transitive `workspace:` dependencies from
+ * a package's `dependencies` field. These are co-published workspace
+ * packages whose tarballs must be installed alongside the primary package.
+ * `devDependencies` and `peerDependencies` are intentionally excluded —
+ * they are not co-published.
+ */
+const resolveWorkspaceDeps = (
+  packageName: string,
+  index: ReadonlyMap<string, PackageJson>,
+  visited = new Set<string>(),
 ): readonly string[] => {
-  const entries = collectTarballs();
-  const names = [options.packageName, ...(options.workspaceDeps ?? [])];
+  if (visited.has(packageName)) return [];
+  visited.add(packageName);
+
+  const pkg = index.get(packageName);
+  if (pkg === undefined) return [];
+
+  const direct = Object.entries(pkg.dependencies ?? {})
+    .filter(([, spec]) => spec.startsWith('workspace:'))
+    .map(([name]) => name);
+
+  return [
+    ...direct,
+    ...direct.flatMap(dep => resolveWorkspaceDeps(dep, index, visited)),
+  ];
+};
+
+const resolveTarballs = (packageName: string): readonly string[] => {
+  const entries = getTarballs();
+  const index = getIndex();
+  const names = [...new Set([packageName, ...resolveWorkspaceDeps(packageName, index)])];
   return names.map(name => locateTarballFrom(entries, name));
 };
 
@@ -207,7 +276,7 @@ const resolveTarballs = (
  * packages into separate directories so `NODE_PATH` controls resolution order.
  */
 export const createIsolatedFixture = (options: IsolatedFixtureOptions): IsolatedFixture => {
-  const tarballs = resolveTarballs(options);
+  const tarballs = resolveTarballs(options.packageName);
   const baseDir = mkdtempSync(path.join(tmpdir(), 'e2e-isolated-'));
   const projectDir = mkdtempSync(path.join(tmpdir(), 'e2e-project-'));
 
@@ -239,11 +308,6 @@ export const createIsolatedFixture = (options: IsolatedFixtureOptions): Isolated
 interface ProjectFixtureOptions {
   readonly packages?: readonly string[];
   readonly packageName: string;
-  /**
-   * Additional workspace package names whose tarballs should be installed
-   * alongside the primary package (e.g. unpublished workspace dependencies).
-   */
-  readonly workspaceDeps?: readonly string[];
 }
 
 /**
@@ -264,7 +328,7 @@ export interface ProjectFixture {
 export const createProjectFixture = (
   options: ProjectFixtureOptions,
 ): ProjectFixture => {
-  const tarballs = resolveTarballs(options);
+  const tarballs = resolveTarballs(options.packageName);
   const projectDir = mkdtempSync(path.join(tmpdir(), 'e2e-build-'));
 
   const pinnedPkgs = (options.packages ?? []).map(pinned);
