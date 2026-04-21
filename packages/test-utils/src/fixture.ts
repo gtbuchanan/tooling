@@ -21,7 +21,13 @@ const exec = (command: string, args: readonly string[], options: SpawnSyncOption
   }
 };
 
-const PackageJson = v.object({ version: v.string() });
+const PackageJson = v.object({
+  dependencies: v.optional(v.record(v.string(), v.string())),
+  name: v.optional(v.string()),
+  version: v.string(),
+});
+
+type PackageJson = v.InferOutput<typeof PackageJson>;
 
 const require = createRequire(import.meta.url);
 
@@ -82,7 +88,7 @@ const findWorkspaceRoot = (): string => {
  * Memoize the derived values so each additional fixture is O(1).
  */
 const cache: {
-  index?: ReadonlyMap<string, PkgJson>;
+  index?: ReadonlyMap<string, PackageJson>;
   root?: string;
   tarballs?: readonly TarballEntry[];
 } = {};
@@ -93,7 +99,7 @@ const getWorkspaceRoot = (): string =>
 const getTarballs = (): readonly TarballEntry[] =>
   cache.tarballs ??= collectTarballs();
 
-const getIndex = (): ReadonlyMap<string, PkgJson> =>
+const getIndex = (): ReadonlyMap<string, PackageJson> =>
   cache.index ??= buildWorkspaceIndex();
 
 const collectTarballs = (): readonly TarballEntry[] => {
@@ -217,20 +223,13 @@ const createSubdir = (parent: string, name: string): string => {
   return dir;
 };
 
-const PkgJsonSchema = v.object({
-  dependencies: v.optional(v.record(v.string(), v.string())),
-  name: v.optional(v.string()),
-});
-
-type PkgJson = v.InferOutput<typeof PkgJsonSchema>;
-
-const buildWorkspaceIndex = (): ReadonlyMap<string, PkgJson> => {
+const buildWorkspaceIndex = (): ReadonlyMap<string, PackageJson> => {
   const wsRoot = getWorkspaceRoot();
-  const index = new Map<string, PkgJson>();
+  const index = new Map<string, PackageJson>();
 
   for (const pkgJsonPath of globSync('packages/*/package.json', { cwd: wsRoot })) {
     const abs = path.join(wsRoot, pkgJsonPath);
-    const pkg = v.parse(PkgJsonSchema, JSON.parse(readFileSync(abs, 'utf8')));
+    const pkg = v.parse(PackageJson, JSON.parse(readFileSync(abs, 'utf8')));
     if (pkg.name !== undefined) index.set(pkg.name, pkg);
   }
 
@@ -246,7 +245,7 @@ const buildWorkspaceIndex = (): ReadonlyMap<string, PkgJson> => {
  */
 const resolveWorkspaceDeps = (
   packageName: string,
-  index: ReadonlyMap<string, PkgJson>,
+  index: ReadonlyMap<string, PackageJson>,
   visited = new Set<string>(),
 ): readonly string[] => {
   if (visited.has(packageName)) return [];
