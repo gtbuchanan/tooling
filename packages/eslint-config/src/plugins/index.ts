@@ -15,10 +15,11 @@ import typescript from './typescript.ts';
 import unicorn from './unicorn.ts';
 import vitest from './vitest.ts';
 import yaml from './yaml.ts';
+import yamllint from './yamllint.ts';
 
 /** Ordered plugin factories. Later entries override earlier ones for the same file. */
 export const plugins: readonly PluginFactory[] = [
-  typescript, unicorn, promise, regexp, jsdoc, json, yaml, pnpm, node,
+  typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint, pnpm, node,
   format, markdownlint, stylistic, eslintComments, importX,
   core, vitest,
 ];

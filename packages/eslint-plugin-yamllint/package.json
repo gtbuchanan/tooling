@@ -1,0 +1,42 @@
+{
+  "name": "@gtbuchanan/eslint-plugin-yamllint",
+  "version": "0.1.0",
+  "description": "ESLint plugin implementing yamllint-equivalent rules for YAML files",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "compile:ts": "pnpm run gtb compile:ts",
+    "coverage:codecov:upload": "pnpm run gtb coverage:codecov:upload",
+    "coverage:vitest:merge": "pnpm run gtb coverage:vitest:merge",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "lint:eslint": "pnpm run gtb lint:eslint",
+    "pack:npm": "pnpm run gtb pack:npm",
+    "test:vitest:fast": "pnpm run gtb test:vitest:fast",
+    "test:vitest:slow": "pnpm run gtb test:vitest:slow",
+    "typecheck:ts": "pnpm run gtb typecheck:ts"
+  },
+  "dependencies": {
+    "yaml": "catalog:"
+  },
+  "devDependencies": {
+    "@gtbuchanan/vitest-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "eslint": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=22.17"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "exports": {
+      ".": "./src/index.js"
+    },
+    "linkDirectory": false
+  }
+}

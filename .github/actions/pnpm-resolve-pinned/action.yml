@@ -1,3 +1,4 @@
+---
 description: Resolve a package's locked version from pnpm-lock.yaml (no install required)
 inputs:
   package:

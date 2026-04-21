@@ -1,3 +1,4 @@
+---
 codecov:
   require_ci_to_pass: true
 comment:
@@ -18,6 +19,10 @@ component_management:
       name: test-utils
       paths:
         - packages/test-utils/src/**
+    - component_id: eslint-plugin-yamllint
+      name: eslint-plugin-yamllint
+      paths:
+        - packages/eslint-plugin-yamllint/src/**
     - component_id: eslint-plugin-markdownlint
       name: eslint-plugin-markdownlint
       paths:
@@ -53,6 +58,10 @@ flags:
     carryforward: true
     paths:
       - packages/eslint-plugin-markdownlint/
+  eslint-plugin-yamllint:
+    carryforward: true
+    paths:
+      - packages/eslint-plugin-yamllint/
   test-utils:
     carryforward: true
     paths:

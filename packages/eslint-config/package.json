@@ -25,6 +25,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@eslint/json": "catalog:",
     "@gtbuchanan/eslint-plugin-markdownlint": "workspace:*",
+    "@gtbuchanan/eslint-plugin-yamllint": "workspace:*",
     "@prettier/plugin-xml": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "@vitest/eslint-plugin": "catalog:",
