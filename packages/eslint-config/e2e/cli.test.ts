@@ -225,7 +225,7 @@ describe.concurrent('eslint CLI integration', () => {
   it('formats JSON, Markdown, YAML, and CSS via Prettier plugins', async ({ fixture, expect }) => {
     const unsortedJson = '{\n  "z": 1,\n  "a": [1, 2]\n}\n';
     const longMarkdown = `# Title\n\n${'word '.repeat(40).trim()}\n`;
-    const doubleQuotedYaml = 'key: "value"\n';
+    const doubleQuotedYaml = '---\nkey: "value"\n';
     const unsortedCss = '.box {\n  display: flex;\n  color: red;\n}\n';
 
     const result = await fixture.run({
@@ -249,7 +249,7 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result.readFile('doc.md')).toBe(longMarkdown);
 
     // YAML: singleQuote from prettierDefaults converts double quotes
-    expect(result.readFile('config.yml')).toBe("key: 'value'\n");
+    expect(result.readFile('config.yml')).toBe("---\nkey: 'value'\n");
 
     // CSS: alphabetical property sorting (color before display)
     expect(result.readFile('style.css')).toBe(
