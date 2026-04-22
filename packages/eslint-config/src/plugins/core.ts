@@ -14,8 +14,6 @@ const coreRuleConfig: Linter.Config = {
     'complexity': ['warn', { max: 10 }],
     // Justification: Single-letter namespace aliases are idiomatic for schema libraries
     'id-length': ['warn', { exceptions: ['v'] }],
-    // Justification: Pushes toward const and expressions over statements
-    'init-declarations': 'warn',
     // Justification: Enforces modern JS idiom (x ??= y over x = x ?? y)
     'logical-assignment-operators': [
       'warn', 'always', { enforceForIfStatements: true },

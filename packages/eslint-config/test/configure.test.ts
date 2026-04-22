@@ -169,6 +169,16 @@ describe(configure, () => {
     }
   });
 
+  it('leaves init-declarations disabled', async ({ expect }) => {
+    // Conflicts with unicorn/no-useless-undefined on `let x: T | undefined`
+    const configs = await configure({ onlyWarn: false });
+    const initConfig = configs.find(
+      cfg => cfg.rules?.['init-declarations'] !== undefined,
+    );
+
+    expect(initConfig).toBeUndefined();
+  });
+
   it('applies import ordering to all script file extensions', async ({ expect }) => {
     const configs = await configure({ onlyWarn: false });
     const importConfig = configs.find(
