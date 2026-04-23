@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
-import { prepack } from '#src/commands/pack.js';
+import { prepack } from '#src/commands/task/pack-npm.js';
 import { createTempDir } from './helpers.ts';
 
 const jsonIndent = 2;

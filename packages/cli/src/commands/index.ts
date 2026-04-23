@@ -1,19 +1,23 @@
-import { run } from '../lib/process.ts';
-import * as leaf from './leaf/index.ts';
-import type { CommandHandler, LeafCommandDef } from './types.ts';
+import { defineCommand } from 'citty';
+import { rootNames } from './root/names.ts';
+import { pipeline } from './root/pipeline.ts';
+import { prepare } from './root/prepare.ts';
+import { sync } from './root/sync.ts';
+import { verify } from './root/verify.ts';
+import { task } from './task/index.ts';
+import { taskCommandName } from './task/names.ts';
 
-/** Derives a handler from a leaf def (run-based or custom). */
-const toHandler = (def: LeafCommandDef): CommandHandler =>
-  'handler' in def
-    ? def.handler
-    : async (args) => { await run(def.bin, { args: [...def.args, ...args] }); };
-
-/**
- * Command registry mapping CLI names to handler functions.
- *
- * Built from barrel re-exports — adding a command file and its barrel
- * entry automatically extends the registry.
- */
-export const commands: Record<string, CommandHandler> = Object.fromEntries(
-  Object.values(leaf).map(def => [def.name, toHandler(def)]),
-);
+/** Root `gtb` command. Dispatches user commands at the root and leaf tools under `task`. */
+export const main = defineCommand({
+  meta: {
+    description: 'Shared build CLI for @gtbuchanan/tooling',
+    name: 'gtb',
+  },
+  subCommands: {
+    [rootNames.pipeline]: pipeline,
+    [rootNames.prepare]: prepare,
+    [rootNames.sync]: sync,
+    [rootNames.verify]: verify,
+    [taskCommandName]: task,
+  },
+});

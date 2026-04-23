@@ -1,8 +1,4 @@
-import {
-  compileTs, coverageCodecovUpload, coverageVitestMerge, lintEslint,
-  packNpm, testVitestE2e, testVitestFast, testVitestSlow,
-  typecheckTs,
-} from '../commands/leaf/index.ts';
+import { taskNames } from '../commands/task/names.ts';
 import {
   Aggregate,
   type ConditionalEntry,
@@ -22,7 +18,7 @@ const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTa
   {
     condition: flags.hasTypeScript,
     key: Aggregate.typecheck,
-    value: { dependsOn: [typecheckTs.name] },
+    value: { dependsOn: [taskNames.typecheckTs] },
   },
 ];
 
@@ -30,7 +26,7 @@ const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask
   {
     condition: flags.hasPublished,
     key: Aggregate.compile,
-    value: { dependsOn: [compileTs.name] },
+    value: { dependsOn: [taskNames.compileTs] },
   },
 ];
 
@@ -38,7 +34,7 @@ const packAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[]
   {
     condition: flags.hasPublished,
     key: Aggregate.pack,
-    value: { dependsOn: [packNpm.name] },
+    value: { dependsOn: [taskNames.packNpm] },
   },
 ];
 
@@ -48,7 +44,7 @@ const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[]
     key: Aggregate.lint,
     value: {
       dependsOn: [
-        ...(flags.hasEslint ? [lintEslint.name] : []),
+        ...(flags.hasEslint ? [taskNames.lintEslint] : []),
       ],
     },
   },
@@ -62,7 +58,7 @@ const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
       dependsOn: [
         ...(flags.hasTypeScript ? [Aggregate.typecheck] : []),
         ...(flags.hasLint ? [Aggregate.lint] : []),
-        ...(flags.hasVitest ? [testVitestFast.name] : []),
+        ...(flags.hasVitest ? [taskNames.testVitestFast] : []),
       ],
     },
   },
@@ -73,17 +69,17 @@ const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>
     {
       condition: flags.hasVitest,
       key: Aggregate.testSlow,
-      value: { dependsOn: [testVitestSlow.name] },
+      value: { dependsOn: [taskNames.testVitestSlow] },
     },
     {
       condition: flags.hasE2e,
       key: Aggregate.testE2e,
-      value: { dependsOn: [testVitestE2e.name] },
+      value: { dependsOn: [taskNames.testVitestE2e] },
     },
     {
       condition: flags.hasVitest,
       key: Aggregate.coverageMerge,
-      value: { dependsOn: [coverageVitestMerge.name] },
+      value: { dependsOn: [taskNames.coverageVitestMerge] },
     },
   ];
   const ciDeps = [
@@ -108,7 +104,7 @@ const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>
 const coverageTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasVitest,
-    key: coverageCodecovUpload.name,
+    key: taskNames.coverageCodecovUpload,
     value: {
       env: ['CI', 'CODECOV_TOKEN'],
       inputs: ['dist/coverage/vitest/**/lcov.info'],

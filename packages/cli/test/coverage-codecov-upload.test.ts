@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { runCommand } from 'citty';
 import { describe, it, vi } from 'vitest';
 
 vi.mock(import('node:fs'), async (importOriginal) => {
@@ -17,7 +18,9 @@ vi.mock(import('#src/lib/process.js'), async (importOriginal) => {
 
 const { existsSync } = await import('node:fs');
 const { run } = await import('#src/lib/process.js');
-const { def } = await import('#src/commands/leaf/coverage-codecov-upload.js');
+const { coverageCodecovUpload } = await import(
+  '#src/commands/task/coverage-codecov-upload.js',
+);
 
 const mockExistsSync = vi.mocked(existsSync);
 const mockRun = vi.mocked(run);
@@ -30,12 +33,16 @@ const getRunArgs = (): readonly string[] => {
   return lastCall[1]?.args ?? [];
 };
 
-describe(def.name, () => {
+const invoke = async (rawArgs: readonly string[]): Promise<void> => {
+  await runCommand(coverageCodecovUpload, { rawArgs: [...rawArgs] });
+};
+
+describe('coverage:codecov:upload', () => {
   it('skips when CI is not set', async ({ expect }) => {
     vi.stubEnv('CI', '');
     const log = vi.spyOn(console, 'log').mockReturnValue();
 
-    await def.handler([]);
+    await invoke([]);
 
     expect(log).toHaveBeenCalledWith(expect.stringContaining('not in CI'));
     expect(mockRun).not.toHaveBeenCalled();
@@ -45,7 +52,7 @@ describe(def.name, () => {
     vi.stubEnv('CI', 'true');
     const log = vi.spyOn(console, 'log').mockReturnValue();
 
-    await def.handler([]);
+    await invoke([]);
 
     expect(log).toHaveBeenCalledWith(expect.stringContaining('No coverage'));
     expect(mockRun).not.toHaveBeenCalled();
@@ -55,7 +62,7 @@ describe(def.name, () => {
     vi.stubEnv('CI', 'true');
     mockExistsSync.mockReturnValue(true);
 
-    await def.handler([]);
+    await invoke([]);
 
     expect(getRunArgs()).toContain('dist/coverage/vitest/merged/lcov.info');
   });
@@ -66,7 +73,7 @@ describe(def.name, () => {
       path => String(path).includes('fast'),
     );
 
-    await def.handler([]);
+    await invoke([]);
 
     expect(getRunArgs()).toContain('dist/coverage/vitest/fast/lcov.info');
   });
@@ -76,7 +83,7 @@ describe(def.name, () => {
     mockExistsSync.mockReturnValue(true);
     const expected = path.basename(process.cwd());
 
-    await def.handler([]);
+    await invoke([]);
 
     expect(getRunArgs()).toContain('-F');
     expect(getRunArgs()).toContain(expected);
@@ -87,7 +94,7 @@ describe(def.name, () => {
     vi.stubEnv('GITHUB_WORKSPACE', '/ci/workspace');
     mockExistsSync.mockReturnValue(true);
 
-    await def.handler([]);
+    await invoke([]);
 
     expect(getRunArgs()).toContain('--network-root-folder');
     expect(getRunArgs()).toContain('/ci/workspace');
@@ -98,7 +105,7 @@ describe(def.name, () => {
     delete process.env['GITHUB_WORKSPACE'];
     mockExistsSync.mockReturnValue(true);
 
-    await def.handler([]);
+    await invoke([]);
 
     expect(getRunArgs()).toContain('--network-root-folder');
     expect(getRunArgs()).toContain('/repo');
@@ -108,7 +115,7 @@ describe(def.name, () => {
     vi.stubEnv('CI', 'true');
     mockExistsSync.mockReturnValue(true);
 
-    await def.handler(['--verbose', '--dry-run']);
+    await invoke(['--verbose', '--dry-run']);
 
     expect(getRunArgs()).toContain('--verbose');
     expect(getRunArgs()).toContain('--dry-run');

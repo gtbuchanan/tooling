@@ -1,8 +1,9 @@
 # @gtbuchanan/cli
 
 Shared build CLI for JavaScript/TypeScript projects. Provides the `gtb`
-binary with leaf commands that wrap individual tools and Turborepo
-integration for pipeline orchestration.
+binary: user-invoked commands (`verify`, `sync`, `pipeline`, `prepare`)
+at the root, and leaf tool wrappers under `gtb task <name>` for
+Turborepo to call via generated `package.json` scripts.
 
 ## Install
 
@@ -15,12 +16,12 @@ pnpm add -D @gtbuchanan/cli
 After installing, generate your `turbo.json` and per-package scripts:
 
 ```sh
-pnpm exec gtb turbo:init
+pnpm exec gtb sync
 ```
 
-This scaffolds `turbo.json` task definitions and adds the necessary
-`package.json` scripts so Turborepo can orchestrate the pipeline. Re-run
-after adding packages or changing capabilities.
+This reconciles `turbo.json`, tsconfigs, `package.json` scripts, and
+`codecov.yml` with the current workspace. Re-run after adding packages
+or changing capabilities.
 
 Run the pipeline via Turborepo:
 
@@ -50,20 +51,31 @@ up pre-commit hooks via prek:
 }
 ```
 
-Use `turbo:check` in CI to detect drift between the generated config and
+Use `verify` in CI to detect drift between the generated config and
 the current workspace state:
 
 ```sh
-pnpm exec gtb turbo:check
+pnpm exec gtb verify
 ```
 
 ## Commands
 
-All commands are leaf commands — they target a single tool and forward
-extra arguments. Turborepo handles orchestration (parallel groups,
-sequential pipelines, caching, dependency graphs).
+Root commands are user-invoked. `task <name>` dispatches to a single
+leaf tool and forwards extra arguments; Turborepo invokes leaves through
+generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 
-| Command                   | Tool                                                                                         |
+### Root commands
+
+| Command    | Purpose                                                 |
+| ---------- | ------------------------------------------------------- |
+| `verify`   | Validate generated config against workspace state       |
+| `sync`     | Reconcile `turbo.json`, tsconfigs, scripts, codecov.yml |
+| `pipeline` | Run a turbo aggregate without the turbo binary          |
+| `prepare`  | Install pre-commit hooks via prek / pre-commit          |
+
+### Task leaves (`gtb task <name>`)
+
+| Name                      | Tool                                                                                         |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
 | `compile:ts`              | `tsc -p tsconfig.build.json`                                                                 |
 | `coverage:codecov:upload` | Upload lcov to Codecov (requires [`codecov` CLI](https://docs.codecov.com/docs/codecov-cli)) |
@@ -71,22 +83,18 @@ sequential pipelines, caching, dependency graphs).
 | `typecheck:ts`            | `tsc --noEmit`                                                                               |
 | `lint:eslint`             | `eslint --max-warnings=0`                                                                    |
 | `pack:npm`                | Generate manifest + `pnpm pack` (per-pkg)                                                    |
-| `pipeline`                | Run turbo task graph without turbo binary                                                    |
-| `prepare`                 | `prek install`                                                                               |
 | `test:vitest`             | `vitest run`                                                                                 |
 | `test:vitest:fast`        | `vitest run --tags-filter='!slow'`                                                           |
 | `test:vitest:slow`        | `vitest run --tags-filter=slow`                                                              |
 | `test:vitest:e2e`         | `vitest run --config vitest.config.e2e.ts`                                                   |
-| `turbo:init`              | Scaffold `turbo.json` and package scripts                                                    |
-| `turbo:check`             | Validate config against workspace state                                                      |
 
-Leaf commands forward extra arguments:
+Leaves forward extra arguments to the underlying tool:
 
 ```sh
-gtb test:vitest --reporter=verbose
-gtb test:vitest --tags-filter='!slow && !db'
-gtb lint:eslint --fix
-gtb turbo:init --force   # overwrite existing scripts
+gtb task test:vitest --reporter=verbose
+gtb task test:vitest --tags-filter='!slow && !db'
+gtb task lint:eslint --fix
+gtb sync --force              # overwrite existing scripts
 ```
 
 ## Test tags
@@ -116,8 +124,8 @@ This is closer to what `react-scripts` does for Create React App.
 Turborepo provides the orchestration layer (caching, dependency graphs,
 incremental builds, parallel execution). `gtb` provides the tool
 definitions layer (what each command runs, with what flags). The two are
-complementary: `turbo:init` generates the `turbo.json` pipeline and
-`package.json` scripts that delegate to `gtb` leaf commands.
+complementary: `sync` generates the `turbo.json` pipeline and
+`package.json` scripts that delegate to `gtb task <name>` leaves.
 
 ## Code generation
 
@@ -133,7 +141,7 @@ should define `generate:<tool>` scripts in their `package.json`:
 }
 ```
 
-`turbo:init` discovers these scripts and wires them into the pipeline
+`sync` discovers these scripts and wires them into the pipeline
 automatically. The `generate` aggregate runs before `typecheck:ts`,
 `compile:ts`, and all lint tasks, so generated code is always available
 when those steps execute.

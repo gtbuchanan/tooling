@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { defineCommand } from 'citty';
 import { findUpSync } from 'find-up-simple';
 import { run } from '../../lib/process.ts';
-import type { CustomCommandDef } from '../types.ts';
 
 const mergedLcov = 'dist/coverage/vitest/merged/lcov.info';
 const fastLcov = 'dist/coverage/vitest/fast/lcov.info';
@@ -15,7 +15,6 @@ const fastLcov = 'dist/coverage/vitest/fast/lcov.info';
 const sentinelDir = 'dist/coverage/codecov';
 const sentinelFile = path.join(sentinelDir, '.uploaded');
 
-/** Resolves the repo root for Codecov network file listing. */
 const resolveNetworkRoot = (): string => {
   const cwd = process.cwd();
   const gitPath = findUpSync('.git', { cwd });
@@ -24,13 +23,11 @@ const resolveNetworkRoot = (): string => {
     cwd;
 };
 
-/** Writes the turbo cache sentinel after a successful upload. */
 const writeSentinel = (): void => {
   mkdirSync(sentinelDir, { recursive: true });
   writeFileSync(sentinelFile, '');
 };
 
-/** Resolves the best available lcov file (merged over fast). */
 const resolveLcov = (): string | undefined => {
   if (existsSync(mergedLcov)) {
     return mergedLcov;
@@ -42,8 +39,12 @@ const resolveLcov = (): string | undefined => {
 };
 
 /** Uploads coverage to Codecov. No-ops outside CI. */
-export const def = {
-  handler: async (args) => {
+export const coverageCodecovUpload = defineCommand({
+  meta: {
+    description: 'Upload merged coverage to Codecov (no-op outside CI)',
+    name: 'coverage:codecov:upload',
+  },
+  run: async ({ rawArgs }) => {
     if (!process.env['CI']) {
       console.log('Codecov upload skipped (not in CI)');
       return;
@@ -62,11 +63,10 @@ export const def = {
         '--network-root-folder', resolveNetworkRoot(),
         '-f', file,
         '-F', path.basename(process.cwd()),
-        ...args,
+        ...rawArgs,
       ],
     });
 
     writeSentinel();
   },
-  name: 'coverage:codecov:upload',
-} as const satisfies CustomCommandDef;
+});

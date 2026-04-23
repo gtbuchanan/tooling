@@ -39,6 +39,9 @@ catalogs:
     '@vitest/eslint-plugin':
       specifier: 1.6.14
       version: 1.6.14
+    citty:
+      specifier: ^0.2.2
+      version: 0.2.2
     console-fail-test:
       specifier: 0.6.1
       version: 0.6.1
@@ -188,6 +191,9 @@ importers:
 
   packages/cli:
     dependencies:
+      citty:
+        specifier: 'catalog:'
+        version: 0.2.2
       cross-spawn:
         specifier: 'catalog:'
         version: 7.0.6
@@ -1311,6 +1317,9 @@ packages:
   ci-info@4.4.0:
     resolution: {integrity: sha512-77PSwercCZU2Fc4sX94eF8k8Pxte6JAwL4/ICZLFjJLqegs7kCuAsqqj/70NQF6TvDpgFjkubQB2FW2ZZddvQg==}
     engines: {node: '>=8'}
+
+  citty@0.2.2:
+    resolution: {integrity: sha512-+6vJA3L98yv+IdfKGZHBNiGW5KHn22e/JwID0Strsz8h4S/csAu/OuICwxrg44k5MRiZHWIo8XXuJgQTriRP4w==, tarball: https://registry.npmjs.org/citty/-/citty-0.2.2.tgz}
 
   clean-regexp@1.0.0:
     resolution: {integrity: sha512-GfisEZEJvzKrmGWkvfhgzcz/BllN1USeqD2V6tg14OAOgaCD2Z/PUEuxnAZ/nPvmaHRG7a8y77p1T/IRQ4D1Hw==}
@@ -3947,6 +3956,8 @@ snapshots:
       regexp-to-ast: 0.5.0
 
   ci-info@4.4.0: {}
+
+  citty@0.2.2: {}
 
   clean-regexp@1.0.0:
     dependencies:

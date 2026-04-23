@@ -1,6 +1,7 @@
 import { statSync } from 'node:fs';
+import { defineCommand } from 'citty';
 import crossSpawn from 'cross-spawn';
-import type { CustomCommandDef } from '../types.ts';
+import { rootNames } from './names.ts';
 
 /**
  * Tries to spawn a command. Resolves true on exit 0, false on ENOENT
@@ -42,34 +43,34 @@ const isLinkedWorktree = (): boolean => {
 };
 
 /**
- * Installs pre-commit hooks.
+ * Installs pre-commit hooks via prek or pre-commit.
  *
  * Skips in linked worktrees (hooks inherited via shared config). In the
  * main working tree, tries prek first (Rust, fast), then falls back to
  * pre-commit (Python) when prek is unavailable (e.g., Android/Termux).
  */
-const prepare = async (): Promise<void> => {
-  if (isLinkedWorktree()) {
-    console.log('prepare: skipped (linked worktree)');
-    return;
-  }
+export const prepare = defineCommand({
+  meta: {
+    description: 'Install pre-commit hooks via prek or pre-commit',
+    name: rootNames.prepare,
+  },
+  run: async () => {
+    if (isLinkedWorktree()) {
+      console.log('prepare: skipped (linked worktree)');
+      return;
+    }
 
-  if (await trySpawn('prek', ['install'])) {
-    return;
-  }
+    if (await trySpawn('prek', ['install'])) {
+      return;
+    }
 
-  console.log('prek unavailable, falling back to pre-commit');
-  crossSpawn.sync('git', ['config', '--unset-all', 'core.hooksPath']);
+    console.log('prek unavailable, falling back to pre-commit');
+    crossSpawn.sync('git', ['config', '--unset-all', 'core.hooksPath']);
 
-  if (await trySpawn('pre-commit', ['install'])) {
-    return;
-  }
+    if (await trySpawn('pre-commit', ['install'])) {
+      return;
+    }
 
-  console.log('pre-commit unavailable, skipping hook installation');
-};
-
-/** Installs pre-commit hooks via prek or pre-commit. */
-export const def = {
-  handler: prepare,
-  name: 'prepare',
-} as const satisfies CustomCommandDef;
+    console.log('pre-commit unavailable, skipping hook installation');
+  },
+});

@@ -1,5 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { defineCommand } from 'citty';
 import crossSpawn from 'cross-spawn';
 import * as v from 'valibot';
 import {
@@ -8,13 +9,13 @@ import {
   RootManifestSchema,
   buildOutput,
   buildRepoFields,
-} from '../lib/manifest.ts';
+} from '../../lib/manifest.ts';
 import {
   type ResolveWorkspaceOptions,
   readManifest,
   readParsedManifest,
   resolveWorkspace,
-} from '../lib/workspace.ts';
+} from '../../lib/workspace.ts';
 
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';
@@ -107,9 +108,15 @@ const prepareAndPack = (
  * Per-package pack for npm. Generates `dist/source/` manifest and packs
  * a tarball to `dist/packages/npm/`. Designed to run as a turbo task.
  */
-export const packNpm = (): void => {
-  const pkgDir = process.cwd();
-  const ctx = resolveWorkspace({ cwd: pkgDir });
-  const root = readRootManifest(ctx.rootDir);
-  prepareAndPack(root, ctx.rootDir, pkgDir);
-};
+export const packNpm = defineCommand({
+  meta: {
+    description: 'Generate dist/source manifest and pack tarball to dist/packages/npm',
+    name: 'pack:npm',
+  },
+  run: () => {
+    const pkgDir = process.cwd();
+    const ctx = resolveWorkspace({ cwd: pkgDir });
+    const root = readRootManifest(ctx.rootDir);
+    prepareAndPack(root, ctx.rootDir, pkgDir);
+  },
+});

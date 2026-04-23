@@ -1,8 +1,4 @@
-import {
-  compileTs, coverageVitestMerge, lintEslint,
-  packNpm, testVitestE2e, testVitestFast, testVitestSlow,
-  typecheckTs,
-} from '../commands/leaf/index.ts';
+import { taskNames } from '../commands/task/names.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
 import { typeCheckInclude } from './tsconfig-gen.ts';
 import { aggregateTasks } from './turbo-aggregates.ts';
@@ -120,7 +116,7 @@ const toTurboGlobs = (include: string): readonly string[] => {
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasTypeScript,
-    key: typecheckTs.name,
+    key: taskNames.typecheckTs,
     value: {
       dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: [
@@ -136,9 +132,9 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
 const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
-    key: compileTs.name,
+    key: taskNames.compileTs,
     value: {
-      dependsOn: [topo(compileTs.name), ...(flags.hasGenerate ? [Aggregate.generate] : [])],
+      dependsOn: [topo(taskNames.compileTs), ...(flags.hasGenerate ? [Aggregate.generate] : [])],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
         ...flags.compileIncludes.flatMap(toTurboGlobs), 'tsconfig.build.json',
@@ -151,9 +147,9 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
 const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
-    key: packNpm.name,
+    key: taskNames.packNpm,
     value: {
-      dependsOn: [compileTs.name],
+      dependsOn: [taskNames.compileTs],
       inputs: ['$TURBO_ROOT$/package.json', 'dist/source/**', 'package.json'],
       outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
     },
@@ -163,14 +159,14 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
 const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
     ...(flags.hasGenerate ? [Aggregate.generate] : []),
-    ...(flags.hasTypeScript ? [typecheckTs.name] : []),
+    ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
   ];
   const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**'];
 
   return [
     {
       condition: flags.hasEslint,
-      key: lintEslint.name,
+      key: taskNames.lintEslint,
       value: {
         dependsOn: deps,
         inputs: ['$TURBO_ROOT$/eslint.config.*', ...inputs, 'eslint.config.*'],
@@ -192,13 +188,13 @@ const testInputs = [
 
 const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
-    ...(flags.hasPublished ? [topo(compileTs.name)] : []),
+    ...(flags.hasPublished ? [topo(taskNames.compileTs)] : []),
   ];
 
   return [
     {
       condition: flags.hasVitest,
-      key: testVitestFast.name,
+      key: taskNames.testVitestFast,
       value: {
         dependsOn: deps,
         env: ['CI'],
@@ -208,7 +204,7 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     },
     {
       condition: flags.hasVitest,
-      key: testVitestSlow.name,
+      key: taskNames.testVitestSlow,
       value: {
         dependsOn: deps,
         env: ['CI'],
@@ -218,16 +214,16 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     },
     {
       condition: flags.hasVitest,
-      key: coverageVitestMerge.name,
+      key: taskNames.coverageVitestMerge,
       value: {
-        dependsOn: [testVitestFast.name, testVitestSlow.name],
+        dependsOn: [taskNames.testVitestFast, taskNames.testVitestSlow],
         inputs: ['dist/test-results/vitest/merge/blob-*.json'],
         outputs: ['dist/coverage/vitest/merged/**'],
       },
     },
     {
       condition: flags.hasE2e,
-      key: testVitestE2e.name,
+      key: taskNames.testVitestE2e,
       value: {
         dependsOn: flags.hasPublished ? [Aggregate.pack, topo(Aggregate.pack)] : [],
         env: ['CI'],

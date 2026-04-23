@@ -1,28 +1,30 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { defineCommand } from 'citty';
 import * as v from 'valibot';
 import { parse as parseYaml } from 'yaml';
-import { type CodecovSections, generateCodecovSections } from '../lib/codecov-config.ts';
-import { type WorkspaceDiscovery, discoverWorkspace } from '../lib/discovery.ts';
-import { readJsonFile } from '../lib/file-writer.ts';
+import { type CodecovSections, generateCodecovSections } from '../../lib/codecov-config.ts';
+import { type WorkspaceDiscovery, discoverWorkspace } from '../../lib/discovery.ts';
+import { readJsonFile } from '../../lib/file-writer.ts';
 import {
   type GeneratedTsconfig,
   planTsconfigs,
   readUserCompilerOptions,
-} from '../lib/tsconfig-gen.ts';
+} from '../../lib/tsconfig-gen.ts';
 import {
   type TurboJson,
   generatePackageScripts,
   generateRequiredRootScripts,
   generateTurboJson,
-} from '../lib/turbo-config.ts';
-import { readParsedManifest } from '../lib/workspace.ts';
+} from '../../lib/turbo-config.ts';
+import { readParsedManifest } from '../../lib/workspace.ts';
+import { rootNames } from './names.ts';
 
 const TurboJsonSchema = v.looseObject({
   tasks: v.optional(v.record(v.string(), v.unknown())),
 });
 
-/** Parses `--ignore <name>` flags from CLI args. */
+/** Parses `--ignore <name>` flags from raw CLI args. */
 export const parseIgnoreArgs = (args: readonly string[]): ReadonlySet<string> => {
   const ignored = new Set<string>();
   for (let idx = 0; idx < args.length; idx++) {
@@ -43,7 +45,7 @@ const checkTurboTasks = (
 ): readonly string[] => {
   const filePath = path.join(rootDir, 'turbo.json');
   if (!existsSync(filePath)) {
-    return ['turbo.json is missing (run gtb turbo:init)'];
+    return ['turbo.json is missing (run gtb sync)'];
   }
 
   const raw = readJsonFile(filePath);
@@ -88,7 +90,7 @@ const TsconfigCheckSchema = v.looseObject({
 });
 
 const checkOwnedCompilerOptions = (
-  path: string,
+  filePath: string,
   actual: Record<string, unknown> | undefined,
   expected: GeneratedTsconfig,
   ownedKeys: Readonly<Record<string, unknown>>,
@@ -97,17 +99,17 @@ const checkOwnedCompilerOptions = (
     .filter(key => actual?.[key] !== expected.compilerOptions[key])
     .map((key) => {
       const want = String(expected.compilerOptions[key]);
-      return `${path}: compilerOptions.${key} should be ${want}`;
+      return `${filePath}: compilerOptions.${key} should be ${want}`;
     });
 
 const checkTsconfigStructure = (
-  path: string,
+  filePath: string,
   expected: GeneratedTsconfig,
   ownedKeys: Readonly<Record<string, unknown>>,
 ): readonly string[] => {
-  const result = v.safeParse(TsconfigCheckSchema, readJsonFile(path));
+  const result = v.safeParse(TsconfigCheckSchema, readJsonFile(filePath));
   if (!result.success) {
-    return [`${path}: failed to parse`];
+    return [`${filePath}: failed to parse`];
   }
 
   const actual = result.output;
@@ -115,29 +117,29 @@ const checkTsconfigStructure = (
   return [
     ...(actual.extends === expected.extends
       ? []
-      : [`${path}: extends should be '${expected.extends}'`]),
+      : [`${filePath}: extends should be '${expected.extends}'`]),
     ...(expected.include === undefined ||
       JSON.stringify(actual.include) === JSON.stringify(expected.include)
       ? []
-      : [`${path}: include should be ${JSON.stringify(expected.include)}`]),
-    ...checkOwnedCompilerOptions(path, actual.compilerOptions, expected, ownedKeys),
+      : [`${filePath}: include should be ${JSON.stringify(expected.include)}`]),
+    ...checkOwnedCompilerOptions(filePath, actual.compilerOptions, expected, ownedKeys),
   ];
 };
 
 const checkTsconfigFile = (
-  path: string,
+  filePath: string,
   expected: GeneratedTsconfig,
   ownedKeys: Readonly<Record<string, unknown>>,
 ): readonly string[] =>
-  existsSync(path)
-    ? checkTsconfigStructure(path, expected, ownedKeys)
-    : [`${path}: missing (run gtb turbo:init)`];
+  existsSync(filePath)
+    ? checkTsconfigStructure(filePath, expected, ownedKeys)
+    : [`${filePath}: missing (run gtb sync)`];
 
 const checkTsconfigs = (
   { rootDir, packages }: WorkspaceDiscovery,
 ): readonly string[] =>
-  planTsconfigs(rootDir, packages).flatMap(({ path, generate, ownedKeys }) =>
-    checkTsconfigFile(path, generate(readUserCompilerOptions(path)), ownedKeys),
+  planTsconfigs(rootDir, packages).flatMap(({ path: filePath, generate, ownedKeys }) =>
+    checkTsconfigFile(filePath, generate(readUserCompilerOptions(filePath)), ownedKeys),
   );
 
 const CodecovYamlSchema = v.nullable(
@@ -159,14 +161,14 @@ type ReadCodecovResult =
   | { readonly data: unknown; readonly errors?: undefined }
   | { readonly errors: readonly string[] };
 
-const readCodecovYaml = (path: string): ReadCodecovResult => {
-  if (!existsSync(path)) {
-    return { errors: ['codecov.yml is missing (run gtb turbo:init)'] };
+const readCodecovYaml = (filePath: string): ReadCodecovResult => {
+  if (!existsSync(filePath)) {
+    return { errors: ['codecov.yml is missing (run gtb sync)'] };
   }
   try {
-    return { data: parseYaml(readFileSync(path, 'utf8')) };
+    return { data: parseYaml(readFileSync(filePath, 'utf8')) };
   } catch {
-    return { errors: ['codecov.yml: invalid YAML (run gtb turbo:init)'] };
+    return { errors: ['codecov.yml: invalid YAML (run gtb sync)'] };
   }
 };
 
@@ -215,39 +217,53 @@ const checkCodecovSections = (
 };
 
 /**
- * Validates project config against expected baseline from discovery.
- * Checks turbo tasks, package scripts, and tsconfig structure.
- * Use `--ignore <name>` to skip specific tasks/scripts.
+ * Validates project config against the expected baseline from discovery.
+ *
+ * Checks turbo.json tasks, package.json scripts, tsconfig structure, and
+ * codecov.yml flags/components. Use `--ignore <name>` to skip specific
+ * tasks/scripts. Exits non-zero on drift.
  */
-export const turboCheck = (args: readonly string[]): void => {
-  const ignored = parseIgnoreArgs(args);
-  const discovery = discoverWorkspace();
-  const expected = generateTurboJson(discovery);
+export const verify = defineCommand({
+  args: {
+    ignore: {
+      description: 'Skip drift detection for a specific task or script',
+      type: 'string',
+    },
+  },
+  meta: {
+    description: 'Verify generated config matches the expected baseline',
+    name: rootNames.verify,
+  },
+  run: ({ rawArgs }) => {
+    const ignored = parseIgnoreArgs(rawArgs);
+    const discovery = discoverWorkspace();
+    const expected = generateTurboJson(discovery);
 
-  const drift = [
-    ...checkTurboTasks(discovery.rootDir, expected, ignored),
-    ...checkTsconfigs(discovery),
-    ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
-    ...discovery.packages.flatMap(
-      pkg => checkScripts(
-        pkg.dir,
-        generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir),
-        ignored,
+    const drift = [
+      ...checkTurboTasks(discovery.rootDir, expected, ignored),
+      ...checkTsconfigs(discovery),
+      ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
+      ...discovery.packages.flatMap(
+        pkg => checkScripts(
+          pkg.dir,
+          generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir),
+          ignored,
+        ),
       ),
-    ),
-    ...(discovery.packages.some(pkg => pkg.hasVitestTests)
-      ? checkCodecovSections(discovery.rootDir, discovery, ignored)
-      : []),
-  ];
+      ...(discovery.packages.some(pkg => pkg.hasVitestTests)
+        ? checkCodecovSections(discovery.rootDir, discovery, ignored)
+        : []),
+    ];
 
-  if (drift.length === 0) {
-    console.log('turbo:check passed — no drift detected');
-    return;
-  }
+    if (drift.length === 0) {
+      console.log('verify passed — no drift detected');
+      return;
+    }
 
-  for (const message of drift) {
-    console.error(message);
-  }
+    for (const message of drift) {
+      console.error(message);
+    }
 
-  process.exitCode = 1;
-};
+    process.exitCode = 1;
+  },
+});

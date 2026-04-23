@@ -12,10 +12,10 @@
   "scripts": {
     "compile:ts": "node --experimental-strip-types scripts/flatten.ts",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
-    "lint:eslint": "pnpm run gtb lint:eslint",
-    "pack:npm": "pnpm run gtb pack:npm",
-    "test:vitest:e2e": "pnpm run gtb test:vitest:e2e",
-    "typecheck:ts": "pnpm run gtb typecheck:ts"
+    "lint:eslint": "pnpm run gtb task lint:eslint",
+    "pack:npm": "pnpm run gtb task pack:npm",
+    "test:vitest:e2e": "pnpm run gtb task test:vitest:e2e",
+    "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "devDependencies": {
     "@gtbuchanan/eslint-config": "workspace:*",
