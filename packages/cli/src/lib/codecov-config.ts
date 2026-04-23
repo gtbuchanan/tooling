@@ -1,5 +1,6 @@
 import path from 'node:path';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
+import { toPosixRelative } from './paths.ts';
 
 /** Codecov per-package flag configuration. */
 export interface CodecovFlag {
@@ -62,7 +63,7 @@ const buildCoverageEntries = (
   const components: CodecovComponent[] = [];
   for (const pkg of packages) {
     const name = path.basename(pkg.dir);
-    const relDir = path.relative(rootDir, pkg.dir).replaceAll('\\', '/');
+    const relDir = toPosixRelative(rootDir, pkg.dir);
     flags[name] = { carryforward: true, paths: [`${relDir}/`] };
     components.push({ component_id: name, name, paths: buildComponentPaths(pkg, relDir) });
   }
