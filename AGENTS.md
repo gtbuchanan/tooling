@@ -7,6 +7,7 @@ TypeScript, Vitest configuration, and a shared build CLI.
 
 ```text
 README.md              — Consumer-facing documentation
+skills-npm.config.ts   — Agent targets for `skills-npm` (claude-code, codex, github-copilot)
 .github/
   actions/
     pnpm-resolve-pinned/ — Composite action: resolve locked version without install
@@ -20,6 +21,7 @@ README.md              — Consumer-facing documentation
     pre-commit-seed.yml  — Seed prek cache on push to main
 packages/
   cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
+    skills/                     — Authored Agent Skills deployed by `gtb task deploy:skills`
   eslint-config/                — @gtbuchanan/eslint-config (ESLint configure())
   eslint-plugin-markdownlint/   — @gtbuchanan/eslint-plugin-markdownlint (markdownlint via ESLint)
   eslint-plugin-yamllint/       — @gtbuchanan/eslint-plugin-yamllint (yamllint gap rules via ESLint)
@@ -28,31 +30,23 @@ packages/
   test-utils/                   — private shared E2E fixture utilities
 ```
 
+## Published-package behavior
+
+Package-specific conventions ship as Agent Skills under each package's
+`skills/` directory, discovered by coding agents via `skills-npm` in
+consumer repos. Authored in this repo; deployed locally via `gtb task
+deploy:skills` for dogfooding.
+
+- **`gtb-build-pipeline`** (`@gtbuchanan/cli`) — Turborepo task graph,
+  `gtb sync` / `gtb verify` / `gtb pipeline`, consumer script
+  customization, test-bucket strategy, aggregate semantics
+
+Packages without skills yet (vitest-config, eslint-config,
+eslint-plugin-markdownlint, eslint-plugin-yamllint, tsconfig, test-utils)
+keep their conventions in the sections below until those skills are
+authored.
+
 ## Architecture
-
-### Turborepo
-
-Turborepo orchestrates the build pipeline via `turbo.json`. Each package
-defines leaf task scripts in `package.json`; Turborepo handles dependency
-ordering, caching, and parallelism.
-
-- **Task graph** — `turbo.json` declares tasks and their `dependsOn`
-  relationships. Aggregate tasks (`check`, `build`, `lint`) use the
-  transit node pattern: they exist only as `dependsOn` targets with no
-  corresponding script, so Turborepo resolves their dependencies without
-  executing anything.
-- **Consumer customization** — Consumers override behavior by replacing
-  `package.json` script values. No hooks or plugin system.
-- **`sync`** — Reconciles generated `turbo.json`, tsconfigs, per-package
-  `package.json` scripts, and `codecov.yml` with the current workspace.
-  Run after adding packages or changing the task graph. Without `--force`,
-  existing script values are preserved — this is how packages keep custom
-  overrides (e.g., `@gtbuchanan/tsconfig` uses a custom `compile:ts`
-  script). Only use `--force` when you intentionally want to reset all
-  scripts to their generated defaults.
-- **`verify`** — Validates that generated `turbo.json`, per-package
-  scripts, tsconfigs, and `codecov.yml` have not drifted from the
-  expected state.
 
 ### Vitest config API
 
@@ -65,42 +59,6 @@ coverage, setupFiles, and mock reset.
 - Slow tag: `configureGlobal` defines a `slow` tag (300s timeout).
   Customize via `configureGlobal({ slow: { timeout: 600_000 } })`
 - E2E: `configureEndToEndPackage` / `configureEndToEndGlobal`
-
-### Build CLI
-
-`@gtbuchanan/cli` provides the `gtb` binary. User-invoked commands sit
-at the root (`gtb verify`, `gtb sync`, `gtb pipeline`, `gtb prepare`);
-leaf tool wrappers live under `gtb task <name>` for Turborepo to call
-via generated `package.json` scripts.
-
-Consumers install it and wire scripts in `package.json`:
-
-```json
-{
-  "scripts": {
-    "typecheck:ts": "gtb task typecheck:ts",
-    "compile:ts": "gtb task compile:ts",
-    "lint:eslint": "gtb task lint:eslint",
-    "test:vitest": "gtb task test:vitest",
-    "test:vitest:fast": "gtb task test:vitest:fast",
-    "test:vitest:slow": "gtb task test:vitest:slow",
-    "test:vitest:e2e": "gtb task test:vitest:e2e"
-  }
-}
-```
-
-This repo dogfoods via a `gtb` package.json script that runs the CLI
-source directly with `node --experimental-strip-types`, bypassing the
-compiled bin entry to avoid a bootstrapping dependency.
-
-Root commands: `verify`, `sync`, `pipeline`, `prepare`.
-Task leaves (under `gtb task <name>`): `typecheck:ts`, `compile:ts`,
-`coverage:codecov:upload`, `coverage:vitest:merge`, `lint:eslint`,
-`test:vitest`, `test:vitest:fast`, `test:vitest:slow`, `test:vitest:e2e`,
-`pack:npm`.
-
-Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
-globs for monorepos, or falls back to single-package mode.
 
 ### Per-package tool configs
 
@@ -194,69 +152,23 @@ Composite actions:
   lockfile without install. Used to pin `pnpm dlx` invocations to the
   locked version.
 
-### Testing strategy
-
-Three buckets across two axes — speed (fast vs slow) and target (source
-vs artifact):
-
-|          | Source (coverage, no pack) | Artifact (no coverage, needs pack) |
-| -------- | -------------------------- | ---------------------------------- |
-| **Fast** | Unit + fast integration    | —                                  |
-| **Slow** | Testcontainers, etc.       | E2E (Playwright, CLI tools)        |
-
-Commands:
-
-| Command            | Bucket                  | Coverage | Needs pack |
-| ------------------ | ----------------------- | -------- | ---------- |
-| `test:vitest:fast` | Fast source             | Yes      | No         |
-| `test:vitest:slow` | Slow source             | Yes      | No         |
-| `test:vitest:e2e`  | Artifact                | No       | Yes        |
-| `test:vitest`      | test:vitest:fast + slow | Merged   | No         |
-
-Pipeline (Turborepo task graph):
-
-```text
-generate:* → generate → typecheck:ts, compile:ts, lint:eslint
-typecheck:ts → typecheck → check
-typecheck:ts → lint:eslint → lint → check
-^compile:ts → test:vitest:fast → check
-test:vitest:fast → test:vitest:slow → test:slow → build
-compile:ts → pack:npm → pack → test:vitest:e2e → test:e2e → build
-check + compile + pack → build:ci → build
-```
-
-Test tasks include `env: ["CI"]` so Turborepo hashes the `CI` environment
-variable into the task cache key. This prevents local and CI caches from
-colliding — Vitest uses different reporters and coverage settings in CI.
-
-Lint tasks depend on `typecheck:ts` to prevent confusing linter output
-from type errors. ESLint (with `typescript-eslint`) runs its own type
-resolution, so the dependency is not strictly required — consumers who
-prefer parallelism can remove it.
-Test tasks do not depend on `typecheck:ts` to maximize parallelism.
-
-Vitest configs:
-
-- Per-package `vitest.config.ts` — source tests (coverage enabled via `configurePackage()`)
-- Per-package `vitest.config.e2e.ts` — artifact tests (no coverage)
+### Vitest usage specifics
 
 Slow tests use Vitest's native tag system (`test('name', { tags: ['slow'] }, ...)`
 or `/** @module-tag slow */`). The `--tags-filter` CLI option controls
 which tests run (`!slow` for fast, `slow` for slow-only, omit for all).
 
-CI coverage merging: per-package runs write to `dist/coverage/` (separate
-runners, no conflict). Fast and slow jobs upload as `coverage-fast`
-and `coverage-slow` artifacts. A `coverage` job downloads both and
-runs `vitest --merge-reports` to produce a unified report.
+Custom tags via `configureGlobal({ tags: [{ name: 'db', timeout: 60_000 }] })`.
+Filter with `pnpm exec vitest run --tags-filter="!db"` (run vitest directly
+for custom filter expressions; `gtb` commands only handle the `slow` tag).
 
-Consumer guidance:
+Consumer directory conventions:
 
 - `test/` — source tests (unit + integration). Coverage via source config.
 - `e2e/` — artifact tests. No source coverage. Needs tarballs from pack.
-- Tag slow source tests with `slow` (via options or `@module-tag`).
-- Add custom tags via `configureGlobal({ tags: [{ name: 'db', timeout: 60_000 }] })`.
-  Filter with `pnpm exec vitest run --tags-filter="!db"` (run vitest directly
-  for custom filter expressions; `gtb` commands only handle the `slow` tag).
+
+Task-graph and bucket-table details moved to the `gtb-build-pipeline`
+skill.
 
 ## Conventions
 
@@ -276,23 +188,6 @@ Consumer guidance:
   `expect(result.exitCode).toBe(0)`. On failure, `toMatchObject` shows
   the full result object (including stderr) in the diff, making failures
   self-diagnosing.
-
-## Build
-
-Root scripts delegate to Turborepo:
-
-```sh
-pnpm check     # turbo run check
-pnpm build:ci  # turbo run check compile:ts && pack
-pnpm build     # turbo run check compile:ts test:vitest:slow && pack && test:e2e
-```
-
-On platforms where Turborepo is unavailable (e.g., Android/Termux), use
-`pnpm pipeline <task>` instead (`gtb pipeline`). See the
-[CLI package](packages/cli/README.md#usage) for details.
-
-This repo dogfoods `gtb` via a package.json script that runs the CLI
-source directly with `node --experimental-strip-types`.
 
 ## Versioning
 
