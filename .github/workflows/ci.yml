@@ -72,7 +72,7 @@ jobs:
       - uses: ./.github/actions/pnpm-tasks
 
       - name: Check config drift
-        run: pnpm turbo:check
+        run: pnpm verify
 
   coverage:
     if: inputs.run-slow-tests == true

@@ -143,7 +143,7 @@ export interface TsconfigDescriptor {
 
 /**
  * Builds the list of tsconfig descriptors for the entire workspace.
- * Both turbo:init (write) and turbo:check (validate) consume this plan.
+ * Both `sync` (write) and `verify` (validate) consume this plan.
  */
 export const planTsconfigs = (
   rootDir: string,

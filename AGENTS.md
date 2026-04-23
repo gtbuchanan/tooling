@@ -43,14 +43,16 @@ ordering, caching, and parallelism.
   executing anything.
 - **Consumer customization** — Consumers override behavior by replacing
   `package.json` script values. No hooks or plugin system.
-- **`turbo:init`** — Generates `turbo.json` and per-package scripts from
-  workspace discovery. Run after adding packages or changing the task graph.
-  Without `--force`, existing script values are preserved — this is how
-  packages keep custom overrides (e.g., `@gtbuchanan/tsconfig` uses a
-  custom `compile:ts` script). Only use `--force` when you intentionally
-  want to reset all scripts to their generated defaults.
-- **`turbo:check`** — Validates that generated `turbo.json` and per-package
-  scripts have not drifted from the expected state.
+- **`sync`** — Reconciles generated `turbo.json`, tsconfigs, per-package
+  `package.json` scripts, and `codecov.yml` with the current workspace.
+  Run after adding packages or changing the task graph. Without `--force`,
+  existing script values are preserved — this is how packages keep custom
+  overrides (e.g., `@gtbuchanan/tsconfig` uses a custom `compile:ts`
+  script). Only use `--force` when you intentionally want to reset all
+  scripts to their generated defaults.
+- **`verify`** — Validates that generated `turbo.json`, per-package
+  scripts, tsconfigs, and `codecov.yml` have not drifted from the
+  expected state.
 
 ### Vitest config API
 
@@ -66,21 +68,23 @@ coverage, setupFiles, and mock reset.
 
 ### Build CLI
 
-`@gtbuchanan/cli` provides the `gtb` binary with leaf commands that
-perform individual build steps. Turborepo handles orchestration.
+`@gtbuchanan/cli` provides the `gtb` binary. User-invoked commands sit
+at the root (`gtb verify`, `gtb sync`, `gtb pipeline`, `gtb prepare`);
+leaf tool wrappers live under `gtb task <name>` for Turborepo to call
+via generated `package.json` scripts.
 
 Consumers install it and wire scripts in `package.json`:
 
 ```json
 {
   "scripts": {
-    "typecheck:ts": "gtb typecheck:ts",
-    "compile:ts": "gtb compile:ts",
-    "lint:eslint": "gtb lint:eslint",
-    "test:vitest": "gtb test:vitest",
-    "test:vitest:fast": "gtb test:vitest:fast",
-    "test:vitest:slow": "gtb test:vitest:slow",
-    "test:vitest:e2e": "gtb test:vitest:e2e"
+    "typecheck:ts": "gtb task typecheck:ts",
+    "compile:ts": "gtb task compile:ts",
+    "lint:eslint": "gtb task lint:eslint",
+    "test:vitest": "gtb task test:vitest",
+    "test:vitest:fast": "gtb task test:vitest:fast",
+    "test:vitest:slow": "gtb task test:vitest:slow",
+    "test:vitest:e2e": "gtb task test:vitest:e2e"
   }
 }
 ```
@@ -89,11 +93,11 @@ This repo dogfoods via a `gtb` package.json script that runs the CLI
 source directly with `node --experimental-strip-types`, bypassing the
 compiled bin entry to avoid a bootstrapping dependency.
 
-Commands: `typecheck:ts`, `compile:ts`, `coverage:codecov:upload`,
-`coverage:vitest:merge`,
-`lint:eslint`, `test:vitest`, `test:vitest:fast`,
-`test:vitest:slow`, `test:vitest:e2e`, `pack:npm`, `pipeline`,
-`prepare`, `turbo:init`, `turbo:check`.
+Root commands: `verify`, `sync`, `pipeline`, `prepare`.
+Task leaves (under `gtb task <name>`): `typecheck:ts`, `compile:ts`,
+`coverage:codecov:upload`, `coverage:vitest:merge`, `lint:eslint`,
+`test:vitest`, `test:vitest:fast`, `test:vitest:slow`, `test:vitest:e2e`,
+`pack:npm`.
 
 Workspace detection for `pack` resolves `pnpm-workspace.yaml` packages
 globs for monorepos, or falls back to single-package mode.

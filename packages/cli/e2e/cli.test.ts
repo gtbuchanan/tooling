@@ -33,20 +33,28 @@ describe.concurrent('gtb CLI', () => {
     const result = await fixture.run('gtb', ['--help']);
 
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(result.stdout).toContain('Usage: gtb');
+    expect(result.stdout).toContain('USAGE');
+    expect(result.stdout).toContain('verify');
+    expect(result.stdout).toContain('sync');
+    expect(result.stdout).toContain('pipeline');
+    expect(result.stdout).toContain('task');
+  });
+
+  it('lists leaf tasks with `task --help`', async ({ fixture, expect }) => {
+    const result = await fixture.run('gtb', ['task', '--help']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
     expect(result.stdout).toContain('compile:ts');
     expect(result.stdout).toContain('typecheck:ts');
     expect(result.stdout).toContain('lint:eslint');
     expect(result.stdout).toContain('test:vitest:fast');
-    expect(result.stdout).toContain('turbo:init');
-    expect(result.stdout).toContain('turbo:check');
   });
 
   it('prints help with no arguments', async ({ fixture, expect }) => {
     const result = await fixture.run('gtb', []);
 
-    expect(result).toMatchObject({ exitCode: 0 });
-    expect(result.stdout).toContain('Usage: gtb');
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain('No command specified');
   });
 
   it('exits non-zero for unknown command', async ({ fixture, expect }) => {
@@ -60,7 +68,7 @@ describe.concurrent('gtb CLI', () => {
 /* eslint-disable vitest/max-expects, vitest/no-standalone-expect, vitest/require-hook --
    False positive when callback omits custom fixture properties:
    https://github.com/vitest-dev/eslint-plugin-vitest/issues/891 */
-describe.concurrent('gtb pack:npm', () => {
+describe.concurrent('gtb task pack:npm', () => {
   it('produces tarball for publishable package', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
@@ -69,7 +77,7 @@ describe.concurrent('gtb pack:npm', () => {
       version: '1.0.0',
     });
 
-    const result = await fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['task', 'pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 
@@ -90,7 +98,7 @@ describe.concurrent('gtb pack:npm', () => {
       version: '1.0.0',
     });
 
-    const result = await fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['task', 'pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
     expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
@@ -105,7 +113,7 @@ describe.concurrent('gtb pack:npm', () => {
       version: '1.0.0',
     });
 
-    const result = await fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['task', 'pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
     expect(existsSync(path.join(fixture.projectDir, 'dist', 'packages', 'npm'))).toBe(
@@ -134,7 +142,7 @@ describe.concurrent('gtb pack:npm', () => {
       version: '1.0.0',
     });
 
-    const result = await fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['task', 'pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 
@@ -169,7 +177,7 @@ describe.concurrent('gtb pack:npm', () => {
     mkdirSync(distDir, { recursive: true });
     writeFileSync(path.join(distDir, 'stale-0.0.0.tgz'), '');
 
-    const result = await fixture.run('gtb', ['pack:npm']);
+    const result = await fixture.run('gtb', ['task', 'pack:npm']);
 
     expect(result).toMatchObject({ exitCode: 0 });
 

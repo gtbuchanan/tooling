@@ -113,7 +113,7 @@ export const mergeCodecovSections = (path: string, sections: CodecovSections): v
     try {
       rawYaml = parseYaml(readFileSync(path, 'utf8'));
     } catch {
-      throw new Error(`${path}: invalid YAML — fix or delete it and re-run gtb turbo:init`);
+      throw new Error(`${path}: invalid YAML — fix or delete it and re-run gtb sync`);
     }
   }
   const existing = v.parse(v.optional(ExistingCodecovSchema), rawYaml) ?? {};

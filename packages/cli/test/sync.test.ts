@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { runCommand } from 'citty';
 import * as v from 'valibot';
 import { describe, it, vi } from 'vitest';
-import { turboInit } from '#src/commands/turbo-init.js';
+import { sync } from '#src/commands/root/sync.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
@@ -13,8 +14,20 @@ import {
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
 
+const runSync = async (dir: string, args: readonly string[]): Promise<void> => {
+  const origCwd = process.cwd();
+  vi.spyOn(console, 'log').mockReturnValue();
+
+  try {
+    process.chdir(dir);
+    await runCommand(sync, { rawArgs: [...args] });
+  } finally {
+    process.chdir(origCwd);
+  }
+};
+
 const createConsumerProject = (): string => {
-  const root = mkdtempSync(path.join(tmpdir(), 'gtb-turbo-init-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'gtb-sync-'));
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
     "packages:\n  - 'packages/*'\n",
@@ -65,7 +78,7 @@ const createConsumerProject = (): string => {
   return root;
 };
 
-describe(turboInit, () => {
+describe('sync', () => {
   it('generates turbo.json with correct tasks for consumer project', ({ expect }) => {
     const root = createConsumerProject();
     const discovery = discoverWorkspace({ cwd: root });
@@ -80,7 +93,7 @@ describe(turboInit, () => {
     );
   });
 
-  it('generates per-package scripts with gtb commands', ({ expect }) => {
+  it('generates per-package scripts with gtb task commands', ({ expect }) => {
     const root = createConsumerProject();
     const discovery = discoverWorkspace({ cwd: root });
     const app = discovery.packages.find(pkg => pkg.dir.endsWith('app'));
@@ -88,11 +101,11 @@ describe(turboInit, () => {
     const scripts = generatePackageScripts(app!, discovery.isSelfHosted);
 
     expect(scripts).toMatchObject({
-      'compile:ts': 'gtb compile:ts',
-      'lint:eslint': 'gtb lint:eslint',
-      'test:vitest:fast': 'gtb test:vitest:fast',
-      'test:vitest:slow': 'gtb test:vitest:slow',
-      'typecheck:ts': 'gtb typecheck:ts',
+      'compile:ts': 'gtb task compile:ts',
+      'lint:eslint': 'gtb task lint:eslint',
+      'test:vitest:fast': 'gtb task test:vitest:fast',
+      'test:vitest:slow': 'gtb task test:vitest:slow',
+      'typecheck:ts': 'gtb task typecheck:ts',
     });
   });
 
@@ -121,7 +134,7 @@ describe(turboInit, () => {
       'check': 'turbo run check',
       'pack': 'turbo run pack',
       'prepare': 'gtb prepare',
-      'turbo:check': 'gtb turbo:check',
+      'verify': 'gtb verify',
     });
   });
 
@@ -164,17 +177,9 @@ describe(turboInit, () => {
     expect(discovery.isSelfHosted).toBe(true);
   });
 
-  it('turboInit command writes turbo.json and scripts', ({ expect }) => {
+  it('sync command writes turbo.json and scripts', async ({ expect }) => {
     const root = createConsumerProject();
-    const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockReturnValue();
-
-    try {
-      process.chdir(root);
-      turboInit([]);
-    } finally {
-      process.chdir(origCwd);
-    }
+    await runSync(root, []);
 
     expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
 
@@ -185,17 +190,9 @@ describe(turboInit, () => {
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
   });
 
-  it('turboInit generates codecov.yml when packages have vitest tests', ({ expect }) => {
+  it('sync generates codecov.yml when packages have vitest tests', async ({ expect }) => {
     const root = createConsumerProject();
-    const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockReturnValue();
-
-    try {
-      process.chdir(root);
-      turboInit([]);
-    } finally {
-      process.chdir(origCwd);
-    }
+    await runSync(root, []);
 
     const codecovPath = path.join(root, 'codecov.yml');
 
@@ -207,21 +204,14 @@ describe(turboInit, () => {
     expect(content).toContain('carryforward');
   });
 
-  it('turboInit preserves existing codecov.yml user config', ({ expect }) => {
+  it('sync preserves existing codecov.yml user config', async ({ expect }) => {
     const root = createConsumerProject();
-    const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockReturnValue();
     writeFileSync(
       path.join(root, 'codecov.yml'),
       'codecov:\n  require_ci_to_pass: true\n',
     );
 
-    try {
-      process.chdir(root);
-      turboInit([]);
-    } finally {
-      process.chdir(origCwd);
-    }
+    await runSync(root, []);
 
     const content = readFileSync(path.join(root, 'codecov.yml'), 'utf8');
 
@@ -229,30 +219,22 @@ describe(turboInit, () => {
     expect(content).toContain('carryforward');
   });
 
-  it('turboInit --force overwrites existing scripts', ({ expect }) => {
+  it('sync --force overwrites existing scripts', async ({ expect }) => {
     const root = createConsumerProject();
-    const origCwd = process.cwd();
-    vi.spyOn(console, 'log').mockReturnValue();
+    await runSync(root, []);
 
-    try {
-      process.chdir(root);
-      turboInit([]);
+    const appPkg = path.join(root, 'packages', 'app', 'package.json');
+    const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
+    const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
+    writeJsonFile(appPkg, { ...manifest, scripts });
 
-      const appPkg = path.join(root, 'packages', 'app', 'package.json');
-      const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
-      const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
-      writeJsonFile(appPkg, { ...manifest, scripts });
-
-      turboInit(['--force']);
-    } finally {
-      process.chdir(origCwd);
-    }
+    await runSync(root, ['--force']);
 
     const result: unknown = JSON.parse(
       readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
     );
 
-    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb typecheck:ts');
+    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
   });
 
   it('generates gtb shim for self-hosted', ({ expect }) => {
@@ -271,7 +253,7 @@ describe(turboInit, () => {
       discovery.packages[0]!, discovery.isSelfHosted, discovery.rootDir,
     );
 
-    expect(scripts['typecheck:ts']).toBe('pnpm run gtb typecheck:ts');
+    expect(scripts['typecheck:ts']).toBe('pnpm run gtb task typecheck:ts');
     expect(scripts['gtb']).toContain('packages/cli/bin/gtb.ts');
   });
 });
