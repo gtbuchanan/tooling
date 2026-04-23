@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import { compileTs } from './compile-ts.ts';
 import { coverageCodecovUpload } from './coverage-codecov-upload.ts';
 import { coverageVitestMerge } from './coverage-vitest-merge.ts';
+import { deploySkills } from './deploy-skills.ts';
 import { lintEslint } from './lint-eslint.ts';
 import { taskCommandName, taskNames } from './names.ts';
 import { packNpm } from './pack-npm.ts';
@@ -21,6 +22,7 @@ export const task = defineCommand({
     [taskNames.compileTs]: compileTs,
     [taskNames.coverageCodecovUpload]: coverageCodecovUpload,
     [taskNames.coverageVitestMerge]: coverageVitestMerge,
+    [taskNames.deploySkills]: deploySkills,
     [taskNames.lintEslint]: lintEslint,
     [taskNames.packNpm]: packNpm,
     [taskNames.testVitest]: testVitest,

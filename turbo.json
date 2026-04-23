@@ -89,6 +89,7 @@
         "test/**",
         "e2e/**",
         "scripts/**",
+        "skills/**",
         "eslint.config.*"
       ],
       "outputs": [

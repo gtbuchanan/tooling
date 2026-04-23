@@ -1,5 +1,6 @@
 import { taskNames } from '../commands/task/names.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import { skillsConfigFilename } from './skills-config.ts';
 import { typeCheckInclude } from './tsconfig-gen.ts';
 import { aggregateTasks } from './turbo-aggregates.ts';
 
@@ -58,6 +59,7 @@ export interface ToolFlags {
   readonly generateScripts: readonly string[];
   readonly hasLint: boolean;
   readonly hasPublished: boolean;
+  readonly hasSkills: boolean;
   readonly hasTypeScript: boolean;
   readonly hasVitest: boolean;
 }
@@ -87,6 +89,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     hasGenerate: generateScripts.length > 0,
     hasLint,
     hasPublished: discovery.packages.some(pkg => pkg.isPublished),
+    hasSkills: discovery.packages.some(pkg => pkg.hasSkills),
     hasTypeScript,
     hasVitest,
   };
@@ -161,7 +164,7 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     ...(flags.hasGenerate ? [Aggregate.generate] : []),
     ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
   ];
-  const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**'];
+  const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**', 'skills/**'];
 
   return [
     {
@@ -234,6 +237,22 @@ const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
   ];
 };
 
+const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasSkills,
+    key: taskNames.deploySkills,
+    value: {
+      /*
+       * Same-package lint only (no `^`): skills are authored independently
+       * per package and don't depend on sibling packages' lint state.
+       */
+      dependsOn: [taskNames.lintEslint],
+      inputs: [`$TURBO_ROOT$/${skillsConfigFilename}`, 'skills/**'],
+      outputs: [],
+    },
+  },
+];
+
 /** Generates turbo.json from workspace discovery. */
 export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   const flags = resolveToolFlags(discovery);
@@ -243,6 +262,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...packTasks(flags),
     ...lintTasks(flags),
     ...testTasks(flags),
+    ...deploySkillsTasks(flags),
     ...aggregateTasks(flags),
   ];
 

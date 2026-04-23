@@ -3,6 +3,7 @@ export const taskNames = {
   compileTs: 'compile:ts',
   coverageCodecovUpload: 'coverage:codecov:upload',
   coverageVitestMerge: 'coverage:vitest:merge',
+  deploySkills: 'deploy:skills',
   lintEslint: 'lint:eslint',
   packNpm: 'pack:npm',
   testVitest: 'test:vitest',

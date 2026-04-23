@@ -26,6 +26,8 @@ export interface PackageCapabilities {
   readonly hasEslint: boolean;
   /** Has a `scripts/` directory. */
   readonly hasScripts: boolean;
+  /** Has a `skills/` directory containing authored Agent Skills. */
+  readonly hasSkills: boolean;
   /** Has a `test/` directory. */
   readonly hasTest: boolean;
   /** Has `@gtbuchanan/tsconfig` dependency or `tsconfig.json`. */
@@ -111,6 +113,7 @@ const buildCapabilities = (
     hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasFilePrefix(files, 'eslint.config'),
     hasGenerate: generateScripts.length > 0,
     hasScripts: hasDir(dir, 'scripts'),
+    hasSkills: hasDir(dir, 'skills'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),
     hasVitest,

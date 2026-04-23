@@ -90,6 +90,7 @@ const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>
     ...ciDeps,
     ...(flags.hasVitest ? [Aggregate.testSlow] : []),
     ...(flags.hasE2e ? [Aggregate.testE2e] : []),
+    ...(flags.hasSkills ? [taskNames.deploySkills] : []),
   ];
 
   return [
