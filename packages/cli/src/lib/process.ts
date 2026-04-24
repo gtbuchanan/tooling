@@ -26,3 +26,29 @@ export const run = async (
     child.on('error', reject);
   });
 };
+
+/**
+ * Spawns a command. Resolves true on exit 0, false on ENOENT
+ * (command not found), and rejects on other failures.
+ */
+export const trySpawn = async (
+  bin: string,
+  args: readonly string[],
+): Promise<boolean> =>
+  new Promise((resolve, reject) => {
+    const child = crossSpawn(bin, [...args], { stdio: 'inherit' });
+    child.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'ENOENT') {
+        resolve(false);
+      } else {
+        reject(err);
+      }
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve(true);
+      } else {
+        reject(new Error(`${bin} exited with code ${String(code)}`));
+      }
+    });
+  });

@@ -1,33 +1,8 @@
 import { statSync } from 'node:fs';
 import { defineCommand } from 'citty';
 import crossSpawn from 'cross-spawn';
+import { trySpawn } from '../../lib/process.ts';
 import { rootNames } from './names.ts';
-
-/**
- * Tries to spawn a command. Resolves true on exit 0, false on ENOENT
- * (command not found), and rejects on other failures.
- */
-const trySpawn = async (
-  bin: string,
-  args: readonly string[],
-): Promise<boolean> =>
-  new Promise((resolve, reject) => {
-    const child = crossSpawn(bin, [...args], { stdio: 'inherit' });
-    child.on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'ENOENT') {
-        resolve(false);
-      } else {
-        reject(err);
-      }
-    });
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve(true);
-      } else {
-        reject(new Error(`${bin} exited with code ${String(code)}`));
-      }
-    });
-  });
 
 /**
  * Linked worktrees have a `.git` file (not directory) pointing to the
@@ -42,35 +17,52 @@ const isLinkedWorktree = (): boolean => {
   }
 };
 
+const installPreCommitHooks = async (): Promise<void> => {
+  if (isLinkedWorktree()) {
+    console.log('linked worktree, skipping hook installation');
+    return;
+  }
+
+  if (await trySpawn('prek', ['install'])) {
+    return;
+  }
+
+  console.log('prek unavailable, falling back to pre-commit');
+  crossSpawn.sync('git', ['config', '--unset-all', 'core.hooksPath']);
+
+  if (await trySpawn('pre-commit', ['install'])) {
+    return;
+  }
+
+  console.log('pre-commit unavailable, skipping hook installation');
+};
+
+const syncInstalledSkills = async (): Promise<void> => {
+  if (!await trySpawn('skills-npm', ['--recursive', '--yes'])) {
+    console.log('skills-npm unavailable, skipping skill symlinking');
+  }
+};
+
 /**
- * Installs pre-commit hooks via prek or pre-commit.
+ * Installs pre-commit hooks and symlinks skills from installed packages.
  *
- * Skips in linked worktrees (hooks inherited via shared config). In the
- * main working tree, tries prek first (Rust, fast), then falls back to
- * pre-commit (Python) when prek is unavailable (e.g., Android/Termux).
+ * Hooks: prek first (Rust, fast), falls back to pre-commit (Python) on
+ * platforms where prek is unavailable. Skipped in linked worktrees
+ * (hooks inherited via shared `core.hooksPath`).
+ *
+ * Skills: `skills-npm --recursive` discovers `skills/` in every installed
+ * package and symlinks them into agent directories per
+ * `skills-npm.config.ts`. Runs unconditionally — linked worktrees have
+ * their own `node_modules` and agent dirs. Silently skipped when
+ * `skills-npm` isn't installed (consumers opt in).
  */
 export const prepare = defineCommand({
   meta: {
-    description: 'Install pre-commit hooks via prek or pre-commit',
+    description: 'Install pre-commit hooks and sync installed skills',
     name: rootNames.prepare,
   },
   run: async () => {
-    if (isLinkedWorktree()) {
-      console.log('prepare: skipped (linked worktree)');
-      return;
-    }
-
-    if (await trySpawn('prek', ['install'])) {
-      return;
-    }
-
-    console.log('prek unavailable, falling back to pre-commit');
-    crossSpawn.sync('git', ['config', '--unset-all', 'core.hooksPath']);
-
-    if (await trySpawn('pre-commit', ['install'])) {
-      return;
-    }
-
-    console.log('pre-commit unavailable, skipping hook installation');
+    await installPreCommitHooks();
+    await syncInstalledSkills();
   },
 });

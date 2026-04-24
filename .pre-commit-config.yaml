@@ -23,7 +23,7 @@ repos:
   - hooks:
       # ESLint handles linting, formatting (via eslint-plugin-format),
       # and markdown structural checks (via eslint-plugin-markdownlint).
-      - entry: pnpm exec eslint --fix --max-warnings=0
+      - entry: pnpm exec eslint --fix --max-warnings=0 --no-warn-ignored
         id: eslint
         language: system
         name: eslint
