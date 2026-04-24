@@ -7,7 +7,6 @@ TypeScript, Vitest configuration, and a shared build CLI.
 
 ```text
 README.md              — Consumer-facing documentation
-skills-npm.config.ts   — Agent targets for `skills-npm` (claude-code, codex, github-copilot)
 .github/
   actions/
     pnpm-resolve-pinned/ — Composite action: resolve locked version without install
