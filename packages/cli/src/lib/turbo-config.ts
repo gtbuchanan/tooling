@@ -147,12 +147,23 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
   },
 ];
 
+const compileSkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasSkills && flags.hasPublished,
+    key: taskNames.compileSkills,
+    value: {
+      inputs: ['skills/**'],
+      outputs: ['dist/source/skills/**'],
+    },
+  },
+];
+
 const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
     key: taskNames.packNpm,
     value: {
-      dependsOn: [taskNames.compileTs],
+      dependsOn: [taskNames.compileTs, taskNames.compileSkills],
       inputs: ['$TURBO_ROOT$/package.json', 'dist/source/**', 'package.json'],
       outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
     },
@@ -259,6 +270,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   const entries = [
     ...typecheckTasks(flags),
     ...compileTasks(flags),
+    ...compileSkillsTasks(flags),
     ...packTasks(flags),
     ...lintTasks(flags),
     ...testTasks(flags),

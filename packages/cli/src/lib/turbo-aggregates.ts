@@ -26,7 +26,12 @@ const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask
   {
     condition: flags.hasPublished,
     key: Aggregate.compile,
-    value: { dependsOn: [taskNames.compileTs] },
+    value: {
+      dependsOn: [
+        taskNames.compileTs,
+        ...(flags.hasSkills ? [taskNames.compileSkills] : []),
+      ],
+    },
   },
 ];
 

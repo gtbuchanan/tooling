@@ -1,5 +1,6 @@
 /** CLI names for task subcommands. Keyed by import alias. */
 export const taskNames = {
+  compileSkills: 'compile:skills',
   compileTs: 'compile:ts',
   coverageCodecovUpload: 'coverage:codecov:upload',
   coverageVitestMerge: 'coverage:vitest:merge',

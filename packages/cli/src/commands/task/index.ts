@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { compileSkills } from './compile-skills.ts';
 import { compileTs } from './compile-ts.ts';
 import { coverageCodecovUpload } from './coverage-codecov-upload.ts';
 import { coverageVitestMerge } from './coverage-vitest-merge.ts';
@@ -19,6 +20,7 @@ export const task = defineCommand({
     name: taskCommandName,
   },
   subCommands: {
+    [taskNames.compileSkills]: compileSkills,
     [taskNames.compileTs]: compileTs,
     [taskNames.coverageCodecovUpload]: coverageCodecovUpload,
     [taskNames.coverageVitestMerge]: coverageVitestMerge,

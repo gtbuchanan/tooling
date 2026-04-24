@@ -13,6 +13,7 @@
     "gtb": "./dist/source/bin/gtb.js"
   },
   "scripts": {
+    "compile:skills": "pnpm run gtb task compile:skills",
     "compile:ts": "pnpm run gtb task compile:ts",
     "coverage:codecov:upload": "pnpm run gtb task coverage:codecov:upload",
     "coverage:vitest:merge": "pnpm run gtb task coverage:vitest:merge",

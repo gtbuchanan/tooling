@@ -37,6 +37,11 @@ const packageScriptEntries = (
       value: cmd(taskNames.typecheckTs),
     },
     { condition: caps.isPublished, key: taskNames.compileTs, value: cmd(taskNames.compileTs) },
+    {
+      condition: caps.isPublished && caps.hasSkills,
+      key: taskNames.compileSkills,
+      value: cmd(taskNames.compileSkills),
+    },
     { condition: caps.isPublished, key: taskNames.packNpm, value: cmd(taskNames.packNpm) },
     { condition: caps.hasEslint, key: taskNames.lintEslint, value: cmd(taskNames.lintEslint) },
     {

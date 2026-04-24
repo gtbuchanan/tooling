@@ -27,7 +27,16 @@
     },
     "compile": {
       "dependsOn": [
-        "compile:ts"
+        "compile:ts",
+        "compile:skills"
+      ]
+    },
+    "compile:skills": {
+      "inputs": [
+        "skills/**"
+      ],
+      "outputs": [
+        "dist/source/skills/**"
       ]
     },
     "compile:ts": {
@@ -114,7 +123,8 @@
     },
     "pack:npm": {
       "dependsOn": [
-        "compile:ts"
+        "compile:ts",
+        "compile:skills"
       ],
       "inputs": [
         "$TURBO_ROOT$/package.json",
