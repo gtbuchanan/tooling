@@ -40,10 +40,14 @@
     "@types/cross-spawn": "catalog:"
   },
   "peerDependencies": {
+    "skills": "^1.5.1",
     "skills-npm": "^1.1.1",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
+    "skills": {
+      "optional": true
+    },
     "skills-npm": {
       "optional": true
     }

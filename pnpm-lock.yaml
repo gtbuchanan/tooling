@@ -212,6 +212,9 @@ importers:
       find-up-simple:
         specifier: 'catalog:'
         version: 1.0.1
+      skills:
+        specifier: ^1.5.1
+        version: 1.5.1
       skills-npm:
         specifier: ^1.1.1
         version: 1.1.1

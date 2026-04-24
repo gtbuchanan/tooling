@@ -188,6 +188,25 @@ skipped if `skills-npm` isn't installed. See
 `skills-npm.config.ts` if you need to pin specific agents or filter
 which packages get scanned.
 
+### Authoring skills in your packages
+
+Place `SKILL.md` files under `packages/<pkg>/skills/<name>/` with the
+required frontmatter (`name`, `description`). Pick a globally unique
+name — prefix with your scope (e.g. `acme-foo`) to avoid collision
+with other published packages.
+
+Run `gtb sync`. Packages with a `skills/` directory gain:
+
+- `compile:skills` — copies `skills/` into `dist/source/skills/` during
+  `pack`, shipping them to consumers via the published tarball
+- `deploy:skills` — symlinks skills into local agent directories for
+  dogfooding; requires `skills` (Vercel Labs) as a devDep:
+
+```sh
+pnpm add -D skills
+pnpm deploy:skills
+```
+
 ## Workspace detection
 
 `pack` supports both monorepo and single-package layouts:
