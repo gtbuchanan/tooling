@@ -4,12 +4,15 @@ import { run } from '../../lib/process.ts';
 import { loadConfiguredAgents } from '../../lib/skills-config.ts';
 import { resolveWorkspace } from '../../lib/workspace.ts';
 
+const isModuleNotFound = (error: unknown): boolean =>
+  error instanceof Error && 'code' in error && error.code === 'ERR_MODULE_NOT_FOUND';
+
 const detectAgents = async (): Promise<readonly string[]> => {
   try {
     const { getDetectedAgents } = await import('skills-npm');
     return await getDetectedAgents();
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') {
+    if (isModuleNotFound(error)) {
       return [];
     }
     throw error;
