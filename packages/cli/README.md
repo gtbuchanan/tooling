@@ -167,6 +167,27 @@ Define inputs and outputs in a per-package `turbo.json`:
 }
 ```
 
+## Agent Skills
+
+`gtb` ships opt-in support for
+[Agent Skills](https://agentskills.io/specification).
+
+### Consuming skills from installed packages
+
+Add `skills-npm` as a devDep:
+
+```sh
+pnpm add -D skills-npm
+```
+
+`gtb prepare` invokes `skills-npm --recursive --yes` on every `pnpm
+install`, symlinking skills from every installed package into the
+directories of the coding agents detected on your machine. Silently
+skipped if `skills-npm` isn't installed. See
+[`skills-npm`](https://github.com/antfu/skills-npm) for a
+`skills-npm.config.ts` if you need to pin specific agents or filter
+which packages get scanned.
+
 ## Workspace detection
 
 `pack` supports both monorepo and single-package layouts:

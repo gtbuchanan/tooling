@@ -1,4 +1,6 @@
 *.tsbuildinfo
+.agents/skills/
+.claude/skills/
 .claude/worktrees/
 .turbo/
 dist/
