@@ -196,6 +196,50 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks).toHaveProperty('pack');
   });
 
+  it('omits compile:skills from pack:npm dependsOn when no package has skills', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ isPublished: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['pack:npm']?.dependsOn).toStrictEqual(['compile:ts']);
+    expect(result.tasks).not.toHaveProperty('compile:skills');
+  });
+
+  it('includes compile:skills in pack:npm dependsOn when any package has skills', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasSkills: true, isPublished: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['pack:npm']?.dependsOn).toStrictEqual([
+      'compile:ts',
+      'compile:skills',
+    ]);
+  });
+
+  it('omits lint:eslint from deploy:skills dependsOn when no package has ESLint', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasSkills: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['deploy:skills']?.dependsOn).toStrictEqual([]);
+  });
+
+  it('includes lint:eslint in deploy:skills dependsOn when ESLint exists', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasEslint: true, hasSkills: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['deploy:skills']?.dependsOn).toStrictEqual(['lint:eslint']);
+  });
+
   it('prunes typecheck:ts from lint dependsOn when no TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ hasEslint: true }),

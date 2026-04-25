@@ -7,7 +7,8 @@
         "compile",
         "pack",
         "test:slow",
-        "test:e2e"
+        "test:e2e",
+        "deploy:skills"
       ]
     },
     "build:ci": {
@@ -26,7 +27,16 @@
     },
     "compile": {
       "dependsOn": [
-        "compile:ts"
+        "compile:ts",
+        "compile:skills"
+      ]
+    },
+    "compile:skills": {
+      "inputs": [
+        "skills/**"
+      ],
+      "outputs": [
+        "dist/source/skills/**"
       ]
     },
     "compile:ts": {
@@ -73,6 +83,16 @@
         "dist/coverage/vitest/merged/**"
       ]
     },
+    "deploy:skills": {
+      "dependsOn": [
+        "lint:eslint"
+      ],
+      "inputs": [
+        "$TURBO_ROOT$/skills-npm.config.ts",
+        "skills/**"
+      ],
+      "outputs": []
+    },
     "lint": {
       "dependsOn": [
         "lint:eslint"
@@ -89,6 +109,7 @@
         "test/**",
         "e2e/**",
         "scripts/**",
+        "skills/**",
         "eslint.config.*"
       ],
       "outputs": [
@@ -102,7 +123,8 @@
     },
     "pack:npm": {
       "dependsOn": [
-        "compile:ts"
+        "compile:ts",
+        "compile:skills"
       ],
       "inputs": [
         "$TURBO_ROOT$/package.json",

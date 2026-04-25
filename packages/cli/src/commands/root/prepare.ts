@@ -51,10 +51,10 @@ const syncInstalledSkills = async (): Promise<void> => {
  * (hooks inherited via shared `core.hooksPath`).
  *
  * Skills: `skills-npm --recursive` discovers `skills/` in every installed
- * package and symlinks them into agent directories per
- * `skills-npm.config.ts`. Runs unconditionally — linked worktrees have
- * their own `node_modules` and agent dirs. Silently skipped when
- * `skills-npm` isn't installed (consumers opt in).
+ * package and symlinks them into the agent directories it detects on
+ * the machine. Runs unconditionally — linked worktrees have their own
+ * `node_modules` and agent dirs. Silently skipped when `skills-npm`
+ * isn't installed (consumers opt in).
  */
 export const prepare = defineCommand({
   meta: {

@@ -10,6 +10,7 @@ import {
   buildOutput,
   buildRepoFields,
 } from '../../lib/manifest.ts';
+import { toPosixRelative } from '../../lib/paths.ts';
 import {
   type ResolveWorkspaceOptions,
   readManifest,
@@ -64,7 +65,7 @@ const preparePackage = (
   }
 
   const target = path.join(pkgDir, dir);
-  const directory = path.relative(rootDir, pkgDir).replaceAll('\\', '/');
+  const directory = toPosixRelative(rootDir, pkgDir);
   writeSourceManifest(manifest, root, target, directory);
 };
 
@@ -99,7 +100,7 @@ const prepareAndPack = (
   }
 
   const target = path.join(pkgDir, dir);
-  const directory = path.relative(rootDir, pkgDir).replaceAll('\\', '/');
+  const directory = toPosixRelative(rootDir, pkgDir);
   writeSourceManifest(manifest, root, target, directory);
   execPnpmPack(pkgDir, path.join(pkgDir, packDestination));
 };

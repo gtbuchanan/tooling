@@ -5,3 +5,4 @@
 .turbo/
 dist/
 node_modules/
+skills-lock.json
