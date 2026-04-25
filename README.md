@@ -4,14 +4,16 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 
 ## Packages
 
-| Package                                                                       | Description                          |
-| ----------------------------------------------------------------------------- | ------------------------------------ |
-| [@gtbuchanan/cli](packages/cli)                                               | Shared build CLI (`gtb`)             |
-| [@gtbuchanan/eslint-config](packages/eslint-config)                           | Shared ESLint configuration          |
-| [@gtbuchanan/eslint-plugin-markdownlint](packages/eslint-plugin-markdownlint) | ESLint plugin wrapping markdownlint  |
-| [@gtbuchanan/eslint-plugin-yamllint](packages/eslint-plugin-yamllint)         | ESLint plugin for yamllint gap rules |
-| [@gtbuchanan/tsconfig](packages/tsconfig)                                     | Shared TypeScript base configuration |
-| [@gtbuchanan/vitest-config](packages/vitest-config)                           | Shared Vitest configuration          |
+| Package                                                                           | Description                                                   |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [@gtbuchanan/cli](packages/cli)                                                   | Shared build CLI (`gtb`)                                      |
+| [@gtbuchanan/eslint-config](packages/eslint-config)                               | Shared ESLint configuration                                   |
+| [@gtbuchanan/eslint-plugin-agent-skills](packages/eslint-plugin-agent-skills)     | Agent Skills schema + spec-specific rule                      |
+| [@gtbuchanan/eslint-plugin-markdownlint](packages/eslint-plugin-markdownlint)     | ESLint plugin wrapping markdownlint                           |
+| [@gtbuchanan/eslint-plugin-md-frontmatter](packages/eslint-plugin-md-frontmatter) | ESLint plugin validating Markdown frontmatter via JSON Schema |
+| [@gtbuchanan/eslint-plugin-yamllint](packages/eslint-plugin-yamllint)             | ESLint plugin for yamllint gap rules                          |
+| [@gtbuchanan/tsconfig](packages/tsconfig)                                         | Shared TypeScript base configuration                          |
+| [@gtbuchanan/vitest-config](packages/vitest-config)                               | Shared Vitest configuration                                   |
 
 ## Reusable Workflows
 
