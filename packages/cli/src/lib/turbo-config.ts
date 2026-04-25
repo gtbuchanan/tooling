@@ -167,7 +167,18 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
         taskNames.compileTs,
         ...(flags.hasSkills ? [taskNames.compileSkills] : []),
       ],
-      inputs: ['$TURBO_ROOT$/package.json', 'dist/source/**', 'package.json'],
+      /*
+       * Exclude the generated manifest from inputs: pack:npm writes
+       * `dist/source/package.json` as one of its outputs, and including it
+       * in the input glob makes the task's hash depend on whether a prior
+       * run left the file on disk. That prevents cache hits across fresh
+       * worktrees even when the source inputs are identical.
+       */
+      inputs: [
+        '$TURBO_ROOT$/package.json',
+        'dist/source/**', '!dist/source/package.json',
+        'package.json',
+      ],
       outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
     },
   },

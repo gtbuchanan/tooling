@@ -220,6 +220,16 @@ describe.concurrent(generateTurboJson, () => {
     ]);
   });
 
+  it('excludes the generated manifest from pack:npm inputs', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ isPublished: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['pack:npm']?.inputs).toContain('!dist/source/package.json');
+  });
+
   it('omits lint:eslint from deploy:skills dependsOn when no package has ESLint', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ hasSkills: true }),

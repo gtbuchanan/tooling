@@ -129,6 +129,7 @@
       "inputs": [
         "$TURBO_ROOT$/package.json",
         "dist/source/**",
+        "!dist/source/package.json",
         "package.json"
       ],
       "outputs": [
