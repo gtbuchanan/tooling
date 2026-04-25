@@ -45,9 +45,6 @@
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
-    "skills": {
-      "optional": true
-    },
     "skills-npm": {
       "optional": true
     }
