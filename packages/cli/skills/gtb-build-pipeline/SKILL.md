@@ -60,6 +60,8 @@ Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so loc
 - **`deploy:skills` depends on `lint:eslint` same-package (no `^`)** — catches broken frontmatter and markdown in `SKILL.md` before deploy. Skills are authored independently per package; there's no topological chain.
 - **`build:ci` excludes `test:slow`, `test:e2e`, `deploy:skills`** — CI runs fast tests; slow/e2e run on full builds; CI has no agents to serve skills to.
 
+`deploy:skills` keys on `skills/**` and `skills-npm.config.ts` only. If you install or remove an agent and want existing skills resymlinked into the new agent's project-local dir, run `turbo run deploy:skills --force` once — turbo's cache otherwise reports HIT and skips the redeploy.
+
 ## `gtb sync` and `gtb verify`
 
 `gtb sync` reconciles generated state:

@@ -77,9 +77,11 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 
 | Name                      | Tool                                                                                         |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
+| `compile:skills`          | Copy `skills/` into `dist/source/skills/`                                                    |
 | `compile:ts`              | `tsc -p tsconfig.build.json`                                                                 |
 | `coverage:codecov:upload` | Upload lcov to Codecov (requires [`codecov` CLI](https://docs.codecov.com/docs/codecov-cli)) |
 | `coverage:vitest:merge`   | `vitest --merge-reports` (fast + slow)                                                       |
+| `deploy:skills`           | Symlink skills into project-local agent dirs via `skills add`                                |
 | `typecheck:ts`            | `tsc --noEmit`                                                                               |
 | `lint:eslint`             | `eslint --max-warnings=0`                                                                    |
 | `pack:npm`                | Generate manifest + `pnpm pack` (per-pkg)                                                    |
@@ -197,10 +199,11 @@ with other published packages.
 
 Run `gtb sync`. Packages with a `skills/` directory gain:
 
-- `compile:skills` — copies `skills/` into `dist/source/skills/` during
-  `pack`, shipping them to consumers via the published tarball
-- `deploy:skills` — symlinks skills into local agent directories for
-  dogfooding; requires `skills` (Vercel Labs) as a devDep:
+- `compile:skills` — copies `skills/` into `dist/source/skills/` before
+  `pack:npm`, shipping them to consumers via the published tarball
+- `deploy:skills` — symlinks skills into project-local agent directories
+  (`./.claude/skills/`, `./.codex/skills/`, etc.) for dogfooding;
+  requires `skills` (Vercel Labs) as a devDep:
 
 ```sh
 pnpm add -D skills
