@@ -1,22 +1,20 @@
+import { createRequire } from 'node:module';
 import { defineCommand } from 'citty';
 import { toPosixRelative } from '../../lib/paths.ts';
 import { run } from '../../lib/process.ts';
 import { loadConfiguredAgents } from '../../lib/skills-config.ts';
 import { resolveWorkspace } from '../../lib/workspace.ts';
 
-const isModuleNotFound = (error: unknown): boolean =>
-  error instanceof Error && 'code' in error && error.code === 'ERR_MODULE_NOT_FOUND';
+const require = createRequire(import.meta.url);
 
 const detectAgents = async (): Promise<readonly string[]> => {
   try {
-    const { getDetectedAgents } = await import('skills-npm');
-    return await getDetectedAgents();
-  } catch (error) {
-    if (isModuleNotFound(error)) {
-      return [];
-    }
-    throw error;
+    require.resolve('skills-npm');
+  } catch {
+    return [];
   }
+  const { getDetectedAgents } = await import('skills-npm');
+  return getDetectedAgents();
 };
 
 /**
