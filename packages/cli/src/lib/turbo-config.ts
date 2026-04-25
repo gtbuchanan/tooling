@@ -163,7 +163,10 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     condition: flags.hasPublished,
     key: taskNames.packNpm,
     value: {
-      dependsOn: [taskNames.compileTs, taskNames.compileSkills],
+      dependsOn: [
+        taskNames.compileTs,
+        ...(flags.hasSkills ? [taskNames.compileSkills] : []),
+      ],
       inputs: ['$TURBO_ROOT$/package.json', 'dist/source/**', 'package.json'],
       outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
     },
@@ -256,8 +259,10 @@ const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTas
       /*
        * Same-package lint only (no `^`): skills are authored independently
        * per package and don't depend on sibling packages' lint state.
+       * Lint dep is conditional on the workspace having ESLint at all —
+       * referencing lint:eslint when it isn't generated would dangle.
        */
-      dependsOn: [taskNames.lintEslint],
+      dependsOn: flags.hasEslint ? [taskNames.lintEslint] : [],
       inputs: [`$TURBO_ROOT$/${skillsConfigFilename}`, 'skills/**'],
       outputs: [],
     },
