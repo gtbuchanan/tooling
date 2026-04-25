@@ -88,9 +88,14 @@ export const mergePackageScripts = (
   return { added, skipped };
 };
 
-/** Writes a YAML object to a file with single-quoted strings and trailing newline. */
+/**
+ * Writes a YAML object to a file with single-quoted strings, a leading
+ * `---` document-start marker, and a trailing newline. The marker keeps
+ * generated output in sync with the `yamllint/document-start` rule, so
+ * a follow-up `eslint --fix` pass cannot reintroduce drift.
+ */
 export const writeYamlFile = (path: string, data: unknown): void => {
-  writeFileSync(path, stringifyYaml(data, { singleQuote: true }));
+  writeFileSync(path, stringifyYaml(data, { directives: true, singleQuote: true }));
 };
 
 const ExistingCodecovSchema = v.nullable(
