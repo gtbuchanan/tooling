@@ -31,6 +31,9 @@ runs:
         TURBO_VERSION: ${{ steps.turbo-version.outputs.version }}
       id: cache-check
       name: Check turbo cache
+      # Workspace edits fully invalidate the cache — see "Turbo cache
+      # miss on workspace edits" in AGENTS.md. The check still pays off
+      # on root-only edits and re-runs.
       run: |
         hit=false
         if dry=$(pnpm dlx "turbo@${TURBO_VERSION}" run "$TURBO_TASK" --dry=json); then

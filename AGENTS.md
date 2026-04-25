@@ -151,6 +151,22 @@ Composite actions:
   lockfile without install. Used to pin `pnpm dlx` invocations to the
   locked version.
 
+### Turbo cache miss on workspace edits
+
+Source changes in any `packages/*` workspace fully invalidate every
+task's cache across all packages — `Cached: 0 cached, N total` is
+expected. Turbo 2.x mixes every file in every workspace package
+reachable from root `package.json` deps/devDeps into
+`hashOfInternalDependencies`, which salts every task hash. Our root
+devDeps (`@gtbuchanan/cli`, `eslint-config`, `tsconfig`, `vitest-config`)
+transitively reach all seven packages. Root-only edits (this doc,
+`.github/`) still hit cache.
+
+Consumers see our packages as external npm deps (lockfile-keyed), so
+they're unaffected. See
+[vercel/turborepo#8202](https://github.com/vercel/turborepo/pull/8202);
+no config scopes this hash.
+
 ### Vitest usage specifics
 
 Slow tests use Vitest's native tag system (`test('name', { tags: ['slow'] }, ...)`
