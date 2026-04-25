@@ -1,4 +1,5 @@
 import type { PluginFactory } from '../index.ts';
+import agentSkills from './agent-skills.ts';
 import core from './core.ts';
 import eslintComments from './eslint-comments.ts';
 import format from './format.ts';
@@ -20,6 +21,6 @@ import yamllint from './yamllint.ts';
 /** Ordered plugin factories. Later entries override earlier ones for the same file. */
 export const plugins: readonly PluginFactory[] = [
   typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint, pnpm, node,
-  format, markdownlint, stylistic, eslintComments, importX,
+  format, markdownlint, agentSkills, stylistic, eslintComments, importX,
   core, vitest,
 ];

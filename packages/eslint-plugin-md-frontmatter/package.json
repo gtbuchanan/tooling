@@ -1,0 +1,45 @@
+{
+  "name": "@gtbuchanan/eslint-plugin-md-frontmatter",
+  "version": "0.1.0",
+  "description": "ESLint plugin validating Markdown YAML frontmatter against a JSON Schema",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./parse": "./src/parse.ts"
+  },
+  "scripts": {
+    "compile:ts": "pnpm run gtb task compile:ts",
+    "coverage:codecov:upload": "pnpm run gtb task coverage:codecov:upload",
+    "coverage:vitest:merge": "pnpm run gtb task coverage:vitest:merge",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "lint:eslint": "pnpm run gtb task lint:eslint",
+    "pack:npm": "pnpm run gtb task pack:npm",
+    "test:vitest:fast": "pnpm run gtb task test:vitest:fast",
+    "test:vitest:slow": "pnpm run gtb task test:vitest:slow",
+    "typecheck:ts": "pnpm run gtb task typecheck:ts"
+  },
+  "dependencies": {
+    "ajv": "catalog:",
+    "yaml": "catalog:"
+  },
+  "devDependencies": {
+    "@gtbuchanan/vitest-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "eslint": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "exports": {
+      ".": "./src/index.js",
+      "./parse": "./src/parse.js"
+    },
+    "linkDirectory": false
+  }
+}

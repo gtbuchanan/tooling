@@ -23,10 +23,18 @@ component_management:
       name: eslint-plugin-yamllint
       paths:
         - packages/eslint-plugin-yamllint/src/**
+    - component_id: eslint-plugin-md-frontmatter
+      name: eslint-plugin-md-frontmatter
+      paths:
+        - packages/eslint-plugin-md-frontmatter/src/**
     - component_id: eslint-plugin-markdownlint
       name: eslint-plugin-markdownlint
       paths:
         - packages/eslint-plugin-markdownlint/src/**
+    - component_id: eslint-plugin-agent-skills
+      name: eslint-plugin-agent-skills
+      paths:
+        - packages/eslint-plugin-agent-skills/src/**
     - component_id: eslint-config
       name: eslint-config
       paths:
@@ -54,10 +62,18 @@ flags:
     carryforward: true
     paths:
       - packages/eslint-config/
+  eslint-plugin-agent-skills:
+    carryforward: true
+    paths:
+      - packages/eslint-plugin-agent-skills/
   eslint-plugin-markdownlint:
     carryforward: true
     paths:
       - packages/eslint-plugin-markdownlint/
+  eslint-plugin-md-frontmatter:
+    carryforward: true
+    paths:
+      - packages/eslint-plugin-md-frontmatter/
   eslint-plugin-yamllint:
     carryforward: true
     paths:
