@@ -139,6 +139,15 @@ describe(writeYamlFile, () => {
     expect(content.endsWith('\n')).toBe(true);
   });
 
+  it('emits the document-start marker so output matches yamllint policy', ({ expect }) => {
+    const dir = createTempDir();
+    const filePath = path.join(dir, 'test.yml');
+
+    writeYamlFile(filePath, { key: 'value' });
+
+    expect(readFileSync(filePath, 'utf8').startsWith('---\n')).toBe(true);
+  });
+
   it('uses single quotes for strings that need quoting', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'test.yml');
