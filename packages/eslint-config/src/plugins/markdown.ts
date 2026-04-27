@@ -28,10 +28,21 @@ const prettierConflicts = {
  * commonmark mdast; the latter fills the gap rules `\@eslint/markdown`
  * does not yet implement.
  */
-const plugin: PluginFactory = () => markdown.configs.recommended.map(cfg => ({
-  ...cfg,
-  ignores: [...markdownIgnores],
-  rules: { ...cfg.rules, ...extraRules, ...prettierConflicts },
-}));
+const plugin: PluginFactory = () => [
+  ...markdown.configs.recommended.map(cfg => ({
+    ...cfg,
+    ignores: [...markdownIgnores],
+    rules: { ...cfg.rules, ...extraRules, ...prettierConflicts },
+  })),
+  {
+    /*
+     * Changesets writes `[<commit>] <message>` for each entry, where
+     * `[<commit>]` is parsed as a reference-style link with no matching
+     * definition. The rule otherwise applies on authored Markdown.
+     */
+    files: ['**/CHANGELOG.md'],
+    rules: { 'markdown/no-missing-label-refs': 'off' },
+  },
+];
 
 export default plugin;

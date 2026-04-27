@@ -23,12 +23,10 @@ export const tsOnlyFiles: string[] = tsOnlyExtensions.map(
 );
 
 /**
- * Markdown files excluded from structural lint. `.changeset/**` is
- * authored against a stricter changesets schema; `**\/CHANGELOG.md` is
- * generated and contains ref-style commit links without matching
- * definitions.
+ * Markdown files excluded from structural lint. Changesets owns the
+ * format of files in `.changeset/**` and validates them against its
+ * own schema.
  */
 export const markdownIgnores = [
   '.changeset/**',
-  '**/CHANGELOG.md',
 ] as const;
