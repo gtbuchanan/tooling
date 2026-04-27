@@ -2,6 +2,7 @@ catalog:
   '@changesets/cli': ^2.29.4
   '@eslint-community/eslint-plugin-eslint-comments': 4.7.1
   '@eslint/json': 1.2.0
+  '@eslint/markdown': 8.0.1
   '@j178/prek': ^0.3.8
   '@prettier/plugin-xml': ^3.4.2
   '@stylistic/eslint-plugin': 5.10.0
