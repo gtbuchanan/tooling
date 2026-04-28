@@ -159,7 +159,9 @@ export const schema: Rule.RuleModule = {
 
   create(context) {
     return {
-      Program() {
+      // Key off the actual AST root so this fires under any markdown
+      // parser or language (e.g. @eslint/markdown's `root` mdast node).
+      [context.sourceCode.ast.type]() {
         const options = context.options[0] as SchemaRuleOptions | undefined;
         if (!options) return;
 

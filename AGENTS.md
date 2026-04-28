@@ -83,7 +83,11 @@ coverage, setupFiles, and mock reset.
   rules), `eslint-plugin-yml` (YAML linting + key sorting),
   `eslint-plugin-yamllint` (yamllint gap rules: truthy, octal-values,
   anchors, document-start/end),
-  `eslint-plugin-markdownlint` (Markdown structural linting),
+  `@eslint/markdown` (official Markdown plugin, commonmark AST,
+  recommended rule set),
+  `eslint-plugin-markdownlint` (Markdown structural linting for the
+  rules `@eslint/markdown` doesn't yet cover; rules it does cover are
+  disabled in this config to avoid duplicate diagnostics),
   `eslint-plugin-md-frontmatter` (generic Markdown frontmatter
   validation via JSON Schema, ajv-backed),
   `eslint-plugin-agent-skills` (Agent Skills JSON Schema + the
@@ -197,10 +201,12 @@ skill.
 - All lint violations report as warnings in IDEs (not errors) so TypeScript
   diagnostics stand out. CI enforces via `--max-warnings=0`.
 - Inline suppressions require a `--` reason suffix.
-- Markdown structural rules (`markdownlint/lint`) use markdownlint's
-  own comment syntax for per-rule suppression, not ESLint comments:
-  `<!-- markdownlint-disable-next-line MD024 -->`. This keeps the
-  plugin compatible with standalone markdownlint usage.
+- Markdown lints through two plugins: `@eslint/markdown` (recommended
+  rule set) and `@gtbuchanan/eslint-plugin-markdownlint` for the gaps
+  it doesn't cover. `markdown/*` rules suppress with the standard
+  `<!-- eslint-disable-next-line markdown/no-duplicate-headings -- ... -->`
+  syntax; the wrapped `markdownlint/lint` rule needs markdownlint's
+  own per-rule directive instead: `<!-- markdownlint-disable-next-line MD036 -->`.
 - All exported functions, types, interfaces, and constants must have JSDoc comments.
 - When adding or removing a package, update the packages table in
   `README.md`, the structure tree above, and the linter/formatter

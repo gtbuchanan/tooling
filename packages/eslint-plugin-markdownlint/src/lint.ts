@@ -87,7 +87,9 @@ export const lint: Rule.RuleModule = {
 
   create(context) {
     return {
-      Program() {
+      // Key off the actual AST root so this fires under any markdown
+      // parser or language (e.g. @eslint/markdown's `root` mdast node).
+      [context.sourceCode.ast.type]() {
         const config = (context.options[0] ?? {}) as Configuration;
         const text = context.sourceCode.getText();
         const lines = text.split(/\r\n?|\n/v);

@@ -1,3 +1,4 @@
+import { Linter } from 'eslint';
 import { describe, it, vi } from 'vitest';
 import { configure, defaultEntryPoints } from '#src/index.js';
 
@@ -15,6 +16,14 @@ vi.mock(import('eslint-plugin-only-warn'), () => {
   onlyWarnImport();
   return {};
 });
+
+/*
+ * configure() does dynamic plugin imports — tens of ms per call. Most
+ * tests want the same default-options output, so resolve once and
+ * reuse. Tests with non-default options (custom entryPoints, ignores,
+ * tsconfigRootDir, onlyWarn) keep their own configure() calls.
+ */
+const defaultConfigs = configure({ onlyWarn: false });
 
 describe(configure, () => {
   it('imports eslint-plugin-only-warn when onlyWarn is true', async ({ expect }) => {
@@ -34,14 +43,14 @@ describe(configure, () => {
   });
 
   it('includes json configs', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
 
     expect(configs.some(cfg => cfg.language === 'json/json')).toBe(true);
     expect(configs.some(cfg => cfg.language === 'json/jsonc')).toBe(true);
   });
 
   it('includes pnpm configs by default', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
 
     expect(configs.some(cfg => cfg.name?.includes('pnpm'))).toBe(true);
   });
@@ -98,7 +107,7 @@ describe(configure, () => {
   });
 
   it('includes markdownlint/lint for markdown files', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
 
     const mdlConfig = configs.find(
       cfg => cfg.rules?.['markdownlint/lint'] !== undefined,
@@ -108,7 +117,7 @@ describe(configure, () => {
   });
 
   it('disables Prettier-conflicting markdownlint rules', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
 
     const mdlConfig = configs.find(
       cfg => cfg.rules?.['markdownlint/lint'] !== undefined,
@@ -121,7 +130,7 @@ describe(configure, () => {
   });
 
   it('ignores .changeset files for markdownlint', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
 
     const mdlConfig = configs.find(
       cfg => cfg.rules?.['markdownlint/lint'] !== undefined,
@@ -130,8 +139,46 @@ describe(configure, () => {
     expect(mdlConfig?.ignores).toContain('.changeset/**');
   });
 
+  it('disables markdownlint rules covered by @eslint/markdown', async ({ expect }) => {
+    const configs = await defaultConfigs;
+
+    const mdlConfig = configs.find(
+      cfg => cfg.rules?.['markdownlint/lint'] !== undefined,
+    );
+    const [, ruleConfig] = mdlConfig?.rules?.['markdownlint/lint'] as
+      [string, Record<string, unknown>];
+
+    expect(ruleConfig['no-duplicate-heading']).toBe(false);
+    expect(ruleConfig['fenced-code-language']).toBe(false);
+  });
+
+  it('enables @eslint/markdown commonmark language for markdown files', async ({ expect }) => {
+    const configs = await defaultConfigs;
+
+    const mdConfig = configs.find(
+      cfg => cfg.language === 'markdown/commonmark',
+    );
+
+    expect(mdConfig?.files).toStrictEqual(['**/*.md']);
+    expect(mdConfig?.ignores).toContain('.changeset/**');
+  });
+
+  it('fires both @eslint/markdown and markdownlint on the same .md file', async ({ expect }) => {
+    const configs = await defaultConfigs;
+    const linter = new Linter();
+
+    // `# Heading.` trips markdownlint-only MD026; `[]()` trips
+    // @eslint/markdown-only no-empty-links.
+    const code = '# Heading.\n\n[]()\n';
+    const messages = linter.verify(code, configs, 'foo.md');
+    const ruleIds = new Set(messages.map(msg => msg.ruleId));
+
+    expect(ruleIds).toContain('markdownlint/lint');
+    expect(ruleIds).toContain('markdown/no-empty-links');
+  });
+
   it('includes format/prettier for all supported file types', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
 
     const formatConfigs = configs.filter(
       cfg => cfg.rules?.['format/prettier'] !== undefined,
@@ -148,7 +195,7 @@ describe(configure, () => {
   });
 
   it('type-checks all script file extensions', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const disableConfig = configs.find(cfg =>
       cfg.files?.includes('**/*') && cfg.ignores?.includes('**/*.ts'),
     );
@@ -159,7 +206,7 @@ describe(configure, () => {
   });
 
   it('applies core rules to all script file extensions', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const coreConfig = configs.find(
       cfg => cfg.rules?.['class-methods-use-this'] !== undefined,
     );
@@ -171,7 +218,7 @@ describe(configure, () => {
 
   it('leaves init-declarations disabled', async ({ expect }) => {
     // Conflicts with unicorn/no-useless-undefined on `let x: T | undefined`
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const initConfig = configs.find(
       cfg => cfg.rules?.['init-declarations'] !== undefined,
     );
@@ -180,7 +227,7 @@ describe(configure, () => {
   });
 
   it('applies import ordering to all script file extensions', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const importConfig = configs.find(
       cfg => cfg.rules?.['import-x/order'] !== undefined,
     );
@@ -191,7 +238,7 @@ describe(configure, () => {
   });
 
   it('applies node rules to all script file extensions', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const nodeConfig = configs.find(
       cfg => cfg.rules?.['n/no-extraneous-import'] === 'off',
     );
@@ -202,7 +249,7 @@ describe(configure, () => {
   });
 
   it('applies vitest rules to test files with all script extensions', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const vitestConfig = configs.find(
       cfg => cfg.rules?.['vitest/prefer-lowercase-title'] !== undefined,
     );
@@ -223,7 +270,7 @@ describe(configure, () => {
   });
 
   it('scopes TS-syntax rules to TypeScript files only', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const tsOnlyConfig = configs.find(
       cfg => cfg.rules?.['@typescript-eslint/consistent-type-exports'] !== undefined,
     );
@@ -237,7 +284,7 @@ describe(configure, () => {
   });
 
   it('scopes jsdoc/tsdoc rules to TypeScript files only', async ({ expect }) => {
-    const configs = await configure({ onlyWarn: false });
+    const configs = await defaultConfigs;
     const jsdocConfig = configs.find(
       cfg => cfg.rules?.['jsdoc/check-tag-names'] !== undefined,
     );

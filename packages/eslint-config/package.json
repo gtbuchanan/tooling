@@ -24,6 +24,7 @@
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@eslint/json": "catalog:",
+    "@eslint/markdown": "catalog:",
     "@gtbuchanan/eslint-plugin-agent-skills": "workspace:*",
     "@gtbuchanan/eslint-plugin-markdownlint": "workspace:*",
     "@gtbuchanan/eslint-plugin-md-frontmatter": "workspace:*",

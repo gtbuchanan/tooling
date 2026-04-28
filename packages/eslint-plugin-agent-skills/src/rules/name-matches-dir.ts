@@ -21,7 +21,9 @@ export const nameMatchesDir: Rule.RuleModule = {
 
   create(context) {
     return {
-      Program() {
+      // Key off the actual AST root so this fires under any markdown
+      // parser or language (e.g. @eslint/markdown's `root` mdast node).
+      [context.sourceCode.ast.type]() {
         const { filename } = context;
         if (!filename) return;
         const text = context.sourceCode.getText();

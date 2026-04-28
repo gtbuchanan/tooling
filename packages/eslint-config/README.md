@@ -67,23 +67,42 @@ export default configure({
 - `eslint-plugin-n` — Node.js best practices
 - `eslint-plugin-pnpm` — pnpm workspace validation (opt-in)
 - `eslint-plugin-yml` — YAML linting and key sorting
-- `@gtbuchanan/eslint-plugin-markdownlint` — Markdown structural linting via markdownlint
+- `@eslint/markdown` — Official Markdown lint plugin (commonmark AST)
+- `@gtbuchanan/eslint-plugin-markdownlint` — Markdown structural linting via markdownlint (gap-filling rules not yet covered by `@eslint/markdown`)
 - `eslint-plugin-only-warn` — Downgrades errors to warnings (opt-in)
 
-## Markdown suppression
+## Markdown linting
 
-Markdown structural rules run as a single `markdownlint/lint` ESLint rule.
-To suppress a specific markdownlint rule, use markdownlint's own comment
-syntax (not ESLint comments):
+Two plugins lint Markdown alongside each other: `@eslint/markdown` runs
+its `recommended` rule set, and `@gtbuchanan/eslint-plugin-markdownlint`
+fills the gaps `@eslint/markdown` doesn't yet cover. Rules
+`@eslint/markdown` already enforces (e.g. duplicate headings, bare
+URLs, missing alt text) are disabled in markdownlint to keep
+diagnostics single-sourced. As `@eslint/markdown` adds rules upstream,
+the markdownlint counterparts retire one by one.
+
+### Suppressions
+
+`@eslint/markdown` rules suppress with the standard ESLint HTML-comment
+syntax:
 
 ```markdown
-<!-- markdownlint-disable-next-line MD024 -->
+<!-- eslint-disable-next-line markdown/no-duplicate-headings -- intentional -->
 
 # Duplicate heading allowed here
 ```
 
-ESLint's `<!-- eslint-disable markdownlint/lint -->` suppresses all
-markdownlint rules at once. Use markdownlint directives for per-rule
-control. See the
+`markdownlint/lint` runs as a single ESLint rule, so per-rule control
+uses markdownlint's own comment syntax instead:
+
+```markdown
+<!-- markdownlint-disable-next-line MD036 -->
+
+**Bold paragraph used as heading**
+```
+
+`<!-- eslint-disable markdownlint/lint -->` would suppress every
+markdownlint rule at once. Prefer the markdownlint directive for
+single-rule scope. See the
 [markdownlint docs](https://github.com/DavidAnson/markdownlint#configuration)
 for the full inline directive syntax.

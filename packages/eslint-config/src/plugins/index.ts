@@ -6,6 +6,7 @@ import format from './format.ts';
 import importX from './import-x.ts';
 import jsdoc from './jsdoc.ts';
 import json from './json.ts';
+import markdown from './markdown.ts';
 import markdownlint from './markdownlint.ts';
 import node from './node.ts';
 import pnpm from './pnpm.ts';
@@ -21,6 +22,6 @@ import yamllint from './yamllint.ts';
 /** Ordered plugin factories. Later entries override earlier ones for the same file. */
 export const plugins: readonly PluginFactory[] = [
   typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint, pnpm, node,
-  format, markdownlint, agentSkills, stylistic, eslintComments, importX,
+  format, markdownlint, markdown, agentSkills, stylistic, eslintComments, importX,
   core, vitest,
 ];

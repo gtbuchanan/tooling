@@ -21,3 +21,12 @@ export const tsOnlyExtensions = ['cts', 'mts', 'ts', 'tsx'] as const;
 export const tsOnlyFiles: string[] = tsOnlyExtensions.map(
   ext => `**/*.${ext}`,
 );
+
+/**
+ * Markdown files excluded from structural lint. Changesets owns the
+ * format of files in `.changeset/**` and validates them against its
+ * own schema.
+ */
+export const markdownIgnores = [
+  '.changeset/**',
+] as const;

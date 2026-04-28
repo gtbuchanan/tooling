@@ -1,5 +1,6 @@
 import frontmatter from '@gtbuchanan/eslint-plugin-md-frontmatter';
 import type { ESLint, Linter } from 'eslint';
+import { maxLines } from './rules/max-lines.ts';
 import { nameMatchesDir } from './rules/name-matches-dir.ts';
 import schema from './schema.json' with { type: 'json' };
 
@@ -17,11 +18,13 @@ export { default as skillFrontmatterSchema }
 /**
  * ESLint plugin for Agent Skills-specific lint checks. Most validation
  * lives in the JSON Schema (see `skillFrontmatterSchema`); this plugin
- * only ships the `name-matches-dir` rule for the one spec constraint
- * that schemas can't express.
+ * ships rules for the spec constraints schemas can't express:
+ * `name-matches-dir` (name field matches parent dir) and `max-lines`
+ * (markdown-aware version of core's `max-lines`).
  */
 const plugin: ESLint.Plugin = {
   rules: {
+    'max-lines': maxLines,
     'name-matches-dir': nameMatchesDir,
   },
 };
@@ -30,8 +33,8 @@ const plugin: ESLint.Plugin = {
  * Ready-to-spread flat-config blocks for SKILL.md files.
  *
  * - `recommended` — wires `md-frontmatter/schema` (with the canonical
- *   schema), `agent-skills/name-matches-dir`, and core `max-lines: 500`
- *   for file-length enforcement, scoped to `**\/skills/*\/SKILL.md`.
+ *   schema), `agent-skills/name-matches-dir`, and `agent-skills/max-lines`
+ *   capped at 500 per the spec. Scoped to `**\/skills/*\/SKILL.md`.
  */
 export const configs: {
   readonly recommended: readonly Linter.Config[];
@@ -44,8 +47,8 @@ export const configs: {
         'md-frontmatter': frontmatter,
       },
       rules: {
+        'agent-skills/max-lines': ['warn', { max: 500 }],
         'agent-skills/name-matches-dir': 'warn',
-        'max-lines': ['warn', { max: 500 }],
         'md-frontmatter/schema': ['warn', { schema }],
       },
     },
