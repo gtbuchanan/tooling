@@ -28,12 +28,15 @@ export const maxLines: Rule.RuleModule = {
     return {
       [context.sourceCode.ast.type]() {
         const { max = 500 } = (context.options[0] ?? {}) as MaxLinesOptions;
-        const actual = context.sourceCode.lines.length;
-        if (actual <= max) return;
+        const { lines } = context.sourceCode;
+        if (lines.length <= max) return;
 
         context.report({
-          data: { actual: String(actual), max: String(max) },
-          loc: { end: { column: 0, line: 1 }, start: { column: 0, line: 1 } },
+          data: { actual: String(lines.length), max: String(max) },
+          loc: {
+            end: { column: lines.at(-1)?.length ?? 0, line: lines.length },
+            start: { column: 0, line: max + 1 },
+          },
           messageId: 'tooLong',
         });
       },
