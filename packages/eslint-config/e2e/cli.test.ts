@@ -174,12 +174,14 @@ describe.concurrent('eslint CLI integration', () => {
   });
 
   it('detects markdownlint violations in markdown files', async ({ fixture, expect }) => {
+    // MD026 (no-trailing-punctuation) — markdownlint-only, not covered
+    // by @eslint/markdown's recommended set.
     const result = await fixture.run({
-      files: { 'doc.md': '# Title\n\n# Title\n' },
+      files: { 'doc.md': '# Title.\n' },
     });
 
     expect(result.stdout).toContain('markdownlint/lint');
-    expect(result.stdout).toMatch(/MD024/v);
+    expect(result.stdout).toMatch(/MD026/v);
   });
 
   it('suppresses markdownlint rules disabled by prettier style', async ({ fixture, expect }) => {
@@ -191,21 +193,22 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result.stdout).not.toMatch(/MD003/v);
   });
 
-  it('runs both Prettier formatting and markdownlint on markdown', async ({ fixture, expect }) => {
+  it('runs prettier, markdownlint, and markdown on the same file', async ({ fixture, expect }) => {
     /*
-     * Prettier (format/prettier) and markdownlint (markdownlint/lint)
-     * both target *.md. The markdownlint parser must override
-     * format.parserPlain so both rule sets work on the same file.
-     * Misformatted table triggers Prettier, duplicate heading triggers MD024.
+     * All three plugins target *.md. The misformatted table trips
+     * format/prettier; trailing punctuation in the heading trips
+     * markdownlint MD026; the duplicate H1 trips
+     * markdown/no-multiple-h1 from @eslint/markdown.
      */
     const result = await fixture.run({
       files: {
-        'doc.md': '# Title\n\n| a|b |\n|---|---|\n| 1|2 |\n\n# Title\n',
+        'doc.md': '# Title.\n\n| a|b |\n|---|---|\n| 1|2 |\n\n# Title.\n',
       },
     });
 
     expect(result.stdout).toContain('format/prettier');
     expect(result.stdout).toContain('markdownlint/lint');
+    expect(result.stdout).toContain('markdown/no-multiple-h1');
   });
 
   it('applies markdownlint autofix via --fix', async ({ fixture, expect }) => {

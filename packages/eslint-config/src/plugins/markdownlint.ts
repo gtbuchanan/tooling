@@ -12,7 +12,6 @@ const coveredByEslintMarkdown = {
   'link-fragments': false, // md051 → markdown/no-missing-link-fragments
   'link-image-reference-definitions': false, // md053 → markdown/no-unused-definitions
   'no-alt-text': false, // md045 → markdown/require-alt-text
-  'no-bare-urls': false, // md034 → markdown/no-bare-urls
   'no-duplicate-heading': false, // md024 → markdown/no-duplicate-headings
   'no-empty-links': false, // md042 → markdown/no-empty-links
   'no-inline-html': false, // md033 → markdown/no-html

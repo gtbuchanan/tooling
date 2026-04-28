@@ -5,10 +5,11 @@ import type { PluginFactory } from '../index.ts';
 /*
  * Rules outside `recommended` whose markdownlint counterpart is in
  * `coveredByEslintMarkdown`. Enabled here so disabling the markdownlint
- * rule does not lose coverage.
+ * rule does not lose coverage. `markdown/no-bare-urls` is omitted —
+ * markdownlint MD034 stays active for its autofix (wraps bare URLs in
+ * `<>`); the `markdown/*` counterpart only warns.
  */
 const extraRules = {
-  'markdown/no-bare-urls': 'warn', // markdownlint MD034
   'markdown/no-duplicate-headings': 'warn', // markdownlint MD024
   'markdown/no-html': 'warn', // markdownlint MD033
 } as const;
