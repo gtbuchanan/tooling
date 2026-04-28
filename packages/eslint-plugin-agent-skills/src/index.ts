@@ -31,11 +31,14 @@ const plugin: ESLint.Plugin = {
 };
 
 /**
- * Ready-to-spread flat-config blocks for SKILL.md files.
- *
- * - `recommended` — wires the schema rule and every plugin rule for
- *   `**\/skills/*\/SKILL.md`. Sets `language: 'markdown/commonmark'`
- *   so `file-references` can walk the markdown AST.
+ * Ready-to-spread flat-config blocks for Agent Skills files. The
+ * `markdown/commonmark` language is required so `file-references`
+ * can walk the markdown AST. The 300-line cap on `references/**` is
+ * tighter than the 500-line `SKILL.md` cap to mirror the spec's
+ * [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
+ * guidance that ancillary reference files stay focused and smaller
+ * than `SKILL.md`; 300 sits just above the p90 line count of files
+ * in popular published skills.
  */
 export const configs: {
   readonly recommended: readonly Linter.Config[];
@@ -54,6 +57,14 @@ export const configs: {
         'agent-skills/max-lines': ['warn', { max: 500 }],
         'agent-skills/name-matches-dir': 'warn',
         'md-frontmatter/schema': ['warn', { schema }],
+      },
+    },
+    {
+      files: ['**/skills/*/references/**/*.md'],
+      language: 'markdown/commonmark',
+      plugins: { 'agent-skills': plugin, markdown },
+      rules: {
+        'agent-skills/max-lines': ['warn', { max: 300 }],
       },
     },
   ],
