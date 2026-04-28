@@ -75,6 +75,7 @@ export const configure = async (
       '**/.turbo/**',
       '**/dist/**',
       '**/pnpm-lock.yaml',
+      '**/skills-lock.json',
     ],
     onlyWarn: options.onlyWarn ?? true,
     pnpm: options.pnpm ?? true,
