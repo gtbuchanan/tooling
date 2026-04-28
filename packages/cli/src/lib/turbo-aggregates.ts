@@ -4,6 +4,7 @@ import {
   type ConditionalEntry,
   type ToolFlags,
   type TurboTask,
+  rootTaskKey,
 } from './turbo-config.ts';
 
 const generateAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
@@ -44,12 +45,17 @@ const packAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[]
 ];
 
 const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  /*
+   * Root tasks must be referenced explicitly — turbo does not roll them
+   * into the bare task name when resolving deps.
+   */
   {
     condition: flags.hasLint,
     key: Aggregate.lint,
     value: {
       dependsOn: [
         ...(flags.hasEslint ? [taskNames.lintEslint] : []),
+        ...(flags.hasRootEslint ? [rootTaskKey(taskNames.lintEslint)] : []),
       ],
     },
   },

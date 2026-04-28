@@ -107,7 +107,7 @@ describe.concurrent(generateRootScripts, () => {
 });
 
 describe.concurrent(generateRequiredRootScripts, () => {
-  it('returns only prepare and verify regardless of capabilities', ({ expect }) => {
+  it('returns only prepare and verify in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
         hasEslint: true,
@@ -123,5 +123,28 @@ describe.concurrent(generateRequiredRootScripts, () => {
       prepare: 'gtb prepare',
       verify: 'gtb verify',
     });
+  });
+
+  it('adds root lint:eslint when monorepo root has ESLint', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasEslint: true })],
+      { hasEslint: true },
+    );
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result['lint:eslint']).toBe(
+      'gtb task lint:eslint . --ignore-pattern "packages/*/**"',
+    );
+  });
+
+  it('omits root lint:eslint when root has no ESLint', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasEslint: true })],
+    );
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result).not.toHaveProperty('lint:eslint');
   });
 });

@@ -20,6 +20,7 @@ vi.mock(import('#src/lib/workspace.js'), async (importOriginal) => {
     ...actual,
     resolveWorkspace: vi.fn<typeof actual.resolveWorkspace>(() => ({
       packageDirs: [process.cwd()],
+      packageGlobs: [],
       rootDir: process.cwd(),
     })),
   };
@@ -53,6 +54,7 @@ const createFixture = (): Fixture => {
   const mockDetected = vi.mocked(getDetectedAgents);
   mockResolveWorkspace.mockReturnValue({
     packageDirs: [process.cwd()],
+    packageGlobs: [],
     rootDir: process.cwd(),
   });
   return { mockRun, mockLoadConfigured, mockResolveWorkspace, mockDetected };
@@ -110,6 +112,7 @@ describe('gtb task deploy:skills', () => {
     const fixture = createFixture();
     fixture.mockResolveWorkspace.mockReturnValue({
       packageDirs: [process.cwd()],
+      packageGlobs: [],
       rootDir: `${process.cwd()}/..`,
     });
     fixture.mockLoadConfigured.mockResolvedValue(['claude-code']);

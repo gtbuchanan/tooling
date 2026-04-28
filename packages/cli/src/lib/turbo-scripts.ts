@@ -8,6 +8,7 @@ import {
   type ToolFlags,
   collect,
   resolveToolFlags,
+  toPackageIgnore,
 } from './turbo-config.ts';
 
 /*
@@ -94,10 +95,41 @@ export const generatePackageScripts = (
   return scripts;
 };
 
+/**
+ * Root-leaf scripts — leaf tasks turbo dispatches at the workspace root
+ * via `//#<task>`. Distinct from alias scripts (which delegate to turbo)
+ * and from required scripts like `prepare`/`verify`. Generated at sync
+ * time so workspace-shape inputs (package globs) are baked in.
+ *
+ * Patterns use double quotes for cross-platform shell compatibility:
+ * cmd.exe treats single quotes as literal characters (Windows pnpm
+ * default), while both shells respect double quotes for arg grouping.
+ */
+const rootLeafScriptEntries = (
+  flags: ToolFlags,
+  isSelfHosted: boolean,
+  packageGlobs: readonly string[],
+): readonly ConditionalEntry<string>[] => {
+  const ignoreFlags = packageGlobs
+    .map(glob => `--ignore-pattern "${toPackageIgnore(glob)}"`)
+    .join(' ');
+  const lintCmd = `${taskCmd(isSelfHosted, taskNames.lintEslint)} . ${ignoreFlags}`;
+
+  return [
+    { condition: flags.hasRootEslint, key: taskNames.lintEslint, value: lintCmd },
+  ];
+};
+
 /** Required root scripts — validated by `gtb verify`. */
-const requiredRootScripts = (isSelfHosted: boolean): Readonly<Record<string, string>> => ({
-  [rootNames.prepare]: rootCmd(isSelfHosted, rootNames.prepare),
-  [rootNames.verify]: rootCmd(isSelfHosted, rootNames.verify),
+const requiredRootScripts = (
+  discovery: WorkspaceDiscovery,
+  flags: ToolFlags,
+): Readonly<Record<string, string>> => ({
+  [rootNames.prepare]: rootCmd(discovery.isSelfHosted, rootNames.prepare),
+  [rootNames.verify]: rootCmd(discovery.isSelfHosted, rootNames.verify),
+  ...collect(
+    rootLeafScriptEntries(flags, discovery.isSelfHosted, discovery.packageGlobs),
+  ),
 });
 
 /**
@@ -143,12 +175,15 @@ const aliasRootScriptEntries = (
 /** Generates all root-level scripts (required + optional aliases). */
 export const generateRootScripts = (
   discovery: WorkspaceDiscovery,
-): Record<string, string> => ({
-  ...collect(aliasRootScriptEntries(resolveToolFlags(discovery), discovery.isMonorepo)),
-  ...requiredRootScripts(discovery.isSelfHosted),
-});
+): Record<string, string> => {
+  const flags = resolveToolFlags(discovery);
+  return {
+    ...collect(aliasRootScriptEntries(flags, discovery.isMonorepo)),
+    ...requiredRootScripts(discovery, flags),
+  };
+};
 
 /** Generates only required root scripts for drift validation. */
 export const generateRequiredRootScripts = (
   discovery: WorkspaceDiscovery,
-): Record<string, string> => ({ ...requiredRootScripts(discovery.isSelfHosted) });
+): Record<string, string> => ({ ...requiredRootScripts(discovery, resolveToolFlags(discovery)) });

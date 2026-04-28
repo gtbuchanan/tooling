@@ -59,6 +59,12 @@ export interface ToolFlags {
   readonly generateScripts: readonly string[];
   readonly hasLint: boolean;
   readonly hasPublished: boolean;
+  /**
+   * Workspace root has its own ESLint config and is a monorepo (so root
+   * is distinct from any package). Single-package repos lint root files
+   * via the per-package task and don't need a separate root task.
+   */
+  readonly hasRootEslint: boolean;
   readonly hasSkills: boolean;
   readonly hasTypeScript: boolean;
   readonly hasVitest: boolean;
@@ -89,6 +95,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     hasGenerate: generateScripts.length > 0,
     hasLint,
     hasPublished: discovery.packages.some(pkg => pkg.isPublished),
+    hasRootEslint: discovery.isMonorepo && discovery.root.hasEslint,
     hasSkills: discovery.packages.some(pkg => pkg.hasSkills),
     hasTypeScript,
     hasVitest,
@@ -204,6 +211,40 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
   ];
 };
 
+/**
+ * Converts a pnpm workspace package glob into an ESLint/turbo ignore
+ * pattern that matches files under any directory the glob resolves to.
+ * `packages/*` → `packages/*​/**` (descendants of any direct subdir).
+ */
+export const toPackageIgnore = (glob: string): string => `${glob}/**`;
+
+/** Turbo task key for tasks dispatched at the workspace root. */
+export const rootTaskKey = (name: string): string => `//#${name}`;
+
+const rootLintTasks = (
+  flags: ToolFlags,
+  packageGlobs: readonly string[],
+): readonly ConditionalEntry<TurboTask>[] => [
+  /*
+   * `$TURBO_DEFAULT$` expands to root files minus gitignored paths
+   * (dist/, node_modules/, .turbo/, .claude/worktrees/); only package
+   * dirs need explicit subtraction since they're tracked but owned by
+   * per-package lint. Cache file lives in the root cwd's dist/,
+   * distinct from per-package caches that live in each package's dist/.
+   */
+  {
+    condition: flags.hasRootEslint,
+    key: rootTaskKey(taskNames.lintEslint),
+    value: {
+      inputs: [
+        '$TURBO_DEFAULT$',
+        ...packageGlobs.map(glob => `!${toPackageIgnore(glob)}`),
+      ],
+      outputs: ['dist/.eslintcache'],
+    },
+  },
+];
+
 /*
  * Unlike compile inputs, test inputs can't be resolved from vitest config —
  * vitest configs are executable TypeScript, not statically parseable.
@@ -289,6 +330,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...compileSkillsTasks(flags),
     ...packTasks(flags),
     ...lintTasks(flags),
+    ...rootLintTasks(flags, discovery.packageGlobs),
     ...testTasks(flags),
     ...deploySkillsTasks(flags),
     ...aggregateTasks(flags),
