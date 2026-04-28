@@ -4,4 +4,4 @@
 
 ### Minor Changes
 
-- a135a59: Initial release
+- Initial release
