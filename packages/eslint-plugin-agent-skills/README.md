@@ -18,8 +18,9 @@ ships:
     spec's "one level deep" depth guidance.
   - `agent-skills/max-lines` — markdown-aware version of core's
     `max-lines` that fires under any markdown parser/language.
-- A `configs.recommended` flat-config block that wires the plugin's
-  rules plus the schema rule for `**/skills/*/SKILL.md`.
+- A `configs.recommended` flat-config that wires the plugin's rules
+  plus the schema rule for `**/skills/*/SKILL.md`, and applies a
+  smaller `max-lines` cap (300) to `**/skills/*/references/**/*.md`.
 
 ## Install
 
@@ -119,12 +120,22 @@ Options:
 
 ### `agent-skills/max-lines`
 
-Caps `SKILL.md` at a maximum line count, defaulting to 500 per the
-spec's [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
-guidance ("Keep your main `SKILL.md` under 500 lines."). Mirrors core
-ESLint's `max-lines` but fires under any markdown parser or language
-(the core rule's `Program` visitor never runs against
-`@eslint/markdown`'s `root` mdast node).
+Caps a markdown file at a maximum line count. Mirrors core ESLint's
+`max-lines` but fires under any markdown parser or language (the core
+rule's `Program` visitor never runs against `@eslint/markdown`'s
+`root` mdast node).
+
+The recommended config applies it twice, with different caps for
+different file roles per the spec's
+[Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
+guidance:
+
+- `**/skills/*/SKILL.md` — 500 lines ("Keep your main `SKILL.md` under
+  500 lines.").
+- `**/skills/*/references/**/*.md` — 300 lines, since the spec calls
+  for ancillary reference files to be focused and smaller than
+  `SKILL.md`. 300 sits just above the p90 line count observed across
+  popular published skills.
 
 Options:
 
