@@ -65,7 +65,12 @@ coverage, setupFiles, and mock reset.
 
 - **ESLint** — Per-package `eslint.config.ts` importing `configure()`
   from `@gtbuchanan/eslint-config`. ESLint caching enabled via
-  `--cache --cache-location dist/.eslintcache`.
+  `--cache --cache-location dist/.eslintcache`. In monorepos with a
+  root ESLint config, `gtb sync` also generates a `//#lint:eslint`
+  turbo task and root `lint:eslint` script that lints workspace-root
+  files (`package.json`, `pnpm-workspace.yaml`, `.github/`, etc.) which
+  per-package lint never sees. Per-package dirs are excluded via
+  `--ignore-pattern` derived from `pnpm-workspace.yaml` package globs.
 - **Vitest** — Per-package `vitest.config.ts` using `configurePackage()`
   from `@gtbuchanan/vitest-config/configure`.
 

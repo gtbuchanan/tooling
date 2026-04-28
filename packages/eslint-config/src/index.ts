@@ -70,7 +70,12 @@ export const configure = async (
 ): Promise<Linter.Config[]> => {
   const resolved: ResolvedOptions = {
     entryPoints: options.entryPoints ?? [...defaultEntryPoints],
-    ignores: options.ignores ?? ['.claude/worktrees/**', '**/dist/**', '**/pnpm-lock.yaml'],
+    ignores: options.ignores ?? [
+      '.claude/worktrees/**',
+      '**/.turbo/**',
+      '**/dist/**',
+      '**/pnpm-lock.yaml',
+    ],
     onlyWarn: options.onlyWarn ?? true,
     pnpm: options.pnpm ?? true,
     target: options.target ?? 'server',

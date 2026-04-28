@@ -36,6 +36,7 @@ export const makeDiscovery = (
   isMonorepo: packages.length > 1,
   isSelfHosted: false,
   packages,
+  packageGlobs: packages.length > 1 ? ['packages/*'] : [],
   root: makeCapabilities(rootOverrides),
   rootDir: '/fake/root',
 });

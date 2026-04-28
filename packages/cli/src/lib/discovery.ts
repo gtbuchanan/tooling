@@ -50,6 +50,8 @@ export interface WorkspaceDiscovery {
   readonly isSelfHosted: boolean;
   /** Capabilities per workspace package. */
   readonly packages: readonly PackageCapabilities[];
+  /** Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode. */
+  readonly packageGlobs: readonly string[];
   /** Root-level capabilities. */
   readonly root: PackageCapabilities;
   /** Workspace root directory. */
@@ -141,6 +143,7 @@ export const discoverWorkspace = (
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
     packages: ctx.packageDirs.map(dir => buildCapabilities(dir, parseManifest(dir))),
+    packageGlobs: ctx.packageGlobs,
     root: buildCapabilities(ctx.rootDir, rootManifest),
     rootDir: ctx.rootDir,
   };

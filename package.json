@@ -15,6 +15,7 @@
     "coverage:merge": "turbo run coverage:merge",
     "deploy:skills": "turbo run deploy:skills",
     "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
+    "lint:eslint": "pnpm run gtb task lint:eslint . --ignore-pattern \"packages/*/**\"",
     "pack": "turbo run pack",
     "pipeline": "node --experimental-strip-types packages/cli/bin/gtb.ts pipeline",
     "prepare": "pnpm run gtb prepare",

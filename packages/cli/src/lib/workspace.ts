@@ -9,6 +9,8 @@ import { type Manifest, ManifestSchema } from './manifest.ts';
 /** Resolved workspace context for pack operations. */
 export interface WorkspaceContext {
   readonly packageDirs: readonly string[];
+  /** Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode. */
+  readonly packageGlobs: readonly string[];
   readonly rootDir: string;
 }
 
@@ -30,16 +32,16 @@ export const resolveWorkspace = (
   const workspaceFile = findUpSync('pnpm-workspace.yaml', { cwd });
   if (workspaceFile !== undefined) {
     const rootDir = path.dirname(workspaceFile);
-    const globs = parsePackageGlobs(workspaceFile);
-    const packageDirs = globs.flatMap(pattern =>
+    const packageGlobs = parsePackageGlobs(workspaceFile);
+    const packageDirs = packageGlobs.flatMap(pattern =>
       globSync(`${pattern}/`, { cwd: rootDir }).map(dir => path.resolve(rootDir, dir)),
     );
     if (packageDirs.length > 0) {
-      return { packageDirs, rootDir };
+      return { packageDirs, packageGlobs, rootDir };
     }
   }
 
-  return { packageDirs: [cwd], rootDir: cwd };
+  return { packageDirs: [cwd], packageGlobs: [], rootDir: cwd };
 };
 
 const WorkspaceSchema = v.object({

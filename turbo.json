@@ -1,6 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
+    "//#lint:eslint": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!packages/*/**"
+      ],
+      "outputs": [
+        "dist/.eslintcache"
+      ]
+    },
     "build": {
       "dependsOn": [
         "check",
@@ -95,7 +104,8 @@
     },
     "lint": {
       "dependsOn": [
-        "lint:eslint"
+        "lint:eslint",
+        "//#lint:eslint"
       ]
     },
     "lint:eslint": {
