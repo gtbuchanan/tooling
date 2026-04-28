@@ -9,11 +9,17 @@ ships:
 
 - The Agent Skills frontmatter JSON Schema (exported as
   `skillFrontmatterSchema`).
-- One rule, `agent-skills/name-matches-dir`, covering the one
-  [spec](https://agentskills.io/specification) constraint that pure
-  schemas can't express: `name` must equal the parent directory name.
-- A `configs.recommended` flat-config block that wires both plugins
-  plus core `max-lines: 500` for `**/skills/*/SKILL.md`.
+- Three rules covering [spec](https://agentskills.io/specification)
+  constraints that pure schemas can't express:
+  - `agent-skills/name-matches-dir` — `name` must equal the parent
+    directory name.
+  - `agent-skills/file-references` — markdown link/image/reference
+    targets must exist within the skill root and stay within the
+    spec's "one level deep" depth guidance.
+  - `agent-skills/max-lines` — markdown-aware version of core's
+    `max-lines` that fires under any markdown parser/language.
+- A `configs.recommended` flat-config block that wires the plugin's
+  rules plus the schema rule for `**/skills/*/SKILL.md`.
 
 ## Install
 
@@ -58,9 +64,10 @@ export default [
       'md-frontmatter': frontmatter,
     },
     rules: {
+      'agent-skills/file-references': 'error',
+      'agent-skills/max-lines': ['error', { max: 500 }],
       'agent-skills/name-matches-dir': 'error',
       'md-frontmatter/schema': ['error', { schema: skillFrontmatterSchema }],
-      'max-lines': ['error', { max: 500 }],
     },
   },
 ];
@@ -72,12 +79,59 @@ export default [
   required `name`/`description`, length limits, kebab-case `name`,
   `metadata` map of strings, optional `license`/`compatibility`/`allowed-tools`,
   no unknown top-level fields.
-- **Rule-driven** (this plugin): `name === parent directory name`.
-- **File length** via core `max-lines` (≤ 500 lines per the spec).
+- **Rule-driven** (this plugin): `name === parent directory name`,
+  link/image/reference targets exist within the skill root and stay
+  within the spec's depth guidance, file length cap.
 
 ## Rules
+
+### `agent-skills/file-references`
+
+Enforces the [File references](https://agentskills.io/specification#file-references)
+section of the Agent Skills spec, which calls for relative paths from
+the skill root and references kept "one level deep" so progressive
+disclosure can load resources on demand.
+
+Flags markdown link, image, and reference-style definition URLs in the
+body of `SKILL.md` when they:
+
+- resolve to a file that does not exist on disk (`notFound`),
+- escape the skill root with `..` or absolute paths (`outsideRoot`), or
+- nest deeper than the spec's "one level deep" guidance (`tooDeep`).
+
+External URLs (any `scheme:`, `//host`, or `#fragment`) are ignored, as
+are URLs inside fenced code blocks, inline code spans, and HTML
+comments. Fragments and query strings are stripped before the existence
+check (`[ref](references/REFERENCE.md#heading)` validates the file, not
+the heading).
+
+Options:
+
+- `maxDepth` — maximum number of directories between the skill root and
+  a referenced file. Defaults to `1` per the spec. Set to `0` to forbid
+  any subdirectory references; raise to allow deeper layouts.
+
+```json
+{
+  "agent-skills/file-references": ["error", { "maxDepth": 1 }]
+}
+```
+
+### `agent-skills/max-lines`
+
+Caps `SKILL.md` at a maximum line count, defaulting to 500 per the
+spec's [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
+guidance ("Keep your main `SKILL.md` under 500 lines."). Mirrors core
+ESLint's `max-lines` but fires under any markdown parser or language
+(the core rule's `Program` visitor never runs against
+`@eslint/markdown`'s `root` mdast node).
+
+Options:
+
+- `max` — maximum line count. Defaults to `500`.
 
 ### `agent-skills/name-matches-dir`
 
 Flags when `name` in `SKILL.md` frontmatter doesn't match the parent
-directory name. No options.
+directory name, per the spec's [`name` field](https://agentskills.io/specification#name-field)
+requirement. No options.

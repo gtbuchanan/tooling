@@ -8,6 +8,7 @@ catalog:
   '@stylistic/eslint-plugin': 5.10.0
   '@tsconfig/strictest': ^2.0.8
   '@types/cross-spawn': ^6.0.6
+  '@types/mdast': ^4.0.4
   '@types/node': ^25.5.0
   '@vitest/coverage-v8': ^4.1.2
   '@vitest/eslint-plugin': 1.6.14
