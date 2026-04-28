@@ -1,7 +1,7 @@
 {
   "name": "@gtbuchanan/eslint-plugin-agent-skills",
   "version": "0.1.0",
-  "description": "ESLint plugin: Agent Skills JSON Schema + name-matches-dir rule",
+  "description": "ESLint plugin and JSON Schema for Agent Skills",
   "type": "module",
   "imports": {
     "#src/*": "./src/*"
@@ -21,11 +21,13 @@
     "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "dependencies": {
+    "@eslint/markdown": "catalog:",
     "@gtbuchanan/eslint-plugin-md-frontmatter": "workspace:*",
     "yaml": "catalog:"
   },
   "devDependencies": {
-    "@gtbuchanan/vitest-config": "workspace:*"
+    "@gtbuchanan/vitest-config": "workspace:*",
+    "@types/mdast": "catalog:"
   },
   "peerDependencies": {
     "eslint": "^10.0.0"

@@ -8,10 +8,12 @@ import { isMap, isScalar } from 'yaml';
 
 /**
  * Validates that the Agent Skills SKILL.md `name` frontmatter field
- * matches the parent directory name, per the spec. Other field-level
- * checks (length, kebab-case, required) are expressed in the
- * frontmatter JSON Schema and run via `md-frontmatter/schema` — this
- * rule covers the one constraint a pure schema can't express.
+ * matches the parent directory name, per the spec's
+ * [`name` field](https://agentskills.io/specification#name-field)
+ * requirement ("Must match the parent directory name"). Other
+ * field-level checks (length, kebab-case, required) are expressed in
+ * the frontmatter JSON Schema and run via `md-frontmatter/schema` —
+ * this rule covers the one constraint a pure schema can't express.
  */
 export const nameMatchesDir: Rule.RuleModule = {
   meta: {

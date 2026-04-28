@@ -22,7 +22,7 @@ packages/
   cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
     skills/                     — Authored Agent Skills deployed by `gtb task deploy:skills`
   eslint-config/                — @gtbuchanan/eslint-config (ESLint configure())
-  eslint-plugin-agent-skills/   — @gtbuchanan/eslint-plugin-agent-skills (Agent Skills schema + name-matches-dir rule)
+  eslint-plugin-agent-skills/   — @gtbuchanan/eslint-plugin-agent-skills (Agent Skills schema + rules)
   eslint-plugin-markdownlint/   — @gtbuchanan/eslint-plugin-markdownlint (markdownlint via ESLint)
   eslint-plugin-md-frontmatter/ — @gtbuchanan/eslint-plugin-md-frontmatter (Markdown frontmatter validation via JSON Schema)
   eslint-plugin-yamllint/       — @gtbuchanan/eslint-plugin-yamllint (yamllint gap rules via ESLint)
@@ -95,9 +95,9 @@ coverage, setupFiles, and mock reset.
   disabled in this config to avoid duplicate diagnostics),
   `eslint-plugin-md-frontmatter` (generic Markdown frontmatter
   validation via JSON Schema, ajv-backed),
-  `eslint-plugin-agent-skills` (Agent Skills JSON Schema + the
-  `name-matches-dir` rule; the schema plugs into
-  `eslint-plugin-md-frontmatter`. File length via core `max-lines`),
+  `eslint-plugin-agent-skills` (Agent Skills JSON Schema + rules
+  covering spec constraints schemas can't express; the schema plugs
+  into `eslint-plugin-md-frontmatter`),
   `@vitest/eslint-plugin` (test rules), and `eslint-plugin-only-warn`
   (downgrades errors to warnings).
 

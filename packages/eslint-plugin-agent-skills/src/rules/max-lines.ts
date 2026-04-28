@@ -5,11 +5,13 @@ interface MaxLinesOptions {
 }
 
 /**
- * Caps SKILL.md at a maximum line count, per the Agent Skills spec.
- * Mirrors core ESLint's `max-lines` rule but keys off the actual AST
- * root so it fires under any markdown parser or language — the core
- * rule's `Program` visitor never runs against `\@eslint/markdown`'s
- * `root` mdast node. Defaults to 500 lines.
+ * Caps SKILL.md at a maximum line count, per the Agent Skills spec's
+ * [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
+ * guidance ("Keep your main `SKILL.md` under 500 lines"). Mirrors core
+ * ESLint's `max-lines` rule but keys off the actual AST root so it
+ * fires under any markdown parser or language — the core rule's
+ * `Program` visitor never runs against `\@eslint/markdown`'s `root`
+ * mdast node. Defaults to 500 lines.
  */
 export const maxLines: Rule.RuleModule = {
   meta: {

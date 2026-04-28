@@ -87,6 +87,51 @@ describe.concurrent('SKILL.md validation', () => {
     expect(result.stdout).toMatch(/expected `example-skill`, got `wrong-name`/v);
   });
 
+  it('passes when referenced files exist within the skill root', async ({ fixture, expect }) => {
+    const result = await fixture.run({
+      files: {
+        'skills/example-skill/SKILL.md': skill(
+          [
+            'name: example-skill',
+            'description: A description that is descriptive enough.',
+          ],
+          [
+            '# Example skill',
+            '',
+            'See [the reference](references/REFERENCE.md) for details.',
+            '',
+          ],
+        ),
+        'skills/example-skill/references/REFERENCE.md': '# Reference\n\nStub.\n',
+      },
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.stdout).not.toMatch(/agent-skills\/file-references/v);
+  });
+
+  it('flags references to files that do not exist', async ({ fixture, expect }) => {
+    const result = await fixture.run({
+      files: {
+        'skills/example-skill/SKILL.md': skill(
+          [
+            'name: example-skill',
+            'description: A description that is descriptive enough.',
+          ],
+          [
+            '# Example skill',
+            '',
+            'See [the reference](references/MISSING.md).',
+            '',
+          ],
+        ),
+      },
+    });
+
+    expect(result.stdout).toMatch(/agent-skills\/file-references/v);
+    expect(result.stdout).toMatch(/not found.*references\/MISSING\.md/v);
+  });
+
   it('caps file at 500 lines per the spec', async ({ fixture, expect }) => {
     const lines = Array.from(
       { length: 600 },
