@@ -17,7 +17,7 @@ const writeFormattedJson = (dir: string, name: string, data: unknown): void => {
 const readJson = (path: string): unknown =>
   JSON.parse(readFileSync(path, 'utf8'));
 
-describe(prepack, () => {
+describe.concurrent(prepack, () => {
   it('generates dist/source/package.json for publishable package', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(

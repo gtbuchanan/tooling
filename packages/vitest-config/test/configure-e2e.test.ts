@@ -14,7 +14,7 @@ const expectedE2eTestInclude = allScriptExtensions.map(
 
 const packageName = '@gtbuchanan/vitest-config';
 
-describe(configureEndToEndProject, () => {
+describe.concurrent(configureEndToEndProject, () => {
   it('does not include resolve alias', ({ expect }) => {
     const config = configureEndToEndProject();
 
@@ -46,7 +46,7 @@ describe(configureEndToEndProject, () => {
   });
 });
 
-describe(configureEndToEndGlobal, () => {
+describe.concurrent(configureEndToEndGlobal, () => {
   it('does not include coverage', ({ expect }) => {
     const config = configureEndToEndGlobal();
 
@@ -117,7 +117,7 @@ describe(configureEndToEndGlobal, () => {
   });
 });
 
-describe(configureEndToEndPackage, () => {
+describe.concurrent(configureEndToEndPackage, () => {
   it('includes e2e test patterns', ({ expect }) => {
     const config = configureEndToEndPackage();
 
@@ -156,7 +156,7 @@ describe(configureEndToEndPackage, () => {
   });
 });
 
-describe(configureEndToEnd, () => {
+describe.concurrent(configureEndToEnd, () => {
   it('merges global and project settings', ({ expect }) => {
     const config = configureEndToEnd();
 

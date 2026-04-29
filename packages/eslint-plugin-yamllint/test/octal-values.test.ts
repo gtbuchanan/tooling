@@ -7,7 +7,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser },
 });
 
-describe('yamllint/octal-values', () => {
+describe.concurrent('yamllint/octal-values', () => {
   it('passes for regular numbers', ({ expect }) => {
     expect(() => {
       ruleTester.run('yamllint/octal-values', octalValues, {

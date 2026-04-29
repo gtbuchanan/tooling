@@ -16,7 +16,7 @@ const readJson = (filePath: string): unknown =>
 
 const jsonIndent = 2;
 
-describe(writeJsonFile, () => {
+describe.concurrent(writeJsonFile, () => {
   it('writes formatted JSON with trailing newline', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'test.json');
@@ -41,7 +41,7 @@ describe(writeJsonFile, () => {
   });
 });
 
-describe(mergePackageScripts, () => {
+describe.concurrent(mergePackageScripts, () => {
   it('adds missing scripts to existing package.json', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'package.json');
@@ -125,7 +125,7 @@ describe(mergePackageScripts, () => {
   });
 });
 
-describe(writeYamlFile, () => {
+describe.concurrent(writeYamlFile, () => {
   it('writes valid YAML with trailing newline', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'test.yml');
@@ -160,7 +160,7 @@ describe(writeYamlFile, () => {
   });
 });
 
-describe(sortKeysDeep, () => {
+describe.concurrent(sortKeysDeep, () => {
   it('sorts top-level keys alphabetically', ({ expect }) => {
     expect(sortKeysDeep({ zebra: 3, alpha: 1, mango: 2 }))
       .toStrictEqual({ alpha: 1, mango: 2, zebra: 3 });
@@ -185,7 +185,7 @@ describe(sortKeysDeep, () => {
   });
 });
 
-describe(mergeCodecovSections, () => {
+describe.concurrent(mergeCodecovSections, () => {
   const sections = {
     component_management: {
       individual_components: [

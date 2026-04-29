@@ -68,7 +68,7 @@ const createConsumerProject = (): string => {
   return root;
 };
 
-describe('verify drift detection', () => {
+describe.concurrent('verify drift detection', () => {
   it('all expected tasks present after init', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
@@ -172,7 +172,7 @@ describe('verify', () => {
   });
 });
 
-describe(parseIgnoreArgs, () => {
+describe.concurrent(parseIgnoreArgs, () => {
   it('parses single --ignore flag', ({ expect }) => {
     const result = parseIgnoreArgs(['--ignore', 'test:vitest:slow']);
 

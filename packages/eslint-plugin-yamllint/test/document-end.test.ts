@@ -7,7 +7,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser },
 });
 
-describe('yamllint/document-end', () => {
+describe.concurrent('yamllint/document-end', () => {
   it('passes when marker is absent and forbidden (default)', ({ expect }) => {
     expect(() => {
       ruleTester.run('yamllint/document-end', documentEnd, {

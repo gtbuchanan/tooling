@@ -27,7 +27,7 @@ const testSchema = {
   type: 'object',
 } as const;
 
-describe('md-frontmatter/schema', () => {
+describe.concurrent('md-frontmatter/schema', () => {
   it('passes for frontmatter that satisfies the schema', ({ expect }) => {
     expect(() => {
       ruleTester.run('md-frontmatter/schema', schema, {

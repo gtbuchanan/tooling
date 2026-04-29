@@ -7,7 +7,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser },
 });
 
-describe('agent-skills/name-matches-dir', () => {
+describe.concurrent('agent-skills/name-matches-dir', () => {
   it('passes when name matches the parent directory', ({ expect }) => {
     expect(() => {
       ruleTester.run('agent-skills/name-matches-dir', nameMatchesDir, {

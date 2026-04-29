@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { buildOutput, buildRepoFields } from '#src/lib/manifest.js';
 
-describe(buildOutput, () => {
+describe.concurrent(buildOutput, () => {
   it('strips devDependencies and scripts', ({ expect }) => {
     const result = buildOutput({
       devDependencies: { vitest: '^4.0.0' },
@@ -81,7 +81,7 @@ describe(buildOutput, () => {
   });
 });
 
-describe(buildRepoFields, () => {
+describe.concurrent(buildRepoFields, () => {
   it('builds all fields from root manifest', ({ expect }) => {
     const result = buildRepoFields({
       bugs: 'https://github.com/test/repo/issues',

@@ -7,7 +7,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser },
 });
 
-describe('yamllint/anchors', () => {
+describe.concurrent('yamllint/anchors', () => {
   it('passes for valid anchor/alias pairs', ({ expect }) => {
     expect(() => {
       ruleTester.run('yamllint/anchors', anchors, {
