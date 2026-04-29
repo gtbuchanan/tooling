@@ -8,7 +8,7 @@ const writeFile = (dir: string, name: string, content = ''): void => {
   writeFileSync(path.join(dir, name), content);
 };
 
-describe(discoverPackage, () => {
+describe.concurrent(discoverPackage, () => {
   it('detects test directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
@@ -207,7 +207,7 @@ describe(discoverPackage, () => {
   });
 });
 
-describe(discoverWorkspace, () => {
+describe.concurrent(discoverWorkspace, () => {
   it('discovers monorepo packages', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(

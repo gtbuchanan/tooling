@@ -7,7 +7,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser },
 });
 
-describe('yamllint/document-start', () => {
+describe.concurrent('yamllint/document-start', () => {
   it('passes when marker is present and required', ({ expect }) => {
     expect(() => {
       ruleTester.run('yamllint/document-start', documentStart, {

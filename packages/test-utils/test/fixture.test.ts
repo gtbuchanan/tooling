@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { createGitEnv, matchTarball, pinned, runCommand } from '#src/fixture.js';
 
-describe(matchTarball, () => {
+describe.concurrent(matchTarball, () => {
   it('matches a scoped package tarball', ({ expect }) => {
     const files = ['gtbuchanan-eslint-config-0.0.0.tgz'];
 
@@ -53,7 +53,7 @@ describe(matchTarball, () => {
   });
 });
 
-describe(createGitEnv, () => {
+describe.concurrent(createGitEnv, () => {
   it('isolates from global git config', ({ expect }) => {
     const env = createGitEnv();
 
@@ -78,7 +78,7 @@ describe(createGitEnv, () => {
   });
 });
 
-describe(runCommand, () => {
+describe.concurrent(runCommand, () => {
   it('captures stdout', async ({ expect }) => {
     const result = await runCommand('node', ['-e', 'console.log("hello")'], {});
 
@@ -101,7 +101,7 @@ describe(runCommand, () => {
   });
 });
 
-describe(pinned, () => {
+describe.concurrent(pinned, () => {
   it('resolves installed package to name@version', ({ expect }) => {
     const result = pinned('valibot');
 

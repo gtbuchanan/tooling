@@ -7,7 +7,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser },
 });
 
-describe('markdownlint/lint', () => {
+describe.concurrent('markdownlint/lint', () => {
   it('passes for clean markdown', ({ expect }) => {
     expect(() => {
       ruleTester.run('markdownlint/lint', lint, {

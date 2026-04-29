@@ -18,7 +18,7 @@ const fixturesDir = path.join(
 const validSkill = path.join(fixturesDir, 'valid-skill', 'SKILL.md');
 const deepSkill = path.join(fixturesDir, 'deep-skill', 'SKILL.md');
 
-describe('agent-skills/file-references', () => {
+describe.concurrent('agent-skills/file-references', () => {
   it('passes when all referenced files exist within the skill root', ({ expect }) => {
     expect(() => {
       ruleTester.run('agent-skills/file-references', fileReferences, {

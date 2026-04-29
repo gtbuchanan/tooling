@@ -21,7 +21,7 @@ const createFixture = (): Fixture => {
   };
 };
 
-describe('loadConfiguredAgents', () => {
+describe.concurrent('loadConfiguredAgents', () => {
   it('returns empty array when skills-npm.config.ts is absent', async ({ expect }) => {
     using fixture = createFixture();
 

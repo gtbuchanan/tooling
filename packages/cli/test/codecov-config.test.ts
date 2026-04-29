@@ -37,7 +37,7 @@ const createMonorepo = (): string => {
   return root;
 };
 
-describe(generateCodecovSections, () => {
+describe.concurrent(generateCodecovSections, () => {
   it('generates a flag per coverage package', ({ expect }) => {
     const root = createMonorepo();
     const discovery = discoverWorkspace({ cwd: root });

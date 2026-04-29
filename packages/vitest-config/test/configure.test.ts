@@ -18,7 +18,7 @@ const expectedUnitTestInclude = allScriptExtensions.map(
 
 const packageName = '@gtbuchanan/vitest-config';
 
-describe(configure, () => {
+describe.concurrent(configure, () => {
   it('enables mockReset by default', ({ expect }) => {
     const config = configure();
 
@@ -118,7 +118,7 @@ describe(configure, () => {
   });
 });
 
-describe(configureGlobal, () => {
+describe.concurrent(configureGlobal, () => {
   it('includes setup files', ({ expect }) => {
     const config = configureGlobal();
 
@@ -204,7 +204,7 @@ describe(configureGlobal, () => {
   });
 });
 
-describe(resolveCoverageInclude, () => {
+describe.concurrent(resolveCoverageInclude, () => {
   it('returns default patterns without projects', ({ expect }) => {
     expect(resolveCoverageInclude()).toStrictEqual([...coverageInclude]);
   });
@@ -239,7 +239,7 @@ describe(resolveCoverageInclude, () => {
   });
 });
 
-describe(buildWorkspaceEntry, () => {
+describe.concurrent(buildWorkspaceEntry, () => {
   it('adds name from directory basename', ({ expect }) => {
     const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
 
@@ -271,7 +271,7 @@ describe(buildWorkspaceEntry, () => {
   });
 });
 
-describe(configureProject, () => {
+describe.concurrent(configureProject, () => {
   it('does not include resolve alias', ({ expect }) => {
     const config = configureProject();
 
@@ -291,7 +291,7 @@ describe(configureProject, () => {
   });
 });
 
-describe(configurePackage, () => {
+describe.concurrent(configurePackage, () => {
   it('includes test patterns', ({ expect }) => {
     const config = configurePackage();
 

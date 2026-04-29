@@ -7,7 +7,7 @@ const ruleTester = new RuleTester({
   languageOptions: { parser },
 });
 
-describe('yamllint/truthy', () => {
+describe.concurrent('yamllint/truthy', () => {
   it('passes for quoted boolean-like values', ({ expect }) => {
     expect(() => {
       ruleTester.run('yamllint/truthy', truthy, {

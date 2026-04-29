@@ -4,7 +4,7 @@ import { describe, it } from 'vitest';
 import { resolveWorkspace } from '#src/lib/workspace.js';
 import { createTempDir } from './helpers.ts';
 
-describe(resolveWorkspace, () => {
+describe.concurrent(resolveWorkspace, () => {
   it('detects monorepo with packages glob', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
