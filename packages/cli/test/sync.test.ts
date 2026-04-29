@@ -3,7 +3,7 @@ import path from 'node:path';
 import { Writable } from 'node:stream';
 import * as v from 'valibot';
 import { describe, it } from 'vitest';
-import { runSync } from '#src/commands/root/sync.js';
+import { runSync, syncCommand } from '#src/commands/root/sync.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
 import { createLogger } from '#src/lib/logger.js';
@@ -13,7 +13,7 @@ import {
   generateRootScripts,
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
-import { createTempDir, writeJson } from './helpers.ts';
+import { captureLogger, createTempDir, writeJson } from './helpers.ts';
 
 const silentSink = new Writable({
   write: (_chunk, _enc, cb) => {
@@ -253,5 +253,46 @@ describe.concurrent(runSync, () => {
     );
 
     expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
+  });
+});
+
+describe.concurrent(syncCommand, () => {
+  it('passes cwd from args through to runSync', ({ expect }) => {
+    const root = createConsumerProject();
+    const { logger } = captureLogger();
+
+    syncCommand({ cwd: root }, logger);
+
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
+  });
+
+  it('passes force from args through to runSync', ({ expect }) => {
+    const root = createConsumerProject();
+    const { logger } = captureLogger();
+    syncCommand({ cwd: root }, logger);
+
+    const appPkg = path.join(root, 'packages', 'app', 'package.json');
+    const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
+    writeJsonFile(appPkg, {
+      ...manifest,
+      scripts: { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' },
+    });
+
+    syncCommand({ cwd: root, force: true }, logger);
+
+    const result: unknown = JSON.parse(
+      readFileSync(appPkg, 'utf8'),
+    );
+
+    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
+  });
+
+  it('routes progress messages through the injected logger', ({ expect }) => {
+    const root = createConsumerProject();
+    const { logger, out } = captureLogger();
+
+    syncCommand({ cwd: root }, logger);
+
+    expect(out()).toContain(`wrote ${path.join(root, 'turbo.json')}`);
   });
 });

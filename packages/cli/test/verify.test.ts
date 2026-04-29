@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
-import { parseIgnoreArgs, runVerify } from '#src/commands/root/verify.js';
+import { parseIgnoreArgs, runVerify, verifyCommand } from '#src/commands/root/verify.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { writeJsonFile } from '#src/lib/file-writer.js';
 import {
@@ -9,7 +9,7 @@ import {
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
 import {
-  createTempDir, initProject, readScripts, readTurboTasks, writeJson,
+  captureLogger, createTempDir, initProject, readScripts, readTurboTasks, writeJson,
 } from './helpers.ts';
 
 const createConsumerProject = (): string => {
@@ -225,5 +225,47 @@ describe.concurrent(parseIgnoreArgs, () => {
     const result = parseIgnoreArgs(['--ignore']);
 
     expect(result.size).toBe(0);
+  });
+});
+
+describe.concurrent(verifyCommand, () => {
+  it('returns 0 and logs success when there is no drift', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    const { logger, out, err } = captureLogger();
+
+    const code = verifyCommand([], { cwd: root }, logger);
+
+    expect(code).toBe(0);
+    expect(out()).toContain('verify passed');
+    expect(err()).toBe('');
+  });
+
+  it('returns 1 and writes each drift message to stderr on drift', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    const tasks = readTurboTasks(root);
+    delete tasks['typecheck:ts'];
+    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    const { logger, out, err } = captureLogger();
+
+    const code = verifyCommand([], { cwd: root }, logger);
+
+    expect(code).toBe(1);
+    expect(err()).toContain('typecheck:ts');
+    expect(out()).toBe('');
+  });
+
+  it('forwards --ignore flags from rawArgs to runVerify', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    const tasks = readTurboTasks(root);
+    delete tasks['typecheck:ts'];
+    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    const { logger } = captureLogger();
+
+    const code = verifyCommand(['--ignore', 'typecheck:ts'], { cwd: root }, logger);
+
+    expect(code).toBe(0);
   });
 });

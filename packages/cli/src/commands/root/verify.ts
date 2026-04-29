@@ -250,7 +250,41 @@ export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => 
   ];
 };
 
-/** Citty command wrapper for {@link runVerify}. */
+/** Parsed citty args for {@link verify}. */
+export interface VerifyCommandArgs {
+  readonly cwd?: string | undefined;
+}
+
+/**
+ * Translates citty args into {@link RunVerifyOptions}, invokes
+ * {@link runVerify}, and reports the drift through the given logger.
+ * Returns the exit code so the citty wrapper can set
+ * `process.exitCode` and tests can assert on the result without
+ * mutating process state.
+ */
+export const verifyCommand = (
+  rawArgs: readonly string[],
+  args: VerifyCommandArgs,
+  logger: Logger,
+): number => {
+  const drift = runVerify({
+    ...(args.cwd !== undefined && { cwd: args.cwd }),
+    ignored: parseIgnoreArgs(rawArgs),
+  });
+
+  if (drift.length === 0) {
+    logger.info('verify passed — no drift detected');
+    return 0;
+  }
+
+  for (const message of drift) {
+    logger.error(message);
+  }
+
+  return 1;
+};
+
+/** Citty command wrapper for {@link verifyCommand}. */
 export const verify = defineCommand({
   args: {
     cwd: {
@@ -268,21 +302,9 @@ export const verify = defineCommand({
     name: rootNames.verify,
   },
   run: ({ rawArgs, args }) => {
-    const logger: Logger = createLogger();
-    const drift = runVerify({
-      ...(args.cwd !== undefined && { cwd: args.cwd }),
-      ignored: parseIgnoreArgs(rawArgs),
-    });
-
-    if (drift.length === 0) {
-      logger.info('verify passed — no drift detected');
-      return;
+    const exitCode = verifyCommand(rawArgs, args, createLogger());
+    if (exitCode !== 0) {
+      process.exitCode = exitCode;
     }
-
-    for (const message of drift) {
-      logger.error(message);
-    }
-
-    process.exitCode = 1;
   },
 });

@@ -104,7 +104,27 @@ export const runSync = (options: RunSyncOptions = {}): void => {
   writeCodecovConfig(logger, discovery);
 };
 
-/** Citty command wrapper for {@link runSync}. */
+/** Parsed citty args for {@link sync}. */
+export interface SyncCommandArgs {
+  readonly cwd?: string | undefined;
+  readonly force?: boolean | undefined;
+}
+
+/**
+ * Translates citty args into {@link RunSyncOptions} and invokes
+ * {@link runSync}. Lives between the citty wrapper and the pure
+ * function so the args translation is testable without going through
+ * citty's `runCommand`.
+ */
+export const syncCommand = (args: SyncCommandArgs, logger: Logger): void => {
+  runSync({
+    ...(args.cwd !== undefined && { cwd: args.cwd }),
+    force: args.force ?? false,
+    logger,
+  });
+};
+
+/** Citty command wrapper for {@link syncCommand}. */
 export const sync = defineCommand({
   args: {
     cwd: {
@@ -122,9 +142,6 @@ export const sync = defineCommand({
     name: rootNames.sync,
   },
   run: ({ args }) => {
-    runSync({
-      ...(args.cwd !== undefined && { cwd: args.cwd }),
-      force: args.force ?? false,
-    });
+    syncCommand(args, createLogger());
   },
 });
