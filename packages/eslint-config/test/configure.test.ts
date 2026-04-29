@@ -1,5 +1,5 @@
 import { Linter } from 'eslint';
-import { describe, it, vi } from 'vitest';
+import { describe, it } from 'vitest';
 import { configure, defaultEntryPoints } from '#src/index.js';
 
 /**
@@ -10,38 +10,20 @@ const allScriptExtensions = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx
 const jsOnlyExtensions = ['cjs', 'js', 'jsx', 'mjs'];
 const tsOnlyExtensions = ['cts', 'mts', 'ts', 'tsx'];
 
-const onlyWarnImport = vi.fn<() => void>();
-
-vi.mock(import('eslint-plugin-only-warn'), () => {
-  onlyWarnImport();
-  return {};
-});
-
 /*
  * configure() does dynamic plugin imports — tens of ms per call. Most
  * tests want the same default-options output, so resolve once and
  * reuse. Tests with non-default options (custom entryPoints, ignores,
  * tsconfigRootDir, onlyWarn) keep their own configure() calls.
+ *
+ * onlyWarn behavior is verified end-to-end in eslint-config/e2e/cli.test.ts —
+ * it side-effect-imports eslint-plugin-only-warn, which monkey-patches
+ * the Linter globally and so cannot be unit-tested alongside other
+ * configs in the same process.
  */
 const defaultConfigs = configure({ onlyWarn: false });
 
-describe(configure, () => {
-  it('imports eslint-plugin-only-warn when onlyWarn is true', async ({ expect }) => {
-    onlyWarnImport.mockClear();
-
-    await configure({ onlyWarn: true });
-
-    expect(onlyWarnImport).toHaveBeenCalledWith();
-  });
-
-  it('does not import eslint-plugin-only-warn when onlyWarn is false', async ({ expect }) => {
-    onlyWarnImport.mockClear();
-
-    await configure({ onlyWarn: false });
-
-    expect(onlyWarnImport).not.toHaveBeenCalled();
-  });
-
+describe.concurrent(configure, () => {
   it('includes json configs', async ({ expect }) => {
     const configs = await defaultConfigs;
 
