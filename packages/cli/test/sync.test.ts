@@ -78,7 +78,7 @@ const createConsumerProject = (): string => {
   return root;
 };
 
-describe('sync', () => {
+describe.concurrent('sync helpers', () => {
   it('generates turbo.json with correct tasks for consumer project', ({ expect }) => {
     const root = createConsumerProject();
     const discovery = discoverWorkspace({ cwd: root });
@@ -177,66 +177,6 @@ describe('sync', () => {
     expect(discovery.isSelfHosted).toBe(true);
   });
 
-  it('sync command writes turbo.json and scripts', async ({ expect }) => {
-    const root = createConsumerProject();
-    await runSync(root, []);
-
-    expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
-
-    const scripts: unknown = JSON.parse(
-      readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
-    );
-
-    expect(scripts).toHaveProperty('scripts.typecheck:ts');
-  });
-
-  it('sync generates codecov.yml when packages have vitest tests', async ({ expect }) => {
-    const root = createConsumerProject();
-    await runSync(root, []);
-
-    const codecovPath = path.join(root, 'codecov.yml');
-
-    expect(existsSync(codecovPath)).toBe(true);
-
-    const content = readFileSync(codecovPath, 'utf8');
-
-    expect(content).toContain('app:');
-    expect(content).toContain('carryforward');
-  });
-
-  it('sync preserves existing codecov.yml user config', async ({ expect }) => {
-    const root = createConsumerProject();
-    writeFileSync(
-      path.join(root, 'codecov.yml'),
-      'codecov:\n  require_ci_to_pass: true\n',
-    );
-
-    await runSync(root, []);
-
-    const content = readFileSync(path.join(root, 'codecov.yml'), 'utf8');
-
-    expect(content).toContain('require_ci_to_pass');
-    expect(content).toContain('carryforward');
-  });
-
-  it('sync --force overwrites existing scripts', async ({ expect }) => {
-    const root = createConsumerProject();
-    await runSync(root, []);
-
-    const appPkg = path.join(root, 'packages', 'app', 'package.json');
-    const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
-    const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
-    writeJsonFile(appPkg, { ...manifest, scripts });
-
-    await runSync(root, ['--force']);
-
-    const result: unknown = JSON.parse(
-      readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
-    );
-
-    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
-  });
-
   it('generates gtb shim for self-hosted', ({ expect }) => {
     const root = mkdtempSync(path.join(tmpdir(), 'gtb-selfhost-'));
     writeFileSync(path.join(root, 'package.json'), JSON.stringify({
@@ -255,5 +195,67 @@ describe('sync', () => {
 
     expect(scripts['typecheck:ts']).toBe('pnpm run gtb task typecheck:ts');
     expect(scripts['gtb']).toContain('packages/cli/bin/gtb.ts');
+  });
+});
+
+describe('sync command', () => {
+  it('writes turbo.json and scripts', async ({ expect }) => {
+    const root = createConsumerProject();
+    await runSync(root, []);
+
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
+
+    const scripts: unknown = JSON.parse(
+      readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
+    );
+
+    expect(scripts).toHaveProperty('scripts.typecheck:ts');
+  });
+
+  it('generates codecov.yml when packages have vitest tests', async ({ expect }) => {
+    const root = createConsumerProject();
+    await runSync(root, []);
+
+    const codecovPath = path.join(root, 'codecov.yml');
+
+    expect(existsSync(codecovPath)).toBe(true);
+
+    const content = readFileSync(codecovPath, 'utf8');
+
+    expect(content).toContain('app:');
+    expect(content).toContain('carryforward');
+  });
+
+  it('preserves existing codecov.yml user config', async ({ expect }) => {
+    const root = createConsumerProject();
+    writeFileSync(
+      path.join(root, 'codecov.yml'),
+      'codecov:\n  require_ci_to_pass: true\n',
+    );
+
+    await runSync(root, []);
+
+    const content = readFileSync(path.join(root, 'codecov.yml'), 'utf8');
+
+    expect(content).toContain('require_ci_to_pass');
+    expect(content).toContain('carryforward');
+  });
+
+  it('--force overwrites existing scripts', async ({ expect }) => {
+    const root = createConsumerProject();
+    await runSync(root, []);
+
+    const appPkg = path.join(root, 'packages', 'app', 'package.json');
+    const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
+    const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
+    writeJsonFile(appPkg, { ...manifest, scripts });
+
+    await runSync(root, ['--force']);
+
+    const result: unknown = JSON.parse(
+      readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
+    );
+
+    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
   });
 });
