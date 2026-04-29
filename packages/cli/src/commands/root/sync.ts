@@ -7,6 +7,7 @@ import {
 import {
   type MergeResult, mergeCodecovSections, mergePackageScripts, sortKeysDeep, writeJsonFile,
 } from '../../lib/file-writer.ts';
+import { type Logger, createLogger } from '../../lib/logger.ts';
 import { planTsconfigs, readUserCompilerOptions } from '../../lib/tsconfig-gen.ts';
 import {
   generatePackageScripts,
@@ -15,53 +16,122 @@ import {
 } from '../../lib/turbo-config.ts';
 import { rootNames } from './names.ts';
 
-const logMergeResult = (label: string, result: MergeResult): void => {
+const logMergeResult = (logger: Logger, label: string, result: MergeResult): void => {
   if (result.added.length > 0) {
-    console.log(`${label}: added ${result.added.join(', ')}`);
+    logger.info(`${label}: added ${result.added.join(', ')}`);
   }
   if (result.skipped.length > 0) {
-    console.log(`${label}: skipped ${result.skipped.join(', ')}`);
+    logger.info(`${label}: skipped ${result.skipped.join(', ')}`);
   }
 };
 
-const writeSortedAndLog = (filePath: string, data: object): void => {
+const writeSortedAndLog = (logger: Logger, filePath: string, data: object): void => {
   writeJsonFile(filePath, sortKeysDeep(data));
-  console.log(`wrote ${filePath}`);
+  logger.info(`wrote ${filePath}`);
 };
 
-const writeRootScripts = (discovery: WorkspaceDiscovery, force: boolean): void => {
+const writeRootScripts = (
+  logger: Logger, discovery: WorkspaceDiscovery, force: boolean,
+): void => {
   const rootPkgPath = path.join(discovery.rootDir, 'package.json');
-  logMergeResult('root', mergePackageScripts(rootPkgPath, generateRootScripts(discovery), force));
+  logMergeResult(
+    logger,
+    'root',
+    mergePackageScripts(rootPkgPath, generateRootScripts(discovery), force),
+  );
 };
 
 const writePackageScripts = (
-  pkg: PackageCapabilities, force: boolean, isSelfHosted: boolean, rootDir: string,
+  logger: Logger,
+  pkg: PackageCapabilities,
+  discovery: WorkspaceDiscovery,
+  force: boolean,
 ): void => {
-  const scripts = generatePackageScripts(pkg, isSelfHosted, rootDir);
+  const scripts = generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir);
   if (Object.keys(scripts).length === 0) {
     return;
   }
-  logMergeResult(pkg.dir, mergePackageScripts(path.join(pkg.dir, 'package.json'), scripts, force));
+  logMergeResult(
+    logger,
+    pkg.dir,
+    mergePackageScripts(path.join(pkg.dir, 'package.json'), scripts, force),
+  );
 };
 
-const writeCodecovConfig = (discovery: WorkspaceDiscovery): void => {
+const writeCodecovConfig = (logger: Logger, discovery: WorkspaceDiscovery): void => {
   if (!discovery.packages.some(pkg => pkg.hasVitestTests)) {
     return;
   }
   const filePath = path.join(discovery.rootDir, 'codecov.yml');
   mergeCodecovSections(filePath, generateCodecovSections(discovery));
-  console.log(`wrote ${filePath}`);
+  logger.info(`wrote ${filePath}`);
 };
+
+/** Options for {@link runSync}. */
+export interface RunSyncOptions {
+  readonly cwd?: string;
+  readonly force?: boolean;
+  readonly logger?: Logger;
+}
 
 /**
  * Reconciles generated config with the current workspace state.
  *
  * Writes `turbo.json`, per-package tsconfigs, `package.json` scripts,
- * and `codecov.yml` from discovery. Without `--force`, existing script
- * values are preserved; pass `--force` to overwrite them.
+ * and `codecov.yml` from discovery. With `force: false` (default),
+ * existing script values are preserved; with `force: true`, they're
+ * overwritten.
  */
+export const runSync = (options: RunSyncOptions = {}): void => {
+  const cwd = options.cwd ?? process.cwd();
+  const force = options.force ?? false;
+  const logger = options.logger ?? createLogger();
+  const discovery = discoverWorkspace({ cwd });
+
+  writeSortedAndLog(
+    logger, path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery),
+  );
+
+  for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
+    const userOpts = readUserCompilerOptions(descriptor.path);
+    writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));
+  }
+
+  for (const pkg of discovery.packages) {
+    writePackageScripts(logger, pkg, discovery, force);
+  }
+  writeRootScripts(logger, discovery, force);
+  writeCodecovConfig(logger, discovery);
+};
+
+/** Parsed citty args for {@link sync}. */
+export interface SyncCommandArgs {
+  readonly cwd?: string | undefined;
+  readonly force?: boolean | undefined;
+}
+
+/**
+ * Translates citty args into {@link RunSyncOptions} and invokes
+ * {@link runSync}. Lives between the citty wrapper and the pure
+ * function so the args translation is testable without going through
+ * citty's `runCommand`.
+ */
+export const syncCommand = (args: SyncCommandArgs, logger: Logger): void => {
+  runSync({
+    ...(args.cwd !== undefined && { cwd: args.cwd }),
+    force: args.force ?? false,
+    logger,
+  });
+};
+
+/** Citty command wrapper for {@link syncCommand}. */
 export const sync = defineCommand({
   args: {
+    cwd: {
+      alias: 'C',
+      description: 'Workspace root directory (defaults to current working directory)',
+      type: 'string',
+    },
     force: {
       description: 'Overwrite existing package.json scripts',
       type: 'boolean',
@@ -72,20 +142,6 @@ export const sync = defineCommand({
     name: rootNames.sync,
   },
   run: ({ args }) => {
-    const force = args.force === true;
-    const discovery = discoverWorkspace();
-
-    writeSortedAndLog(path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery));
-
-    for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
-      const userOpts = readUserCompilerOptions(descriptor.path);
-      writeSortedAndLog(descriptor.path, descriptor.generate(userOpts));
-    }
-
-    for (const pkg of discovery.packages) {
-      writePackageScripts(pkg, force, discovery.isSelfHosted, discovery.rootDir);
-    }
-    writeRootScripts(discovery, force);
-    writeCodecovConfig(discovery);
+    syncCommand(args, createLogger());
   },
 });

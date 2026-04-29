@@ -1,38 +1,34 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { runCommand } from 'citty';
+import { Writable } from 'node:stream';
 import * as v from 'valibot';
-import { describe, it, vi } from 'vitest';
-import { sync } from '#src/commands/root/sync.js';
+import { describe, it } from 'vitest';
+import { runSync, syncCommand } from '#src/commands/root/sync.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
+import { createLogger } from '#src/lib/logger.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
 import {
   generatePackageScripts,
   generateRootScripts,
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
+import { captureLogger, createTempDir, writeJson } from './helpers.ts';
 
-const runSync = async (dir: string, args: readonly string[]): Promise<void> => {
-  const origCwd = process.cwd();
-  vi.spyOn(console, 'log').mockReturnValue();
-
-  try {
-    process.chdir(dir);
-    await runCommand(sync, { rawArgs: [...args] });
-  } finally {
-    process.chdir(origCwd);
-  }
-};
+const silentSink = new Writable({
+  write: (_chunk, _enc, cb) => {
+    cb();
+  },
+});
+const silentLogger = createLogger(silentSink, silentSink);
 
 const createConsumerProject = (): string => {
-  const root = mkdtempSync(path.join(tmpdir(), 'gtb-sync-'));
+  const root = createTempDir();
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
     "packages:\n  - 'packages/*'\n",
   );
-  writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+  writeJson(root, 'package.json', {
     devDependencies: {
       '@gtbuchanan/cli': '^0.1.0',
       '@gtbuchanan/eslint-config': '^0.1.0',
@@ -42,12 +38,12 @@ const createConsumerProject = (): string => {
     name: 'consumer-app',
     private: true,
     scripts: { prepare: 'gtb prepare' },
-  }));
+  });
 
   const app = path.join(root, 'packages', 'app');
   mkdirSync(path.join(app, 'src'), { recursive: true });
   mkdirSync(path.join(app, 'test'), { recursive: true });
-  writeFileSync(path.join(app, 'package.json'), JSON.stringify({
+  writeJson(app, 'package.json', {
     devDependencies: {
       '@gtbuchanan/eslint-config': '^0.1.0',
       '@gtbuchanan/tsconfig': '^0.1.0',
@@ -56,14 +52,14 @@ const createConsumerProject = (): string => {
     name: '@consumer/app',
     publishConfig: { directory: 'dist/source' },
     version: '1.0.0',
-  }));
+  });
   writeFileSync(path.join(app, 'tsconfig.json'), '{}');
   writeFileSync(path.join(app, 'eslint.config.ts'), '');
   writeFileSync(path.join(app, 'vitest.config.ts'), '');
 
   const lib = path.join(root, 'packages', 'lib');
   mkdirSync(path.join(lib, 'src'), { recursive: true });
-  writeFileSync(path.join(lib, 'package.json'), JSON.stringify({
+  writeJson(lib, 'package.json', {
     devDependencies: {
       '@gtbuchanan/eslint-config': '^0.1.0',
       '@gtbuchanan/tsconfig': '^0.1.0',
@@ -71,7 +67,7 @@ const createConsumerProject = (): string => {
     name: '@consumer/lib',
     private: true,
     version: '1.0.0',
-  }));
+  });
   writeFileSync(path.join(lib, 'tsconfig.json'), '{}');
   writeFileSync(path.join(lib, 'eslint.config.ts'), '');
 
@@ -167,10 +163,10 @@ describe.concurrent('sync helpers', () => {
   });
 
   it('detects self-hosted workspace', ({ expect }) => {
-    const root = mkdtempSync(path.join(tmpdir(), 'gtb-selfhost-'));
-    writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+    const root = createTempDir();
+    writeJson(root, 'package.json', {
       devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
-    }));
+    });
 
     const discovery = discoverWorkspace({ cwd: root });
 
@@ -178,13 +174,13 @@ describe.concurrent('sync helpers', () => {
   });
 
   it('generates gtb shim for self-hosted', ({ expect }) => {
-    const root = mkdtempSync(path.join(tmpdir(), 'gtb-selfhost-'));
-    writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+    const root = createTempDir();
+    writeJson(root, 'package.json', {
       devDependencies: {
         '@gtbuchanan/cli': 'workspace:*',
         '@gtbuchanan/tsconfig': 'workspace:*',
       },
-    }));
+    });
     mkdirSync(path.join(root, 'src'));
     writeFileSync(path.join(root, 'tsconfig.json'), '{}');
 
@@ -198,10 +194,10 @@ describe.concurrent('sync helpers', () => {
   });
 });
 
-describe('sync command', () => {
-  it('writes turbo.json and scripts', async ({ expect }) => {
+describe.concurrent(runSync, () => {
+  it('writes turbo.json and scripts', ({ expect }) => {
     const root = createConsumerProject();
-    await runSync(root, []);
+    runSync({ cwd: root, logger: silentLogger });
 
     expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
 
@@ -212,9 +208,9 @@ describe('sync command', () => {
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
   });
 
-  it('generates codecov.yml when packages have vitest tests', async ({ expect }) => {
+  it('generates codecov.yml when packages have vitest tests', ({ expect }) => {
     const root = createConsumerProject();
-    await runSync(root, []);
+    runSync({ cwd: root, logger: silentLogger });
 
     const codecovPath = path.join(root, 'codecov.yml');
 
@@ -226,14 +222,14 @@ describe('sync command', () => {
     expect(content).toContain('carryforward');
   });
 
-  it('preserves existing codecov.yml user config', async ({ expect }) => {
+  it('preserves existing codecov.yml user config', ({ expect }) => {
     const root = createConsumerProject();
     writeFileSync(
       path.join(root, 'codecov.yml'),
       'codecov:\n  require_ci_to_pass: true\n',
     );
 
-    await runSync(root, []);
+    runSync({ cwd: root, logger: silentLogger });
 
     const content = readFileSync(path.join(root, 'codecov.yml'), 'utf8');
 
@@ -241,21 +237,62 @@ describe('sync command', () => {
     expect(content).toContain('carryforward');
   });
 
-  it('--force overwrites existing scripts', async ({ expect }) => {
+  it('force overwrites existing scripts', ({ expect }) => {
     const root = createConsumerProject();
-    await runSync(root, []);
+    runSync({ cwd: root, logger: silentLogger });
 
     const appPkg = path.join(root, 'packages', 'app', 'package.json');
     const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
     const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
     writeJsonFile(appPkg, { ...manifest, scripts });
 
-    await runSync(root, ['--force']);
+    runSync({ cwd: root, force: true, logger: silentLogger });
 
     const result: unknown = JSON.parse(
       readFileSync(path.join(root, 'packages', 'app', 'package.json'), 'utf8'),
     );
 
     expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
+  });
+});
+
+describe.concurrent(syncCommand, () => {
+  it('passes cwd from args through to runSync', ({ expect }) => {
+    const root = createConsumerProject();
+    const { logger } = captureLogger();
+
+    syncCommand({ cwd: root }, logger);
+
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
+  });
+
+  it('passes force from args through to runSync', ({ expect }) => {
+    const root = createConsumerProject();
+    const { logger } = captureLogger();
+    syncCommand({ cwd: root }, logger);
+
+    const appPkg = path.join(root, 'packages', 'app', 'package.json');
+    const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
+    writeJsonFile(appPkg, {
+      ...manifest,
+      scripts: { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' },
+    });
+
+    syncCommand({ cwd: root, force: true }, logger);
+
+    const result: unknown = JSON.parse(
+      readFileSync(appPkg, 'utf8'),
+    );
+
+    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
+  });
+
+  it('routes progress messages through the injected logger', ({ expect }) => {
+    const root = createConsumerProject();
+    const { logger, out } = captureLogger();
+
+    syncCommand({ cwd: root }, logger);
+
+    expect(out()).toContain(`wrote ${path.join(root, 'turbo.json')}`);
   });
 });

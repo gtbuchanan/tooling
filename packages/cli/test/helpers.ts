@@ -1,12 +1,14 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { Writable } from 'node:stream';
 import * as v from 'valibot';
 import { generateCodecovSections } from '#src/lib/codecov-config.js';
 import { type PackageCapabilities, discoverWorkspace } from '#src/lib/discovery.js';
 import {
   mergeCodecovSections, mergePackageScripts, writeJsonFile,
 } from '#src/lib/file-writer.js';
+import { type Logger, createLogger } from '#src/lib/logger.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
 import { planTsconfigs } from '#src/lib/tsconfig-gen.js';
 import {
@@ -16,6 +18,35 @@ import {
 /** Creates an isolated temp directory for test fixtures. */
 export const createTempDir = (): string =>
   mkdtempSync(path.join(tmpdir(), 'gtb-test-'));
+
+/** A capturing logger plus accessors for the buffered stdout/stderr text. */
+export interface CapturedLogger {
+  readonly logger: Logger;
+  readonly out: () => string;
+  readonly err: () => string;
+}
+
+const captureSink = (chunks: string[]): NodeJS.WritableStream =>
+  new Writable({
+    write: (chunk, _enc, cb) => {
+      chunks.push(String(chunk));
+      cb();
+    },
+  });
+
+/**
+ * Buffers everything written through the Logger so concurrent tests can
+ * assert on the output without sharing console state.
+ */
+export const captureLogger = (): CapturedLogger => {
+  const stdoutChunks: string[] = [];
+  const stderrChunks: string[] = [];
+  return {
+    logger: createLogger(captureSink(stdoutChunks), captureSink(stderrChunks)),
+    out: () => stdoutChunks.join(''),
+    err: () => stderrChunks.join(''),
+  };
+};
 
 /** Writes generated tsconfigs for a discovered workspace. */
 export const writeTsconfigs = (

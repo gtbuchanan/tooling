@@ -6,6 +6,7 @@ import { parse as parseYaml } from 'yaml';
 import { type CodecovSections, generateCodecovSections } from '../../lib/codecov-config.ts';
 import { type WorkspaceDiscovery, discoverWorkspace } from '../../lib/discovery.ts';
 import { readJsonFile } from '../../lib/file-writer.ts';
+import { type Logger, createLogger } from '../../lib/logger.ts';
 import {
   type GeneratedTsconfig,
   planTsconfigs,
@@ -216,15 +217,81 @@ const checkCodecovSections = (
   ];
 };
 
+/** Options for {@link runVerify}. */
+export interface RunVerifyOptions {
+  readonly cwd?: string;
+  readonly ignored?: ReadonlySet<string>;
+}
+
 /**
  * Validates project config against the expected baseline from discovery.
- *
- * Checks turbo.json tasks, package.json scripts, tsconfig structure, and
- * codecov.yml flags/components. Use `--ignore <name>` to skip specific
- * tasks/scripts. Exits non-zero on drift.
+ * Returns drift messages — empty array means no drift.
  */
+export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
+  const cwd = options.cwd ?? process.cwd();
+  const ignored = options.ignored ?? new Set<string>();
+  const discovery = discoverWorkspace({ cwd });
+  const expected = generateTurboJson(discovery);
+
+  return [
+    ...checkTurboTasks(discovery.rootDir, expected, ignored),
+    ...checkTsconfigs(discovery),
+    ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
+    ...discovery.packages.flatMap(
+      pkg => checkScripts(
+        pkg.dir,
+        generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir),
+        ignored,
+      ),
+    ),
+    ...(discovery.packages.some(pkg => pkg.hasVitestTests)
+      ? checkCodecovSections(discovery.rootDir, discovery, ignored)
+      : []),
+  ];
+};
+
+/** Parsed citty args for {@link verify}. */
+export interface VerifyCommandArgs {
+  readonly cwd?: string | undefined;
+}
+
+/**
+ * Translates citty args into {@link RunVerifyOptions}, invokes
+ * {@link runVerify}, and reports the drift through the given logger.
+ * Returns the exit code so the citty wrapper can set
+ * `process.exitCode` and tests can assert on the result without
+ * mutating process state.
+ */
+export const verifyCommand = (
+  rawArgs: readonly string[],
+  args: VerifyCommandArgs,
+  logger: Logger,
+): number => {
+  const drift = runVerify({
+    ...(args.cwd !== undefined && { cwd: args.cwd }),
+    ignored: parseIgnoreArgs(rawArgs),
+  });
+
+  if (drift.length === 0) {
+    logger.info('verify passed — no drift detected');
+    return 0;
+  }
+
+  for (const message of drift) {
+    logger.error(message);
+  }
+
+  return 1;
+};
+
+/** Citty command wrapper for {@link verifyCommand}. */
 export const verify = defineCommand({
   args: {
+    cwd: {
+      alias: 'C',
+      description: 'Workspace root directory (defaults to current working directory)',
+      type: 'string',
+    },
     ignore: {
       description: 'Skip drift detection for a specific task or script',
       type: 'string',
@@ -234,36 +301,10 @@ export const verify = defineCommand({
     description: 'Verify generated config matches the expected baseline',
     name: rootNames.verify,
   },
-  run: ({ rawArgs }) => {
-    const ignored = parseIgnoreArgs(rawArgs);
-    const discovery = discoverWorkspace();
-    const expected = generateTurboJson(discovery);
-
-    const drift = [
-      ...checkTurboTasks(discovery.rootDir, expected, ignored),
-      ...checkTsconfigs(discovery),
-      ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
-      ...discovery.packages.flatMap(
-        pkg => checkScripts(
-          pkg.dir,
-          generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir),
-          ignored,
-        ),
-      ),
-      ...(discovery.packages.some(pkg => pkg.hasVitestTests)
-        ? checkCodecovSections(discovery.rootDir, discovery, ignored)
-        : []),
-    ];
-
-    if (drift.length === 0) {
-      console.log('verify passed — no drift detected');
-      return;
+  run: ({ rawArgs, args }) => {
+    const exitCode = verifyCommand(rawArgs, args, createLogger());
+    if (exitCode !== 0) {
+      process.exitCode = exitCode;
     }
-
-    for (const message of drift) {
-      console.error(message);
-    }
-
-    process.exitCode = 1;
   },
 });

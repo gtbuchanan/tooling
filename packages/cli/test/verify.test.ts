@@ -1,8 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { runCommand } from 'citty';
-import { describe, it, vi } from 'vitest';
-import { parseIgnoreArgs, verify } from '#src/commands/root/verify.js';
+import { describe, it } from 'vitest';
+import { parseIgnoreArgs, runVerify, verifyCommand } from '#src/commands/root/verify.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { writeJsonFile } from '#src/lib/file-writer.js';
 import {
@@ -10,27 +9,8 @@ import {
   generateTurboJson,
 } from '#src/lib/turbo-config.js';
 import {
-  createTempDir, initProject, readScripts, readTurboTasks, writeJson,
+  captureLogger, createTempDir, initProject, readScripts, readTurboTasks, writeJson,
 } from './helpers.ts';
-
-const runVerify = async (
-  dir: string,
-  args: readonly string[],
-): Promise<typeof process.exitCode> => {
-  const origCwd = process.cwd();
-  const origExitCode = process.exitCode;
-  vi.spyOn(console, 'log').mockReturnValue();
-  vi.spyOn(console, 'error').mockReturnValue();
-
-  try {
-    process.chdir(dir);
-    await runCommand(verify, { rawArgs: [...args] });
-    return process.exitCode;
-  } finally {
-    process.chdir(origCwd);
-    process.exitCode = origExitCode;
-  }
-};
 
 const createConsumerProject = (): string => {
   const root = createTempDir();
@@ -135,17 +115,17 @@ describe.concurrent('verify drift detection', () => {
   });
 });
 
-describe('verify', () => {
-  it('passes with no drift', async ({ expect }) => {
+describe.concurrent(runVerify, () => {
+  it('returns no drift when project is fully synced', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
 
-    const exitCode = await runVerify(root, []);
+    const drift = runVerify({ cwd: root });
 
-    expect(exitCode).not.toBe(1);
+    expect(drift).toHaveLength(0);
   });
 
-  it('sets exitCode 1 on drift', async ({ expect }) => {
+  it('reports drift on missing turbo task', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
 
@@ -153,12 +133,12 @@ describe('verify', () => {
     delete tasks['typecheck:ts'];
     writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
 
-    const exitCode = await runVerify(root, []);
+    const drift = runVerify({ cwd: root });
 
-    expect(exitCode).toBe(1);
+    expect(drift.some(msg => msg.includes('typecheck:ts'))).toBe(true);
   });
 
-  it('--ignore suppresses specific drift', async ({ expect }) => {
+  it('ignored set suppresses specific drift', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
 
@@ -166,9 +146,55 @@ describe('verify', () => {
     delete tasks['typecheck:ts'];
     writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
 
-    const exitCode = await runVerify(root, ['--ignore', 'typecheck:ts']);
+    const drift = runVerify({ cwd: root, ignored: new Set(['typecheck:ts']) });
 
-    expect(exitCode).not.toBe(1);
+    expect(drift).toHaveLength(0);
+  });
+
+  it('reports drift when codecov.yml has invalid YAML', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(path.join(root, 'codecov.yml'), 'invalid: [}');
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('codecov.yml'))).toBe(true);
+  });
+
+  it('reports drift when codecov.yml is empty', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(path.join(root, 'codecov.yml'), '');
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('codecov.yml'))).toBe(true);
+  });
+
+  it('reports drift when a codecov flag is missing', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      path.join(root, 'codecov.yml'),
+      'flags: {}\ncomponent_management:\n  individual_components: []\n',
+    );
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes("missing flag 'app'"))).toBe(true);
+  });
+
+  it('ignored set suppresses missing codecov flag drift', ({ expect }) => {
+    const root = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      path.join(root, 'codecov.yml'),
+      'flags: {}\ncomponent_management:\n  individual_components: []\n',
+    );
+
+    const drift = runVerify({ cwd: root, ignored: new Set(['app']) });
+
+    expect(drift).toHaveLength(0);
   });
 });
 
@@ -202,59 +228,44 @@ describe.concurrent(parseIgnoreArgs, () => {
   });
 });
 
-describe('verify codecov drift detection', () => {
-  it('passes with valid codecov.yml after init', async ({ expect }) => {
+describe.concurrent(verifyCommand, () => {
+  it('returns 0 and logs success when there is no drift', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
+    const { logger, out, err } = captureLogger();
 
-    const exitCode = await runVerify(root, []);
+    const code = verifyCommand([], { cwd: root }, logger);
 
-    expect(exitCode).not.toBe(1);
+    expect(code).toBe(0);
+    expect(out()).toContain('verify passed');
+    expect(err()).toBe('');
   });
 
-  it('sets exitCode 1 when codecov.yml has invalid YAML', async ({ expect }) => {
+  it('returns 1 and writes each drift message to stderr on drift', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
-    writeFileSync(path.join(root, 'codecov.yml'), 'invalid: [}');
+    const tasks = readTurboTasks(root);
+    delete tasks['typecheck:ts'];
+    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    const { logger, out, err } = captureLogger();
 
-    const exitCode = await runVerify(root, []);
+    const code = verifyCommand([], { cwd: root }, logger);
 
-    expect(exitCode).toBe(1);
+    expect(code).toBe(1);
+    expect(err()).toContain('typecheck:ts');
+    expect(out()).toBe('');
   });
 
-  it('sets exitCode 1 when codecov.yml is missing', async ({ expect }) => {
+  it('forwards --ignore flags from rawArgs to runVerify', ({ expect }) => {
     const root = createConsumerProject();
     initProject(root);
-    writeFileSync(path.join(root, 'codecov.yml'), '');
+    const tasks = readTurboTasks(root);
+    delete tasks['typecheck:ts'];
+    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    const { logger } = captureLogger();
 
-    const exitCode = await runVerify(root, []);
+    const code = verifyCommand(['--ignore', 'typecheck:ts'], { cwd: root }, logger);
 
-    expect(exitCode).toBe(1);
-  });
-
-  it('sets exitCode 1 when flag is missing', async ({ expect }) => {
-    const root = createConsumerProject();
-    initProject(root);
-    writeFileSync(
-      path.join(root, 'codecov.yml'),
-      'flags: {}\ncomponent_management:\n  individual_components: []\n',
-    );
-
-    const exitCode = await runVerify(root, []);
-
-    expect(exitCode).toBe(1);
-  });
-
-  it('--ignore suppresses missing flag error', async ({ expect }) => {
-    const root = createConsumerProject();
-    initProject(root);
-    writeFileSync(
-      path.join(root, 'codecov.yml'),
-      'flags: {}\ncomponent_management:\n  individual_components: []\n',
-    );
-
-    const exitCode = await runVerify(root, ['--ignore', 'app']);
-
-    expect(exitCode).not.toBe(1);
+    expect(code).toBe(0);
   });
 });
