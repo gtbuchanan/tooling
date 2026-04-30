@@ -125,6 +125,24 @@ pnpm install
 pnpm build
 ```
 
+### Termux/Android setup
+
+Two Bionic-specific quirks contributors should know about:
+
+**Turborepo unavailable.** Use `pnpm pipeline <task>` instead
+(`gtb pipeline`) — it reads `turbo.json` and runs leaf tasks
+level-by-level via `pnpm -r`. See the
+[CLI package](packages/cli/README.md#usage) for details.
+
+**prek/uv libc detection.** prek's bundled `uv` aborts during
+managed-Python discovery because Bionic isn't recognized as glibc or
+musl. Set `UV_LIBC=none` in your shell rc so `uv` falls back to
+Termux's system Python:
+
+```sh
+export UV_LIBC=none
+```
+
 ### Scripts
 
 Top-level scripts delegate to Turborepo:
@@ -132,10 +150,6 @@ Top-level scripts delegate to Turborepo:
 - `pnpm check` — Typecheck, lint, and test:fast (use during development)
 - `pnpm build` — Full pipeline: check + test:slow + pack + test:e2e
 - `pnpm build:ci` — CI pipeline: check + pack (slow/e2e run as separate jobs)
-
-On platforms where Turborepo is unavailable (e.g., Android/Termux), use
-`pnpm pipeline <task>` instead (`gtb pipeline`). See the
-[CLI package](packages/cli/README.md#usage) for details.
 
 Turbo tasks can also be run individually:
 
