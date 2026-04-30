@@ -71,7 +71,7 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 | `verify`   | Validate generated config against workspace state       |
 | `sync`     | Reconcile `turbo.json`, tsconfigs, scripts, codecov.yml |
 | `pipeline` | Run a turbo aggregate without the turbo binary          |
-| `prepare`  | Install pre-commit hooks via prek / pre-commit          |
+| `prepare`  | Install pre-commit hooks via prek                       |
 
 ### Task leaves (`gtb task <name>`)
 
