@@ -12,6 +12,7 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 | [@gtbuchanan/eslint-plugin-markdownlint](packages/eslint-plugin-markdownlint)     | ESLint plugin wrapping markdownlint                           |
 | [@gtbuchanan/eslint-plugin-md-frontmatter](packages/eslint-plugin-md-frontmatter) | ESLint plugin validating Markdown frontmatter via JSON Schema |
 | [@gtbuchanan/eslint-plugin-yamllint](packages/eslint-plugin-yamllint)             | ESLint plugin for yamllint gap rules                          |
+| [@gtbuchanan/pnpm-termux-shim](packages/pnpm-termux-shim)                         | pnpm bin shim for Termux/Android (`os: ["android"]`)          |
 | [@gtbuchanan/tsconfig](packages/tsconfig)                                         | Shared TypeScript base configuration                          |
 | [@gtbuchanan/vitest-config](packages/vitest-config)                               | Shared Vitest configuration                                   |
 
@@ -127,12 +128,18 @@ pnpm build
 
 ### Termux/Android setup
 
-Two Bionic-specific quirks contributors should know about:
+Before `pnpm install`, widen pnpm's `supportedArchitectures` whitelist
+in your per-user global rc so the Linux turbo binary is downloaded:
 
-**Turborepo unavailable.** Use `pnpm pipeline <task>` instead
-(`gtb pipeline`) — it reads `turbo.json` and runs leaf tasks
-level-by-level via `pnpm -r`. See the
-[CLI package](packages/cli/README.md#usage) for details.
+```text
+# ~/.config/pnpm/rc
+supported-architectures.os[]=current
+supported-architectures.os[]=linux
+```
+
+Then `pnpm install --force` once. Everything else (the linux turbo
+binary discovery via `gtb turbo`, the `pnpm` bin shim via
+`@gtbuchanan/pnpm-termux-shim`) is handled automatically.
 
 **prek/uv libc detection.** prek's bundled `uv` aborts during
 managed-Python discovery because Bionic isn't recognized as glibc or
@@ -153,10 +160,10 @@ Top-level scripts delegate to Turborepo:
 
 Turbo tasks can also be run individually:
 
-- `turbo run typecheck:ts` — TypeScript type-checking
-- `turbo run lint` — ESLint
-- `turbo run test:vitest:fast` — Fast source tests only
-- `turbo run test:vitest:slow` — Slow source tests only (tagged `slow`)
+- `pnpm exec gtb turbo run typecheck:ts` — TypeScript type-checking
+- `pnpm exec gtb turbo run lint` — ESLint
+- `pnpm exec gtb turbo run test:vitest:fast` — Fast source tests only
+- `pnpm exec gtb turbo run test:vitest:slow` — Slow source tests only (tagged `slow`)
 
 All commands go through Turbo for caching:
 

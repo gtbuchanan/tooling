@@ -81,10 +81,22 @@ describe.concurrent(generateRootScripts, () => {
 
     const result = generateRootScripts(discovery);
 
-    expect(result).toHaveProperty('check', 'turbo run check');
-    expect(result).toHaveProperty('build', 'turbo run build');
+    expect(result).toHaveProperty('check', 'gtb turbo run check');
+    expect(result).toHaveProperty('build', 'gtb turbo run build');
     expect(result).toHaveProperty('prepare', 'gtb prepare');
     expect(result).toHaveProperty('verify', 'gtb verify');
+  });
+
+  it('routes aliases through pnpm run gtb in self-hosted repos', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasEslint: true, hasTypeScript: true, isPublished: true })],
+      { isSelfHosted: true },
+    );
+
+    const result = generateRootScripts(discovery);
+
+    expect(result).toHaveProperty('build', 'pnpm run gtb turbo run build');
+    expect(result).toHaveProperty('pack', 'pnpm run gtb turbo run pack');
   });
 
   it('generates pack alias when published packages exist', ({ expect }) => {
@@ -94,7 +106,7 @@ describe.concurrent(generateRootScripts, () => {
 
     const result = generateRootScripts(discovery);
 
-    expect(result).toHaveProperty('pack', 'turbo run pack');
+    expect(result).toHaveProperty('pack', 'gtb turbo run pack');
   });
 
   it('omits pack alias when no published packages', ({ expect }) => {

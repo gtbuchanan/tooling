@@ -26,6 +26,7 @@ packages/
   eslint-plugin-markdownlint/   — @gtbuchanan/eslint-plugin-markdownlint (markdownlint via ESLint)
   eslint-plugin-md-frontmatter/ — @gtbuchanan/eslint-plugin-md-frontmatter (Markdown frontmatter validation via JSON Schema)
   eslint-plugin-yamllint/       — @gtbuchanan/eslint-plugin-yamllint (yamllint gap rules via ESLint)
+  pnpm-termux-shim/             — @gtbuchanan/pnpm-termux-shim (pnpm bin shim for Termux/Android, os: ["android"])
   tsconfig/                     — @gtbuchanan/tsconfig (shared base tsconfig.json)
   vitest-config/                — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
   test-utils/                   — private shared E2E fixture utilities
@@ -39,8 +40,9 @@ consumer repos. Authored in this repo; deployed locally via `gtb task
 deploy:skills` for dogfooding.
 
 - **`gtb-build-pipeline`** (`@gtbuchanan/cli`) — Turborepo task graph,
-  `gtb sync` / `gtb verify` / `gtb pipeline`, consumer script
-  customization, test-bucket strategy, aggregate semantics
+  `gtb sync` / `gtb verify` / `gtb turbo` (with the Android/Termux
+  escape hatch), consumer script customization, test-bucket strategy,
+  aggregate semantics
 
 Packages without skills yet (vitest-config, eslint-config,
 eslint-plugin-markdownlint, eslint-plugin-yamllint, tsconfig, test-utils)

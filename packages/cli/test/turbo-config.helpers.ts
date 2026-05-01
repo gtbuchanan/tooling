@@ -29,14 +29,22 @@ export const makeCapabilities = (
   };
 };
 
+export interface MakeDiscoveryOverrides extends Partial<PackageCapabilities> {
+  /** Overrides {@link WorkspaceDiscovery.isSelfHosted} (defaults to `false`). */
+  readonly isSelfHosted?: boolean;
+}
+
 export const makeDiscovery = (
   packages: readonly PackageCapabilities[],
-  rootOverrides: Partial<PackageCapabilities> = {},
-): WorkspaceDiscovery => ({
-  isMonorepo: packages.length > 1,
-  isSelfHosted: false,
-  packages,
-  packageGlobs: packages.length > 1 ? ['packages/*'] : [],
-  root: makeCapabilities(rootOverrides),
-  rootDir: '/fake/root',
-});
+  overrides: MakeDiscoveryOverrides = {},
+): WorkspaceDiscovery => {
+  const { isSelfHosted = false, ...rootOverrides } = overrides;
+  return {
+    isMonorepo: packages.length > 1,
+    isSelfHosted,
+    packages,
+    packageGlobs: packages.length > 1 ? ['packages/*'] : [],
+    root: makeCapabilities(rootOverrides),
+    rootDir: '/fake/root',
+  };
+};

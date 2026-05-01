@@ -1,7 +1,7 @@
 # @gtbuchanan/cli
 
 Shared build CLI for JavaScript/TypeScript projects. Provides the `gtb`
-binary: user-invoked commands (`verify`, `sync`, `pipeline`, `prepare`)
+binary: user-invoked commands (`verify`, `sync`, `turbo`, `prepare`)
 at the root, and leaf tool wrappers under `gtb task <name>` for
 Turborepo to call via generated `package.json` scripts.
 
@@ -23,22 +23,36 @@ This reconciles `turbo.json`, tsconfigs, `package.json` scripts, and
 `codecov.yml` with the current workspace. Re-run after adding packages
 or changing capabilities.
 
-Run the pipeline via Turborepo:
+Run the pipeline via the `gtb turbo` wrapper (generated root scripts
+delegate to it so Android/Termux users get a transparent escape hatch):
 
 ```sh
-turbo run check       # compile → lint + test:fast (parallel)
-turbo run build       # full pipeline
-turbo run test:fast   # fast source tests only
+pnpm exec gtb turbo run check   # compile → lint + test:fast (parallel)
+pnpm exec gtb turbo run build   # full pipeline
+pnpm exec gtb turbo run test:fast
 ```
 
-On platforms where Turborepo is unavailable (e.g., Android/Termux), use
-`gtb pipeline` instead. It reads `turbo.json`, resolves the dependency
-graph, and runs leaf tasks level-by-level via `pnpm -r`:
+`gtb turbo` is a thin pass-through to `turbo` on every supported
+platform. On Android, `process.platform === 'android'` causes turbo's
+launcher to refuse to start; the wrapper resolves the matching
+`@turbo/linux-<arch>` binary from your workspace and execs it directly.
+For this to work, pnpm must materialize the Linux binary — add to your
+per-user pnpm rc and re-run `pnpm install --force`:
 
-```sh
-gtb pipeline check    # same task graph, no turbo binary needed
-gtb pipeline build
+```text
+# ~/.config/pnpm/rc
+supported-architectures.os[]=current
+supported-architectures.os[]=linux
 ```
+
+A second Termux issue — turbo's child-process spawns tripping on
+`/usr/bin/env` shebangs because the glibc binary bypasses Termux's
+Bionic libc preload — is solved out-of-band by
+[`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim). Add it to
+your **workspace root** `package.json` `optionalDependencies` (not
+inside any individual package — under pnpm strict layout, only the
+root's `node_modules/.bin/` is on turbo's PATH at spawn time). The
+shim's `os: ["android"]` filter keeps it off non-Android hosts.
 
 The `prepare` script must be declared so pnpm runs it on install to set
 up pre-commit hooks via prek:
@@ -66,12 +80,12 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 
 ### Root commands
 
-| Command    | Purpose                                                 |
-| ---------- | ------------------------------------------------------- |
-| `verify`   | Validate generated config against workspace state       |
-| `sync`     | Reconcile `turbo.json`, tsconfigs, scripts, codecov.yml |
-| `pipeline` | Run a turbo aggregate without the turbo binary          |
-| `prepare`  | Install pre-commit hooks via prek                       |
+| Command   | Purpose                                                 |
+| --------- | ------------------------------------------------------- |
+| `verify`  | Validate generated config against workspace state       |
+| `sync`    | Reconcile `turbo.json`, tsconfigs, scripts, codecov.yml |
+| `turbo`   | Run turbo (with an Android escape hatch)                |
+| `prepare` | Install pre-commit hooks via prek                       |
 
 ### Task leaves (`gtb task <name>`)
 

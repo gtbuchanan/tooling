@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty';
 import { rootNames } from './root/names.ts';
-import { pipeline } from './root/pipeline.ts';
 import { prepare } from './root/prepare.ts';
 import { sync } from './root/sync.ts';
+import { turbo } from './root/turbo.ts';
 import { verify } from './root/verify.ts';
 import { task } from './task/index.ts';
 import { taskCommandName } from './task/names.ts';
@@ -14,9 +14,9 @@ export const main = defineCommand({
     name: 'gtb',
   },
   subCommands: {
-    [rootNames.pipeline]: pipeline,
     [rootNames.prepare]: prepare,
     [rootNames.sync]: sync,
+    [rootNames.turbo]: turbo,
     [rootNames.verify]: verify,
     [taskCommandName]: task,
   },

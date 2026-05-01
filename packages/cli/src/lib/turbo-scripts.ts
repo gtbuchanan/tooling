@@ -137,40 +137,51 @@ const requiredRootScripts = (
  * `isMonorepo` gates the `deploy:skills` alias: in single-package repos the
  * root IS the package and gets the leaf script directly, so no alias is needed
  * and emitting one would collide with the leaf.
+ *
+ * Aliases route through `gtb turbo` rather than `turbo` directly so the
+ * Android escape hatch (resolve linux platform binary, bypass turbo's
+ * launcher) activates transparently. On every other platform `gtb turbo`
+ * is a thin pass-through, so this does not change behavior.
  */
 const aliasRootScriptEntries = (
   flags: ToolFlags,
   isMonorepo: boolean,
-): readonly ConditionalEntry<string>[] => [
-  { condition: flags.hasCheck, key: Aggregate.check, value: `turbo run ${Aggregate.check}` },
-  {
-    condition: flags.hasCheck || flags.hasPublished,
-    key: Aggregate.buildCi,
-    value: `turbo run ${Aggregate.buildCi}`,
-  },
-  {
-    condition: flags.hasCheck || flags.hasPublished || flags.hasE2e,
-    key: Aggregate.build,
-    value: `turbo run ${Aggregate.build}`,
-  },
-  {
-    condition: flags.hasVitest,
-    key: Aggregate.coverageMerge,
-    value: `turbo run ${Aggregate.coverageMerge}`,
-  },
-  {
-    condition: flags.hasPublished,
-    key: Aggregate.pack,
-    value: `turbo run ${Aggregate.pack}`,
-  },
-  { condition: flags.hasE2e, key: Aggregate.testE2e, value: `turbo run ${Aggregate.testE2e}` },
-  { condition: flags.hasVitest, key: Aggregate.testSlow, value: `turbo run ${Aggregate.testSlow}` },
-  {
-    condition: flags.hasSkills && isMonorepo,
-    key: taskNames.deploySkills,
-    value: `turbo run ${taskNames.deploySkills}`,
-  },
-];
+  isSelfHosted: boolean,
+): readonly ConditionalEntry<string>[] => {
+  const cmd = (name: string): string =>
+    `${rootCmd(isSelfHosted, rootNames.turbo)} run ${name}`;
+
+  return [
+    { condition: flags.hasCheck, key: Aggregate.check, value: cmd(Aggregate.check) },
+    {
+      condition: flags.hasCheck || flags.hasPublished,
+      key: Aggregate.buildCi,
+      value: cmd(Aggregate.buildCi),
+    },
+    {
+      condition: flags.hasCheck || flags.hasPublished || flags.hasE2e,
+      key: Aggregate.build,
+      value: cmd(Aggregate.build),
+    },
+    {
+      condition: flags.hasVitest,
+      key: Aggregate.coverageMerge,
+      value: cmd(Aggregate.coverageMerge),
+    },
+    {
+      condition: flags.hasPublished,
+      key: Aggregate.pack,
+      value: cmd(Aggregate.pack),
+    },
+    { condition: flags.hasE2e, key: Aggregate.testE2e, value: cmd(Aggregate.testE2e) },
+    { condition: flags.hasVitest, key: Aggregate.testSlow, value: cmd(Aggregate.testSlow) },
+    {
+      condition: flags.hasSkills && isMonorepo,
+      key: taskNames.deploySkills,
+      value: cmd(taskNames.deploySkills),
+    },
+  ];
+};
 
 /** Generates all root-level scripts (required + optional aliases). */
 export const generateRootScripts = (
@@ -178,7 +189,7 @@ export const generateRootScripts = (
 ): Record<string, string> => {
   const flags = resolveToolFlags(discovery);
   return {
-    ...collect(aliasRootScriptEntries(flags, discovery.isMonorepo)),
+    ...collect(aliasRootScriptEntries(flags, discovery.isMonorepo, discovery.isSelfHosted)),
     ...requiredRootScripts(discovery, flags),
   };
 };

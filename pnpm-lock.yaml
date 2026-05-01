@@ -209,6 +209,10 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.2(@types/node@25.5.2)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(jiti@2.6.1)(yaml@2.8.3))
+    optionalDependencies:
+      '@gtbuchanan/pnpm-termux-shim':
+        specifier: workspace:*
+        version: link:packages/pnpm-termux-shim
 
   packages/cli:
     dependencies:
@@ -409,6 +413,16 @@ importers:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
+    publishDirectory: dist/source
+
+  packages/pnpm-termux-shim:
+    devDependencies:
+      '@gtbuchanan/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@gtbuchanan/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
     publishDirectory: dist/source
 
   packages/test-utils:

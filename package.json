@@ -9,18 +9,17 @@
   },
   "type": "module",
   "scripts": {
-    "build": "turbo run build",
-    "build:ci": "turbo run build:ci",
-    "check": "turbo run check",
-    "coverage:merge": "turbo run coverage:merge",
-    "deploy:skills": "turbo run deploy:skills",
+    "build": "pnpm run gtb turbo run build",
+    "build:ci": "pnpm run gtb turbo run build:ci",
+    "check": "pnpm run gtb turbo run check",
+    "coverage:merge": "pnpm run gtb turbo run coverage:merge",
+    "deploy:skills": "pnpm run gtb turbo run deploy:skills",
     "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb task lint:eslint . --ignore-pattern \"packages/*/**\"",
-    "pack": "turbo run pack",
-    "pipeline": "node --experimental-strip-types packages/cli/bin/gtb.ts pipeline",
+    "pack": "pnpm run gtb turbo run pack",
     "prepare": "pnpm run gtb prepare",
-    "test:e2e": "turbo run test:e2e",
-    "test:slow": "turbo run test:slow",
+    "test:e2e": "pnpm run gtb turbo run test:e2e",
+    "test:slow": "pnpm run gtb turbo run test:slow",
     "verify": "pnpm run gtb verify"
   },
   "devDependencies": {
@@ -46,6 +45,9 @@
     "typescript": "catalog:",
     "valibot": "catalog:",
     "vitest": "catalog:"
+  },
+  "optionalDependencies": {
+    "@gtbuchanan/pnpm-termux-shim": "workspace:*"
   },
   "packageManager": "pnpm@10.32.1",
   "engines": {
