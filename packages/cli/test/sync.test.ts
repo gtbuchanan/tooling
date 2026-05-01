@@ -125,10 +125,10 @@ describe.concurrent('sync helpers', () => {
     const scripts = generateRootScripts(discovery);
 
     expect(scripts).toMatchObject({
-      'build': 'turbo run build',
-      'build:ci': 'turbo run build:ci',
-      'check': 'turbo run check',
-      'pack': 'turbo run pack',
+      'build': 'gtb turbo run build',
+      'build:ci': 'gtb turbo run build:ci',
+      'check': 'gtb turbo run check',
+      'pack': 'gtb turbo run pack',
       'prepare': 'gtb prepare',
       'verify': 'gtb verify',
     });

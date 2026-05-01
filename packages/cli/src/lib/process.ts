@@ -4,6 +4,7 @@ import crossSpawn from 'cross-spawn';
 export interface RunOptions {
   readonly args?: readonly string[];
   readonly cwd?: string;
+  readonly env?: NodeJS.ProcessEnv;
 }
 
 /** Spawns a command with inherited stdio and resolves on success. */
@@ -14,6 +15,7 @@ export const run = async (
   await new Promise<void>((resolve, reject) => {
     const child = crossSpawn(command, options?.args?.slice() ?? [], {
       cwd: options?.cwd,
+      ...(options?.env !== undefined && { env: options.env }),
       stdio: 'inherit',
     });
     child.on('close', (code) => {

@@ -1,0 +1,44 @@
+{
+  "name": "@gtbuchanan/pnpm-termux-shim",
+  "version": "0.1.0",
+  "description": "pnpm wrapper with an absolute-path shebang for Termux/Android, where /usr/bin/env doesn't exist and glibc-built binaries (e.g. turbo) bypass Termux's Bionic LD_PRELOAD shebang shim",
+  "homepage": "https://github.com/gtbuchanan/tooling/tree/main/packages/pnpm-termux-shim",
+  "bugs": "https://github.com/gtbuchanan/tooling/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gtbuchanan/tooling.git",
+    "directory": "packages/pnpm-termux-shim"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "pnpm": "./dist/source/bin/pnpm"
+  },
+  "files": [
+    "bin"
+  ],
+  "scripts": {
+    "compile:ts": "node --experimental-strip-types scripts/build.ts",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "lint:eslint": "pnpm run gtb task lint:eslint",
+    "pack:npm": "pnpm run gtb task pack:npm",
+    "typecheck:ts": "pnpm run gtb task typecheck:ts"
+  },
+  "devDependencies": {
+    "@gtbuchanan/eslint-config": "workspace:*",
+    "@gtbuchanan/tsconfig": "workspace:*"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "os": [
+    "android"
+  ],
+  "publishConfig": {
+    "bin": {
+      "pnpm": "./bin/pnpm"
+    },
+    "directory": "dist/source",
+    "linkDirectory": false
+  }
+}

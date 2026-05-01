@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify, gtb pipeline fallback, consumer script customization, and test-bucket strategy. Trigger keywords - turbo, turbo.json, gtb sync, gtb verify, gtb pipeline, build, compile:ts, pack:npm, check, task graph, deploy:skills, workspace scripts, CI build.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb verify, gtb turbo, gtb task, compile:ts, pack:npm, deploy:skills, task graph.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -9,16 +9,23 @@ Turborepo-based build pipeline orchestrated by the `gtb` CLI. Each package defin
 
 ## Orchestration
 
-Root `package.json` scripts are thin turbo aliases:
+Root `package.json` scripts are thin aliases that route through the
+`gtb turbo` wrapper:
 
-- `pnpm check` → `turbo run check`
-- `pnpm build` → `turbo run build`
-- `pnpm build:ci` → `turbo run build:ci`
-- `pnpm pack` → `turbo run pack`
-- `pnpm test:slow` → `turbo run test:slow`
-- `pnpm test:e2e` → `turbo run test:e2e`
-- `pnpm coverage:merge` → `turbo run coverage:merge`
-- `pnpm deploy:skills` → `turbo run deploy:skills` (monorepos only)
+- `pnpm check` → `gtb turbo run check`
+- `pnpm build` → `gtb turbo run build`
+- `pnpm build:ci` → `gtb turbo run build:ci`
+- `pnpm pack` → `gtb turbo run pack`
+- `pnpm test:slow` → `gtb turbo run test:slow`
+- `pnpm test:e2e` → `gtb turbo run test:e2e`
+- `pnpm coverage:merge` → `gtb turbo run coverage:merge`
+- `pnpm deploy:skills` → `gtb turbo run deploy:skills` (monorepos only)
+
+`gtb turbo` is a thin pass-through to `turbo` on every supported
+platform. On Android (`process.platform === 'android'`) it resolves
+the matching `@turbo/linux-<arch>` binary and execs it directly,
+bypassing turbo's launcher (which rejects the platform upfront). See
+[Android-Termux setup](#android-termux-setup) below.
 
 `pnpm verify`, `pnpm prepare`, and `pnpm run gtb <cmd>` invoke the CLI directly.
 
@@ -60,7 +67,7 @@ Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so loc
 - **`deploy:skills` depends on `lint:eslint` same-package (no `^`)** — catches broken frontmatter and markdown in `SKILL.md` before deploy. Skills are authored independently per package; there's no topological chain.
 - **`build:ci` excludes `test:slow`, `test:e2e`, `deploy:skills`** — CI runs fast tests; slow/e2e run on full builds; CI has no agents to serve skills to.
 
-`deploy:skills` keys on `skills/**` and `skills-npm.config.ts` only. If you install or remove an agent and want existing skills resymlinked into the new agent's project-local dir, run `turbo run deploy:skills --force` once — turbo's cache otherwise reports HIT and skips the redeploy.
+`deploy:skills` keys on `skills/**` and `skills-npm.config.ts` only. If you install or remove an agent and want existing skills resymlinked into the new agent's project-local dir, run `gtb turbo run deploy:skills --force` once — turbo's cache otherwise reports HIT and skips the redeploy.
 
 ## `gtb sync` and `gtb verify`
 
@@ -76,11 +83,43 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 `gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift.
 
-## `gtb pipeline`
+## Android-Termux setup
 
-Fallback for platforms where Turborepo is unavailable (e.g., Android/Termux). Invokes a task's dependency tree sequentially without caching. Same task names as turbo: `gtb pipeline check`, `gtb pipeline build`, etc.
+Two issues are caused by Termux's Node reporting `process.platform === 'android'`; a third (memory pressure) is unrelated and applies to any low-memory host. Native Android support upstream was declined in [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616), so `gtb turbo` ships the workaround instead.
 
-Not a substitute for turbo — no caching, no parallelism. Only use when turbo won't run.
+**1. Turbo platform binary missing.** pnpm filters `@turbo/<os>-<arch>` optional dependencies by host platform; none target `android`, so all six are skipped on install. Widen the whitelist in the per-user pnpm rc:
+
+```text
+# ~/.config/pnpm/rc
+supported-architectures.os[]=current
+supported-architectures.os[]=linux
+```
+
+Then `pnpm install --force` from the workspace root. The Linux binary lands in `node_modules/.pnpm/turbo@<v>/node_modules/@turbo/linux-<arch>/`. `gtb turbo` resolves it via `require.resolve` from inside `node_modules/turbo/bin/turbo` (mirroring how the launcher itself looks up its platform package under pnpm strict layout) and execs it directly. The launcher's android-platform check is bypassed entirely; no `TURBO_BINARY_PATH` env var.
+
+**2. Turbo child-process spawn ENOENT.** The Linux turbo binary is glibc-built, but Termux is Bionic. Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls — but the preload is Bionic-only, so it never loads into the glibc turbo. When turbo spawns `pnpm`, the kernel sees `#!/usr/bin/env node` and fails because Termux has no `/usr/bin/env`.
+
+Fixed by `@gtbuchanan/pnpm-termux-shim` — an `os: ["android"]`-filtered package whose `bin: { pnpm: ... }` entry has an absolute-path shebang. pnpm symlinks it into `<rootDir>/node_modules/.bin/pnpm`, which is first in `pnpm exec` PATH, so turbo's child-spawn resolves it ahead of the broken system pnpm. On non-Android hosts the package is skipped at install — zero footprint.
+
+Add it as an `optionalDependencies` entry on the workspace root (so the bin lands in the root's `node_modules/.bin`, not nested under a transitive dep):
+
+```jsonc
+{
+  "optionalDependencies": {
+    "@gtbuchanan/pnpm-termux-shim": "^0.1.0",
+  },
+}
+```
+
+**3. Memory-bound concurrency for heavy aggregates.** Unrelated to `process.platform`: phones typically have 2–4GB free RAM under load. Turbo's default `--concurrency=10` is fine for `check` (typecheck + lint + fast tests fan out narrowly under the dependency graph). It is **not** fine for `build`, `test:slow`, or `test:e2e`, which fork their own vitest worker pools per task — `--concurrency=2` already crashed the OS in measurement. Run heavy aggregates with `--concurrency=1` on memory-constrained devices:
+
+```sh
+pnpm build --concurrency=1
+pnpm test:slow --concurrency=1
+pnpm test:e2e --concurrency=1
+```
+
+`gtb turbo` does not auto-set this — the right ceiling depends on which aggregate you're running and on free memory at invocation time, neither of which the wrapper can predict. Same applies to any low-memory host (small CI runners, etc.), not just Termux.
 
 ## Customizing behavior
 

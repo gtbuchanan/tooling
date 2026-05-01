@@ -1,0 +1,11 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# pnpm wrapper for Termux/Android. The literal absolute-path shebang
+# bypasses Termux's missing /usr/bin/env, which the kernel would
+# otherwise dereference when glibc-built binaries (e.g. turbo) execve
+# this script — Termux's Bionic LD_PRELOAD shim only intercepts libc
+# execve calls, not the syscall path used by glibc binaries.
+#
+# Honors $PREFIX (Termux's standard env var) so non-default install
+# locations still work; falls back to the shipped Termux paths.
+prefix="${PREFIX:-/data/data/com.termux/files/usr}"
+exec "${prefix}/bin/node" "${prefix}/lib/node_modules/pnpm/bin/pnpm.cjs" "$@"

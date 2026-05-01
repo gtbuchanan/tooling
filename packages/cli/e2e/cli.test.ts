@@ -36,7 +36,7 @@ describe.concurrent('gtb CLI', () => {
     expect(result.stdout).toContain('USAGE');
     expect(result.stdout).toContain('verify');
     expect(result.stdout).toContain('sync');
-    expect(result.stdout).toContain('pipeline');
+    expect(result.stdout).toContain('turbo');
     expect(result.stdout).toContain('task');
   });
 
