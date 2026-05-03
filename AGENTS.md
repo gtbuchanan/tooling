@@ -180,6 +180,12 @@ JSDoc on exports, two-plugin Markdown lint split) live in the
   the full result object (including stderr) in the diff, making failures
   self-diagnosing.
 
+## Operational notes
+
+- **Termux** — run `pnpm build`, `pnpm test:slow`, and `pnpm test:e2e`
+  with `--concurrency=1` to avoid OOM. See the `gtb-build-pipeline`
+  skill for why.
+
 ## Versioning
 
 Every PR requires a changeset — CI enforces this. Create a `.changeset/<name>.md`
