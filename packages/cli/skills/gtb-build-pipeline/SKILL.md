@@ -121,6 +121,8 @@ pnpm test:e2e --concurrency=1
 
 `gtb turbo` does not auto-set this — the right ceiling depends on which aggregate you're running and on free memory at invocation time, neither of which the wrapper can predict. Same applies to any low-memory host (small CI runners, etc.), not just Termux.
 
+If your host _always_ needs this (e.g., a Termux dev machine, a tight CI runner), encode it as a project rule in always-loaded agent context (`AGENTS.md`, `CLAUDE.md`, repo memory, etc.) rather than relying on discretionary skill activation. Skills load body-on-trigger, but operational rules that must fire every session belong in the system prompt.
+
 ## Customizing behavior
 
 Consumers override behavior by replacing `package.json` script values. No hooks or plugin system.
