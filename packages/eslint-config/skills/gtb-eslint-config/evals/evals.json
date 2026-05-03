@@ -1,0 +1,92 @@
+{
+  "evals": [
+    {
+      "expectations": [
+        "Recommends installing @gtbuchanan/eslint-config, eslint, and jiti as devDependencies (e.g., via pnpm add -D)",
+        "Shows or describes an eslint.config.ts that imports configure from @gtbuchanan/eslint-config and exports its result",
+        "Recommends passing tsconfigRootDir: import.meta.dirname to configure()"
+      ],
+      "expected_output": "Activates skill. Recommends `pnpm add -D @gtbuchanan/eslint-config eslint jiti`. Shows a minimal `eslint.config.ts` calling `configure({ tsconfigRootDir: import.meta.dirname })`.",
+      "files": [],
+      "id": 1,
+      "prompt": "I'm starting a new TypeScript project. How do I set up @gtbuchanan/eslint-config?"
+    },
+    {
+      "expectations": [
+        "Identifies the cause as pre-commit / prek hooks running in an isolated environment without project node_modules",
+        "Recommends using createRequire from node:module to bridge ESM to CJS resolution so NODE_PATH is respected",
+        "Shows or references a pattern that uses createRequire(import.meta.url) plus pathToFileURL to resolve and dynamically import @gtbuchanan/eslint-config"
+      ],
+      "expected_output": "Activates skill. Explains that pre-commit / prek run hooks in an isolated environment without project node_modules. Provides the `createRequire` + `pathToFileURL` import-bridge pattern from the skill, importing the config dynamically.",
+      "files": [],
+      "id": 2,
+      "prompt": "ESLint can't resolve @gtbuchanan/eslint-config when running under pre-commit. How do I fix it?"
+    },
+    {
+      "expectations": [
+        "Recommends eslint-disable-next-line over eslint-disable for narrow scope",
+        "States that suppression comments must include a -- reason suffix",
+        "Shows the multiline /* eslint-disable-next-line rule-name -- reason */ format with the reason on the next line"
+      ],
+      "expected_output": "Activates skill. Recommends `eslint-disable-next-line` over `eslint-disable` for narrow scope, with the multiline `--` reason format. Mentions that the `--` reason suffix is enforced.",
+      "files": [],
+      "id": 3,
+      "prompt": "What's the right way to suppress an ESLint rule for one line in a file using this config?"
+    },
+    {
+      "expectations": [
+        "Recommends the markdownlint-native directive: <!-- markdownlint-disable-next-line MD036 -->",
+        "Does NOT recommend an eslint-disable directive (e.g., <!-- eslint-disable-next-line markdownlint/lint -->) as the primary fix",
+        "Explains that markdownlint/lint runs as a single ESLint rule, so per-rule control needs markdownlint's own directive (or notes that eslint-disable markdownlint/lint would suppress every markdownlint rule at once)"
+      ],
+      "expected_output": "Activates skill. Recommends the markdownlint-native directive `<!-- markdownlint-disable-next-line MD036 -->`, NOT `eslint-disable`. Explains that `markdownlint/lint` runs as a single ESLint rule so per-rule control needs markdownlint's own syntax — `eslint-disable markdownlint/lint` would suppress every markdownlint rule at once.",
+      "files": [],
+      "id": 4,
+      "prompt": "How do I suppress a markdownlint MD036 warning on just one line of a Markdown file?"
+    },
+    {
+      "expectations": [
+        "Recommends setting target: 'browser' in the configure() options",
+        "Mentions that target: 'browser' enables no-console (and no-alert)",
+        "Notes that entry points (default: bin/** and scripts/**) are exempt from no-console even in browser mode, and that the entryPoints option can customize this"
+      ],
+      "expected_output": "Activates skill. Explains that `target: 'browser'` enables `no-console` and `no-alert`. Notes that entry points (`bin/**`, `scripts/**` by default) are exempt from `no-console` even in browser mode, and can be customized via `entryPoints`.",
+      "files": [],
+      "id": 5,
+      "prompt": "I'm using @gtbuchanan/eslint-config in a browser project but no-console isn't firing on my source files. What option do I need?"
+    },
+    {
+      "expectations": [
+        "Mentions that gtb sync generates a //#lint:eslint root turbo task when a root eslint.config.ts is present",
+        "Mentions that gtb sync generates a root lint:eslint script that lints workspace-root files (e.g., package.json, pnpm-workspace.yaml, .github/)",
+        "Mentions that per-package directories are auto-excluded via --ignore-pattern flags derived from pnpm-workspace.yaml package globs"
+      ],
+      "expected_output": "Activates skill. Explains that gtb sync generates a `//#lint:eslint` turbo task and a root `lint:eslint` script when a root eslint.config.ts is present. The root script lints workspace-root files (package.json, pnpm-workspace.yaml, .github/, etc.); per-package directories are auto-excluded via `--ignore-pattern` flags derived from `pnpm-workspace.yaml` package globs.",
+      "files": [],
+      "id": 6,
+      "prompt": "We have a monorepo with a root eslint.config.ts and per-package configs. What does gtb sync generate at the root?"
+    },
+    {
+      "expectations": [
+        "States that ESLint caches to dist/.eslintcache (per-package)",
+        "Mentions the --cache and --cache-location flags"
+      ],
+      "expected_output": "Activates skill. States that the per-package `lint:eslint` task runs with `--cache --cache-location dist/.eslintcache --max-warnings=0`. Cache lives under each package's `dist/`.",
+      "files": [],
+      "id": 7,
+      "prompt": "Where does ESLint cache its results when I run lint:eslint via gtb?"
+    },
+    {
+      "expectations": [
+        "Confirms both plugins are used together (the answer is yes, both are needed/active)",
+        "Mentions @eslint/markdown runs its recommended rule set on the CommonMark AST",
+        "Mentions @gtbuchanan/eslint-plugin-markdownlint fills the structural gaps that @eslint/markdown does not yet cover (rules already enforced by @eslint/markdown are disabled in the markdownlint plugin to keep diagnostics single-sourced)"
+      ],
+      "expected_output": "Activates skill. Explains the two-plugin split: `@eslint/markdown` runs its `recommended` rule set on the CommonMark AST; `@gtbuchanan/eslint-plugin-markdownlint` fills the structural gaps `@eslint/markdown` doesn't yet cover. Rules already enforced by `@eslint/markdown` are disabled in markdownlint to keep diagnostics single-sourced. As `@eslint/markdown` adds rules, the markdownlint counterparts retire.",
+      "files": [],
+      "id": 8,
+      "prompt": "What's the deal with @eslint/markdown vs @gtbuchanan/eslint-plugin-markdownlint — do I need both?"
+    }
+  ],
+  "skill_name": "gtb-eslint-config"
+}

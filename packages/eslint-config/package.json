@@ -10,9 +10,11 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "compile:skills": "pnpm run gtb task compile:skills",
     "compile:ts": "pnpm run gtb task compile:ts",
     "coverage:codecov:upload": "pnpm run gtb task coverage:codecov:upload",
     "coverage:vitest:merge": "pnpm run gtb task coverage:vitest:merge",
+    "deploy:skills": "pnpm run gtb task deploy:skills",
     "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb task lint:eslint",
     "pack:npm": "pnpm run gtb task pack:npm",

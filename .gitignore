@@ -1,4 +1,5 @@
 *.tsbuildinfo
+**/skills/*-workspace/
 .agents/skills/
 .claude/skills/
 .claude/worktrees/

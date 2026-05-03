@@ -43,11 +43,14 @@ deploy:skills` for dogfooding.
   `gtb sync` / `gtb verify` / `gtb turbo` (with the Android/Termux
   escape hatch), consumer script customization, test-bucket strategy,
   aggregate semantics
+- **`gtb-eslint-config`** (`@gtbuchanan/eslint-config`) — `configure()`
+  API and options, pre-commit `createRequire` pattern, bundled plugin
+  set, suppression conventions, two-plugin Markdown lint split,
+  per-package vs. workspace-root config split
 
-Packages without skills yet (vitest-config, eslint-config,
-eslint-plugin-markdownlint, eslint-plugin-yamllint, tsconfig, test-utils)
-keep their conventions in the sections below until those skills are
-authored.
+Packages without skills yet (vitest-config, eslint-plugin-markdownlint,
+eslint-plugin-yamllint, tsconfig, test-utils) keep their conventions in
+the sections below until those skills are authored.
 
 ## Architecture
 
@@ -65,54 +68,13 @@ coverage, setupFiles, and mock reset.
 
 ### Per-package tool configs
 
-- **ESLint** — Per-package `eslint.config.ts` importing `configure()`
-  from `@gtbuchanan/eslint-config`. ESLint caching enabled via
-  `--cache --cache-location dist/.eslintcache`. In monorepos with a
-  root ESLint config, `gtb sync` also generates a `//#lint:eslint`
-  turbo task and root `lint:eslint` script that lints workspace-root
-  files (`package.json`, `pnpm-workspace.yaml`, `.github/`, etc.) which
-  per-package lint never sees. Per-package dirs are excluded via
-  `--ignore-pattern` derived from `pnpm-workspace.yaml` package globs.
+- **ESLint** — Per-package `eslint.config.ts` calling `configure()`
+  from `@gtbuchanan/eslint-config`. API surface, plugin set,
+  suppression conventions, Markdown lint split, and the per-package
+  vs. workspace-root config split (incl. `//#lint:eslint` generation)
+  live in the `gtb-eslint-config` skill.
 - **Vitest** — Per-package `vitest.config.ts` using `configurePackage()`
   from `@gtbuchanan/vitest-config/configure`.
-
-### Linter
-
-- **ESLint** — Primary linter and formatter. `typescript-eslint`
-  strictTypeChecked + stylisticTypeChecked presets, `eslint-plugin-unicorn`
-  (recommended), `eslint-plugin-promise`, `eslint-plugin-regexp` (regex
-  safety), `eslint-plugin-jsdoc` (JSDoc/TSDoc validation),
-  `@stylistic/eslint-plugin` (JS/TS formatting), `eslint-plugin-format`
-  (Prettier formatting for JSON, Markdown, YAML, CSS, XML via ESLint
-  rules), `@eslint-community/eslint-plugin-eslint-comments`,
-  `eslint-plugin-import-x` (ordering), `@eslint/json` (JSON linting),
-  `eslint-plugin-pnpm` (workspace validation), `eslint-plugin-n` (Node.js
-  rules), `eslint-plugin-yml` (YAML linting + key sorting),
-  `eslint-plugin-yamllint` (yamllint gap rules: truthy, octal-values,
-  anchors, document-start/end),
-  `@eslint/markdown` (official Markdown plugin, commonmark AST,
-  recommended rule set),
-  `eslint-plugin-markdownlint` (Markdown structural linting for the
-  rules `@eslint/markdown` doesn't yet cover; rules it does cover are
-  disabled in this config to avoid duplicate diagnostics),
-  `eslint-plugin-md-frontmatter` (generic Markdown frontmatter
-  validation via JSON Schema, ajv-backed),
-  `eslint-plugin-agent-skills` (Agent Skills JSON Schema + rules
-  covering spec constraints schemas can't express; the schema plugs
-  into `eslint-plugin-md-frontmatter`),
-  `@vitest/eslint-plugin` (test rules), and `eslint-plugin-only-warn`
-  (downgrades errors to warnings).
-
-### Formatter
-
-- **Prettier (via eslint-plugin-format)** — Formats non-JS/TS files
-  (JSON, Markdown, YAML, CSS/SCSS/Less, XML) through ESLint rules.
-  JS/TS formatting is handled by `@stylistic/eslint-plugin`. Prettier
-  plugins (`prettier-plugin-sort-json`, `prettier-plugin-multiline-arrays`,
-  `prettier-plugin-packagejson`, `prettier-plugin-css-order`,
-  `@prettier/plugin-xml`) are resolved as `file://` URLs from this
-  package's dependencies for reliable resolution under pnpm strict
-  hoisting.
 
 ### Pre-commit hooks
 
@@ -205,19 +167,13 @@ skill.
 
 ## Conventions
 
-- All lint violations report as warnings in IDEs (not errors) so TypeScript
-  diagnostics stand out. CI enforces via `--max-warnings=0`.
-- Inline suppressions require a `--` reason suffix.
-- Markdown lints through two plugins: `@eslint/markdown` (recommended
-  rule set) and `@gtbuchanan/eslint-plugin-markdownlint` for the gaps
-  it doesn't cover. `markdown/*` rules suppress with the standard
-  `<!-- eslint-disable-next-line markdown/no-duplicate-headings -- ... -->`
-  syntax; the wrapped `markdownlint/lint` rule needs markdownlint's
-  own per-rule directive instead: `<!-- markdownlint-disable-next-line MD036 -->`.
-- All exported functions, types, interfaces, and constants must have JSDoc comments.
+ESLint conventions enforced by `@gtbuchanan/eslint-config` (warnings-only
+in IDE / `--max-warnings=0` in CI, `--` reason suffix on suppressions,
+JSDoc on exports, two-plugin Markdown lint split) live in the
+`gtb-eslint-config` skill. Repo-local conventions:
+
 - When adding or removing a package, update the packages table in
-  `README.md`, the structure tree above, and the linter/formatter
-  sections as applicable.
+  `README.md` and the structure tree above.
 - When asserting on `CommandResult` (exit code, stdout, stderr), use
   `expect(result).toMatchObject({ exitCode: 0 })` instead of
   `expect(result.exitCode).toBe(0)`. On failure, `toMatchObject` shows
