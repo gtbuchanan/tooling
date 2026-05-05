@@ -87,15 +87,7 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 Two issues are caused by Termux's Node reporting `process.platform === 'android'`; a third (memory pressure) is unrelated and applies to any low-memory host. Native Android support upstream was declined in [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616), so `gtb turbo` ships the workaround instead.
 
-**1. Turbo platform binary missing.** pnpm filters `@turbo/<os>-<arch>` optional dependencies by host platform; none target `android`, so all six are skipped on install. Widen the whitelist in the per-user pnpm rc:
-
-```text
-# ~/.config/pnpm/rc
-supported-architectures.os[]=current
-supported-architectures.os[]=linux
-```
-
-Then `pnpm install --force` from the workspace root. The Linux binary lands in `node_modules/.pnpm/turbo@<v>/node_modules/@turbo/linux-<arch>/`. `gtb turbo` resolves it via `require.resolve` from inside `node_modules/turbo/bin/turbo` (mirroring how the launcher itself looks up its platform package under pnpm strict layout) and execs it directly. The launcher's android-platform check is bypassed entirely; no `TURBO_BINARY_PATH` env var.
+**1. Turbo platform binary missing.** pnpm filters `@turbo/<os>-<arch>` optional dependencies by host platform; none target `android`, so all six are skipped on install. Run `pnpm install --force` from the workspace root — that's a known side-effect path that bypasses the optional-dep filter and installs every `@turbo/<os>-<arch>` package locally. The Linux binary lands in `node_modules/.pnpm/turbo@<v>/node_modules/@turbo/linux-<arch>/`. `gtb turbo` resolves it via `require.resolve` from inside `node_modules/turbo/bin/turbo` (mirroring how the launcher itself looks up its platform package under pnpm strict layout) and execs it directly. The launcher's android-platform check is bypassed entirely; no `TURBO_BINARY_PATH` env var.
 
 **2. Turbo child-process spawn ENOENT.** The Linux turbo binary is glibc-built, but Termux is Bionic. Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls — but the preload is Bionic-only, so it never loads into the glibc turbo. When turbo spawns `pnpm`, the kernel sees `#!/usr/bin/env node` and fails because Termux has no `/usr/bin/env`.
 
