@@ -1,0 +1,53 @@
+{
+  "evals": [
+    {
+      "expected_output": "Activates skill. Recommends `pnpm build --concurrency=1` (and the same flag for `test:slow` and `test:e2e`). Explains that turbo's default `--concurrency=10` is fine for `check` but not for `build`/`test:slow`/`test:e2e`, which fork their own vitest worker pools per task. Notes that `gtb turbo` does not auto-set this and that the same applies to any low-memory host (small CI runners), not just Termux.",
+      "files": [],
+      "id": 1,
+      "prompt": "I'm running pnpm build in Termux on my Android phone and it's crashing with OOM partway through. What should I try?"
+    },
+    {
+      "expected_output": "Activates skill. Tells me to add `supported-architectures.os[]=current` and `supported-architectures.os[]=linux` to `~/.config/pnpm/rc`, then run `pnpm install --force` from the workspace root. Explains that pnpm filters `@turbo/<os>-<arch>` optional deps by host platform; none target Android, so widening the whitelist installs the Linux binary, which `gtb turbo` resolves and execs directly to bypass the launcher's android-platform check.",
+      "files": [],
+      "id": 2,
+      "prompt": "When I run `gtb turbo run build` on Termux it says `the linux turbo binary is not installed`. How do I fix that?"
+    },
+    {
+      "expected_output": "Activates skill. Explains that the Linux turbo binary is glibc-built but Termux is Bionic; Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls, but the preload is Bionic-only and doesn't load into glibc turbo, so the kernel sees `#!/usr/bin/env node` and fails because `/usr/bin/env` doesn't exist. Fix: add `@gtbuchanan/pnpm-termux-shim` as an `optionalDependencies` entry on the workspace root so its absolute-path `bin/pnpm` lands in `<rootDir>/node_modules/.bin/pnpm` ahead of the system pnpm.",
+      "files": [],
+      "id": 3,
+      "prompt": "On Termux turbo fails to spawn pnpm with ENOENT. What's going on and how do I fix it?"
+    },
+    {
+      "expected_output": "Activates skill. Explains: `gtb sync` reconciles generated state — `turbo.json` tasks and aggregates, per-package `tsconfig.json`/`tsconfig.build.json`, per-package and root `package.json` scripts, `codecov.yml` flags. Without `--force`, existing script values are preserved (consumers keep custom overrides); use `--force` to reset to defaults. `gtb verify` validates no drift from the expected baseline and exits non-zero if anything is out of sync; run in CI as a drift gate.",
+      "files": [],
+      "id": 4,
+      "prompt": "What's the difference between `gtb sync` and `gtb verify`?"
+    },
+    {
+      "expected_output": "Activates skill. Explains aggregate semantics: pick by scope — `check` for fast pre-commit checks (typecheck/lint/fast tests), `build:ci` for PR-suitable runs (skips slow/e2e/skill deploys), `build` for full local validation. Add a `dependsOn` entry from the chosen aggregate to the new task in `turbo.json`. For PR coverage, `build:ci` is the right home.",
+      "files": [],
+      "id": 5,
+      "prompt": "I added a custom `lint:custom` task to my package. How do I plug it into the build aggregate so CI runs it?"
+    },
+    {
+      "expected_output": "Activates skill. Explains that `deploy:skills` keys on `skills/**` and `skills-npm.config.ts` only — installing or removing an agent changes neither, so turbo's cache reports HIT. Run `gtb turbo run deploy:skills --force` once to bypass the cache and resymlink into the new agent's project-local dir.",
+      "files": [],
+      "id": 6,
+      "prompt": "I just installed a new coding agent and want my existing skills symlinked into its project-local directory, but `deploy:skills` keeps showing as a turbo cache hit and skips."
+    },
+    {
+      "expected_output": "Activates skill. Explains: `lint:eslint` depends on `typecheck:ts` to prevent confusing linter output when there are type errors — ESLint via `typescript-eslint` runs its own type resolution, so the dep isn't strictly required, and consumers who prefer parallelism over cleaner output can remove it. Test tasks deliberately skip the dep — parallelism wins there because tests fail loudly on their own when types are broken.",
+      "files": [],
+      "id": 7,
+      "prompt": "Why does `lint:eslint` depend on `typecheck:ts` in this build graph, but the test tasks don't?"
+    },
+    {
+      "expected_output": "Activates skill. Explains that source changes in any `packages/*` workspace fully invalidate every task across all packages — Turbo 2.x mixes every file in every workspace package reachable from the root `package.json` deps/devDeps into `hashOfInternalDependencies`, salting every task hash. Root devDeps (`@gtbuchanan/cli`, eslint-config, tsconfig, vitest-config) transitively reach all packages. Root-only edits (docs, `.github/`) still hit cache. Consumers see our packages as external npm deps (lockfile-keyed), so they're unaffected. References vercel/turborepo#8202.",
+      "files": [],
+      "id": 8,
+      "prompt": "Why is turbo reporting `Cached: 0 cached, N total` after I edited one source file in one workspace package?"
+    }
+  ],
+  "skill_name": "gtb-build-pipeline"
+}
