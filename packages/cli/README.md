@@ -33,22 +33,25 @@ pnpm exec gtb turbo run test:fast
 ```
 
 `gtb turbo` is a thin pass-through to `turbo` on every supported
-platform. On Android, `process.platform === 'android'` causes turbo's
-launcher to refuse to start; the wrapper resolves the matching
-`@turbo/linux-<arch>` binary from your workspace and execs it directly.
-For this to work, pnpm must materialize the Linux binary — add to your
-per-user pnpm rc and re-run `pnpm install --force`:
+platform. On Android, `process.platform === 'android'` causes the
+node_modules launcher to refuse to start; the wrapper resolves the
+native turbo from Termux's package registry and execs it directly.
+Install it once per Termux environment:
 
-```text
-# ~/.config/pnpm/rc
-supported-architectures.os[]=current
-supported-architectures.os[]=linux
+```sh
+pkg install turbo
 ```
 
-A second Termux issue — turbo's child-process spawns tripping on
-`/usr/bin/env` shebangs because the glibc binary bypasses Termux's
-Bionic libc preload — is solved out-of-band by
-[`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim). Add it to
+That puts a Bionic-built `turbo` at `$PREFIX/bin/turbo` (typically
+`/data/data/com.termux/files/usr/bin/turbo`), which `gtb turbo`
+resolves and execs.
+
+The Termux-pkg turbo is Bionic-built, so its child-process spawns
+honor Termux's `LD_PRELOAD` shebang rewriter and resolve
+`#!/usr/bin/env <name>` correctly.
+[`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim) is retained
+defensively in case turbo reintroduces a glibc npm distribution, or
+another glibc binary in the graph needs to spawn `pnpm`. Add it to
 your **workspace root** `package.json` `optionalDependencies` (not
 inside any individual package — under pnpm strict layout, only the
 root's `node_modules/.bin/` is on turbo's PATH at spawn time). The

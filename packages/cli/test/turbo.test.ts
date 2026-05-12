@@ -1,10 +1,28 @@
-import { describe, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { describe, it, vi } from 'vitest';
 import { type TurboInvocation, planTurboInvocation } from '#src/commands/root/turbo.js';
 
+interface PrefixFixture {
+  readonly prefix: string;
+  readonly turboBin: string;
+  readonly [Symbol.dispose]: () => void;
+}
+
+const createPrefixFixture = (): PrefixFixture => {
+  const prefix = mkdtempSync(path.join(tmpdir(), 'gtb-turbo-test-'));
+  return {
+    prefix,
+    turboBin: path.join(prefix, 'bin', 'turbo'),
+    [Symbol.dispose]: () => {
+      rmSync(prefix, { force: true, recursive: true });
+    },
+  };
+};
+
 const baseOptions = {
-  arch: 'arm64',
   rawArgs: ['run', 'build'] as const,
-  rootDir: '/fake/root',
 };
 
 const stubResolver = (resolved?: string) => (): string | undefined => resolved;
@@ -57,40 +75,20 @@ describe.concurrent(planTurboInvocation, () => {
     expect(called).toBe(false);
   });
 
-  it('resolves the linux-arm64 binary on android arm64', ({ expect }) => {
+  it('uses the resolved global turbo binary on android', ({ expect }) => {
     const plan = planTurboInvocation({
       ...baseOptions,
-      arch: 'arm64',
       platform: 'android',
       resolveAndroidBinary: stubResolver(
-        '/fake/root/node_modules/@turbo/linux-arm64/bin/turbo',
+        '/data/data/com.termux/files/usr/bin/turbo',
       ),
     });
 
     expect(plan).toStrictEqual({
       args: ['run', 'build'],
-      bin: '/fake/root/node_modules/@turbo/linux-arm64/bin/turbo',
+      bin: '/data/data/com.termux/files/usr/bin/turbo',
       kind: 'spawn',
     });
-  });
-
-  it('resolves the linux-64 binary on android x64', ({ expect }) => {
-    const calls: string[] = [];
-    const plan = planTurboInvocation({
-      ...baseOptions,
-      arch: 'x64',
-      platform: 'android',
-      resolveAndroidBinary: (rootDir) => {
-        calls.push(rootDir);
-        return '/fake/root/node_modules/@turbo/linux-64/bin/turbo';
-      },
-    });
-
-    expect(plan).toMatchObject({
-      bin: '/fake/root/node_modules/@turbo/linux-64/bin/turbo',
-      kind: 'spawn',
-    });
-    expect(calls).toStrictEqual(['/fake/root']);
   });
 
   it('forwards raw args verbatim to the spawn plan', ({ expect }) => {
@@ -107,7 +105,7 @@ describe.concurrent(planTurboInvocation, () => {
     });
   });
 
-  it('returns an error plan when the linux binary is missing on android', ({ expect }) => {
+  it('returns an error plan when the global turbo is missing on android', ({ expect }) => {
     const plan = planTurboInvocation({
       ...baseOptions,
       platform: 'android',
@@ -115,7 +113,34 @@ describe.concurrent(planTurboInvocation, () => {
     });
     assertErrorPlan(plan);
 
-    expect(plan.message).toContain('supported-architectures');
-    expect(plan.message).toContain('pnpm install --force');
+    expect(plan.message).toContain('pkg install turbo');
+    expect(plan.message).toContain('global turbo binary is not installed');
+  });
+});
+
+/*
+ * Default-resolver tests stub $PREFIX, which is global state, so they
+ * run serially (no `.concurrent`) and rely on vitest's `unstubEnvs`
+ * setting to restore the env between cases.
+ */
+describe('planTurboInvocation default android resolver', () => {
+  it('resolves $PREFIX/bin/turbo when the binary exists', ({ expect }) => {
+    using fixture = createPrefixFixture();
+    mkdirSync(path.dirname(fixture.turboBin), { recursive: true });
+    writeFileSync(fixture.turboBin, '');
+    vi.stubEnv('PREFIX', fixture.prefix);
+
+    const plan = planTurboInvocation({ ...baseOptions, platform: 'android' });
+
+    expect(plan).toMatchObject({ bin: fixture.turboBin, kind: 'spawn' });
+  });
+
+  it('returns an error plan when $PREFIX/bin/turbo is missing', ({ expect }) => {
+    using fixture = createPrefixFixture();
+    vi.stubEnv('PREFIX', fixture.prefix);
+
+    const plan = planTurboInvocation({ ...baseOptions, platform: 'android' });
+
+    expect(plan.kind).toBe('error');
   });
 });
