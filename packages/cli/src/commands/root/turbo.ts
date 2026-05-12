@@ -1,56 +1,44 @@
-import { realpathSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import { run } from '../../lib/process.ts';
-import { resolveWorkspace } from '../../lib/workspace.ts';
 import { rootNames } from './names.ts';
 
 /**
- * Setup help shown when `@turbo/linux-*` is missing on Android. Termux's
- * Node reports `process.platform === 'android'`, so pnpm filters out
- * every turbo platform binary on install. The fix is to widen pnpm's
- * `supportedArchitectures` whitelist via the per-user global rc.
+ * Setup help shown when the global turbo binary is missing on Android.
+ * Termux ships a native turbo via its package registry; the npm
+ * `@turbo/linux-<arch>` workaround is no longer needed and the
+ * launcher in `node_modules/.bin/turbo` rejects
+ * `process.platform === 'android'` upfront.
  *
  * Native android binaries are not coming from upstream — vercel/turborepo#5616
- * was closed as "not planned" — so the linux-arm64 binary is the workaround.
+ * was closed as "not planned" — so the Termux-pkg turbo (Bionic-built
+ * against `aarch64-linux-android`) is the supported path.
  */
 const androidSetupHelp = `
-gtb turbo: the linux turbo binary is not installed.
+gtb turbo: the global turbo binary is not installed.
 
-On Android (Termux), pnpm filters optional dependencies by host platform,
-so @turbo/linux-${process.arch === 'arm64' ? 'arm64' : '64'} is skipped by default.
-Add the following to your global pnpm rc and reinstall:
+On Android (Termux), gtb turbo execs the native turbo from the Termux
+package registry instead of the npm-distributed Linux binary. The
+node_modules launcher refuses to start when process.platform === 'android'.
 
-  ~/.config/pnpm/rc
+Install it from the Termux registry:
 
-    supported-architectures.os[]=current
-    supported-architectures.os[]=linux
+  pkg install turbo
 
-Then run \`pnpm install --force\` from the workspace root.
+If your Termux prefix is non-standard, set $PREFIX before running.
 `.trimStart();
 
-const linuxArchSuffix = (): '64' | 'arm64' =>
-  process.arch === 'arm64' ? 'arm64' : '64';
-
 /**
- * Resolves the linux turbo binary by mirroring how turbo's own launcher
- * locates its platform package: `require.resolve` from inside
- * `node_modules/turbo/bin/`. Uses realpath because pnpm's strict
- * `node_modules/turbo` is a symlink into `.pnpm/`, and Node's module
- * lookup walks the literal path components of the parent — without
- * realpath we'd never reach the `@turbo/<plat>-<arch>` siblings.
+ * Resolves the global Termux-pkg-installed turbo binary. Honors
+ * Termux's $PREFIX env var; falls back to the standard install path
+ * when $PREFIX is unset (matching the convention used by
+ * `@gtbuchanan/pnpm-termux-shim`).
  */
-const resolveAndroidTurboBinary = (rootDir: string): string | undefined => {
-  const launcherSymlink = path.join(rootDir, 'node_modules', 'turbo', 'bin', 'turbo');
-  try {
-    const launcherRealpath = realpathSync(launcherSymlink);
-    return createRequire(launcherRealpath).resolve(
-      `@turbo/linux-${linuxArchSuffix()}/bin/turbo`,
-    );
-  } catch {
-    return undefined;
-  }
+const resolveAndroidTurboBinary = (): string | undefined => {
+  const prefix = process.env['PREFIX'] ?? '/data/data/com.termux/files/usr';
+  const candidate = path.join(prefix, 'bin', 'turbo');
+  return existsSync(candidate) ? candidate : undefined;
 };
 
 /** Discriminated plan for how to invoke turbo from the current host. */
@@ -60,25 +48,24 @@ export type TurboInvocation =
 
 /** Inputs to {@link planTurboInvocation}. */
 export interface PlanTurboInvocationOptions {
-  readonly arch: string;
   readonly platform: string;
   readonly rawArgs: readonly string[];
-  readonly resolveAndroidBinary?: (rootDir: string) => string | undefined;
-  readonly rootDir: string;
+  readonly resolveAndroidBinary?: () => string | undefined;
 }
 
 /**
  * Computes the turbo invocation plan for a given host. On Android
- * resolves the linux platform binary directly (bypassing turbo's
- * launcher, which rejects `android` upfront). On every other platform
- * delegates to the launcher on PATH so its native install behavior is
- * preserved.
+ * resolves the Termux-pkg turbo binary directly (bypassing the
+ * node_modules launcher, which rejects `android` upfront). On every
+ * other platform delegates to the launcher on PATH so its native
+ * install behavior is preserved.
  *
- * Issue 2 — turbo's child-process spawn tripping on `/usr/bin/env`
- * shebangs because the glibc binary bypasses Termux's Bionic libc
- * preload — is handled out-of-band by `@gtbuchanan/pnpm-termux-shim`,
- * which lands a working `pnpm` in `node_modules/.bin/` via an
- * `os: ["android"]`-filtered optional dependency.
+ * The Termux-pkg turbo is Bionic-built, so its child-process spawns
+ * honor Termux's `LD_PRELOAD` shebang rewriter and resolve
+ * `#!/usr/bin/env <name>` correctly. The companion
+ * `@gtbuchanan/pnpm-termux-shim` package is retained defensively in
+ * case turbo reintroduces a glibc npm distribution, or another glibc
+ * binary in the graph needs to spawn `pnpm`.
  */
 export const planTurboInvocation = (
   options: PlanTurboInvocationOptions,
@@ -87,7 +74,7 @@ export const planTurboInvocation = (
     return { args: [...options.rawArgs], bin: 'turbo', kind: 'spawn' };
   }
   const resolveBin = options.resolveAndroidBinary ?? resolveAndroidTurboBinary;
-  const resolved = resolveBin(options.rootDir);
+  const resolved = resolveBin();
   if (resolved === undefined) {
     return { kind: 'error', message: androidSetupHelp };
   }
@@ -101,12 +88,9 @@ export const turbo = defineCommand({
     name: rootNames.turbo,
   },
   run: async ({ rawArgs }) => {
-    const { rootDir } = resolveWorkspace();
     const plan = planTurboInvocation({
-      arch: process.arch,
       platform: process.platform,
       rawArgs,
-      rootDir,
     });
     if (plan.kind === 'error') {
       console.error(plan.message);

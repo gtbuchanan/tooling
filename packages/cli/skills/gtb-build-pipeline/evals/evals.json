@@ -13,14 +13,14 @@
     },
     {
       "expectations": [
-        "Recommends running `pnpm install --force` from the workspace root",
-        "Explains pnpm's optional-dependency platform filtering — none of the @turbo/<os>-<arch> packages target android, so all six are skipped by default",
-        "Notes that `--force` bypasses the optional-dep filter and installs every @turbo platform locally"
+        "Recommends running `pkg install turbo` to install the native turbo from the Termux package registry",
+        "Explains that the node_modules launcher rejects `process.platform === 'android'` upfront, and pnpm filters `@turbo/<os>-<arch>` optional deps by host platform so none of the bundled platform binaries are installed either",
+        "Notes that `gtb turbo` resolves `$PREFIX/bin/turbo` (with `/data/data/com.termux/files/usr` as the standard fallback) and execs it directly, bypassing the launcher"
       ],
-      "expected_output": "Activates skill. Tells me to run `pnpm install --force` from the workspace root. Explains that pnpm filters `@turbo/<os>-<arch>` optional deps by host platform; none target Android, so all six are skipped by default. Notes that `--force` bypasses the filter and installs every @turbo platform locally. After install the Linux binary is available and `gtb turbo` resolves it via `require.resolve` and execs it directly.",
+      "expected_output": "Activates skill. Tells me to run `pkg install turbo` to install the native turbo from the Termux package registry. Explains that the node_modules launcher rejects `process.platform === 'android'` upfront, and pnpm filters `@turbo/<os>-<arch>` optional deps by host platform so none of the bundled binaries are installed either. After install the Bionic turbo lands at `$PREFIX/bin/turbo` and `gtb turbo` resolves it directly (honoring `$PREFIX`, with `/data/data/com.termux/files/usr` as fallback) and execs it, bypassing the launcher.",
       "files": [],
       "id": 2,
-      "prompt": "When I run `gtb turbo run build` on Termux it says `the linux turbo binary is not installed`. How do I fix that?"
+      "prompt": "When I run `gtb turbo run build` on Termux it says `the global turbo binary is not installed`. How do I fix that?"
     },
     {
       "expectations": [

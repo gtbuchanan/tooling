@@ -23,8 +23,9 @@ Root `package.json` scripts are thin aliases that route through the
 
 `gtb turbo` is a thin pass-through to `turbo` on every supported
 platform. On Android (`process.platform === 'android'`) it resolves
-the matching `@turbo/linux-<arch>` binary and execs it directly,
-bypassing turbo's launcher (which rejects the platform upfront). See
+the global turbo binary installed via Termux's package registry
+(`$PREFIX/bin/turbo`) and execs it directly, bypassing the
+node_modules launcher (which rejects the platform upfront). See
 [Android-Termux setup](#android-termux-setup) below.
 
 `pnpm verify`, `pnpm prepare`, and `pnpm run gtb <cmd>` invoke the CLI directly.
@@ -87,11 +88,17 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 Two issues are caused by Termux's Node reporting `process.platform === 'android'`; a third (memory pressure) is unrelated and applies to any low-memory host. Native Android support upstream was declined in [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616), so `gtb turbo` ships the workaround instead.
 
-**1. Turbo platform binary missing.** pnpm filters `@turbo/<os>-<arch>` optional dependencies by host platform; none target `android`, so all six are skipped on install. Run `pnpm install --force` from the workspace root — that's a known side-effect path that bypasses the optional-dep filter and installs every `@turbo/<os>-<arch>` package locally. The Linux binary lands in `node_modules/.pnpm/turbo@<v>/node_modules/@turbo/linux-<arch>/`. `gtb turbo` resolves it via `require.resolve` from inside `node_modules/turbo/bin/turbo` (mirroring how the launcher itself looks up its platform package under pnpm strict layout) and execs it directly. The launcher's android-platform check is bypassed entirely; no `TURBO_BINARY_PATH` env var.
+**1. Node_modules launcher rejects android.** The launcher in `node_modules/.bin/turbo` exits early when `process.platform === 'android'`, and pnpm filters `@turbo/<os>-<arch>` optional dependencies by host platform so none of the bundled platform binaries are installed either. Install the native turbo from Termux's package registry instead:
 
-**2. Turbo child-process spawn ENOENT.** The Linux turbo binary is glibc-built, but Termux is Bionic. Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls — but the preload is Bionic-only, so it never loads into the glibc turbo. When turbo spawns `pnpm`, the kernel sees `#!/usr/bin/env node` and fails because Termux has no `/usr/bin/env`.
+```sh
+pkg install turbo
+```
 
-Fixed by `@gtbuchanan/pnpm-termux-shim` — an `os: ["android"]`-filtered package whose `bin: { pnpm: ... }` entry has an absolute-path shebang. pnpm symlinks it into `<rootDir>/node_modules/.bin/pnpm`, which is first in `pnpm exec` PATH, so turbo's child-spawn resolves it ahead of the broken system pnpm. On non-Android hosts the package is skipped at install — zero footprint.
+That puts a Bionic-built `turbo` at `$PREFIX/bin/turbo` (typically `/data/data/com.termux/files/usr/bin/turbo`). `gtb turbo` resolves it directly via `$PREFIX` (with the standard prefix as fallback) and execs it, bypassing the node_modules launcher entirely.
+
+**2. Turbo child-process spawn ENOENT (historically).** The npm-distributed Linux turbo binary is glibc-built, but Termux is Bionic. Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls — but the preload is Bionic-only, so it never loads into a glibc turbo. When such a turbo spawns `pnpm`, the kernel sees `#!/usr/bin/env node` and fails because Termux has no `/usr/bin/env`.
+
+The Termux-pkg turbo is Bionic-built, so the preload loads correctly and child-process spawns resolve `pnpm` without issue. `@gtbuchanan/pnpm-termux-shim` is retained defensively in case turbo reintroduces a glibc npm distribution, or another glibc binary in the graph needs to spawn `pnpm`. The shim is an `os: ["android"]`-filtered package whose `bin: { pnpm: ... }` entry has an absolute-path shebang; pnpm symlinks it into `<rootDir>/node_modules/.bin/pnpm` ahead of the system `pnpm` in PATH. On non-Android hosts it's filtered out at install — zero footprint.
 
 Add it as an `optionalDependencies` entry on the workspace root (so the bin lands in the root's `node_modules/.bin`, not nested under a transitive dep):
 
