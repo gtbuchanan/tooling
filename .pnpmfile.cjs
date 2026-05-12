@@ -1,3 +1,18 @@
+/** @param {import('@pnpm/lockfile.types').LockfileObject} lockFile */
+const afterAllResolved = (lockFile) => {
+  /** @type {import('@pnpm/lockfile.types').PackageSnapshot[]} */
+  const pkgs = Object.values(lockFile.packages ?? {});
+  for (const pkg of pkgs) {
+    /* HACK: Remove tarball URLs from the lockfile
+       https://github.com/pnpm/pnpm/issues/6667 */
+    if ('tarball' in pkg.resolution) {
+      delete pkg.resolution.tarball;
+    }
+  }
+
+  return lockFile;
+};
+
 /** @type {import('@pnpm/types').ReadPackageHook} */
 const readPackage = (pkg) => {
   /* pnpm ignores the `os` field for workspace packages, so the Termux
@@ -17,6 +32,7 @@ const readPackage = (pkg) => {
 
 module.exports = {
   hooks: {
+    afterAllResolved,
     readPackage,
   },
 };

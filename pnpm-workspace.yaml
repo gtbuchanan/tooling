@@ -4,6 +4,7 @@ catalog:
   '@eslint/json': 1.2.0
   '@eslint/markdown': 8.0.1
   '@j178/prek': ^0.3.11
+  '@pnpm/lockfile.types': ^1100.0.5
   '@pnpm/types': ^1101.1.0
   '@prettier/plugin-xml': ^3.4.2
   '@stylistic/eslint-plugin': 5.10.0
@@ -46,6 +47,8 @@ catalog:
   yaml: ^2.8.3
 
 hoist: false
+
+lockfileIncludeTarballUrl: false
 
 onlyBuiltDependencies:
   - '@j178/prek'
