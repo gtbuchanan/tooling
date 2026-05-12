@@ -7,3 +7,6 @@
 dist/
 node_modules/
 skills-lock.json
+
+# Agent skills from npm packages (managed by skills-npm)
+**/skills/npm-*
