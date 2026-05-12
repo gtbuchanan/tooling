@@ -76,6 +76,8 @@ export const configure = async (
       '**/dist/**',
       '**/pnpm-lock.yaml',
       '**/skills-lock.json',
+      '**/skills/*-workspace/**',
+      '**/skills/npm-*/**',
     ],
     onlyWarn: options.onlyWarn ?? true,
     pnpm: options.pnpm ?? true,
