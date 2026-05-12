@@ -57,6 +57,36 @@ describe.concurrent(buildOutput, () => {
     expect(result['imports']).toStrictEqual({ '#src/*.ts': './*.js' });
   });
 
+  it('remaps publishConfig.os to top-level os', ({ expect }) => {
+    const result = buildOutput({
+      publishConfig: {
+        os: ['android'],
+      },
+    });
+
+    expect(result['os']).toStrictEqual(['android']);
+  });
+
+  it('remaps publishConfig.cpu to top-level cpu', ({ expect }) => {
+    const result = buildOutput({
+      publishConfig: {
+        cpu: ['arm64'],
+      },
+    });
+
+    expect(result['cpu']).toStrictEqual(['arm64']);
+  });
+
+  it('remaps publishConfig.libc to top-level libc', ({ expect }) => {
+    const result = buildOutput({
+      publishConfig: {
+        libc: ['glibc'],
+      },
+    });
+
+    expect(result['libc']).toStrictEqual(['glibc']);
+  });
+
   it('strips publishConfig from output', ({ expect }) => {
     const result = buildOutput({
       publishConfig: {
