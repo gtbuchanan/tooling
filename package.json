@@ -29,6 +29,7 @@
     "@gtbuchanan/tsconfig": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
     "@j178/prek": "catalog:",
+    "@pnpm/lockfile.types": "catalog:",
     "@pnpm/types": "catalog:",
     "@tsconfig/strictest": "catalog:",
     "@types/cross-spawn": "catalog:",
