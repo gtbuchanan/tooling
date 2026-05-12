@@ -29,6 +29,11 @@ broken system `pnpm` in `PATH`. The shim's `os: ["android"]` filter
 means non-Android consumers skip the install entirely — zero footprint
 on macOS, Linux, or Windows.
 
+The `os` filter lives under `publishConfig` in the source manifest so
+the dev workspace doesn't trip pnpm's "unsupported platform" warning
+during dogfooding. The published tarball still ships with
+`"os": ["android"]` at the top level.
+
 See [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616)
 for the upstream context: native Android support for turbo was declined,
 so consumers run the linux-arm64 binary on Termux and work around the

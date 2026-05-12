@@ -3,10 +3,13 @@ import * as v from 'valibot';
 /** Valibot schema for the `publishConfig` field of package.json. */
 export const PublishConfigSchema = v.object({
   bin: v.optional(v.record(v.string(), v.string())),
+  cpu: v.optional(v.array(v.string())),
   directory: v.optional(v.string()),
   exports: v.optional(v.record(v.string(), v.string())),
   imports: v.optional(v.record(v.string(), v.string())),
+  libc: v.optional(v.array(v.string())),
   linkDirectory: v.optional(v.boolean()),
+  os: v.optional(v.array(v.string())),
   scripts: v.optional(v.record(v.string(), v.string())),
 });
 
@@ -57,9 +60,42 @@ export const buildRepoFields = (
 });
 
 /**
- * Strips `devDependencies` and `scripts`, then promotes `publishConfig.bin`,
- * `publishConfig.exports`, `publishConfig.imports`, and
- * `publishConfig.scripts` to top-level fields for publishing.
+ * `publishConfig` fields hoisted to top-level on packed manifests.
+ *
+ * - `imports`: pnpm doesn't natively promote `publishConfig.imports`.
+ *   `rewriteRelativeImportExtensions` only rewrites relative imports,
+ *   not subpath imports (`#src/*`). Dev uses .ts extensions via the
+ *   source imports map; published packages need a separate map (e.g.
+ *   `"#src/*.ts": "./*.js"`).
+ * - `os`/`cpu`/`libc`: top-level platform fields trip pnpm's
+ *   "Unsupported platform" warning during workspace scans. Keeping
+ *   them under `publishConfig` quiets dev; promoting at publish keeps
+ *   the platform filter for consumers.
+ */
+const promotableFields = [
+  'bin',
+  'cpu',
+  'exports',
+  'imports',
+  'libc',
+  'os',
+  'scripts',
+] as const;
+
+const promoteFromPublishConfig = (
+  publishConfig: Manifest['publishConfig'],
+): Partial<Manifest> =>
+  publishConfig === undefined
+    ? {}
+    : promotableFields.reduce<Partial<Manifest>>((acc, field) => {
+        const value = publishConfig[field];
+        return value === undefined ? acc : { ...acc, [field]: value };
+      }, {});
+
+/**
+ * Strips `devDependencies` and `scripts`, then promotes the
+ * {@link promotableFields} from `publishConfig` to top-level
+ * for publishing.
  */
 export const buildOutput = (manifest: Manifest): Manifest => {
   const {
@@ -69,26 +105,5 @@ export const buildOutput = (manifest: Manifest): Manifest => {
     ...rest
   } = manifest;
 
-  return {
-    ...rest,
-    ...(publishConfig?.bin && {
-      bin: publishConfig.bin,
-    }),
-    ...(publishConfig?.exports && {
-      exports: publishConfig.exports,
-    }),
-    /*
-     * Pnpm doesn't natively promote publishConfig.imports. Needed because
-     * rewriteRelativeImportExtensions only rewrites relative imports, not
-     * subpath imports (#src/*). Dev uses .ts extensions resolved via the
-     * source imports map; published packages need .ts → .js rewriting
-     * via a separate imports map (e.g. "#src/*.ts": "./*.js").
-     */
-    ...(publishConfig?.imports && {
-      imports: publishConfig.imports,
-    }),
-    ...(publishConfig?.scripts && {
-      scripts: publishConfig.scripts,
-    }),
-  };
+  return { ...rest, ...promoteFromPublishConfig(publishConfig) };
 };

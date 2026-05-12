@@ -31,14 +31,14 @@
   "engines": {
     "node": ">=24.0.0"
   },
-  "os": [
-    "android"
-  ],
   "publishConfig": {
     "bin": {
       "pnpm": "./bin/pnpm"
     },
     "directory": "dist/source",
-    "linkDirectory": false
+    "linkDirectory": false,
+    "os": [
+      "android"
+    ]
   }
 }
