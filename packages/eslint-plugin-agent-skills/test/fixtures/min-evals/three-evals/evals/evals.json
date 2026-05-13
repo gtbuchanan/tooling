@@ -1,0 +1,32 @@
+{
+  "evals": [
+    {
+      "expectations": [
+        "e1"
+      ],
+      "expected_output": "o1",
+      "files": [],
+      "id": 1,
+      "prompt": "p1"
+    },
+    {
+      "expectations": [
+        "e2"
+      ],
+      "expected_output": "o2",
+      "files": [],
+      "id": 2,
+      "prompt": "p2"
+    },
+    {
+      "expectations": [
+        "e3"
+      ],
+      "expected_output": "o3",
+      "files": [],
+      "id": 3,
+      "prompt": "p3"
+    }
+  ],
+  "skill_name": "three-evals"
+}
