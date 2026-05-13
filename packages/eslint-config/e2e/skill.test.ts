@@ -26,6 +26,16 @@ describe.concurrent('SKILL.md validation', () => {
           ],
           ['# Example skill', '', 'Body content.', ''],
         ),
+        'skills/example-skill/evals/evals.json': `${JSON.stringify({
+          evals: [{
+            expectations: ['Activates skill'],
+            expected_output: 'Example output',
+            files: [],
+            id: 1,
+            prompt: 'Example prompt',
+          }],
+          skill_name: 'example-skill',
+        }, undefined, 2)}\n`,
       },
     });
 

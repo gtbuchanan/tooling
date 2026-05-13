@@ -9,7 +9,7 @@ ships:
 
 - The Agent Skills frontmatter JSON Schema (exported as
   `skillFrontmatterSchema`).
-- Three rules covering [spec](https://agentskills.io/specification)
+- Rules covering [spec](https://agentskills.io/specification)
   constraints that pure schemas can't express:
   - `agent-skills/name-matches-dir` — `name` must equal the parent
     directory name.
@@ -18,6 +18,8 @@ ships:
     spec's "one level deep" depth guidance.
   - `agent-skills/max-lines` — markdown-aware version of core's
     `max-lines` that fires under any markdown parser/language.
+  - `agent-skills/min-evals` — each skill must ship at least N
+    eval cases in `evals/evals.json`.
 - A `configs.recommended` flat-config that wires the plugin's rules
   plus the schema rule for `**/skills/*/SKILL.md`, and applies a
   smaller `max-lines` cap (300) to `**/skills/*/references/**/*.md`.
@@ -67,6 +69,7 @@ export default [
     rules: {
       'agent-skills/file-references': 'error',
       'agent-skills/max-lines': ['error', { max: 500 }],
+      'agent-skills/min-evals': 'error',
       'agent-skills/name-matches-dir': 'error',
       'md-frontmatter/schema': ['error', { schema: skillFrontmatterSchema }],
     },
@@ -82,7 +85,8 @@ export default [
   no unknown top-level fields.
 - **Rule-driven** (this plugin): `name === parent directory name`,
   link/image/reference targets exist within the skill root and stay
-  within the spec's depth guidance, file length cap.
+  within the spec's depth guidance, file length cap, and minimum
+  eval coverage.
 
 ## Rules
 
@@ -140,6 +144,23 @@ guidance:
 Options:
 
 - `max` — maximum line count. Defaults to `500`.
+
+### `agent-skills/min-evals`
+
+Requires every skill to ship at least N eval cases in its sibling
+`evals/evals.json` file. Missing file, malformed JSON, and empty
+`evals` array all count as zero. Reports on `SKILL.md`.
+
+Options:
+
+- `min` — minimum number of eval cases. Defaults to `1`. Raise for
+  a stricter coverage bar.
+
+```json
+{
+  "agent-skills/min-evals": ["error", { "min": 3 }]
+}
+```
 
 ### `agent-skills/name-matches-dir`
 

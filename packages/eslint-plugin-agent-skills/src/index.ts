@@ -3,6 +3,7 @@ import frontmatter from '@gtbuchanan/eslint-plugin-md-frontmatter';
 import type { ESLint, Linter } from 'eslint';
 import { fileReferences } from './rules/file-references.ts';
 import { maxLines } from './rules/max-lines.ts';
+import { minEvals } from './rules/min-evals.ts';
 import { nameMatchesDir } from './rules/name-matches-dir.ts';
 import schema from './schema.json' with { type: 'json' };
 
@@ -26,6 +27,7 @@ const plugin: ESLint.Plugin = {
   rules: {
     'file-references': fileReferences,
     'max-lines': maxLines,
+    'min-evals': minEvals,
     'name-matches-dir': nameMatchesDir,
   },
 };
@@ -55,6 +57,7 @@ export const configs: {
       rules: {
         'agent-skills/file-references': 'warn',
         'agent-skills/max-lines': ['warn', { max: 500 }],
+        'agent-skills/min-evals': 'warn',
         'agent-skills/name-matches-dir': 'warn',
         'md-frontmatter/schema': ['warn', { schema }],
       },
