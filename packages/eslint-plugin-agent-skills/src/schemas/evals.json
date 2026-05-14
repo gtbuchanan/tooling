@@ -1,0 +1,55 @@
+{
+  "$id": "https://gtbuchanan.github.io/tooling/schemas/agent-skills/skill-evals.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "evals": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "expectations": {
+            "items": { "minLength": 1, "type": "string" },
+            "minItems": 1,
+            "type": "array"
+          },
+          "expected_output": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "files": {
+            "items": { "minLength": 1, "type": "string" },
+            "type": "array"
+          },
+          "id": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "prompt": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "prompt",
+          "expected_output",
+          "expectations"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "skill_name": {
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "evals",
+    "skill_name"
+  ],
+  "title": "Agent Skills evals.json",
+  "type": "object"
+}
