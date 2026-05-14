@@ -21,8 +21,10 @@
     "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "dependencies": {
+    "@eslint/json": "catalog:",
     "@eslint/markdown": "catalog:",
     "@gtbuchanan/eslint-plugin-md-frontmatter": "workspace:*",
+    "ajv": "catalog:",
     "yaml": "catalog:"
   },
   "devDependencies": {

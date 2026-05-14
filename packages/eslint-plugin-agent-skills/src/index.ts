@@ -1,6 +1,8 @@
+import json from '@eslint/json';
 import markdown from '@eslint/markdown';
 import frontmatter from '@gtbuchanan/eslint-plugin-md-frontmatter';
 import type { ESLint, Linter } from 'eslint';
+import { evalsSchema } from './rules/evals-schema.ts';
 import { fileReferences } from './rules/file-references.ts';
 import { maxLines } from './rules/max-lines.ts';
 import { minEvals } from './rules/min-evals.ts';
@@ -19,12 +21,25 @@ export { default as skillFrontmatterSchema }
   from './schema.json' with { type: 'json' };
 
 /**
+ * JSON Schema for an Agent Skill's `evals/evals.json` file, matching
+ * the canonical layout documented by Anthropic's `skill-creator`
+ * skill (top-level `skill_name` plus an `evals[]` array, each entry
+ * with `id`, `prompt`, `expected_output`, optional `files`, and
+ * `expectations`). Consumers can reference it via `$schema` for
+ * editor autocomplete; the `agent-skills/evals-schema` rule
+ * validates against it at lint time.
+ */
+export { default as skillEvalsSchema }
+  from './schemas/evals.json' with { type: 'json' };
+
+/**
  * ESLint plugin for Agent Skills-specific lint checks. Most validation
  * lives in the JSON Schema (see `skillFrontmatterSchema`); the rules
  * here cover spec constraints schemas can't express.
  */
 const plugin: ESLint.Plugin = {
   rules: {
+    'evals-schema': evalsSchema,
     'file-references': fileReferences,
     'max-lines': maxLines,
     'min-evals': minEvals,
@@ -68,6 +83,14 @@ export const configs: {
       plugins: { 'agent-skills': plugin, markdown },
       rules: {
         'agent-skills/max-lines': ['warn', { max: 300 }],
+      },
+    },
+    {
+      files: ['**/skills/*/evals/evals.json'],
+      language: 'json/json',
+      plugins: { 'agent-skills': plugin, json },
+      rules: {
+        'agent-skills/evals-schema': 'warn',
       },
     },
   ],

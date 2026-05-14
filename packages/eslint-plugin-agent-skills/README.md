@@ -1,14 +1,14 @@
 # @gtbuchanan/eslint-plugin-agent-skills
 
-Agent Skills-specific ESLint rules and the canonical
-[Agent Skills frontmatter JSON Schema](./src/schema.json).
+Agent Skills-specific ESLint rules plus the canonical
+[SKILL.md frontmatter JSON Schema](./src/schema.json) and
+[evals.json JSON Schema](./src/schemas/evals.json).
 
-Most validation is expressed in the schema and runs via
-`@gtbuchanan/eslint-plugin-md-frontmatter`'s `schema` rule. This package
-ships:
+Most validation is expressed in JSON Schemas; the rules cover spec
+constraints that pure schemas can't express. This package ships:
 
-- The Agent Skills frontmatter JSON Schema (exported as
-  `skillFrontmatterSchema`).
+- JSON Schemas (exported as `skillFrontmatterSchema` and
+  `skillEvalsSchema`).
 - Rules covering [spec](https://agentskills.io/specification)
   constraints that pure schemas can't express:
   - `agent-skills/name-matches-dir` — `name` must equal the parent
@@ -20,9 +20,13 @@ ships:
     `max-lines` that fires under any markdown parser/language.
   - `agent-skills/min-evals` — each skill must ship at least N
     eval cases in `evals/evals.json`.
+  - `agent-skills/evals-schema` — `evals/evals.json` matches the
+    canonical schema, with sequential unique `id` values and a
+    `skill_name` that matches the sibling `SKILL.md`.
 - A `configs.recommended` flat-config that wires the plugin's rules
-  plus the schema rule for `**/skills/*/SKILL.md`, and applies a
-  smaller `max-lines` cap (300) to `**/skills/*/references/**/*.md`.
+  for `**/skills/*/SKILL.md`, `**/skills/*/references/**/*.md`
+  (with a tighter 300-line `max-lines` cap), and
+  `**/skills/*/evals/evals.json`.
 
 ## Install
 
@@ -85,10 +89,23 @@ export default [
   no unknown top-level fields.
 - **Rule-driven** (this plugin): `name === parent directory name`,
   link/image/reference targets exist within the skill root and stay
-  within the spec's depth guidance, file length cap, and minimum
-  eval coverage.
+  within the spec's depth guidance, file length cap, minimum eval
+  coverage, and `evals.json` shape and cross-file integrity.
 
 ## Rules
+
+### `agent-skills/evals-schema`
+
+Validates an Agent Skill's `evals/evals.json` against
+[`skillEvalsSchema`](./src/schemas/evals.json), and also enforces
+invariants the schema can't express:
+
+- `id` values are unique.
+- `id` values are sequential starting at `1`.
+- `skill_name` matches the sibling `SKILL.md` frontmatter `name`,
+  and a sibling `SKILL.md` exists at all.
+
+No options.
 
 ### `agent-skills/file-references`
 
