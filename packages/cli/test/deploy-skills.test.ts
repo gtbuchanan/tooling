@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { runCommand } from 'citty';
 import { describe, it, vi } from 'vitest';
 
@@ -72,14 +73,14 @@ const runArgs = (fixture: Fixture): readonly string[] => {
 describe('gtb task deploy:skills', () => {
   it('uses configured agents when skills-npm.config.ts declares them', async ({ expect }) => {
     const fixture = createFixture();
-    fixture.mockLoadConfigured.mockResolvedValue(['claude-code', 'codex']);
+    const agents = [faker.lorem.slug({ min: 1, max: 2 }), faker.lorem.slug({ min: 1, max: 2 })];
+    fixture.mockLoadConfigured.mockResolvedValue(agents);
 
     await invoke();
 
     expect(runArgs(fixture)).toStrictEqual([
       'add', '.', '--skill', '*', '--yes',
-      '--agent', 'claude-code',
-      '--agent', 'codex',
+      ...agents.flatMap(agent => ['--agent', agent]),
     ]);
     expect(fixture.mockDetected).not.toHaveBeenCalled();
   });
@@ -115,7 +116,7 @@ describe('gtb task deploy:skills', () => {
       packageGlobs: [],
       rootDir: `${process.cwd()}/..`,
     });
-    fixture.mockLoadConfigured.mockResolvedValue(['claude-code']);
+    fixture.mockLoadConfigured.mockResolvedValue([faker.lorem.slug({ min: 1, max: 2 })]);
 
     await invoke();
 

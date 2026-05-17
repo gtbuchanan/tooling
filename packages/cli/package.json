@@ -34,6 +34,7 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
+    "@faker-js/faker": "catalog:",
     "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",

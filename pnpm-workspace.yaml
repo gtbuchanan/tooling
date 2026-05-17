@@ -3,6 +3,7 @@ catalog:
   '@eslint-community/eslint-plugin-eslint-comments': 4.7.1
   '@eslint/json': 1.2.0
   '@eslint/markdown': 8.0.1
+  '@faker-js/faker': ^10.4.0
   '@j178/prek': ^0.3.11
   '@pnpm/lockfile.types': ^1100.0.5
   '@pnpm/types': ^1101.1.0
