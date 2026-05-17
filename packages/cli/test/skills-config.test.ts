@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
 import { loadConfiguredAgents, skillsConfigFilename } from '#src/lib/skills-config.js';
 
@@ -32,14 +33,15 @@ describe.concurrent('loadConfiguredAgents', () => {
 
   it('returns agents when config exports a default with an agents array', async ({ expect }) => {
     using fixture = createFixture();
+    const agents = [faker.lorem.slug({ min: 1, max: 2 }), faker.lorem.slug({ min: 1, max: 2 })];
     writeFileSync(
       fixture.configPath,
-      `export default { agents: ['claude-code', 'codex'] };\n`,
+      `export default { agents: ${JSON.stringify(agents)} };\n`,
     );
 
-    const agents = await loadConfiguredAgents(fixture.rootDir);
+    const result = await loadConfiguredAgents(fixture.rootDir);
 
-    expect(agents).toStrictEqual(['claude-code', 'codex']);
+    expect(result).toStrictEqual(agents);
   });
 
   it('returns empty array when default export has no agents', async ({ expect }) => {

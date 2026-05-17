@@ -1,3 +1,4 @@
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import {
   buildWorkspaceEntry,
@@ -239,33 +240,39 @@ describe.concurrent(resolveCoverageInclude, () => {
   });
 });
 
+const createWorkspaceEntryFixture = () => {
+  const basename = build.packageName();
+  const dir = `/path/to/${basename}`;
+  return { basename, dir, entry: buildWorkspaceEntry(dir, configureProject) };
+};
+
 describe.concurrent(buildWorkspaceEntry, () => {
   it('adds name from directory basename', ({ expect }) => {
-    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+    const { basename, entry } = createWorkspaceEntryFixture();
 
-    expect(entry.test?.name).toBe('my-package');
+    expect(entry.test?.name).toBe(basename);
   });
 
   it('adds root from directory path', ({ expect }) => {
-    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+    const { dir, entry } = createWorkspaceEntryFixture();
 
-    expect(entry.test?.root).toBe('/path/to/my-package');
+    expect(entry.test?.root).toBe(dir);
   });
 
   it('does not include resolve alias', ({ expect }) => {
-    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+    const { entry } = createWorkspaceEntryFixture();
 
     expect(entry.resolve).toBeUndefined();
   });
 
   it('preserves includes from configure function', ({ expect }) => {
-    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+    const { entry } = createWorkspaceEntryFixture();
 
     expect(entry.test?.include).toStrictEqual(expectedUnitTestInclude);
   });
 
   it('preserves excludes from configure function', ({ expect }) => {
-    const entry = buildWorkspaceEntry('/path/to/my-package', configureProject);
+    const { entry } = createWorkspaceEntryFixture();
 
     expect(entry.test?.exclude).toStrictEqual([...excludeDefault]);
   });
