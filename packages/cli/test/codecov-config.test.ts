@@ -1,113 +1,129 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { generateCodecovSections } from '#src/lib/codecov-config.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { createTempDir, writeJson } from './helpers.ts';
 
-const createMonorepo = (): string => {
+interface CodecovMonorepo {
+  readonly alpha: { basename: string; dir: string };
+  readonly beta: { basename: string; dir: string };
+  readonly gamma: { basename: string; dir: string };
+  readonly root: string;
+}
+
+const createMonorepo = (): CodecovMonorepo => {
   const root = createTempDir();
   writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
-  writeJson(root, 'package.json', { name: 'root', private: true });
+  writeJson(root, 'package.json', { name: build.packageName(), private: true });
 
-  const alpha = path.join(root, 'packages', 'alpha');
-  mkdirSync(path.join(alpha, 'src'), { recursive: true });
-  mkdirSync(path.join(alpha, 'test'));
-  writeJson(alpha, 'package.json', {
-    devDependencies: { '@gtbuchanan/vitest-config': '^0.1.0' },
-    name: '@test/alpha',
+  const alphaBasename = build.packageName();
+  const alphaDir = path.join(root, 'packages', alphaBasename);
+  mkdirSync(path.join(alphaDir, 'src'), { recursive: true });
+  mkdirSync(path.join(alphaDir, 'test'));
+  writeJson(alphaDir, 'package.json', {
+    devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
+    name: build.scopedPackageName(),
   });
-  writeFileSync(path.join(alpha, 'vitest.config.ts'), '');
+  writeFileSync(path.join(alphaDir, 'vitest.config.ts'), '');
 
-  const beta = path.join(root, 'packages', 'beta');
-  mkdirSync(path.join(beta, 'src'), { recursive: true });
-  mkdirSync(path.join(beta, 'test'));
-  mkdirSync(path.join(beta, 'bin'));
-  mkdirSync(path.join(beta, 'scripts'));
-  writeJson(beta, 'package.json', {
-    devDependencies: { '@gtbuchanan/vitest-config': '^0.1.0' },
-    name: '@test/beta',
+  const betaBasename = build.packageName();
+  const betaDir = path.join(root, 'packages', betaBasename);
+  mkdirSync(path.join(betaDir, 'src'), { recursive: true });
+  mkdirSync(path.join(betaDir, 'test'));
+  mkdirSync(path.join(betaDir, 'bin'));
+  mkdirSync(path.join(betaDir, 'scripts'));
+  writeJson(betaDir, 'package.json', {
+    devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
+    name: build.scopedPackageName(),
   });
-  writeFileSync(path.join(beta, 'vitest.config.ts'), '');
+  writeFileSync(path.join(betaDir, 'vitest.config.ts'), '');
 
-  const gamma = path.join(root, 'packages', 'gamma');
-  mkdirSync(path.join(gamma, 'src'), { recursive: true });
-  writeJson(gamma, 'package.json', { name: '@test/gamma', private: true });
+  const gammaBasename = build.packageName();
+  const gammaDir = path.join(root, 'packages', gammaBasename);
+  mkdirSync(path.join(gammaDir, 'src'), { recursive: true });
+  writeJson(gammaDir, 'package.json', { name: build.scopedPackageName(), private: true });
 
-  return root;
+  return {
+    alpha: { basename: alphaBasename, dir: alphaDir },
+    beta: { basename: betaBasename, dir: betaDir },
+    gamma: { basename: gammaBasename, dir: gammaDir },
+    root,
+  };
 };
 
 describe.concurrent(generateCodecovSections, () => {
   it('generates a flag per coverage package', ({ expect }) => {
-    const root = createMonorepo();
+    const { alpha, beta, gamma, root } = createMonorepo();
     const discovery = discoverWorkspace({ cwd: root });
 
     const { flags } = generateCodecovSections(discovery);
 
-    expect(Object.keys(flags)).toContain('alpha');
-    expect(Object.keys(flags)).toContain('beta');
-    expect(Object.keys(flags)).not.toContain('gamma');
+    expect(Object.keys(flags)).toContain(alpha.basename);
+    expect(Object.keys(flags)).toContain(beta.basename);
+    expect(Object.keys(flags)).not.toContain(gamma.basename);
   });
 
   it('flag has carryforward true and correct path', ({ expect }) => {
-    const root = createMonorepo();
+    const { alpha, root } = createMonorepo();
     const discovery = discoverWorkspace({ cwd: root });
 
     const { flags } = generateCodecovSections(discovery);
 
-    expect(flags['alpha']).toMatchObject({
+    expect(flags[alpha.basename]).toMatchObject({
       carryforward: true,
-      paths: ['packages/alpha/'],
+      paths: [`packages/${alpha.basename}/`],
     });
   });
 
   it('generates a component per coverage package', ({ expect }) => {
-    const root = createMonorepo();
+    const { alpha, beta, gamma, root } = createMonorepo();
     const discovery = discoverWorkspace({ cwd: root });
 
     const { component_management: componentManagement } = generateCodecovSections(discovery);
     const ids = componentManagement.individual_components.map(comp => comp.component_id);
 
-    expect(ids).toContain('alpha');
-    expect(ids).toContain('beta');
-    expect(ids).not.toContain('gamma');
+    expect(ids).toContain(alpha.basename);
+    expect(ids).toContain(beta.basename);
+    expect(ids).not.toContain(gamma.basename);
   });
 
   it('component paths include only src for package without bin/scripts', ({ expect }) => {
-    const root = createMonorepo();
+    const { alpha, root } = createMonorepo();
     const discovery = discoverWorkspace({ cwd: root });
 
     const { component_management: componentManagement } = generateCodecovSections(discovery);
-    const alpha = componentManagement.individual_components.find(
-      comp => comp.component_id === 'alpha',
+    const alphaComp = componentManagement.individual_components.find(
+      comp => comp.component_id === alpha.basename,
     );
 
-    expect(alpha?.paths).toStrictEqual(['packages/alpha/src/**']);
+    expect(alphaComp?.paths).toStrictEqual([`packages/${alpha.basename}/src/**`]);
   });
 
   it('component paths include bin and scripts when present', ({ expect }) => {
-    const root = createMonorepo();
+    const { beta, root } = createMonorepo();
     const discovery = discoverWorkspace({ cwd: root });
 
     const { component_management: componentManagement } = generateCodecovSections(discovery);
-    const beta = componentManagement.individual_components.find(
-      comp => comp.component_id === 'beta',
+    const betaComp = componentManagement.individual_components.find(
+      comp => comp.component_id === beta.basename,
     );
 
-    expect(beta?.paths).toStrictEqual([
-      'packages/beta/bin/**',
-      'packages/beta/scripts/**',
-      'packages/beta/src/**',
+    expect(betaComp?.paths).toStrictEqual([
+      `packages/${beta.basename}/bin/**`,
+      `packages/${beta.basename}/scripts/**`,
+      `packages/${beta.basename}/src/**`,
     ]);
   });
 
   it('returns empty sections when no package has vitest tests', ({ expect }) => {
     const root = createTempDir();
-    writeJson(root, 'package.json', { name: 'root', private: true });
+    writeJson(root, 'package.json', { name: build.packageName(), private: true });
     writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
-    const pkg = path.join(root, 'packages', 'lib');
-    mkdirSync(path.join(pkg, 'src'), { recursive: true });
-    writeJson(pkg, 'package.json', { name: '@test/lib', private: true });
+    const pkgDir = path.join(root, 'packages', build.packageName());
+    mkdirSync(path.join(pkgDir, 'src'), { recursive: true });
+    writeJson(pkgDir, 'package.json', { name: build.scopedPackageName(), private: true });
 
     const discovery = discoverWorkspace({ cwd: root });
     const { flags, component_management: componentManagement } = generateCodecovSections(discovery);
@@ -122,17 +138,18 @@ describe.concurrent(generateCodecovSections, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'apps/*'\n  - 'packages/*'\n",
     );
-    writeJson(root, 'package.json', { name: 'root', private: true });
+    writeJson(root, 'package.json', { name: build.packageName(), private: true });
 
+    const sharedBasename = build.packageName();
     for (const base of ['apps', 'packages']) {
-      const pkg = path.join(root, base, 'app');
-      mkdirSync(path.join(pkg, 'src'), { recursive: true });
-      mkdirSync(path.join(pkg, 'test'));
-      writeJson(pkg, 'package.json', {
-        devDependencies: { '@gtbuchanan/vitest-config': '^0.1.0' },
-        name: `@test/${base}-app`,
+      const pkgDir = path.join(root, base, sharedBasename);
+      mkdirSync(path.join(pkgDir, 'src'), { recursive: true });
+      mkdirSync(path.join(pkgDir, 'test'));
+      writeJson(pkgDir, 'package.json', {
+        devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
+        name: build.scopedPackageName(),
       });
-      writeFileSync(path.join(pkg, 'vitest.config.ts'), '');
+      writeFileSync(path.join(pkgDir, 'vitest.config.ts'), '');
     }
 
     const discovery = discoverWorkspace({ cwd: root });

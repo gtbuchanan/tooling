@@ -1,5 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { parseIgnoreArgs, runVerify, verifyCommand } from '#src/commands/root/verify.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
@@ -12,45 +14,53 @@ import {
   captureLogger, createTempDir, initProject, readScripts, readTurboTasks, writeJson,
 } from './helpers.ts';
 
-const createConsumerProject = (): string => {
+interface ConsumerProject {
+  readonly app: { basename: string; dir: string; name: string };
+  readonly root: string;
+}
+
+const createConsumerProject = (): ConsumerProject => {
   const root = createTempDir();
+  const appBasename = build.packageName();
+  const appName = build.scopedPackageName();
+
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
     "packages:\n  - 'packages/*'\n",
   );
   writeJson(root, 'package.json', {
     devDependencies: {
-      '@gtbuchanan/eslint-config': '^0.1.0',
-      '@gtbuchanan/tsconfig': '^0.1.0',
-      '@gtbuchanan/vitest-config': '^0.1.0',
+      '@gtbuchanan/eslint-config': build.semverRange(),
+      '@gtbuchanan/tsconfig': build.semverRange(),
+      '@gtbuchanan/vitest-config': build.semverRange(),
     },
-    name: 'test-project',
+    name: build.packageName(),
     private: true,
     scripts: {},
   });
 
-  const pkg = path.join(root, 'packages', 'app');
-  mkdirSync(path.join(pkg, 'src'), { recursive: true });
-  mkdirSync(path.join(pkg, 'test'), { recursive: true });
-  writeJson(pkg, 'package.json', {
+  const appDir = path.join(root, 'packages', appBasename);
+  mkdirSync(path.join(appDir, 'src'), { recursive: true });
+  mkdirSync(path.join(appDir, 'test'), { recursive: true });
+  writeJson(appDir, 'package.json', {
     devDependencies: {
-      '@gtbuchanan/eslint-config': '^0.1.0',
-      '@gtbuchanan/tsconfig': '^0.1.0',
-      '@gtbuchanan/vitest-config': '^0.1.0',
+      '@gtbuchanan/eslint-config': build.semverRange(),
+      '@gtbuchanan/tsconfig': build.semverRange(),
+      '@gtbuchanan/vitest-config': build.semverRange(),
     },
-    name: '@test/app',
+    name: appName,
     scripts: {},
   });
-  writeFileSync(path.join(pkg, 'tsconfig.json'), '{}');
-  writeFileSync(path.join(pkg, 'eslint.config.ts'), '');
-  writeFileSync(path.join(pkg, 'vitest.config.ts'), '');
+  writeFileSync(path.join(appDir, 'tsconfig.json'), '{}');
+  writeFileSync(path.join(appDir, 'eslint.config.ts'), '');
+  writeFileSync(path.join(appDir, 'vitest.config.ts'), '');
 
-  return root;
+  return { app: { basename: appBasename, dir: appDir, name: appName }, root };
 };
 
 describe.concurrent('verify drift detection', () => {
   it('all expected tasks present after init', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
 
     const discovery = discoverWorkspace({ cwd: root });
@@ -63,7 +73,7 @@ describe.concurrent('verify drift detection', () => {
   });
 
   it('detects missing turbo.json task', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
 
     const tasks = readTurboTasks(root);
@@ -79,36 +89,34 @@ describe.concurrent('verify drift detection', () => {
   });
 
   it('detects missing package script', ({ expect }) => {
-    const root = createConsumerProject();
+    const { app, root } = createConsumerProject();
     initProject(root);
 
-    const pkgDir = path.join(root, 'packages', 'app');
-    const scripts = readScripts(pkgDir);
+    const scripts = readScripts(app.dir);
     delete scripts['typecheck:ts'];
-    writeJson(pkgDir, 'package.json', { name: '@test/app', scripts });
+    writeJson(app.dir, 'package.json', { name: app.name, scripts });
 
     const discovery = discoverWorkspace({ cwd: root });
     const pkg = discovery.packages[0]!;
     const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
-    const actual = readScripts(pkgDir);
+    const actual = readScripts(app.dir);
     const missing = Object.keys(expected).filter(name => !(name in actual));
 
     expect(missing).toContain('typecheck:ts');
   });
 
   it('does not flag modified script values', ({ expect }) => {
-    const root = createConsumerProject();
+    const { app, root } = createConsumerProject();
     initProject(root);
 
-    const pkgDir = path.join(root, 'packages', 'app');
-    const scripts = readScripts(pkgDir);
-    scripts['typecheck:ts'] = 'vue-tsc --noEmit';
-    writeJson(pkgDir, 'package.json', { name: '@test/app', scripts });
+    const scripts = readScripts(app.dir);
+    scripts['typecheck:ts'] = faker.lorem.words({ min: 1, max: 3 });
+    writeJson(app.dir, 'package.json', { name: app.name, scripts });
 
     const discovery = discoverWorkspace({ cwd: root });
     const pkg = discovery.packages[0]!;
     const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
-    const actual = readScripts(pkgDir);
+    const actual = readScripts(app.dir);
     const missing = Object.keys(expected).filter(name => !(name in actual));
 
     expect(missing).toHaveLength(0);
@@ -117,7 +125,7 @@ describe.concurrent('verify drift detection', () => {
 
 describe.concurrent(runVerify, () => {
   it('returns no drift when project is fully synced', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
 
     const drift = runVerify({ cwd: root });
@@ -126,7 +134,7 @@ describe.concurrent(runVerify, () => {
   });
 
   it('reports drift on missing turbo task', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
 
     const tasks = readTurboTasks(root);
@@ -139,7 +147,7 @@ describe.concurrent(runVerify, () => {
   });
 
   it('ignored set suppresses specific drift', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
 
     const tasks = readTurboTasks(root);
@@ -152,7 +160,7 @@ describe.concurrent(runVerify, () => {
   });
 
   it('reports drift when codecov.yml has invalid YAML', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
     writeFileSync(path.join(root, 'codecov.yml'), 'invalid: [}');
 
@@ -162,7 +170,7 @@ describe.concurrent(runVerify, () => {
   });
 
   it('reports drift when codecov.yml is empty', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
     writeFileSync(path.join(root, 'codecov.yml'), '');
 
@@ -172,7 +180,7 @@ describe.concurrent(runVerify, () => {
   });
 
   it('reports drift when a codecov flag is missing', ({ expect }) => {
-    const root = createConsumerProject();
+    const { app, root } = createConsumerProject();
     initProject(root);
     writeFileSync(
       path.join(root, 'codecov.yml'),
@@ -181,18 +189,18 @@ describe.concurrent(runVerify, () => {
 
     const drift = runVerify({ cwd: root });
 
-    expect(drift.some(msg => msg.includes("missing flag 'app'"))).toBe(true);
+    expect(drift.some(msg => msg.includes(`missing flag '${app.basename}'`))).toBe(true);
   });
 
   it('ignored set suppresses missing codecov flag drift', ({ expect }) => {
-    const root = createConsumerProject();
+    const { app, root } = createConsumerProject();
     initProject(root);
     writeFileSync(
       path.join(root, 'codecov.yml'),
       'flags: {}\ncomponent_management:\n  individual_components: []\n',
     );
 
-    const drift = runVerify({ cwd: root, ignored: new Set(['app']) });
+    const drift = runVerify({ cwd: root, ignored: new Set([app.basename]) });
 
     expect(drift).toHaveLength(0);
   });
@@ -230,7 +238,7 @@ describe.concurrent(parseIgnoreArgs, () => {
 
 describe.concurrent(verifyCommand, () => {
   it('returns 0 and logs success when there is no drift', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
     const { logger, out, err } = captureLogger();
 
@@ -242,7 +250,7 @@ describe.concurrent(verifyCommand, () => {
   });
 
   it('returns 1 and writes each drift message to stderr on drift', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
     const tasks = readTurboTasks(root);
     delete tasks['typecheck:ts'];
@@ -257,7 +265,7 @@ describe.concurrent(verifyCommand, () => {
   });
 
   it('forwards --ignore flags from rawArgs to runVerify', ({ expect }) => {
-    const root = createConsumerProject();
+    const { root } = createConsumerProject();
     initProject(root);
     const tasks = readTurboTasks(root);
     delete tasks['typecheck:ts'];
