@@ -4,7 +4,9 @@ import {
   type ProjectFixture,
   createProjectFixture,
   extendWithFixture,
+  matchTarball,
 } from '@gtbuchanan/test-utils';
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe } from 'vitest';
 
 const createFixture = (): ProjectFixture =>
@@ -71,10 +73,11 @@ describe.concurrent('gtb CLI', () => {
 describe.concurrent('gtb task pack:npm', () => {
   it('produces tarball for publishable package', async ({ expect }) => {
     using fixture = createFixture();
+    const name = build.scopedPackageName();
     writeJson(fixture.projectDir, 'package.json', {
-      name: '@test/my-lib',
-      publishConfig: { directory: 'dist/source' },
-      version: '1.0.0',
+      name,
+      publishConfig: { directory: build.publishDirectory() },
+      version: build.semverVersion(),
     });
 
     const result = await fixture.run('gtb', ['task', 'pack:npm']);
@@ -86,16 +89,16 @@ describe.concurrent('gtb task pack:npm', () => {
     );
 
     expect(tarballs).toHaveLength(1);
-    expect(tarballs[0]).toMatch(/^test-my-lib-.*\.tgz$/v);
+    expect(matchTarball(tarballs, name)).toBe(tarballs[0]);
   });
 
   it('skips private package', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
-      name: '@test/internal',
+      name: build.scopedPackageName(),
       private: true,
-      publishConfig: { directory: 'dist/source' },
-      version: '1.0.0',
+      publishConfig: { directory: build.publishDirectory() },
+      version: build.semverVersion(),
     });
 
     const result = await fixture.run('gtb', ['task', 'pack:npm']);
@@ -109,8 +112,8 @@ describe.concurrent('gtb task pack:npm', () => {
   it('skips package without publishConfig.directory', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
-      name: '@test/my-lib',
-      version: '1.0.0',
+      name: build.scopedPackageName(),
+      version: build.semverVersion(),
     });
 
     const result = await fixture.run('gtb', ['task', 'pack:npm']);
@@ -123,23 +126,28 @@ describe.concurrent('gtb task pack:npm', () => {
 
   it('generates dist/source manifests before packing', async ({ expect }) => {
     using fixture = createFixture();
+    const bugs = build.gitHubIssuesUrl();
+    const homepage = build.gitHubRepoUrl();
+    const repository = { type: 'git', url: build.gitHubGitUrl() };
+    const dependencies = build.dependencyMap();
+    const name = build.scopedPackageName();
+    const version = build.semverVersion();
+    const publishDir = build.publishDirectory();
+    const publishedExports = build.exportsMap();
     writeJson(fixture.projectDir, 'package.json', {
-      bugs: 'https://github.com/test/repo/issues',
-      dependencies: { valibot: '^1.0.0' },
-      devDependencies: { vitest: '^4.0.0' },
-      exports: { '.': './src/index.ts' },
-      homepage: 'https://github.com/test/repo',
-      name: '@test/my-lib',
+      bugs,
+      dependencies,
+      devDependencies: build.dependencyMap(),
+      exports: build.exportsMap(),
+      homepage,
+      name,
       publishConfig: {
-        directory: 'dist/source',
-        exports: { '.': './index.js' },
+        directory: publishDir,
+        exports: publishedExports,
       },
-      repository: {
-        type: 'git',
-        url: 'https://github.com/test/repo.git',
-      },
-      scripts: { test: 'vitest' },
-      version: '1.0.0',
+      repository,
+      scripts: build.scriptMap(),
+      version,
     });
 
     const result = await fixture.run('gtb', ['task', 'pack:npm']);
@@ -147,19 +155,15 @@ describe.concurrent('gtb task pack:npm', () => {
     expect(result).toMatchObject({ exitCode: 0 });
 
     const output = readJson(
-      path.join(fixture.projectDir, 'dist', 'source', 'package.json'),
+      path.join(fixture.projectDir, publishDir, 'package.json'),
     );
 
     expect(output).toMatchObject({
-      bugs: 'https://github.com/test/repo/issues',
-      exports: { '.': './index.js' },
-      homepage: 'https://github.com/test/repo/tree/main/',
-      name: '@test/my-lib',
-      repository: {
-        directory: '',
-        type: 'git',
-        url: 'https://github.com/test/repo.git',
-      },
+      bugs,
+      exports: publishedExports,
+      homepage: `${homepage}/tree/main/`,
+      name,
+      repository: { ...repository, directory: '' },
     });
     expect(output).not.toHaveProperty('devDependencies');
     expect(output).not.toHaveProperty('scripts');
@@ -169,13 +173,14 @@ describe.concurrent('gtb task pack:npm', () => {
   it('cleans dist/packages/npm before packing', async ({ expect }) => {
     using fixture = createFixture();
     writeJson(fixture.projectDir, 'package.json', {
-      name: '@test/my-lib',
-      publishConfig: { directory: 'dist/source' },
-      version: '1.0.0',
+      name: build.scopedPackageName(),
+      publishConfig: { directory: build.publishDirectory() },
+      version: build.semverVersion(),
     });
     const distDir = path.join(fixture.projectDir, 'dist', 'packages', 'npm');
     mkdirSync(distDir, { recursive: true });
-    writeFileSync(path.join(distDir, 'stale-0.0.0.tgz'), '');
+    const stalePath = path.join(distDir, `${build.packageName()}-0.0.0.tgz`);
+    writeFileSync(stalePath, '');
 
     const result = await fixture.run('gtb', ['task', 'pack:npm']);
 
@@ -183,7 +188,7 @@ describe.concurrent('gtb task pack:npm', () => {
 
     const tarballs = readdirSync(distDir);
 
-    expect(tarballs).not.toContain('stale-0.0.0.tgz');
+    expect(tarballs).not.toContain(path.basename(stalePath));
     expect(tarballs).toHaveLength(1);
   });
 });

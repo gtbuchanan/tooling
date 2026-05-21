@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
 import { createGitEnv, matchTarball, pinned, runCommand } from '#src/fixture.js';
 
@@ -69,12 +70,14 @@ describe.concurrent(createGitEnv, () => {
   });
 
   it('includes identity when provided', ({ expect }) => {
-    const env = createGitEnv({ email: 'test@example.com', name: 'Test' });
+    const email = faker.internet.email();
+    const name = faker.person.firstName();
+    const env = createGitEnv({ email, name });
 
-    expect(env.GIT_AUTHOR_EMAIL).toBe('test@example.com');
-    expect(env.GIT_AUTHOR_NAME).toBe('Test');
-    expect(env.GIT_COMMITTER_EMAIL).toBe('test@example.com');
-    expect(env.GIT_COMMITTER_NAME).toBe('Test');
+    expect(env.GIT_AUTHOR_EMAIL).toBe(email);
+    expect(env.GIT_AUTHOR_NAME).toBe(name);
+    expect(env.GIT_COMMITTER_EMAIL).toBe(email);
+    expect(env.GIT_COMMITTER_NAME).toBe(name);
   });
 });
 

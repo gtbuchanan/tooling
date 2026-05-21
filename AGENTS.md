@@ -29,7 +29,7 @@ packages/
   pnpm-termux-shim/             — @gtbuchanan/pnpm-termux-shim (pnpm bin shim for Termux/Android, os: ["android"])
   tsconfig/                     — @gtbuchanan/tsconfig (shared base tsconfig.json)
   vitest-config/                — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)
-  test-utils/                   — private shared E2E fixture utilities
+  test-utils/                   — private shared E2E fixture utilities + test-data builders
 ```
 
 ## Published-package behavior
@@ -179,6 +179,19 @@ JSDoc on exports, two-plugin Markdown lint split) live in the
   `expect(result.exitCode).toBe(0)`. On failure, `toMatchObject` shows
   the full result object (including stderr) in the diff, making failures
   self-diagnosing.
+- Generate incidental test data via
+  `@gtbuchanan/test-utils/builders` (or `@faker-js/faker` directly for
+  one-off primitives) and capture the result in a local so the
+  assertion references the captured value, not a duplicate literal.
+  Convention: `import * as build from '@gtbuchanan/test-utils/builders'`,
+  then `const name = build.scopedPackageName()` and
+  `expect(result).toHaveProperty('name', name)`. Only hard-code literals
+  when the SUT branches on the specific string (reserved keys, known
+  enum values). Add a builder when the value has a domain shape worth
+  centralizing (scoped package name, semver range, GitHub URL, etc.);
+  inline faker is fine for raw primitives where the shape is exactly
+  what faker already returns. See `packages/cli/test/manifest.test.ts`
+  for the reference pattern.
 
 ## Operational notes
 

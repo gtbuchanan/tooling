@@ -1,4 +1,5 @@
 import path from 'node:path';
+import * as build from '@gtbuchanan/test-utils/builders';
 import { runCommand } from 'citty';
 import { describe, it, vi } from 'vitest';
 import type { Manifest } from '#src/lib/manifest.js';
@@ -29,8 +30,10 @@ interface Fixture {
   readonly mockManifest: ReturnType<typeof vi.mocked<typeof readParsedManifest>>;
 }
 
+const publishDir = build.publishDirectory();
+
 const defaultManifest: Manifest = {
-  publishConfig: { directory: 'dist/source' },
+  publishConfig: { directory: publishDir },
 };
 
 const createFixture = (manifest: Manifest = defaultManifest): Fixture => {
@@ -55,12 +58,12 @@ describe('gtb task compile:skills', () => {
     const pkgDir = process.cwd();
 
     expect(fixture.mockRmSync).toHaveBeenCalledWith(
-      path.join(pkgDir, 'dist/source', 'skills'),
+      path.join(pkgDir, publishDir, 'skills'),
       { force: true, recursive: true },
     );
     expect(fixture.mockCpSync).toHaveBeenCalledWith(
       path.join(pkgDir, 'skills'),
-      path.join(pkgDir, 'dist/source', 'skills'),
+      path.join(pkgDir, publishDir, 'skills'),
       { recursive: true },
     );
   });
@@ -68,7 +71,7 @@ describe('gtb task compile:skills', () => {
   it('skips when package is private', async ({ expect }) => {
     const fixture = createFixture({
       private: true,
-      publishConfig: { directory: 'dist/source' },
+      publishConfig: { directory: publishDir },
     });
 
     await invoke();
