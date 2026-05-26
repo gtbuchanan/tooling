@@ -2,10 +2,11 @@
 
 ## Prerequisites
 
-[mise] is the single source of truth for Node, pnpm, and prek. Tool
-versions are pinned in `mise.toml` with per-platform binary checksums
-recorded in `mise.lock`, so every contributor (and CI) runs the exact
-same binaries.
+[mise] manages Node, pnpm, and prek for every contributor and CI.
+Run `mise install` to get the versions the repo pins. To bump a
+version: Node and prek live in `mise.toml`; pnpm lives in the
+`packageManager` field of `package.json`. `mise.lock` carries
+per-platform binary checksums for all three.
 
 Install mise:
 

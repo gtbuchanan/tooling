@@ -161,6 +161,54 @@ they're unaffected. See
 [vercel/turborepo#8202](https://github.com/vercel/turborepo/pull/8202);
 no config scopes this hash.
 
+### Why turbo isn't in mise.toml
+
+Turbo is a Rust binary and philosophically belongs alongside Node,
+pnpm, and prek in `mise.toml`. We tried, reverted, and recorded the
+reasoning here so the question doesn't get re-litigated:
+
+- Mise's only registered backend for turbo is `npm:turbo` (no aqua /
+  ubi / cargo fallback). Confirmed via `mise registry turbo`.
+- Vercel ships turbo exclusively through npm. The latest release has
+  no binary assets on GitHub Releases;
+  [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616)
+  (request for Android binaries) was closed as "not planned".
+  [vercel/turborepo#12735](https://github.com/vercel/turborepo/pull/12735)
+  is the live PR re-litigating that decision — if it (or anything
+  like it) lands, upstream distribution shifts and this whole
+  trade-off changes.
+- mise's npm backend writes only `version` + `backend` to `mise.lock`
+  — no per-platform integrity. `pnpm-lock.yaml` records per-platform
+  integrity for `turbo` plus every `@turbo/<platform>-<arch>` optional
+  dep. npm install verifies integrity at install time in both paths,
+  so the practical cost of moving was losing the local audit trail
+  rather than losing actual verification.
+
+The forced consequence: `packageManager` in `package.json` is
+required — turbo errors out with `Missing packageManager` during
+workspace resolution. Rather than duplicate the pnpm pin in
+`mise.toml`'s `[tools]`, we set
+`idiomatic_version_file_enable_tools = ["pnpm"]` so mise reads the
+version directly from the same `packageManager` field. One pin, two
+consumers (turbo and mise). `mise.lock` still locks pnpm's
+per-platform binaries via the aqua backend; only the version source
+is shared.
+
+The `TURBO_DANGEROUSLY_DISABLE_PACKAGE_MANAGER_CHECK` escape hatch
+exists but turbo's own schema warns it disables some pnpm-aware
+features; not worth taking on for marginal benefit.
+
+Re-evaluate if:
+
+- Vercel ships standalone binaries (would unblock an `aqua:` or
+  `ubi:` backend with real per-platform integrity).
+- mise's npm backend gains lockfile integrity for `npm:`-backed
+  tools.
+- Turbo ever ships an Agent Skill in its npm package — turbo would
+  still need to live in the pnpm catalog so `skills-npm` can
+  discover it, so the answer wouldn't change but the question is
+  effectively settled.
+
 ### Vitest usage specifics
 
 Slow tests use Vitest's native tag system (`test('name', { tags: ['slow'] }, ...)`
