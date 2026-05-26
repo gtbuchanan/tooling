@@ -2,20 +2,36 @@
 
 ## Prerequisites
 
-- **Node.js** — Version satisfying `engines.node` in `package.json`
-  (currently `>=24.0.0`). `engineStrict: true` in `pnpm-workspace.yaml`
-  makes `pnpm install` fail loudly if your active Node is below the
-  floor.
-- **pnpm** — The version pinned in `packageManager`
-  (currently `pnpm@10.32.1`). Enable [Corepack] to have it managed
-  automatically (`corepack enable`), or install the pinned version
-  manually.
+[mise] is the single source of truth for Node, pnpm, and prek. Tool
+versions are pinned in `mise.toml` with per-platform binary checksums
+recorded in `mise.lock`, so every contributor (and CI) runs the exact
+same binaries.
 
-Once prerequisites are in place, install dependencies and verify your
-setup with a full build:
+Install mise:
+
+- **Windows** — `winget install jdx.mise`
+- **macOS** — `brew install mise`
+- **Linux** — `curl https://mise.run | sh`
+- **Termux/Android** — see [Termux/Android setup](#termuxandroid-setup)
+
+Then trust the workspace config and install the pinned tools:
 
 ```sh
+mise trust
+mise install
 pnpm install
+```
+
+`mise install` reads `mise.toml` + `mise.lock` and verifies each
+downloaded binary against the recorded sha256. `[settings] lockfile =
+true` in `mise.toml` keeps the lockfile self-perpetuating: a local
+`mise.toml` edit re-runs through `mise install` and rewrites
+`mise.lock`. CI runs with `MISE_LOCKED=1` and fails loudly on any
+drift between the two files (analogous to pnpm's `--frozen-lockfile`).
+
+Verify your setup with a full build:
+
+```sh
 pnpm build
 ```
 
@@ -65,8 +81,25 @@ changeset — CI enforces this.
 
 ## Termux/Android setup
 
-Before `pnpm install`, widen pnpm's `supportedArchitectures` whitelist
-in your per-user global rc so the Linux turbo binary is downloaded:
+**mise via `termux-chroot`.** mise's downloaded binaries are standard
+Linux builds that hardcode `/lib`, `/usr`, etc. Termux's prefix is
+`/data/data/com.termux/files/usr`, so those paths don't resolve
+without a chroot wrapper. Add this to your shell rc so `mise` always
+runs through `termux-chroot`:
+
+```sh
+mise() { SSL_CERT_FILE="$PREFIX/etc/tls/cert.pem" termux-chroot command mise "$@"; }
+```
+
+(`pkg install termux-chroot` if it isn't already installed.)
+
+If you'd rather skip mise on Termux and use Termux-shipped Node/pnpm
+directly, `pkg install nodejs` works — you'll drift from the pinned
+patch version but the build still runs.
+
+**pnpm supportedArchitectures.** Before `pnpm install`, widen pnpm's
+`supportedArchitectures` whitelist in your per-user global rc so the
+Linux turbo binary is downloaded:
 
 ```text
 # ~/.config/pnpm/rc
@@ -88,5 +121,5 @@ export UV_LIBC=none
 ```
 
 [changesets]: https://github.com/changesets/changesets
-[Corepack]: https://nodejs.org/api/corepack.html
+[mise]: https://mise.jdx.dev
 [prek]: https://github.com/j178/prek

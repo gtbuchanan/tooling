@@ -7,10 +7,13 @@ TypeScript, Vitest configuration, and a shared build CLI.
 
 ```text
 README.md              — Consumer-facing documentation
+mise.toml              — Pin Node, pnpm, prek versions for local + CI
+mise.lock              — Per-platform binary checksums + download URLs
 .github/
   actions/
+    mise-setup/          — Composite action: install + cache mise tools
     pnpm-resolve-pinned/ — Composite action: resolve locked version without install
-    pnpm-tasks/          — Composite action: install pnpm, cache, install deps
+    pnpm-tasks/          — Composite action: cache pnpm store, install deps
     turbo-run/           — Composite action: run turbo task, skip install on cache hit
   workflows/
     cd.yml               — Calls CI, then version + publish on main
@@ -99,6 +102,12 @@ jobs:
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
 ```
 
+Every job that needs Node, pnpm, or prek prepends `mise-setup`, which
+installs the exact versions pinned in `mise.toml` / `mise.lock`. Tool
+caching is owned by `mise-setup` (mise data dir) and `pnpm-tasks`
+(pnpm store) separately so a single-tool bump in `mise.lock` only
+re-downloads the changed binary.
+
 Repo-specific behavior is customized through `package.json` scripts
 backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
 (`run-e2e`, `run-slow-tests`) for toggling test tiers.
@@ -119,14 +128,19 @@ backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
 
 Composite actions:
 
+- **`mise-setup`** — Restores the mise data dir with an arch-specific
+  `restore-keys` fallback, installs missing tools via
+  `jdx/mise-action` (with `cache: false` so we own the cache layer),
+  and prunes unreferenced versions on inexact restore. Sets
+  `MISE_LOCKED=1` so `mise install` fails on `mise.toml` ↔ `mise.lock`
+  drift. Called as the first step of every job that needs mise tools.
 - **`turbo-run`** — Runs a turbo task, skipping `pnpm install` when
   turbo remote cache covers all tasks. Resolves the locked turbo version,
-  dry-runs to check cache status, then either restores from cache or
-  falls back to full install. Used by all CI jobs.
-- **`pnpm-tasks`** — Sets up pnpm and Node.js (version from
-  `package.json` engines), caches store, installs dependencies, and
-  runs optional pnpm commands. Used by non-turbo jobs (config-check,
-  pre-commit).
+  dry-runs to check cache status, and delegates to `pnpm-tasks` for the
+  install path. Used by all CI jobs.
+- **`pnpm-tasks`** — Restores the pnpm store from `actions/cache`,
+  installs dependencies, runs optional pnpm commands, and prunes the
+  store on inexact restore. Assumes `mise-setup` ran first.
 - **`pnpm-resolve-pinned`** — Resolves a package's exact version from the
   lockfile without install. Used to pin `pnpm dlx` invocations to the
   locked version.
