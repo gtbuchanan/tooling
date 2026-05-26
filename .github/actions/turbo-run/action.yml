@@ -19,6 +19,7 @@ runs:
     - uses: rharkor/caching-for-turbo@v2.3.13
 
     - env:
+        TURBO_GLOBAL_WARNING_DISABLED: '1'
         TURBO_TASK: ${{ inputs.task }}
         TURBO_VERSION: ${{ steps.turbo-version.outputs.version }}
       id: cache-check
@@ -47,6 +48,7 @@ runs:
       uses: ./.github/actions/pnpm-tasks
 
     - env:
+        TURBO_GLOBAL_WARNING_DISABLED: '1'
         TURBO_TASK: ${{ inputs.task }}
         TURBO_VERSION: ${{ steps.turbo-version.outputs.version }}
       name: Run turbo task
