@@ -19,13 +19,16 @@ jobs:
 
       - uses: ./.github/actions/pnpm-tasks
 
+      # mise.lock is in the cache key because prek bakes absolute Node
+      # binary paths into its cached hook environments (j178/prek#1993);
+      # a Node bump must invalidate the cache. No restore-keys fallback:
+      # GH caches are immutable, so a stale-path blob would never get
+      # healed back to the cache and prek would silently break.
       - id: prek-cache
         uses: actions/cache@v4
         with:
-          key: prek-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: prek-${{ runner.os }}-${{ hashFiles('mise.lock', '.pre-commit-config.yaml') }}
           path: ${{ env.PREK_HOME }}
-          restore-keys: |
-            prek-${{ runner.os }}-
 
       - name: Run pre-commit hooks
         run: |
