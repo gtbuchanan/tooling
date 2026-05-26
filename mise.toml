@@ -1,0 +1,6 @@
+[settings]
+lockfile = true
+
+[tools]
+node = "24.16.0"
+prek = "0.4.2"
