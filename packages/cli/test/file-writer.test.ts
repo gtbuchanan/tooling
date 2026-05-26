@@ -1,5 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 import {
@@ -45,9 +47,11 @@ describe.concurrent(mergePackageScripts, () => {
   it('adds missing scripts to existing package.json', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'package.json');
+    const existingScriptName = faker.lorem.word();
+    const existingScriptValue = faker.lorem.words({ min: 1, max: 3 });
     writeFileSync(filePath, JSON.stringify({
-      name: 'test',
-      scripts: { existing: 'keep' },
+      name: build.scopedPackageName(),
+      scripts: { [existingScriptName]: existingScriptValue },
     }));
 
     const result = mergePackageScripts(
@@ -55,7 +59,10 @@ describe.concurrent(mergePackageScripts, () => {
     );
 
     expect(readJson(filePath)).toMatchObject({
-      scripts: { 'existing': 'keep', 'typecheck:ts': 'gtb typecheck:ts' },
+      scripts: {
+        [existingScriptName]: existingScriptValue,
+        'typecheck:ts': 'gtb typecheck:ts',
+      },
     });
     expect(result.added).toContain('typecheck:ts');
   });
@@ -63,8 +70,9 @@ describe.concurrent(mergePackageScripts, () => {
   it('does not overwrite existing scripts without force', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'package.json');
+    const userTypecheck = faker.lorem.words({ min: 1, max: 3 });
     writeFileSync(filePath, JSON.stringify({
-      scripts: { 'typecheck:ts': 'vue-tsc --noEmit' },
+      scripts: { 'typecheck:ts': userTypecheck },
     }));
 
     const result = mergePackageScripts(
@@ -72,7 +80,7 @@ describe.concurrent(mergePackageScripts, () => {
     );
 
     expect(readJson(filePath)).toMatchObject({
-      scripts: { 'typecheck:ts': 'vue-tsc --noEmit' },
+      scripts: { 'typecheck:ts': userTypecheck },
     });
     expect(result.skipped).toContain('typecheck:ts');
   });
@@ -81,7 +89,7 @@ describe.concurrent(mergePackageScripts, () => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'package.json');
     writeFileSync(filePath, JSON.stringify({
-      scripts: { 'typecheck:ts': 'vue-tsc --noEmit' },
+      scripts: { 'typecheck:ts': faker.lorem.words({ min: 1, max: 3 }) },
     }));
 
     const result = mergePackageScripts(
@@ -97,7 +105,7 @@ describe.concurrent(mergePackageScripts, () => {
   it('creates scripts field if missing', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'package.json');
-    writeFileSync(filePath, JSON.stringify({ name: 'test' }));
+    writeFileSync(filePath, JSON.stringify({ name: build.scopedPackageName() }));
 
     mergePackageScripts(filePath, { 'lint:eslint': 'gtb lint:eslint' }, false);
 
@@ -109,19 +117,14 @@ describe.concurrent(mergePackageScripts, () => {
   it('preserves non-script fields in package.json', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'package.json');
-    writeFileSync(filePath, JSON.stringify({
-      dependencies: { valibot: '^1.0.0' },
-      name: 'test',
-      version: '1.0.0',
-    }));
+    const dependencies = build.dependencyMap();
+    const name = build.scopedPackageName();
+    const version = build.semverVersion();
+    writeFileSync(filePath, JSON.stringify({ dependencies, name, version }));
 
     mergePackageScripts(filePath, { 'typecheck:ts': 'gtb typecheck:ts' }, false);
 
-    expect(readJson(filePath)).toMatchObject({
-      dependencies: { valibot: '^1.0.0' },
-      name: 'test',
-      version: '1.0.0',
-    });
+    expect(readJson(filePath)).toMatchObject({ dependencies, name, version });
   });
 });
 

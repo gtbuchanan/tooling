@@ -52,6 +52,7 @@
     "typescript-eslint": "catalog:"
   },
   "devDependencies": {
+    "@faker-js/faker": "catalog:",
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*"
   },

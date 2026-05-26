@@ -1,5 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverPackage, discoverWorkspace } from '#src/lib/discovery.js';
 import { createTempDir, writeJson } from './helpers.ts';
@@ -42,7 +44,7 @@ describe.concurrent(discoverPackage, () => {
   it('detects eslint via dependency', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/eslint-config': '^0.1.0' },
+      devDependencies: { '@gtbuchanan/eslint-config': build.semverRange() },
     });
 
     const result = discoverPackage(dir);
@@ -53,7 +55,7 @@ describe.concurrent(discoverPackage, () => {
   it('detects vitest via dependency', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/vitest-config': '^0.1.0' },
+      devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
     });
 
     const result = discoverPackage(dir);
@@ -74,7 +76,7 @@ describe.concurrent(discoverPackage, () => {
   it('detects typescript via dependency', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/tsconfig': '^0.1.0' },
+      devDependencies: { '@gtbuchanan/tsconfig': build.semverRange() },
     });
 
     const result = discoverPackage(dir);
@@ -95,7 +97,7 @@ describe.concurrent(discoverPackage, () => {
   it('detects published package', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
-      publishConfig: { directory: 'dist/source' },
+      publishConfig: { directory: build.publishDirectory() },
     });
 
     const result = discoverPackage(dir);
@@ -107,7 +109,7 @@ describe.concurrent(discoverPackage, () => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
       private: true,
-      publishConfig: { directory: 'dist/source' },
+      publishConfig: { directory: build.publishDirectory() },
     });
 
     const result = discoverPackage(dir);
@@ -147,37 +149,41 @@ describe.concurrent(discoverPackage, () => {
 
   it('detects generate via script prefix', ({ expect }) => {
     const dir = createTempDir();
+    const generateKey = `generate:${faker.lorem.word()}`;
     writeJson(dir, 'package.json', {
-      scripts: { 'generate:prisma': 'prisma generate' },
+      scripts: { [generateKey]: faker.lorem.words({ min: 1, max: 3 }) },
     });
 
     const result = discoverPackage(dir);
 
     expect(result.hasGenerate).toBe(true);
-    expect(result.generateScripts).toStrictEqual(['generate:prisma']);
+    expect(result.generateScripts).toStrictEqual([generateKey]);
   });
 
   it('collects multiple generate scripts', ({ expect }) => {
     const dir = createTempDir();
+    const generateKeys = [
+      `generate:${faker.lorem.word()}`,
+      `generate:${faker.lorem.word()}`,
+    ].toSorted();
     writeJson(dir, 'package.json', {
-      scripts: {
-        'generate:paraglide': 'paraglide-js compile',
-        'generate:prisma': 'prisma generate',
-      },
+      scripts: Object.fromEntries(
+        generateKeys.map(key => [key, faker.lorem.words({ min: 1, max: 3 })]),
+      ),
     });
 
     const result = discoverPackage(dir);
 
-    expect(result.generateScripts).toStrictEqual([
-      'generate:paraglide',
-      'generate:prisma',
-    ]);
+    expect(result.generateScripts).toStrictEqual(generateKeys);
   });
 
   it('does not detect generate without colon prefix', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
-      scripts: { codegen: 'some-tool generate', generate: 'gen all' },
+      scripts: {
+        codegen: faker.lorem.words({ min: 1, max: 3 }),
+        generate: faker.lorem.words({ min: 1, max: 3 }),
+      },
     });
 
     const result = discoverPackage(dir);
@@ -215,25 +221,24 @@ describe.concurrent(discoverWorkspace, () => {
       "packages:\n  - 'packages/*'\n",
     );
     writeJson(root, 'package.json', {});
-    const alpha = path.join(root, 'packages', 'alpha');
-    mkdirSync(alpha, { recursive: true });
-    writeJson(alpha, 'package.json', {
-      devDependencies: { '@gtbuchanan/eslint-config': '^0.1.0' },
+    const pkgDir = path.join(root, 'packages', build.packageName());
+    mkdirSync(pkgDir, { recursive: true });
+    writeJson(pkgDir, 'package.json', {
+      devDependencies: { '@gtbuchanan/eslint-config': build.semverRange() },
     });
-    mkdirSync(path.join(alpha, 'src'));
+    mkdirSync(path.join(pkgDir, 'src'));
 
     const result = discoverWorkspace({ cwd: root });
 
     expect(result.isMonorepo).toBe(true);
     expect(result.packages).toHaveLength(1);
     expect(result.packages[0]!.hasEslint).toBe(true);
-    expect(result.packages[0]!.hasEslint).toBe(true);
   });
 
   it('discovers single-package repo', ({ expect }) => {
     const root = createTempDir();
     writeJson(root, 'package.json', {
-      devDependencies: { '@gtbuchanan/tsconfig': '^0.1.0' },
+      devDependencies: { '@gtbuchanan/tsconfig': build.semverRange() },
     });
     mkdirSync(path.join(root, 'src'));
 
@@ -253,9 +258,9 @@ describe.concurrent(discoverWorkspace, () => {
     writeJson(root, 'package.json', {
       devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
     });
-    const pkg = path.join(root, 'packages', 'lib');
-    mkdirSync(pkg, { recursive: true });
-    writeJson(pkg, 'package.json', {});
+    const pkgDir = path.join(root, 'packages', build.packageName());
+    mkdirSync(pkgDir, { recursive: true });
+    writeJson(pkgDir, 'package.json', {});
 
     const result = discoverWorkspace({ cwd: root });
 

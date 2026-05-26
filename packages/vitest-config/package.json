@@ -30,6 +30,7 @@
     "find-up-simple": "catalog:"
   },
   "devDependencies": {
+    "@faker-js/faker": "catalog:",
     "@gtbuchanan/test-utils": "workspace:*"
   },
   "peerDependencies": {

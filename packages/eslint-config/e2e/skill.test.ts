@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { it as base, describe } from 'vitest';
 import { type Fixture, createFixture } from './fixture.ts';
 
@@ -15,18 +16,21 @@ const it = base.extend<{ fixture: Fixture }>({
 const skill = (frontmatter: readonly string[], body: readonly string[] = ['# Body', '']) =>
   ['---', ...frontmatter, '---', '', ...body].join('\n');
 
+const skillName = (): string => faker.lorem.slug({ min: 1, max: 2 });
+
 describe.concurrent('SKILL.md validation', () => {
   it('passes for a valid SKILL.md', async ({ fixture, expect }) => {
+    const name = skillName();
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill(
+        [`skills/${name}/SKILL.md`]: skill(
           [
-            'name: example-skill',
-            'description: A description that is descriptive enough.',
+            `name: ${name}`,
+            `description: ${faker.lorem.sentence()}`,
           ],
           ['# Example skill', '', 'Body content.', ''],
         ),
-        'skills/example-skill/evals/evals.json': `${JSON.stringify({
+        [`skills/${name}/evals/evals.json`]: `${JSON.stringify({
           evals: [{
             expectations: ['Activates skill'],
             expected_output: 'Example output',
@@ -34,7 +38,7 @@ describe.concurrent('SKILL.md validation', () => {
             id: 1,
             prompt: 'Example prompt',
           }],
-          skill_name: 'example-skill',
+          skill_name: name,
         }, undefined, 2)}\n`,
       },
     });
@@ -44,9 +48,10 @@ describe.concurrent('SKILL.md validation', () => {
   });
 
   it('flags missing required frontmatter fields', async ({ fixture, expect }) => {
+    const name = skillName();
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill(['name: example-skill']),
+        [`skills/${name}/SKILL.md`]: skill([`name: ${name}`]),
       },
     });
 
@@ -55,11 +60,12 @@ describe.concurrent('SKILL.md validation', () => {
   });
 
   it('flags non-kebab-case name', async ({ fixture, expect }) => {
+    const name = skillName();
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill([
+        [`skills/${name}/SKILL.md`]: skill([
           'name: ExampleSkill',
-          'description: A description that is descriptive enough.',
+          `description: ${faker.lorem.sentence()}`,
         ]),
       },
     });
@@ -69,11 +75,12 @@ describe.concurrent('SKILL.md validation', () => {
   });
 
   it('flags unknown frontmatter fields', async ({ fixture, expect }) => {
+    const name = skillName();
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill([
-          'name: example-skill',
-          'description: A description that is descriptive enough.',
+        [`skills/${name}/SKILL.md`]: skill([
+          `name: ${name}`,
+          `description: ${faker.lorem.sentence()}`,
           'unknown: value',
         ]),
       },
@@ -84,26 +91,30 @@ describe.concurrent('SKILL.md validation', () => {
   });
 
   it('flags name not matching parent directory', async ({ fixture, expect }) => {
+    const name = skillName();
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill([
+        [`skills/${name}/SKILL.md`]: skill([
           'name: wrong-name',
-          'description: A description that is descriptive enough.',
+          `description: ${faker.lorem.sentence()}`,
         ]),
       },
     });
 
     expect(result.stdout).toMatch(/agent-skills\/name-matches-dir/v);
-    expect(result.stdout).toMatch(/expected `example-skill`, got `wrong-name`/v);
+    expect(result.stdout).toMatch(
+      new RegExp(`expected \`${name}\`, got \`wrong-name\``, 'v'),
+    );
   });
 
   it('passes when referenced files exist within the skill root', async ({ fixture, expect }) => {
+    const name = skillName();
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill(
+        [`skills/${name}/SKILL.md`]: skill(
           [
-            'name: example-skill',
-            'description: A description that is descriptive enough.',
+            `name: ${name}`,
+            `description: ${faker.lorem.sentence()}`,
           ],
           [
             '# Example skill',
@@ -112,7 +123,7 @@ describe.concurrent('SKILL.md validation', () => {
             '',
           ],
         ),
-        'skills/example-skill/references/REFERENCE.md': '# Reference\n\nStub.\n',
+        [`skills/${name}/references/REFERENCE.md`]: '# Reference\n\nStub.\n',
       },
     });
 
@@ -121,12 +132,13 @@ describe.concurrent('SKILL.md validation', () => {
   });
 
   it('flags references to files that do not exist', async ({ fixture, expect }) => {
+    const name = skillName();
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill(
+        [`skills/${name}/SKILL.md`]: skill(
           [
-            'name: example-skill',
-            'description: A description that is descriptive enough.',
+            `name: ${name}`,
+            `description: ${faker.lorem.sentence()}`,
           ],
           [
             '# Example skill',
@@ -143,16 +155,17 @@ describe.concurrent('SKILL.md validation', () => {
   });
 
   it('caps file at 500 lines per the spec', async ({ fixture, expect }) => {
+    const name = skillName();
     const lines = Array.from(
       { length: 600 },
       (_unused, index) => `Line ${String(index + 1)}`,
     );
     const result = await fixture.run({
       files: {
-        'skills/example-skill/SKILL.md': skill(
+        [`skills/${name}/SKILL.md`]: skill(
           [
-            'name: example-skill',
-            'description: A description that is descriptive enough.',
+            `name: ${name}`,
+            `description: ${faker.lorem.sentence()}`,
           ],
           [...lines, ''],
         ),

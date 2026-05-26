@@ -7,7 +7,8 @@
     "#src/*": "./src/*"
   },
   "exports": {
-    ".": "./src/fixture.ts"
+    ".": "./src/fixture.ts",
+    "./builders": "./src/builders.ts"
   },
   "scripts": {
     "coverage:codecov:upload": "pnpm run gtb task coverage:codecov:upload",
@@ -19,6 +20,7 @@
     "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "dependencies": {
+    "@faker-js/faker": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
     "valibot": "catalog:"
