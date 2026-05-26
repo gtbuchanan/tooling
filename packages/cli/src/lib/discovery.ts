@@ -44,6 +44,8 @@ export interface PackageCapabilities {
 
 /** Full workspace discovery result. */
 export interface WorkspaceDiscovery {
+  /** Workspace root has a `mise.toml` pinning dev tool versions. */
+  readonly hasMise: boolean;
   /** Whether a pnpm-workspace.yaml was found. */
   readonly isMonorepo: boolean;
   /** `@gtbuchanan/cli` is a workspace:* dependency (bootstrapping). */
@@ -140,6 +142,7 @@ export const discoverWorkspace = (
   const rootDeps = mergeDeps(rootManifest);
 
   return {
+    hasMise: existsSync(path.join(ctx.rootDir, 'mise.toml')),
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
     packages: ctx.packageDirs.map(dir => buildCapabilities(dir, parseManifest(dir))),
