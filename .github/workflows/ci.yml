@@ -9,6 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: ./.github/actions/mise-setup
+
       - uses: ./.github/actions/turbo-run
         with:
           task: build:ci
@@ -40,6 +42,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: ./.github/actions/mise-setup
+
       - uses: actions/download-artifact@v5
         with:
           name: coverage
@@ -69,6 +73,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: ./.github/actions/mise-setup
+
       - uses: ./.github/actions/pnpm-tasks
 
       - name: Check config drift
@@ -81,6 +87,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/mise-setup
 
       - uses: ./.github/actions/turbo-run
         with:
@@ -100,6 +108,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: ./.github/actions/mise-setup
+
       - uses: ./.github/actions/turbo-run
         with:
           task: test:e2e
@@ -110,6 +120,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/mise-setup
 
       - uses: ./.github/actions/turbo-run
         with:

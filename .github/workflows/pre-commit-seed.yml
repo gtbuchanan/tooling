@@ -11,6 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: ./.github/actions/mise-setup
+
       - uses: ./.github/actions/pnpm-tasks
 
       - id: prek-cache

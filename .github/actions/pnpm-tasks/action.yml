@@ -1,5 +1,5 @@
 ---
-description: Set up pnpm and Node.js, restore cache, and install dependencies
+description: Restore the pnpm store and install dependencies (mise-setup must run first)
 inputs:
   commands:
     default: ''
@@ -7,13 +7,19 @@ inputs:
 name: pnpm Tasks
 runs:
   steps:
-    - uses: pnpm/action-setup@v5
+    - id: pnpm-store
+      name: Resolve pnpm store path
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      shell: bash
 
-    - id: setup-node
-      uses: actions/setup-node@v5
+    - id: pnpm-cache
+      name: Restore pnpm store
+      uses: actions/cache@v4
       with:
-        cache: pnpm
-        node-version-file: package.json
+        key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        path: ${{ steps.pnpm-store.outputs.path }}
+        restore-keys: |
+          pnpm-${{ runner.os }}-
 
     # HACK: pnpm has bugs around reporting peer resolution issues, so we
     # call twice — the second pass catches what the first silently misses.
@@ -38,7 +44,7 @@ runs:
 
     # Prune stale packages on inexact cache restore so the re-saved cache
     # does not grow unbounded
-    - if: steps.setup-node.outputs.cache-hit != 'true'
+    - if: steps.pnpm-cache.outputs.cache-hit != 'true'
       name: Prune pnpm store
       run: pnpm store prune
       shell: bash

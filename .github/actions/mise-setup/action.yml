@@ -1,0 +1,46 @@
+---
+description: Install and cache mise-managed dev tools with partial-restore caching
+name: mise Setup
+outputs:
+  cache-hit:
+    description: Whether the exact mise.lock-keyed cache was hit
+    value: ${{ steps.cache.outputs.cache-hit }}
+runs:
+  steps:
+    # Centralize MISE_DATA_DIR so the cache path is OS-agnostic and the
+    # value is visible to subsequent prune/exec steps. MISE_LOCKED=1
+    # makes `mise install` fail if mise.toml drifts from mise.lock
+    # (analogous to pnpm `--frozen-lockfile`). jdx/mise-action already
+    # sets MISE_YES + MISE_TRUSTED_CONFIG_PATHS, so trust prompts and
+    # interactive confirmations are handled by the action itself.
+    - env:
+        DATA_DIR: ${{ runner.temp }}/.mise
+      name: Configure mise environment
+      run: |
+        {
+          echo "MISE_DATA_DIR=${DATA_DIR}"
+          echo "MISE_LOCKED=1"
+        } >> "$GITHUB_ENV"
+      shell: bash
+
+    - id: cache
+      name: Restore mise data
+      uses: actions/cache@v4
+      with:
+        key: mise-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mise.lock') }}
+        path: ${{ runner.temp }}/.mise
+        restore-keys: |
+          mise-${{ runner.os }}-${{ runner.arch }}-
+
+    - uses: jdx/mise-action@v4.0.1
+      with:
+        cache: false
+        version: 2026.5.15
+
+    # Prune unreferenced tool versions on inexact cache restore so the
+    # re-saved cache does not grow unbounded across mise.lock changes
+    - if: steps.cache.outputs.cache-hit != 'true'
+      name: Prune mise data
+      run: mise prune --yes
+      shell: bash
+  using: composite
