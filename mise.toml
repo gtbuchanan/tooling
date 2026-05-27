@@ -8,3 +8,14 @@ lockfile = true
 [tools]
 node = "24.16.0"
 prek = "0.4.2"
+
+# pnpm ignores the `os` field on workspace packages, so the Termux shim's
+# bin doesn't get auto-symlinked into node_modules/.bin via the usual
+# optionalDependencies path. `bootstrap` does it explicitly on Termux.
+[tasks.bootstrap]
+description = "Set up the workspace (install deps; symlink Termux pnpm shim)"
+run = [
+  "pnpm install --frozen-lockfile",
+  'if [ "$(uname -o)" = "Android" ]; then ln -sfn ../../packages/pnpm-termux-shim/bin/pnpm node_modules/.bin/pnpm; fi',
+]
+run_windows = "pnpm install --frozen-lockfile"

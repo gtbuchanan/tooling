@@ -29,7 +29,6 @@
     "@gtbuchanan/tsconfig": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
     "@pnpm/lockfile.types": "catalog:",
-    "@pnpm/types": "catalog:",
     "@tsconfig/strictest": "catalog:",
     "@types/cross-spawn": "catalog:",
     "@types/node": "catalog:",
@@ -46,9 +45,6 @@
     "typescript": "catalog:",
     "valibot": "catalog:",
     "vitest": "catalog:"
-  },
-  "optionalDependencies": {
-    "@gtbuchanan/pnpm-termux-shim": "workspace:*"
   },
   "packageManager": "pnpm@10.32.1",
   "engines": {
