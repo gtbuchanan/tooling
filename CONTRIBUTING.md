@@ -94,23 +94,22 @@ mise() { SSL_CERT_FILE="$PREFIX/etc/tls/cert.pem" termux-chroot command mise "$@
 
 (`pkg install termux-chroot` if it isn't already installed.)
 
-If you'd rather skip mise on Termux and use Termux-shipped Node/pnpm
-directly, `pkg install nodejs` works — you'll drift from the pinned
-patch version but the build still runs.
+**Mixed setup: Termux packages for Node + pnpm, mise for prek.** mise
+shims exec downloaded glibc/musl ELFs directly, bypassing
+`termux-chroot` and ENOENTing on Bionic's missing dynamic linker.
+Install Node, pnpm, and turbo via `pkg install nodejs pnpm turbo`
+(Bionic-native) and let mise handle prek (static musl aarch64). Tell mise to ignore
+the broken tools:
 
-**pnpm supportedArchitectures.** Before `pnpm install`, widen pnpm's
-`supportedArchitectures` whitelist in your per-user global rc so the
-Linux turbo binary is downloaded:
-
-```text
-# ~/.config/pnpm/rc
-supported-architectures.os[]=current
-supported-architectures.os[]=linux
+```toml
+# ~/.config/mise/config.toml
+[settings]
+disable_tools = ["node", "pnpm"]
 ```
 
-Then `pnpm install --force` once. Everything else (the linux turbo
-binary discovery via `gtb turbo`, the `pnpm` bin shim via
-`@gtbuchanan/pnpm-termux-shim`) is handled automatically.
+`disable_tools` doesn't garbage-collect previously-created shims —
+`rm ~/.local/share/mise/shims/{node,pnpm}` if you've installed them
+in the past.
 
 **prek/uv libc detection.** prek's bundled `uv` aborts during
 managed-Python discovery because Bionic isn't recognized as glibc or
