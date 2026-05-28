@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "Shared Renovate config for @gtbuchanan repositories"
+  ],
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "minimumReleaseAge": "3 days",
+  "osvVulnerabilityAlerts": true,
+  "packageRules": [
+    {
+      "description": "Restrict noisy pre-commit hook updates to bi-monthly",
+      "matchSourceUrls": [
+        "https://github.com/renovatebot/pre-commit-hooks"
+      ],
+      "minimumReleaseAge": "",
+      "schedule": [
+        "* * 1,15 * *"
+      ]
+    }
+  ],
+  "platformCommit": "enabled",
+  "postUpdateOptions": [
+    "pnpmDedupe"
+  ],
+  "pre-commit": {
+    "enabled": true
+  },
+  "rebaseWhen": "conflicted",
+  "semanticCommits": "disabled",
+  "timezone": "America/Chicago"
+}
