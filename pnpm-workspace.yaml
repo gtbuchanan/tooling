@@ -2,7 +2,7 @@ catalog:
   '@changesets/cli': ^2.29.4
   '@eslint-community/eslint-plugin-eslint-comments': 4.7.1
   '@eslint/json': 1.2.0
-  '@eslint/markdown': 8.0.1
+  '@eslint/markdown': 8.0.2
   '@faker-js/faker': ^10.4.0
   '@pnpm/lockfile.types': ^1100.0.5
   '@prettier/plugin-xml': ^3.4.2
