@@ -1,5 +1,5 @@
 import type { Linter } from 'eslint';
-import importPlugin from 'eslint-plugin-import-x';
+import importPlugin, { createNodeResolver } from 'eslint-plugin-import-x';
 import { scriptFiles } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
@@ -23,6 +23,11 @@ const importConfig: Linter.Config = {
       },
     ],
   },
+  /*
+   * Pin the bundled node resolver so we don't depend on the optional peer
+   * `eslint-import-resolver-node` being kept in the install graph by pnpm.
+   */
+  settings: { 'import-x/resolver-next': [createNodeResolver()] },
 };
 
 const plugin: PluginFactory = () => [importConfig];
