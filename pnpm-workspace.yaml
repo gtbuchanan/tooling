@@ -4,9 +4,7 @@ catalog:
   '@eslint/json': 1.2.0
   '@eslint/markdown': 8.0.1
   '@faker-js/faker': ^10.4.0
-  '@j178/prek': ^0.3.11
   '@pnpm/lockfile.types': ^1100.0.5
-  '@pnpm/types': ^1101.1.0
   '@prettier/plugin-xml': ^3.4.2
   '@stylistic/eslint-plugin': 5.10.0
   '@tsconfig/strictest': ^2.0.8
@@ -52,7 +50,6 @@ hoist: false
 lockfileIncludeTarballUrl: false
 
 onlyBuiltDependencies:
-  - '@j178/prek'
   - esbuild
 
 packages:

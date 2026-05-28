@@ -15,15 +15,25 @@ jobs:
       - name: Fetch branch refs for diff
         run: git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
+      - uses: ./.github/actions/mise-setup
+
       - uses: ./.github/actions/pnpm-tasks
 
+      # mise.lock is in the cache key because prek bakes absolute Node
+      # binary paths into its cached hook environments (j178/prek#1993);
+      # a Node bump must invalidate the cache. The restore-keys
+      # fallback is mise.lock-aware so a partial restore on
+      # .pre-commit-config.yaml edits still pulls hooks built against
+      # the current Node patch; an OS-only fallback would restore
+      # stale-path blobs the cache can never heal back (GH caches are
+      # immutable).
       - id: prek-cache
         uses: actions/cache@v4
         with:
-          key: prek-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: prek-${{ runner.os }}-${{ hashFiles('mise.lock') }}-${{ hashFiles('.pre-commit-config.yaml') }}
           path: ${{ env.PREK_HOME }}
           restore-keys: |
-            prek-${{ runner.os }}-
+            prek-${{ runner.os }}-${{ hashFiles('mise.lock') }}-
 
       - name: Run pre-commit hooks
         run: |

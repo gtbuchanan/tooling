@@ -22,6 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: ./.github/actions/mise-setup
+
       - uses: ./.github/actions/turbo-run
         with:
           task: pack
@@ -43,11 +45,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: package.json
+      - uses: ./.github/actions/mise-setup
 
       - id: app-token
         uses: actions/create-github-app-token@v2

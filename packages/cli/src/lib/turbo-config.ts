@@ -30,6 +30,8 @@ export interface TurboTask {
 /** Generated turbo.json structure. */
 export interface TurboJson {
   readonly $schema: string;
+  /** Files hashed into every task. Emitted only when discovery detects them. */
+  readonly globalDependencies?: readonly string[];
   readonly tasks: Readonly<Record<string, TurboTask>>;
 }
 
@@ -336,7 +338,11 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...aggregateTasks(flags),
   ];
 
-  return { $schema: 'https://turbo.build/schema.json', tasks: collect(entries) };
+  return {
+    $schema: 'https://turbo.build/schema.json',
+    ...(discovery.hasMise && { globalDependencies: ['mise.lock', 'mise.toml'] }),
+    tasks: collect(entries),
+  };
 };
 
 export {

@@ -30,6 +30,8 @@ export const makeCapabilities = (
 };
 
 export interface MakeDiscoveryOverrides extends Partial<PackageCapabilities> {
+  /** Overrides {@link WorkspaceDiscovery.hasMise} (defaults to `false`). */
+  readonly hasMise?: boolean;
   /** Overrides {@link WorkspaceDiscovery.isSelfHosted} (defaults to `false`). */
   readonly isSelfHosted?: boolean;
 }
@@ -38,8 +40,9 @@ export const makeDiscovery = (
   packages: readonly PackageCapabilities[],
   overrides: MakeDiscoveryOverrides = {},
 ): WorkspaceDiscovery => {
-  const { isSelfHosted = false, ...rootOverrides } = overrides;
+  const { hasMise = false, isSelfHosted = false, ...rootOverrides } = overrides;
   return {
+    hasMise,
     isMonorepo: packages.length > 1,
     isSelfHosted,
     packages,
