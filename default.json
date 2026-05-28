@@ -17,7 +17,7 @@
       "matchSourceUrls": [
         "https://github.com/renovatebot/pre-commit-hooks"
       ],
-      "minimumReleaseAge": "",
+      "minimumReleaseAge": "0 days",
       "schedule": [
         "* * 1,15 * *"
       ]
