@@ -49,6 +49,8 @@ catalog:
   vitest: ^4.1.2
   yaml: ^2.8.3
 
+engineStrict: true
+
 hoist: false
 
 lockfileIncludeTarballUrl: false
