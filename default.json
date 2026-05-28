@@ -38,6 +38,13 @@
       "schedule": [
         "* * 1,15 * *"
       ]
+    },
+    {
+      "description": "Skip release-age quarantine for gtbuchanan's own packages",
+      "matchSourceUrls": [
+        "https://github.com/gtbuchanan/{/,}**"
+      ],
+      "minimumReleaseAge": "0 days"
     }
   ],
   "platformCommit": "enabled",

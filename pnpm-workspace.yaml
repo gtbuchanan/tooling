@@ -55,6 +55,9 @@ hoist: false
 
 lockfileIncludeTarballUrl: false
 
+minimumReleaseAgeExclude:
+  - '@gtbuchanan/*'
+
 packages:
   - 'packages/*'
 
