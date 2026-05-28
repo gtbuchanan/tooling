@@ -91,8 +91,8 @@ catalogs:
       specifier: ^64.0.0
       version: 64.0.0
     eslint-plugin-yml:
-      specifier: 3.3.1
-      version: 3.3.1
+      specifier: 3.3.2
+      version: 3.3.2
     find-up-simple:
       specifier: ^1.0.1
       version: 1.0.1
@@ -323,7 +323,7 @@ importers:
         version: 64.0.0(eslint@10.1.0(jiti@2.6.1))
       eslint-plugin-yml:
         specifier: 'catalog:'
-        version: 3.3.1(eslint@10.1.0(jiti@2.6.1))
+        version: 3.3.2(eslint@10.1.0(jiti@2.6.1))
       prettier:
         specifier: 'catalog:'
         version: 3.8.3
@@ -1652,8 +1652,8 @@ packages:
     peerDependencies:
       eslint: '>=9.38.0'
 
-  eslint-plugin-yml@3.3.1:
-    resolution: {integrity: sha512-isntsZchaTqDMNNkD+CakrgA/pdUoJ45USWBKpuqfAW1MCuw731xX/vrXfoJFZU3tTFr24nCbDYmDfT2+g4QtQ==}
+  eslint-plugin-yml@3.3.2:
+    resolution: {integrity: sha512-XjmOB/fLBwYHqevnpclPL938V+9ExX7xw1hPaM3IPePGyMFRV1giS16RjSTNhIyCv/Oh0G0PEdmmZPATJ02YCw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24.0.0}
     peerDependencies:
       eslint: '>=9.38.0'
@@ -4022,19 +4022,16 @@ snapshots:
       semver: 7.8.1
       strip-indent: 4.1.1
 
-  eslint-plugin-yml@3.3.1(eslint@10.1.0(jiti@2.6.1)):
+  eslint-plugin-yml@3.3.2(eslint@10.1.0(jiti@2.6.1)):
     dependencies:
       '@eslint/core': 1.2.1
-      '@eslint/plugin-kit': 0.6.1
+      '@eslint/plugin-kit': 0.7.1
       '@ota-meshi/ast-token-store': 0.3.0
-      debug: 4.4.3
       diff-sequences: 29.6.3
       escape-string-regexp: 5.0.0
       eslint: 10.1.0(jiti@2.6.1)
       natural-compare: 1.4.0
       yaml-eslint-parser: 2.0.0
-    transitivePeerDependencies:
-      - supports-color
 
   eslint-scope@9.1.2:
     dependencies:
