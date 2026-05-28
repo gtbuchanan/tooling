@@ -1,3 +1,7 @@
+allowBuilds:
+  esbuild: true
+  unrs-resolver: false
+
 catalog:
   '@changesets/cli': ^2.29.4
   '@eslint-community/eslint-plugin-eslint-comments': 4.7.1
@@ -45,12 +49,11 @@ catalog:
   vitest: ^4.1.2
   yaml: ^2.8.3
 
+engineStrict: true
+
 hoist: false
 
 lockfileIncludeTarballUrl: false
-
-onlyBuiltDependencies:
-  - esbuild
 
 packages:
   - 'packages/*'
