@@ -7,14 +7,16 @@ TypeScript, Vitest configuration, and a shared build CLI.
 
 ```text
 README.md              — Consumer-facing documentation
-mise.toml              — Pin Node, pnpm, prek versions for local + CI
+default.json           — Shareable Renovate preset (consumed via `github>gtbuchanan/tooling`)
 mise.lock              — Per-platform binary checksums + download URLs
+mise.toml              — Pin Node, pnpm, prek versions for local + CI
 .github/
   actions/
     mise-setup/          — Composite action: install + cache mise tools
     pnpm-resolve-pinned/ — Composite action: resolve locked version without install
     pnpm-tasks/          — Composite action: cache pnpm store, install deps
     turbo-run/           — Composite action: run turbo task, skip install on cache hit
+  renovate.json        — Repo-local Renovate config (extends the shared preset)
   workflows/
     cd.yml               — Calls CI, then version + publish on main
     changeset-check.yml  — Verify changeset exists on PR
@@ -144,6 +146,38 @@ Composite actions:
 - **`pnpm-resolve-pinned`** — Resolves a package's exact version from the
   lockfile without install. Used to pin `pnpm dlx` invocations to the
   locked version.
+
+### Renovate preset
+
+The repo ships a shareable Renovate config at `default.json` for
+consumer repos and uses it on itself via `.github/renovate.json`.
+Beyond `config:recommended`, the preset overrides these defaults:
+
+- `labels: ["dependencies"]` — tag every Renovate PR for filtering.
+- `minimumReleaseAge: "3 days"` — supply-chain quarantine on new
+  releases.
+- `osvVulnerabilityAlerts: true` — opt into OSV-based alerts, separate
+  from GitHub's GHSA feed.
+- `platformCommit: "enabled"` — force commits via GitHub App API so the
+  bot's commits show the verified checkmark.
+- `postUpdateOptions: ["pnpmDedupe"]` — run `pnpm dedupe` after each
+  update to keep the lockfile lean.
+- `pre-commit.enabled: true` — Renovate's pre-commit manager is off by
+  default; enable so `.pre-commit-config.yaml` hooks get bumped.
+- `rebaseWhen: "conflicted"` — fewer no-op CI runs at the cost of
+  staler PRs (default `"auto"` rebases on every base-branch move).
+- `semanticCommits: "disabled"` — overrides
+  `:semanticPrefixFixDepsChoreOthers` from `config:recommended` to
+  match this repo's sentence-case commit style.
+- `timezone: "America/Chicago"` — anchors the weekly
+  `lockFileMaintenance` schedule inherited from
+  `:maintainLockFilesWeekly`.
+
+Plus a single `packageRules` entry to cap
+`renovatebot/pre-commit-hooks` updates at bi-monthly (`1,15`) — Renovate
+releases multiple times per week, so without throttling we'd get a
+hook-bump PR every few days. The rule clears `minimumReleaseAge` so the
+3-day quarantine doesn't push releases past the schedule window.
 
 ### Turbo cache miss on workspace edits
 

@@ -119,6 +119,25 @@ CD requires:
 - Repo variable `APP_ID` and repo secret `APP_PRIVATE_KEY` from the App
 - `@changesets/cli` as a devDependency
 
+## Renovate preset
+
+The repo publishes a shareable Renovate config as `default.json`.
+Extend it from a consuming repo's Renovate config
+(e.g., `.github/renovate.json`):
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>gtbuchanan/tooling"]
+}
+```
+
+This pulls in `config:recommended` plus a small set of repo-wide
+opinions: 3-day release-age quarantine, OSV vulnerability alerts,
+`pnpm dedupe` after updates, verified-commit platform API, pre-commit
+manager enabled, and `America/Chicago` timezone for the weekly
+lockfile maintenance schedule.
+
 ## Consumer setup
 
 Run `gtb sync` to generate `turbo.json`, tsconfigs, per-package scripts,
