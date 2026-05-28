@@ -3,9 +3,11 @@
 ## Prerequisites
 
 [mise] manages Node, pnpm, and prek for every contributor and CI.
-Run `mise install` to get the versions the repo pins. To bump a
-version: Node and prek live in `mise.toml`; pnpm lives in the
-`packageManager` field of `package.json`. `mise.lock` carries
+Run `mise install` to get the versions the repo pins. Node and prek
+versions live in `mise.toml`; pnpm's version lives in
+`package.json`'s `packageManager` field because turbo requires that
+field for workspace resolution (mise reads the version from there via
+`idiomatic_version_file_enable_tools`). `mise.lock` carries
 per-platform binary checksums for all three.
 
 Install mise:
@@ -15,20 +17,23 @@ Install mise:
 - **Linux** — `curl https://mise.run | sh`
 - **Termux/Android** — see [Termux/Android setup](#termuxandroid-setup)
 
-Then trust the workspace config and install the pinned tools:
+Then trust the workspace config and bootstrap:
 
 ```sh
 mise trust
 mise install
-pnpm install
+mise run bootstrap
 ```
 
 `mise install` reads `mise.toml` + `mise.lock` and verifies each
-downloaded binary against the recorded sha256. `[settings] lockfile =
-true` in `mise.toml` keeps the lockfile self-perpetuating: a local
-`mise.toml` edit re-runs through `mise install` and rewrites
-`mise.lock`. CI runs with `MISE_LOCKED=1` and fails loudly on any
-drift between the two files (analogous to pnpm's `--frozen-lockfile`).
+downloaded binary against the recorded sha256. `mise run bootstrap`
+then runs `pnpm install --frozen-lockfile` (and on Termux/Android,
+symlinks the pnpm shim into `node_modules/.bin`).
+`[settings] lockfile = true` in `mise.toml` keeps the lockfile
+self-perpetuating: a local `mise.toml` edit re-runs through `mise
+install` and rewrites `mise.lock`. CI runs with `MISE_LOCKED=1` and
+fails loudly on any drift between the two files (analogous to pnpm's
+`--frozen-lockfile`).
 
 Verify your setup with a full build:
 
@@ -58,11 +63,11 @@ All commands go through Turbo for caching:
 
 ## Pre-commit
 
-`pnpm install` installs [prek] hooks (via the `prepare` script) that
-verify changed files each time you commit. If the hooks find issues
-they autofix what they can and fail the commit — review the
-corrections, stage them, and try again. Commit often so issues stay
-small.
+`mise run bootstrap` installs [prek] hooks (via the `prepare` script
+that pnpm runs during install) that verify changed files each time
+you commit. If the hooks find issues they autofix what they can and
+fail the commit — review the corrections, stage them, and try again.
+Commit often so issues stay small.
 
 To run prek without committing:
 
