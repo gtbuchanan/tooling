@@ -13,6 +13,13 @@
   "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
+      "description": "Group playwright-cli monorepo",
+      "groupName": "playwright-cli monorepo",
+      "matchSourceUrls": [
+        "https://github.com/microsoft/playwright-cli"
+      ]
+    },
+    {
       "allowedVersions": "!/^0\\.180\\.0$/",
       "description": "Ignore microsoft/playwright-cli v0.180.0 mistag (release body says v0.0.62)",
       "matchDatasources": [
