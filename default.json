@@ -13,6 +13,16 @@
   "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
+      "allowedVersions": "!/^0\\.180\\.0$/",
+      "description": "Ignore microsoft/playwright-cli v0.180.0 mistag (release body says v0.0.62)",
+      "matchDatasources": [
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "microsoft/playwright-cli"
+      ]
+    },
+    {
       "description": "Restrict noisy pre-commit hook updates to bi-monthly",
       "matchSourceUrls": [
         "https://github.com/renovatebot/pre-commit-hooks"
