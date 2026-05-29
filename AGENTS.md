@@ -16,13 +16,15 @@ mise.toml              — Pin Node, pnpm, prek versions for local + CI
     pnpm-resolve-pinned/ — Composite action: resolve locked version without install
     pnpm-tasks/          — Composite action: cache pnpm store, install deps
     turbo-run/           — Composite action: run turbo task, skip install on cache hit
-  renovate.json        — Repo-local Renovate config (extends the shared preset)
+  dependency-review-config.yml — License allowlist for dependency-review.yml
+  renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
-    cd.yml               — Calls CI, then version + publish on main
-    changeset-check.yml  — Verify changeset exists on PR
-    ci.yml               — Build + slow + e2e + coverage (PR + reusable)
-    pre-commit.yml       — Run prek hooks on PR changed files
-    pre-commit-seed.yml  — Seed prek cache on push to main
+    cd.yml                 — Calls CI, then version + publish on main
+    changeset-check.yml    — Verify changeset exists on PR
+    ci.yml                 — Build + slow + e2e + coverage (PR + reusable)
+    dependency-review.yml  — Scan PR dep changes (vulns + licenses)
+    pre-commit.yml         — Run prek hooks on PR changed files
+    pre-commit-seed.yml    — Seed prek cache on push to main
 packages/
   cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
     skills/                     — Authored Agent Skills deployed by `gtb task deploy:skills`
@@ -124,6 +126,21 @@ backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
   (npm trusted publishing via OIDC). Publish uses `turbo-run` for pack.
 - **`changeset-check.yml`** — Verifies a changeset exists on every PR.
   Use `pnpm changeset --empty` for PRs that don't need a version bump.
+- **`dependency-review.yml`** — Two PR gates on newly-changed deps.
+  `review` runs `actions/dependency-review-action` (fails on
+  advisories at `fail-on-severity`, default `moderate`, and on
+  non-permissive licenses per `.github/dependency-review-config.yml`).
+  `version-check` fails if any newly-added dep isn't at its latest
+  version. Resolves the change set via GitHub's dep-graph compare
+  API; looks up latest via deps.dev (npm, pip, maven, nuget,
+  rubygems, go, cargo) or GitHub Releases (Actions). Consumer wrappers inherit the shared license
+  policy by default — the `config-file` input defaults to a remote
+  ref pointing at this repo's config. Posts a PR summary comment on
+  failure; caller must grant `pull-requests: write`. Both jobs
+  require GitHub's Dependency Graph enabled; coverage is limited to
+  ecosystems it indexes (npm + Actions here), so mise tools and
+  `.pre-commit-config.yaml` hooks aren't covered — Renovate's
+  managers handle those independently.
 - **`pre-commit.yml`** — Runs prek hooks against PR changed files.
 - **`pre-commit-seed.yml`** — Warms the prek hook environment cache so
   PR builds get cache hits.

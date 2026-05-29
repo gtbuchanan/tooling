@@ -34,13 +34,14 @@ jobs:
 Each workflow follows this same pattern — only the filename and trigger
 differ:
 
-| Workflow              | Trigger      | Description                              |
-| --------------------- | ------------ | ---------------------------------------- |
-| `ci.yml`              | PR           | Build + e2e + optional slow tests        |
-| `cd.yml`              | Push to main | CI + changesets version + publish (OIDC) |
-| `changeset-check.yml` | PR           | Verify changeset exists                  |
-| `pre-commit.yml`      | PR           | Run prek hooks on changed files          |
-| `pre-commit-seed.yml` | Push to main | Warm prek cache for PR builds            |
+| Workflow                | Trigger      | Description                              |
+| ----------------------- | ------------ | ---------------------------------------- |
+| `ci.yml`                | PR           | Build + e2e + optional slow tests        |
+| `cd.yml`                | Push to main | CI + changesets version + publish (OIDC) |
+| `changeset-check.yml`   | PR           | Verify changeset exists                  |
+| `dependency-review.yml` | PR           | Scan PR dep changes for vulns + licenses |
+| `pre-commit.yml`        | PR           | Run prek hooks on changed files          |
+| `pre-commit-seed.yml`   | Push to main | Warm prek cache for PR builds            |
 
 ### Coverage
 
@@ -79,6 +80,58 @@ and consumers can replace script values to customize individual tools.
 `ci.yml` also accepts workflow inputs (`run-e2e`, `run-slow-tests`) for
 toggling test tiers. See the [CLI package](packages/cli) for available
 commands.
+
+### Dependency review
+
+`dependency-review.yml` runs two PR-time gates on newly-changed
+dependencies:
+
+- **Review** —
+  [`actions/dependency-review-action`](https://github.com/actions/dependency-review-action)
+  fails on advisories at `moderate` severity or higher and on
+  non-permissive licenses per this repo's shared policy
+  (`.github/dependency-review-config.yml`). Consumer wrappers inherit
+  the shared policy automatically — the `config-file` input defaults
+  to a remote ref pointing at this repo's config.
+- **Version check** — fails if any newly-added dep isn't at its
+  latest version. Resolves the change set via GitHub's
+  dependency-graph compare API; looks up latest versions via deps.dev
+  (npm, pip, maven, nuget, rubygems, go, cargo) and GitHub Releases
+  (Actions). SHA-pinned Actions are accepted as intentional.
+
+Both jobs require GitHub's Dependency Graph to be enabled at
+_Settings → Code security and analysis_. Coverage is limited to
+ecosystems the dep graph indexes — for JS/TS projects, that's npm and
+GitHub Actions. mise tools and `.pre-commit-config.yaml` hooks aren't
+covered; Renovate's managers handle those independently on their
+normal cadence.
+
+A failure summary is posted as a PR comment, so callers must grant
+`pull-requests: write`:
+
+```yaml
+jobs:
+  dependency-review:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+```
+
+Override defaults — e.g. a repo-local license policy or a stricter
+severity threshold — via workflow inputs:
+
+```yaml
+jobs:
+  dependency-review:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+    with:
+      config-file: .github/dependency-review-config.yml
+      fail-on-severity: low
+```
 
 ### Build pipeline conventions
 
