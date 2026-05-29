@@ -15,7 +15,7 @@ jobs:
         with:
           task: build:ci
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: packages
           path: packages/*/dist/packages/npm/*.tgz
@@ -23,7 +23,7 @@ jobs:
       # When slow tests are enabled, merged coverage comes from the coverage job.
       # Otherwise, fast-only coverage is the final artifact.
       - if: inputs.run-slow-tests != true
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           if-no-files-found: error
           name: coverage
@@ -44,7 +44,7 @@ jobs:
 
       - uses: ./.github/actions/mise-setup
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: coverage
           path: packages
@@ -94,7 +94,7 @@ jobs:
         with:
           task: coverage:merge
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           if-no-files-found: error
           name: coverage
@@ -127,7 +127,7 @@ jobs:
         with:
           task: test:slow
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           if-no-files-found: error
           name: test-results-slow
