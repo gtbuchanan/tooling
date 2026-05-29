@@ -34,13 +34,14 @@ jobs:
 Each workflow follows this same pattern — only the filename and trigger
 differ:
 
-| Workflow              | Trigger      | Description                              |
-| --------------------- | ------------ | ---------------------------------------- |
-| `ci.yml`              | PR           | Build + e2e + optional slow tests        |
-| `cd.yml`              | Push to main | CI + changesets version + publish (OIDC) |
-| `changeset-check.yml` | PR           | Verify changeset exists                  |
-| `pre-commit.yml`      | PR           | Run prek hooks on changed files          |
-| `pre-commit-seed.yml` | Push to main | Warm prek cache for PR builds            |
+| Workflow                | Trigger      | Description                              |
+| ----------------------- | ------------ | ---------------------------------------- |
+| `ci.yml`                | PR           | Build + e2e + optional slow tests        |
+| `cd.yml`                | Push to main | CI + changesets version + publish (OIDC) |
+| `changeset-check.yml`   | PR           | Verify changeset exists                  |
+| `dependency-review.yml` | PR           | Scan PR dep changes for vulns + licenses |
+| `pre-commit.yml`        | PR           | Run prek hooks on changed files          |
+| `pre-commit-seed.yml`   | Push to main | Warm prek cache for PR builds            |
 
 ### Coverage
 
@@ -79,6 +80,43 @@ and consumers can replace script values to customize individual tools.
 `ci.yml` also accepts workflow inputs (`run-e2e`, `run-slow-tests`) for
 toggling test tiers. See the [CLI package](packages/cli) for available
 commands.
+
+### Dependency review
+
+`dependency-review.yml` scans PR dependency changes via
+[`actions/dependency-review-action`](https://github.com/actions/dependency-review-action).
+It fails on advisories at `moderate` severity or higher and on
+non-permissive licenses per this repo's shared policy
+(`.github/dependency-review-config.yml`). Consumer wrappers inherit
+the shared license policy automatically — the `config-file` input
+defaults to a remote ref pointing at this repo's config.
+
+A failure summary is posted as a PR comment, so callers must grant
+`pull-requests: write`:
+
+```yaml
+jobs:
+  dependency-review:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+```
+
+Override defaults — e.g. a repo-local license policy or a stricter
+severity threshold — via workflow inputs:
+
+```yaml
+jobs:
+  dependency-review:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+    with:
+      config-file: .github/dependency-review-config.yml
+      fail-on-severity: low
+```
 
 ### Build pipeline conventions
 

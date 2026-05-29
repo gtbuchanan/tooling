@@ -1,0 +1,51 @@
+---
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # workflow_call input defaults don't apply on pull_request
+      # events, so this repo's own PRs need explicit fallbacks.
+      - uses: actions/dependency-review-action@v5
+        with:
+          comment-summary-in-pr: ${{ inputs.comment-summary-in-pr || 'on-failure' }}
+          config-file: ${{ inputs.config-file || '.github/dependency-review-config.yml' }}
+          fail-on-severity: ${{ inputs.fail-on-severity || 'moderate' }}
+
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+    inputs:
+      comment-summary-in-pr:
+        default: on-failure
+        description: >-
+          When to post a PR summary comment
+          (always, never, on-failure).
+        type: string
+      config-file:
+        default: gtbuchanan/tooling/.github/dependency-review-config.yml@main
+        description: >-
+          Dependency-review config file. Either a path in
+          the calling repo or `<owner>/<repo>/<path>@<ref>`
+          for a remote file. Defaults to this repo's
+          shared license policy.
+        required: false
+        type: string
+      fail-on-severity:
+        default: moderate
+        description: >-
+          Minimum advisory severity that fails the check
+          (low, moderate, high, critical).
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write

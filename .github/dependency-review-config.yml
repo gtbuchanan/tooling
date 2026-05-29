@@ -1,0 +1,14 @@
+---
+# Permissive OSS licenses accepted for direct + transitive dependencies.
+# SPDX identifiers — see https://spdx.org/licenses/.
+# Add new entries with care; license terms vary materially.
+allow-licenses:
+  - 0BSD
+  - Apache-2.0
+  - BlueOak-1.0.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - CC0-1.0
+  - ISC
+  - MIT
+  - Unlicense
