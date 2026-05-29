@@ -24,7 +24,7 @@ jobs:
       # stale-path blobs the cache can never heal back (GH caches are
       # immutable).
       - id: prek-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: prek-${{ runner.os }}-${{ hashFiles('mise.lock') }}-${{ hashFiles('.pre-commit-config.yaml') }}
           path: ${{ env.PREK_HOME }}

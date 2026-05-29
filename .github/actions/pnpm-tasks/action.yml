@@ -14,7 +14,7 @@ runs:
 
     - id: pnpm-cache
       name: Restore pnpm store
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
         path: ${{ steps.pnpm-store.outputs.path }}
