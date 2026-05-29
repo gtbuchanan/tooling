@@ -20,7 +20,7 @@
       ]
     },
     {
-      "allowedVersions": "!/^0\\.180\\.0$/",
+      "allowedVersions": "!/^v?0\\.180\\.0$/",
       "description": "Ignore microsoft/playwright-cli v0.180.0 mistag (release body says v0.0.62)",
       "matchDatasources": [
         "github-releases"
