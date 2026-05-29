@@ -43,7 +43,7 @@ catalog:
   skills: 1.5.7
   skills-npm: 1.1.1
   turbo: ^2.5.4
-  typescript: ^5.9.3
+  typescript: ^6.0.0
   typescript-eslint: 8.60.0
   valibot: 1.4.1
   vitest: ^4.1.2
