@@ -9,7 +9,7 @@ jobs:
     name: Pre-Commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Shallow fetch of all branch tips so prek can diff against the base
       - name: Fetch branch refs for diff
