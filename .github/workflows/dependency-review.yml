@@ -17,6 +17,98 @@ jobs:
           config-file: ${{ inputs.config-file || '.github/dependency-review-config.yml' }}
           fail-on-severity: ${{ inputs.fail-on-severity || 'moderate' }}
 
+  version-check:
+    name: Version Check
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        name: Check newly-added deps are at latest version
+        run: |
+          set -euo pipefail
+
+          if [ -z "${BASE_SHA:-}" ] || [ -z "${HEAD_SHA:-}" ]; then
+            echo "::warning::No PR context; skipping version check."
+            exit 0
+          fi
+
+          added=$(gh api \
+            "/repos/${GITHUB_REPOSITORY}/dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}" \
+            --jq '[.[] | select(.change_type == "added")]')
+
+          count=$(jq 'length' <<<"$added")
+          if [ "$count" -eq 0 ]; then
+            echo "No new dependencies added."
+            exit 0
+          fi
+
+          echo "Checking $count newly-added dependencies..."
+
+          stale=0
+          while IFS=$'\t' read -r ecosystem name version; do
+            case "$ecosystem" in
+              actions)
+                # SHA pins are intentional immutable pinning.
+                if [[ "$version" =~ ^[a-f0-9]{40}$ ]]; then
+                  echo "OK  $ecosystem:$name@$version (SHA pin)"
+                  continue
+                fi
+                # Strip any sub-action path (actions/cache/save → actions/cache).
+                repo=$(awk -F/ '{print $1"/"$2}' <<<"$name")
+                latest=$(gh api "repos/${repo}/releases/latest" --jq '.tag_name' 2>/dev/null) || latest=""
+                ;;
+              npm|pip|maven|nuget|rubygems|go|cargo)
+                case "$ecosystem" in
+                  pip) system=pypi ;;
+                  *)   system=$ecosystem ;;
+                esac
+                encoded=$(jq -nr --arg n "$name" '$n | @uri')
+                latest=$(
+                  curl -sf "https://api.deps.dev/v3/systems/${system}/packages/${encoded}" \
+                    | jq -r '.versions | map(select(.isDefault == true)) | .[0].versionKey.version // empty'
+                ) || latest=""
+                ;;
+              *)
+                echo "::warning::Skipping $ecosystem:$name (unsupported ecosystem)"
+                continue
+                ;;
+            esac
+
+            if [ -z "$latest" ]; then
+              echo "::warning::Could not resolve latest version for $ecosystem:$name"
+              continue
+            fi
+
+            # GitHub's dep-graph normalizes major/minor tags to semver
+            # wildcards (e.g. `@v6` -> `6.*.*`, `@v6.0` -> `6.0.*`).
+            # Strip leading 'v' from latest, drop the wildcard suffix
+            # from pinned, and accept any latest that matches the
+            # constrained prefix.
+            norm_v=${version#v}
+            norm_l=${latest#v}
+            constrained=${norm_v%%[*]*}
+            constrained=${constrained%.}
+            if [ "$norm_v" = "$norm_l" ] \
+              || { [[ "$constrained" =~ ^[0-9]+(\.[0-9]+)*$ ]] \
+                   && { [ "$constrained" = "$norm_l" ] || [[ "$norm_l" == "$constrained".* ]]; }; }; then
+              echo "OK  $ecosystem:$name@$version (latest $latest)"
+            else
+              echo "::error title=Stale dependency::$ecosystem:$name pinned to $version, latest is $latest"
+              stale=$((stale + 1))
+            fi
+          done < <(jq -r '.[] | [.ecosystem, .name, .version] | @tsv' <<<"$added")
+
+          if [ "$stale" -gt 0 ]; then
+            echo
+            echo "::error::$stale newly-added dependencies are not at their latest version."
+            exit 1
+          fi
+        shell: bash
+
 name: Dependency Review
 
 on:
