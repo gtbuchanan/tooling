@@ -126,14 +126,21 @@ backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
   (npm trusted publishing via OIDC). Publish uses `turbo-run` for pack.
 - **`changeset-check.yml`** — Verifies a changeset exists on every PR.
   Use `pnpm changeset --empty` for PRs that don't need a version bump.
-- **`dependency-review.yml`** — Scans PR dep changes with
-  `actions/dependency-review-action`. Fails on advisories at
-  `fail-on-severity` (default `moderate`) and on non-permissive
-  licenses per `.github/dependency-review-config.yml`. Consumer
-  wrappers inherit the shared license policy by default — the
-  `config-file` input defaults to a remote ref pointing at this
-  repo's config. Posts a PR summary comment on failure; the caller
-  must grant `pull-requests: write`.
+- **`dependency-review.yml`** — Two PR gates on newly-changed deps.
+  `review` runs `actions/dependency-review-action` (fails on
+  advisories at `fail-on-severity`, default `moderate`, and on
+  non-permissive licenses per `.github/dependency-review-config.yml`).
+  `version-check` fails if any newly-added dep isn't at its latest
+  version. Resolves the change set via GitHub's dep-graph compare
+  API; looks up latest via deps.dev (npm, pip, maven, nuget,
+  rubygems, go, cargo) or GitHub Releases (Actions). Consumer wrappers inherit the shared license
+  policy by default — the `config-file` input defaults to a remote
+  ref pointing at this repo's config. Posts a PR summary comment on
+  failure; caller must grant `pull-requests: write`. Both jobs
+  require GitHub's Dependency Graph enabled; coverage is limited to
+  ecosystems it indexes (npm + Actions here), so mise tools and
+  `.pre-commit-config.yaml` hooks aren't covered — Renovate's
+  managers handle those independently.
 - **`pre-commit.yml`** — Runs prek hooks against PR changed files.
 - **`pre-commit-seed.yml`** — Warms the prek hook environment cache so
   PR builds get cache hits.

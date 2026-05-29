@@ -83,13 +83,28 @@ commands.
 
 ### Dependency review
 
-`dependency-review.yml` scans PR dependency changes via
-[`actions/dependency-review-action`](https://github.com/actions/dependency-review-action).
-It fails on advisories at `moderate` severity or higher and on
-non-permissive licenses per this repo's shared policy
-(`.github/dependency-review-config.yml`). Consumer wrappers inherit
-the shared license policy automatically — the `config-file` input
-defaults to a remote ref pointing at this repo's config.
+`dependency-review.yml` runs two PR-time gates on newly-changed
+dependencies:
+
+- **Review** —
+  [`actions/dependency-review-action`](https://github.com/actions/dependency-review-action)
+  fails on advisories at `moderate` severity or higher and on
+  non-permissive licenses per this repo's shared policy
+  (`.github/dependency-review-config.yml`). Consumer wrappers inherit
+  the shared policy automatically — the `config-file` input defaults
+  to a remote ref pointing at this repo's config.
+- **Version check** — fails if any newly-added dep isn't at its
+  latest version. Resolves the change set via GitHub's
+  dependency-graph compare API; looks up latest versions via deps.dev
+  (npm, pip, maven, nuget, rubygems, go, cargo) and GitHub Releases
+  (Actions). SHA-pinned Actions are accepted as intentional.
+
+Both jobs require GitHub's Dependency Graph to be enabled at
+_Settings → Code security and analysis_. Coverage is limited to
+ecosystems the dep graph indexes — for JS/TS projects, that's npm and
+GitHub Actions. mise tools and `.pre-commit-config.yaml` hooks aren't
+covered; Renovate's managers handle those independently on their
+normal cadence.
 
 A failure summary is posted as a PR comment, so callers must grant
 `pull-requests: write`:
