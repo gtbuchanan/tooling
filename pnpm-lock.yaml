@@ -23,7 +23,7 @@ catalogs:
       version: 10.4.0
     '@pnpm/lockfile.types':
       specifier: ^1100.0.5
-      version: 1100.0.7
+      version: 1100.0.8
     '@prettier/plugin-xml':
       specifier: ^3.4.2
       version: 3.4.2
@@ -165,7 +165,7 @@ importers:
         version: link:packages/vitest-config
       '@pnpm/lockfile.types':
         specifier: 'catalog:'
-        version: 1100.0.7
+        version: 1100.0.8
       '@tsconfig/strictest':
         specifier: 'catalog:'
         version: 2.0.8
@@ -881,20 +881,20 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@pnpm/lockfile.types@1100.0.7':
-    resolution: {integrity: sha512-IBaBsC4/zSLM105EBNvlHc4qXVBXgHz6L//+yi2EJDnnSYL8tp6SUn4ZR1RiZjNb7tF9x8UXwySsUqXJ4oWobA==}
+  '@pnpm/lockfile.types@1100.0.8':
+    resolution: {integrity: sha512-+3GLfWIGR6n/wNIivaLvFKpba/0VoT5EWD9u5kxRSeA+kk+y0QYxya/AzHAuveHcRkepQErJb973LtUSD3S6xw==}
     engines: {node: '>=22.13'}
 
   '@pnpm/patching.types@1100.0.0':
     resolution: {integrity: sha512-trrr0UIaIEIDagZhuxjO83z+/aCvyKib+g5zXQQ7d2H3bj8GN2sHPPi/5/i8C1eMiBGNZut/8cl8ipNRbFwIow==}
     engines: {node: '>=22.13'}
 
-  '@pnpm/resolving.resolver-base@1100.3.0':
-    resolution: {integrity: sha512-kHAf0nWq2hSHicdl6CxSJrGEOq1UM1ArggBUa78fmfztUJIvwUHMUDh+NLDXfU072WA5TkltfSBeWPkGi4qEAQ==}
+  '@pnpm/resolving.resolver-base@1100.3.1':
+    resolution: {integrity: sha512-Fx5F52+TiQ7KBuJWOvj47au5vFwQdx4SgKcuswKesSY8EUc1WOBTvva7q0ftWyL6v7hi9jS5HBBEnKO2szg3tA==}
     engines: {node: '>=22.13'}
 
-  '@pnpm/types@1101.1.1':
-    resolution: {integrity: sha512-uKcYehlSNA5OOHbWnuz0SAl/o/DKBkYqfDjD2FHJV59dP3xTPYR9J6XpZY4+ccKr1Tux2TomtrrPYbG5fXDQIw==}
+  '@pnpm/types@1101.2.0':
+    resolution: {integrity: sha512-SO7vq09NqSQZliBRcrhgfoWkCk3IocbthS6a+lvrcqSSWfttuzhypMGFfnZfmNcNr/BgwUL22oP+eyRM4NMOfw==}
     engines: {node: '>=22.13'}
 
   '@prettier/plugin-xml@3.4.2':
@@ -2660,8 +2660,8 @@ packages:
     resolution: {integrity: sha512-M/Q0B2cp4K7kynaT/vnED1j8TlLY+Pp7C6Wl2bl/7u/F0mUVwdyOpwomQb8JpYLitHUssAJRmLZdMCGsrx7i+g==}
     engines: {node: '>=18'}
 
-  tinyglobby@0.2.16:
-    resolution: {integrity: sha512-pn99VhoACYR8nFHhxqix+uvsbXineAasWm5ojXoN8xEwK5Kd3/TrhNn1wByuD52UxWRLy8pu+kRMniEi6Eq9Zg==}
+  tinyglobby@0.2.17:
+    resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
 
   tinypool@2.1.0:
@@ -3330,19 +3330,19 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
-  '@pnpm/lockfile.types@1100.0.7':
+  '@pnpm/lockfile.types@1100.0.8':
     dependencies:
       '@pnpm/patching.types': 1100.0.0
-      '@pnpm/resolving.resolver-base': 1100.3.0
-      '@pnpm/types': 1101.1.1
+      '@pnpm/resolving.resolver-base': 1100.3.1
+      '@pnpm/types': 1101.2.0
 
   '@pnpm/patching.types@1100.0.0': {}
 
-  '@pnpm/resolving.resolver-base@1100.3.0':
+  '@pnpm/resolving.resolver-base@1100.3.1':
     dependencies:
-      '@pnpm/types': 1101.1.1
+      '@pnpm/types': 1101.2.0
 
-  '@pnpm/types@1101.1.1': {}
+  '@pnpm/types@1101.2.0': {}
 
   '@prettier/plugin-xml@3.4.2(prettier@3.8.3)':
     dependencies:
@@ -3558,7 +3558,7 @@ snapshots:
       debug: 4.4.3
       minimatch: 10.2.5
       semver: 7.8.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       ts-api-utils: 2.5.0(typescript@6.0.3)
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -3998,7 +3998,7 @@ snapshots:
       jsonc-eslint-parser: 3.1.0
       pathe: 2.0.3
       pnpm-workspace-yaml: 1.6.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       yaml: 2.9.0
       yaml-eslint-parser: 2.0.0
 
@@ -5107,7 +5107,7 @@ snapshots:
       cac: 7.0.0
       gray-matter: 4.0.3
       picocolors: 1.1.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       unconfig: 7.5.0
       xdg-basedir: 5.1.0
       yaml: 2.9.0
@@ -5128,7 +5128,7 @@ snapshots:
       is-plain-obj: 4.1.0
       semver: 7.8.1
       sort-object-keys: 2.1.0
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
 
   source-map-js@1.2.1: {}
 
@@ -5191,7 +5191,7 @@ snapshots:
 
   tinyexec@1.2.2: {}
 
-  tinyglobby@0.2.16:
+  tinyglobby@0.2.17:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
@@ -5337,7 +5337,7 @@ snapshots:
       picomatch: 4.0.4
       postcss: 8.5.15
       rolldown: 1.0.0-rc.12(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 25.9.1
       fsevents: 2.3.3
@@ -5365,7 +5365,7 @@ snapshots:
       std-env: 4.1.0
       tinybench: 2.9.0
       tinyexec: 1.2.2
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
       vite: 8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.1)(jiti@2.7.0)(yaml@2.9.0)
       why-is-node-running: 2.3.0
