@@ -9,13 +9,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # workflow_call input defaults don't apply on pull_request
-      # events, so this repo's own PRs need explicit fallbacks.
       - uses: actions/dependency-review-action@v5
         with:
-          comment-summary-in-pr: ${{ inputs.comment-summary-in-pr || 'on-failure' }}
-          config-file: ${{ inputs.config-file || '.github/dependency-review-config.yml' }}
-          fail-on-severity: ${{ inputs.fail-on-severity || 'moderate' }}
+          comment-summary-in-pr: ${{ inputs.comment-summary-in-pr }}
+          config-file: ${{ inputs.config-file }}
+          fail-on-severity: ${{ inputs.fail-on-severity }}
 
   version-check:
     name: Version Check
@@ -112,8 +110,6 @@ jobs:
 name: Dependency Review
 
 on:
-  pull_request:
-    branches: [main]
   workflow_call:
     inputs:
       comment-summary-in-pr:

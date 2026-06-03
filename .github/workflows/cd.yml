@@ -3,12 +3,6 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  ci:
-    name: CI
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-    uses: ./.github/workflows/ci.yml
-
   # Requires npm trusted publishing (OIDC) configured for each package.
   publish:
     environment: release
@@ -35,7 +29,6 @@ jobs:
 
   version:
     name: Version
-    needs: ci
     outputs:
       changesets-version: ${{ steps.changesets.outputs.version }}
       hasChangesets: ${{ steps.changesets-action.outputs.hasChangesets }}
@@ -68,15 +61,19 @@ jobs:
 
 name: CD
 
+# Reusable: changesets version + npm publish (OIDC) — the deploy phase.
+# Run by the Release pipeline (release.yml) as its `CD` job after CI
+# passes. The publish job's `release` environment and OIDC token resolve
+# in the caller's repo, so the caller must grant `contents: write` +
+# `id-token: write` and define a `release` environment.
 on:
-  push:
-    branches: [main]
   workflow_call:
     secrets:
-      CODECOV_TOKEN:
+      APP_PRIVATE_KEY:
         description: >-
-          Codecov upload token (required for private repos,
-          optional for public)
+          GitHub App private key for opening the changesets
+          release PR (paired with the APP_ID repository
+          variable).
         required: false
 
 permissions:

@@ -19,12 +19,14 @@ mise.toml              — Pin Node, pnpm, prek versions for local + CI
   dependency-review-config.yml — License allowlist for dependency-review.yml
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
-    cd.yml                 — Calls CI, then version + publish on main
-    changeset-check.yml    — Verify changeset exists on PR
-    ci.yml                 — Build + slow + e2e + coverage (PR + reusable)
-    dependency-review.yml  — Scan PR dep changes (vulns + licenses)
-    pre-commit.yml         — Run prek hooks on PR changed files
-    pre-commit-seed.yml    — Seed prek cache on push to main
+    cd.yml                 — Reusable: changesets version + publish (OIDC)
+    changeset-check.yml    — Reusable: verify a changeset exists
+    ci.yml                 — Reusable: build + slow + e2e + coverage
+    dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
+    pr.yml                 — Pipeline (PR): ci + changeset + deps + pre-commit
+    pre-commit-seed.yml    — Reusable: seed prek cache
+    pre-commit.yml         — Reusable: run prek hooks
+    release.yml            — Pipeline (push): CI gate + CD + pre-commit seed
 packages/
   cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
     skills/                     — Authored Agent Skills deployed by `gtb task deploy:skills`
@@ -93,28 +95,94 @@ coverage, setupFiles, and mock reset.
 
 ### CI/CD workflows
 
-All workflows are reusable via `workflow_call` and run directly in this
-repo. Consuming repos call them with thin wrappers:
+Two **pipeline** workflows own this repo's triggers and define the work
+as peer jobs, each calling a single-concern **reusable** workflow:
+
+- **`pr.yml`** (on `pull_request`) — jobs `CI`, `Changeset`,
+  `Dependencies`, `Pre-Commit`.
+- **`release.yml`** (on `push` to main) — jobs `CI` (gate), `CD`
+  (`needs: ci`), `Pre-Commit`. `CI` and `CD` are peers.
+
+The reusables (`workflow_call`-only): `ci.yml`, `cd.yml`,
+`changeset-check.yml`, `dependency-review.yml`, `pre-commit.yml`,
+`pre-commit-seed.yml`. Consumers copy `pr.yml` / `release.yml`,
+swapping `./` for `gtbuchanan/tooling/.github/workflows/<name>@main`:
 
 ```yaml
-# Example: consuming-repo/.github/workflows/cd.yml
+# consumer/.github/workflows/pr.yml
+name: PR
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+  pull-requests: write # Dependencies posts a PR comment
+jobs:
+  ci:
+    name: CI
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
+    secrets: inherit
+  changeset:
+    name: Changeset
+    uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@main
+  dependencies:
+    name: Dependencies
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+  pre-commit:
+    name: Pre-Commit
+    uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@main
+```
+
+```yaml
+# consumer/.github/workflows/release.yml
+name: Release
 on:
   push:
     branches: [main]
+permissions:
+  contents: read
 jobs:
+  ci:
+    name: CI
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
+    secrets: inherit
   cd:
+    name: CD
+    needs: ci
+    permissions:
+      contents: write # changesets tags/PR
+      id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
+    secrets: inherit
+  pre-commit:
+    name: Pre-Commit
+    uses: gtbuchanan/tooling/.github/workflows/pre-commit-seed.yml@main
 ```
+
+**Naming / required checks.** Branch protection keys on the **leaf job
+name** (e.g. `Build`, `E2E Test`, `Pre-Commit Run`, `Dependency Review`),
+not the workflow or the calling job — so leaf names must stay
+descriptive and unique, and the pipeline job names (`CI`, `CD`,
+`Dependencies`, ...) are just Checks-tab grouping. This is why
+`dependency-review.yml` keeps `Dependency Review` / `Version Check`
+rather than shortening them.
+
+**Why the reusables are `workflow_call`-only.** A workflow that fires
+on both a direct trigger and `workflow_call` gets an empty `inputs`
+context on the direct-trigger path (defaults don't apply), which forces
+per-file workarounds. Keeping the triggers in the `pr.yml` /
+`release.yml` pipelines and the logic in call-only reusables means every
+reusable is always reached via `workflow_call`, so `inputs` always
+populates. Permissions narrow down the call chain but never elevate, so
+the pipeline grants the superset its jobs need (`pull-requests: write`
+for Dependencies; `contents: write` + `id-token: write` for CD).
 
 Every job that needs Node, pnpm, or prek prepends `mise-setup`, which
 installs the exact versions pinned in `mise.toml` / `mise.lock`. Tool
 caching is owned by `mise-setup` (mise data dir) and `pnpm-tasks`
 (pnpm store) separately so a single-tool bump in `mise.lock` only
-re-downloads the changed binary.
-
-Repo-specific behavior is customized through `package.json` scripts
-backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
-(`run-e2e`, `run-slow-tests`) for toggling test tiers.
+re-downloads the changed binary. Repo-specific behavior is customized
+through `package.json` scripts backed by `gtb` leaf commands.
 
 - **`ci.yml`** — Build, slow tests, e2e tests, and coverage merging.
   All jobs use `turbo-run` to skip `pnpm install` on full cache hits.
@@ -122,20 +190,21 @@ backed by `gtb` leaf commands. `ci.yml` also accepts workflow inputs
   Uploads artifacts: `packages` (e2e tarballs) and `coverage` (final
   report). When `run-slow-tests` is enabled, fast and slow coverage are
   merged in a separate `coverage` job.
-- **`cd.yml`** — Calls CI, then runs version (changesets) and publish
-  (npm trusted publishing via OIDC). Publish uses `turbo-run` for pack.
+- **`cd.yml`** — The deploy phase: `version` (changesets) then `publish`
+  (npm trusted publishing via OIDC, `release` environment). Run by
+  `release.yml` as its `CD` job after CI passes.
 - **`changeset-check.yml`** — Verifies a changeset exists on every PR.
   Use `pnpm changeset --empty` for PRs that don't need a version bump.
 - **`dependency-review.yml`** — Two PR gates on newly-changed deps.
-  `review` runs `actions/dependency-review-action` (fails on
+  `Dependency Review` runs `actions/dependency-review-action` (fails on
   advisories at `fail-on-severity`, default `moderate`, and on
   non-permissive licenses per `.github/dependency-review-config.yml`).
-  `version-check` fails if any newly-added dep isn't at its latest
+  `Version Check` fails if any newly-added dep isn't at its latest
   version. Resolves the change set via GitHub's dep-graph compare
   API; looks up latest via deps.dev (npm, pip, maven, nuget,
-  rubygems, go, cargo) or GitHub Releases (Actions). Consumer wrappers inherit the shared license
-  policy by default — the `config-file` input defaults to a remote
-  ref pointing at this repo's config. Posts a PR summary comment on
+  rubygems, go, cargo) or GitHub Releases (Actions). The `config-file`
+  input defaults to a remote ref pointing at this repo's shared license
+  policy, so consumers inherit it. Posts a PR summary comment on
   failure; caller must grant `pull-requests: write`. Both jobs
   require GitHub's Dependency Graph enabled; coverage is limited to
   ecosystems it indexes (npm + Actions here), so mise tools and
