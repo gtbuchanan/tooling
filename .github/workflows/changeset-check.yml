@@ -5,7 +5,7 @@ env:
 jobs:
   check:
     if: github.head_ref != 'changeset-release/main'
-    name: Changeset
+    name: Changeset Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -25,8 +25,6 @@ jobs:
 name: Changeset
 
 on:
-  pull_request:
-    branches: [main]
   workflow_call: {}
 
 permissions:

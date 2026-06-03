@@ -36,7 +36,7 @@ jobs:
       && needs.build.result == 'success'
       && (needs.coverage.result == 'success'
       || needs.coverage.result == 'skipped')
-    name: Codecov
+    name: Codecov Upload
     needs: [build, coverage]
     runs-on: ubuntu-latest
     steps:
@@ -82,7 +82,7 @@ jobs:
 
   coverage:
     if: inputs.run-slow-tests == true
-    name: Coverage
+    name: Coverage Merge
     needs: [build, slow-tests]
     runs-on: ubuntu-latest
     steps:
@@ -101,7 +101,7 @@ jobs:
           path: packages/*/dist/coverage/vitest/merged/
 
   e2e:
-    if: inputs.run-e2e == '' || inputs.run-e2e == true
+    if: inputs.run-e2e == true
     name: E2E Test
     needs: build
     runs-on: ubuntu-latest
@@ -136,8 +136,6 @@ jobs:
 name: CI
 
 on:
-  pull_request:
-    branches: [main]
   workflow_call:
     inputs:
       run-e2e:

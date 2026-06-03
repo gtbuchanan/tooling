@@ -1,0 +1,38 @@
+---
+jobs:
+  changeset:
+    name: Changeset
+    uses: ./.github/workflows/changeset-check.yml
+
+  ci:
+    name: CI
+    secrets: inherit
+    uses: ./.github/workflows/ci.yml
+
+  dependencies:
+    name: Dependencies
+    uses: ./.github/workflows/dependency-review.yml
+    # Test this PR's own copy of the license policy rather than the
+    # remote @main default the base ships to consumers.
+    with:
+      config-file: .github/dependency-review-config.yml
+
+  pre-commit:
+    name: Pre-Commit
+    uses: ./.github/workflows/pre-commit.yml
+
+name: PR
+
+# The pull-request pipeline. Each job is a CI check group calling a
+# reusable base directly (one nesting level). Job names here are just
+# the Checks-tab grouping; the required-check identifiers are the base
+# leaf jobs (Build, E2E Test, Dependency Review, ...). Consumers copy
+# this file, swapping `./` for
+# `gtbuchanan/tooling/.github/workflows/<name>@main`.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
