@@ -1,4 +1,20 @@
 ---
+allow-dependencies-licenses:
+  # lightningcss MPL-2.0 (dev-only build tool): excluded by name rather
+  # than allow-listing MPL globally, so future MPL deps still get gated.
+  # All platform binaries enumerated (no wildcard support).
+  - pkg:npm/lightningcss
+  - pkg:npm/lightningcss-android-arm64
+  - pkg:npm/lightningcss-darwin-arm64
+  - pkg:npm/lightningcss-darwin-x64
+  - pkg:npm/lightningcss-freebsd-x64
+  - pkg:npm/lightningcss-linux-arm-gnueabihf
+  - pkg:npm/lightningcss-linux-arm64-gnu
+  - pkg:npm/lightningcss-linux-arm64-musl
+  - pkg:npm/lightningcss-linux-x64-gnu
+  - pkg:npm/lightningcss-linux-x64-musl
+  - pkg:npm/lightningcss-win32-arm64-msvc
+  - pkg:npm/lightningcss-win32-x64-msvc
 # Permissive OSS licenses accepted for direct + transitive dependencies.
 # SPDX identifiers — see https://spdx.org/licenses/.
 # Add new entries with care; license terms vary materially.
@@ -8,7 +24,12 @@ allow-licenses:
   - BlueOak-1.0.0
   - BSD-2-Clause
   - BSD-3-Clause
+  # Attribution-only data licenses (no copyleft, no share-alike).
+  - CC-BY-3.0
+  - CC-BY-4.0
   - CC0-1.0
   - ISC
   - MIT
+  # BSD-class permissive (CPython's license).
+  - Python-2.0
   - Unlicense
