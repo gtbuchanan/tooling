@@ -9,9 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - uses: ./.github/actions/turbo-run
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
         with:
           task: build:ci
 
@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
       - uses: actions/download-artifact@v8
         with:
@@ -63,7 +63,7 @@ jobs:
 
       - env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        uses: ./.github/actions/turbo-run
+        uses: gtbuchanan/tooling/.github/actions/turbo-run@main
         with:
           task: coverage:codecov:upload
 
@@ -73,9 +73,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - uses: ./.github/actions/pnpm-tasks
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       - name: Check config drift
         run: pnpm verify
@@ -88,9 +88,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - uses: ./.github/actions/turbo-run
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
         with:
           task: coverage:merge
 
@@ -108,9 +108,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - uses: ./.github/actions/turbo-run
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
         with:
           task: test:e2e
 
@@ -121,9 +121,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - uses: ./.github/actions/turbo-run
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
         with:
           task: test:slow
 

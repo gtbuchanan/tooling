@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
       # mise.lock is in the cache key because prek bakes absolute Node
       # binary paths into its cached hook environments (j178/prek#1993);

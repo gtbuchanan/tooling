@@ -12,10 +12,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
       - id: changesets
-        uses: ./.github/actions/pnpm-resolve-pinned
+        uses: gtbuchanan/tooling/.github/actions/pnpm-resolve-pinned@main
         with:
           package: '@changesets/cli'
 
