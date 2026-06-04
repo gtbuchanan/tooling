@@ -17,7 +17,11 @@ jobs:
 
       - uses: ./.github/actions/mise-setup
 
-      - uses: ./.github/actions/pnpm-tasks
+      # The local eslint hook is `language: system` (entry `pnpm exec
+      # eslint`), so it needs node_modules. Node-free consumers set
+      # `use-pnpm: false` to skip this and run prek (from mise) alone.
+      - if: inputs.use-pnpm
+        uses: ./.github/actions/pnpm-tasks
 
       # mise.lock is in the cache key because prek bakes absolute Node
       # binary paths into its cached hook environments (j178/prek#1993);
@@ -37,7 +41,7 @@ jobs:
 
       - name: Run pre-commit hooks
         run: |
-          pnpm exec prek run \
+          prek run \
             --color=always \
             --show-diff-on-failure \
             --verbose \
@@ -46,12 +50,20 @@ jobs:
 
       - if: steps.prek-cache.outputs.cache-hit != 'true'
         name: Prune stale environments
-        run: pnpm exec prek cache gc
+        run: prek cache gc
 
 name: Pre-Commit
 
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      use-pnpm:
+        default: false
+        description: >-
+          Run `pnpm install` so prek hooks that shell out to the
+          project's pnpm deps (e.g. a `language: system` eslint hook)
+          can resolve them. Leave false when no hook needs them.
+        type: boolean
 
 permissions:
   contents: read

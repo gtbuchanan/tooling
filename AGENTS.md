@@ -210,9 +210,14 @@ through `package.json` scripts backed by `gtb` leaf commands.
   ecosystems it indexes (npm + Actions here), so mise tools and
   `.pre-commit-config.yaml` hooks aren't covered — Renovate's
   managers handle those independently.
-- **`pre-commit.yml`** — Runs prek hooks against PR changed files.
-- **`pre-commit-seed.yml`** — Warms the prek hook environment cache so
-  PR builds get cache hits.
+- **`pre-commit.yml`** — Runs prek hooks against PR changed files via
+  bare `prek` (resolved from mise, no pnpm needed to invoke it). The
+  `use-pnpm` input (default `false`) opts into `pnpm install` for hooks
+  that shell out to the project's deps — this repo's `language: system`
+  eslint hook sets it `true`; everything else runs prek alone.
+- **`pre-commit-seed.yml`** — Warms the prek hook environment cache on
+  push so PR builds get cache hits. Uses only mise + bare prek
+  (`prepare-hooks`); each hook's env is isolated, so no `pnpm install`.
 
 Composite actions:
 
