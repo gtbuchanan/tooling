@@ -163,6 +163,24 @@ describe('coverage:codecov:upload', () => {
     expect(getRunArgs()).toContain(sha);
   });
 
+  it('falls back to GITHUB_SHA when the event payload is unreadable', async ({
+    expect,
+  }) => {
+    vi.stubEnv('CI', 'true');
+    vi.stubEnv('GITHUB_EVENT_PATH', '/ci/event.json');
+    const sha = faker.git.commitSha();
+    vi.stubEnv('GITHUB_SHA', sha);
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('boom');
+    });
+
+    await invoke([]);
+
+    expect(getRunArgs()).toContain('-C');
+    expect(getRunArgs()).toContain(sha);
+  });
+
   it('omits -C when no commit sha is resolvable', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
     vi.stubEnv('GITHUB_EVENT_PATH', '');
