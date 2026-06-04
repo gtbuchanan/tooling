@@ -1,10 +1,22 @@
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
 import { runCommand } from 'citty';
 import { describe, it, vi } from 'vitest';
 
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
-  return { ...actual, existsSync: vi.fn<typeof actual.existsSync>(() => false) };
+  return {
+    ...actual,
+    existsSync: vi.fn<typeof actual.existsSync>(() => false),
+    mkdirSync: vi.fn<typeof actual.mkdirSync>(),
+    /*
+     * `typeof readFileSync` is too wide for one of its overloads under
+     * the strict typed factory; `() => never` is assignable to every
+     * overload. The real return is supplied per-test via mockReturnValue.
+     */
+    readFileSync: vi.fn<() => never>(),
+    writeFileSync: vi.fn<typeof actual.writeFileSync>(),
+  };
 });
 
 vi.mock(import('find-up-simple'), () => ({
@@ -16,13 +28,14 @@ vi.mock(import('#src/lib/process.js'), async (importOriginal) => {
   return { ...actual, run: vi.fn<typeof actual.run>() };
 });
 
-const { existsSync } = await import('node:fs');
+const { existsSync, readFileSync } = await import('node:fs');
 const { run } = await import('#src/lib/process.js');
 const { coverageCodecovUpload } = await import(
   '#src/commands/task/coverage-codecov-upload.js',
 );
 
 const mockExistsSync = vi.mocked(existsSync);
+const mockReadFileSync = vi.mocked(readFileSync);
 const mockRun = vi.mocked(run);
 
 const getRunArgs = (): readonly string[] => {
@@ -119,5 +132,45 @@ describe('coverage:codecov:upload', () => {
 
     expect(getRunArgs()).toContain('--verbose');
     expect(getRunArgs()).toContain('--dry-run');
+  });
+
+  it('passes the PR head sha from the event payload', async ({ expect }) => {
+    vi.stubEnv('CI', 'true');
+    vi.stubEnv('GITHUB_EVENT_PATH', '/ci/event.json');
+    const headSha = faker.git.commitSha();
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(
+      JSON.stringify({ pull_request: { head: { sha: headSha } } }),
+    );
+
+    await invoke([]);
+
+    expect(getRunArgs()).toContain('-C');
+    expect(getRunArgs()).toContain(headSha);
+  });
+
+  it('falls back to GITHUB_SHA when not a pull request', async ({ expect }) => {
+    vi.stubEnv('CI', 'true');
+    vi.stubEnv('GITHUB_EVENT_PATH', '/ci/event.json');
+    const sha = faker.git.commitSha();
+    vi.stubEnv('GITHUB_SHA', sha);
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify({ ref: 'refs/heads/main' }));
+
+    await invoke([]);
+
+    expect(getRunArgs()).toContain('-C');
+    expect(getRunArgs()).toContain(sha);
+  });
+
+  it('omits -C when no commit sha is resolvable', async ({ expect }) => {
+    vi.stubEnv('CI', 'true');
+    vi.stubEnv('GITHUB_EVENT_PATH', '');
+    vi.stubEnv('GITHUB_SHA', '');
+    mockExistsSync.mockReturnValue(true);
+
+    await invoke([]);
+
+    expect(getRunArgs()).not.toContain('-C');
   });
 });
