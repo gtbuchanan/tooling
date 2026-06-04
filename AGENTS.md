@@ -177,6 +177,23 @@ populates. Permissions narrow down the call chain but never elevate, so
 the pipeline grants the superset its jobs need (`pull-requests: write`
 for Dependencies; `contents: write` + `id-token: write` for CD).
 
+**Why the reusables reference actions by full path, not `./`.** Every
+`uses:` for an in-repo composite action is written
+`gtbuchanan/tooling/.github/actions/<name>@main`, never
+`./.github/actions/<name>`. A relative `./` action ref resolves against
+`GITHUB_WORKSPACE` — the **caller's** checkout — not the repo that owns
+the workflow. It works when tooling calls its own reusables (the
+workspace _is_ tooling) but 404s for every external consumer, since
+their checkout has no `.github/actions/`. The same trap applies one
+level deeper: a `./` ref _inside_ a composite action also resolves to
+`GITHUB_WORKSPACE` (actions/runner#1348), so `turbo-run` references
+`pnpm-resolve-pinned` / `pnpm-tasks` by full path too. The cost is that
+tooling's own PRs exercise the `@main` action, not the PR's edited copy
+— action changes aren't self-tested until merged. There is no clean
+dynamic alternative (`uses:` can't interpolate a ref; GitHub's
+same-SHA `$/` syntax isn't GA). Do **not** "simplify" these back to
+`./`.
+
 Every job that needs Node, pnpm, or prek prepends `mise-setup`, which
 installs the exact versions pinned in `mise.toml` / `mise.lock`. Tool
 caching is owned by `mise-setup` (mise data dir) and `pnpm-tasks`

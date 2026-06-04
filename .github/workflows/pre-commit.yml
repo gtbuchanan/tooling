@@ -15,13 +15,13 @@ jobs:
       - name: Fetch branch refs for diff
         run: git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
-      - uses: ./.github/actions/mise-setup
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
       # The local eslint hook is `language: system` (entry `pnpm exec
       # eslint`), so it needs node_modules. Node-free consumers set
       # `use-pnpm: false` to skip this and run prek (from mise) alone.
       - if: inputs.use-pnpm
-        uses: ./.github/actions/pnpm-tasks
+        uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       # mise.lock is in the cache key because prek bakes absolute Node
       # binary paths into its cached hook environments (j178/prek#1993);
