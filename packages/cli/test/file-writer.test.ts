@@ -190,6 +190,7 @@ describe.concurrent(sortKeysDeep, () => {
 
 describe.concurrent(mergeCodecovSections, () => {
   const sections = {
+    codecov: { require_ci_to_pass: false },
     component_management: {
       individual_components: [
         { component_id: 'app', name: 'app', paths: ['packages/app/src/**'] },
@@ -198,7 +199,7 @@ describe.concurrent(mergeCodecovSections, () => {
     flags: {
       app: { carryforward: true, paths: ['packages/app/'] },
     },
-  };
+  } as const;
 
   it('throws on malformed YAML in existing file', ({ expect }) => {
     const dir = createTempDir();
@@ -240,13 +241,27 @@ describe.concurrent(mergeCodecovSections, () => {
   it('preserves user-configured keys', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'codecov.yml');
-    writeFileSync(filePath, 'codecov:\n  require_ci_to_pass: true\nflags: {}\n');
+    writeFileSync(filePath, "comment:\n  layout: 'condensed_header'\nflags: {}\n");
 
     mergeCodecovSections(filePath, sections);
 
     const parsed: unknown = parseYaml(readFileSync(filePath, 'utf8'));
 
-    expect(parsed).toHaveProperty('codecov');
+    expect(parsed).toHaveProperty('comment.layout', 'condensed_header');
+  });
+
+  it('forces codecov.require_ci_to_pass false, overwriting user value', ({ expect }) => {
+    const dir = createTempDir();
+    const filePath = path.join(dir, 'codecov.yml');
+    writeFileSync(filePath, 'codecov:\n  require_ci_to_pass: true\n  max_report_age: 24\n');
+
+    mergeCodecovSections(filePath, sections);
+
+    const parsed: unknown = parseYaml(readFileSync(filePath, 'utf8'));
+
+    expect(parsed).toHaveProperty('codecov.require_ci_to_pass', false);
+    // Other codecov.* subkeys are preserved.
+    expect(parsed).toHaveProperty('codecov.max_report_age', 24);
   });
 
   it('sorts keys and uses single quotes', ({ expect }) => {

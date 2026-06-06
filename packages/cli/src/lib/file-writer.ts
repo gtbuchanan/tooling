@@ -100,15 +100,17 @@ export const writeYamlFile = (path: string, data: unknown): void => {
 
 const ExistingCodecovSchema = v.nullable(
   v.looseObject({
+    codecov: v.optional(v.nullable(v.looseObject({}))),
     component_management: v.optional(v.nullable(v.looseObject({}))),
   }),
 );
 
 /**
  * Merges generated codecov sections into a `codecov.yml` file.
- * Overwrites `flags` and `component_management.individual_components`
+ * Overwrites `flags`, `component_management.individual_components`, and the
+ * tooling-owned top-level `codecov` settings (e.g. `require_ci_to_pass`)
  * with the generated values. Preserves all other keys, including
- * `component_management.default_rules`.
+ * `component_management.default_rules` and any other `codecov.*` subkeys.
  * Creates the file if it does not exist.
  * Throws if the existing file contains invalid YAML.
  */
@@ -122,10 +124,15 @@ export const mergeCodecovSections = (path: string, sections: CodecovSections): v
     }
   }
   const existing = v.parse(v.optional(ExistingCodecovSchema), rawYaml) ?? {};
+  const existingCodecov = existing.codecov ?? {};
   const existingComponentMgmt = existing.component_management ?? {};
 
   const merged = {
     ...existing,
+    codecov: {
+      ...existingCodecov,
+      ...sections.codecov,
+    },
     component_management: {
       ...existingComponentMgmt,
       individual_components: sections.component_management.individual_components,

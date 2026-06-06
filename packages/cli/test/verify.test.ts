@@ -197,12 +197,29 @@ describe.concurrent(runVerify, () => {
     initProject(root);
     writeFileSync(
       path.join(root, 'codecov.yml'),
+      'codecov:\n  require_ci_to_pass: false\n' +
       'flags: {}\ncomponent_management:\n  individual_components: []\n',
     );
 
     const drift = runVerify({ cwd: root, ignored: new Set([app.basename]) });
 
     expect(drift).toHaveLength(0);
+  });
+
+  it('reports drift when codecov.require_ci_to_pass is true', ({ expect }) => {
+    const { app, root } = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      path.join(root, 'codecov.yml'),
+      'codecov:\n  require_ci_to_pass: true\n' +
+      'flags: {}\ncomponent_management:\n  individual_components: []\n',
+    );
+
+    const drift = runVerify({ cwd: root, ignored: new Set([app.basename]) });
+
+    expect(drift).toStrictEqual([
+      'codecov.yml: codecov.require_ci_to_pass must be false (run gtb sync)',
+    ]);
   });
 });
 
