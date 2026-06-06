@@ -87,6 +87,9 @@ catalogs:
     eslint-plugin-regexp:
       specifier: 3.1.0
       version: 3.1.0
+    eslint-plugin-toml:
+      specifier: 1.4.0
+      version: 1.4.0
     eslint-plugin-unicorn:
       specifier: ^64.0.0
       version: 64.0.0
@@ -117,6 +120,9 @@ catalogs:
     prettier-plugin-sort-json:
       specifier: 4.2.0
       version: 4.2.0
+    prettier-plugin-toml:
+      specifier: 2.0.6
+      version: 2.0.6
     skills:
       specifier: 1.5.10
       version: 1.5.10
@@ -318,6 +324,9 @@ importers:
       eslint-plugin-regexp:
         specifier: 'catalog:'
         version: 3.1.0(eslint@10.4.1(jiti@2.7.0))
+      eslint-plugin-toml:
+        specifier: 'catalog:'
+        version: 1.4.0(eslint@10.4.1(jiti@2.7.0))
       eslint-plugin-unicorn:
         specifier: 'catalog:'
         version: 64.0.0(eslint@10.4.1(jiti@2.7.0))
@@ -339,6 +348,9 @@ importers:
       prettier-plugin-sort-json:
         specifier: 'catalog:'
         version: 4.2.0(prettier@3.8.3)
+      prettier-plugin-toml:
+        specifier: 'catalog:'
+        version: 2.0.6(prettier@3.8.3)
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.60.1(eslint@10.4.1(jiti@2.7.0))(typescript@6.0.3)
@@ -1012,6 +1024,12 @@ packages:
     peerDependencies:
       eslint: ^9.0.0 || ^10.0.0
 
+  '@taplo/core@0.2.0':
+    resolution: {integrity: sha512-r8bl54Zj1In3QLkiW/ex694bVzpPJ9EhwqT9xkcUVODnVUGirdB1JTsmiIv0o1uwqZiwhi8xNnTOQBRQCpizrQ==}
+
+  '@taplo/lib@0.5.0':
+    resolution: {integrity: sha512-+xIqpQXJco3T+VGaTTwmhxLa51qpkQxCjRwezjFZgr+l21ExlywJFcDfTrNmL6lG6tqb0h8GyJKO3UPGPtSCWg==}
+
   '@tsconfig/strictest@2.0.8':
     resolution: {integrity: sha512-XnQ7vNz5HRN0r88GYf1J9JJjqtZPiHt2woGJOo2dYqyHGGcd6OLGqSlBB6p1j9mpzja6Oe5BoPqWmeDx6X9rLw==}
 
@@ -1649,6 +1667,12 @@ packages:
 
   eslint-plugin-regexp@3.1.0:
     resolution: {integrity: sha512-qGXIC3DIKZHcK1H9A9+Byz9gmndY6TTSRkSMTZpNXdyCw2ObSehRgccJv35n9AdUakEjQp5VFNLas6BMXizCZg==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+    peerDependencies:
+      eslint: '>=9.38.0'
+
+  eslint-plugin-toml@1.4.0:
+    resolution: {integrity: sha512-3ErTnfUjXq/23f72XeyRcE0Y4Sd/ME1lsZeezczqpn2R4tE7+Sgco/NUKDXm0xAMz15tzcRz/9RfJRm6AqRO+A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
       eslint: '>=9.38.0'
@@ -2444,6 +2468,12 @@ packages:
     peerDependencies:
       prettier: ^3.0.0
 
+  prettier-plugin-toml@2.0.6:
+    resolution: {integrity: sha512-12N/wBuHa9jd/KVy9pRP20NMKxQfQLMseQCt66lIbLaPLItvGUcSIryE1eZZMJ7loSws6Ig3M2Elc2EreNh76w==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      prettier: ^3.0.3
+
   prettier@2.8.8:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
@@ -2675,6 +2705,10 @@ packages:
   to-valid-identifier@1.0.0:
     resolution: {integrity: sha512-41wJyvKep3yT2tyPqX/4blcfybknGB4D+oETKLs7Q76UiPqRpUJK3hr1nxelyYO0PHKVzJwlu0aCeEAsGI6rpw==}
     engines: {node: '>=20'}
+
+  toml-eslint-parser@1.0.3:
+    resolution: {integrity: sha512-A5F0cM6+mDleacLIEUkmfpkBbnHJFV1d2rprHU2MXNk7mlxHq2zGojA+SRvQD1RoMo9gqjZPWEaKG4v1BQ48lw==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
   ts-api-utils@2.5.0:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
@@ -3410,6 +3444,12 @@ snapshots:
       estraverse: 5.3.0
       picomatch: 4.0.4
 
+  '@taplo/core@0.2.0': {}
+
+  '@taplo/lib@0.5.0':
+    dependencies:
+      '@taplo/core': 0.2.0
+
   '@tsconfig/strictest@2.0.8': {}
 
   '@turbo/darwin-64@2.9.16':
@@ -4008,6 +4048,17 @@ snapshots:
       refa: 0.12.1
       regexp-ast-analysis: 0.7.1
       scslre: 0.3.0
+
+  eslint-plugin-toml@1.4.0(eslint@10.4.1(jiti@2.7.0)):
+    dependencies:
+      '@eslint/core': 1.2.1
+      '@eslint/plugin-kit': 0.7.2
+      '@ota-meshi/ast-token-store': 0.3.0
+      debug: 4.4.3
+      eslint: 10.4.1(jiti@2.7.0)
+      toml-eslint-parser: 1.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   eslint-plugin-unicorn@64.0.0(eslint@10.4.1(jiti@2.7.0)):
     dependencies:
@@ -4986,6 +5037,11 @@ snapshots:
     dependencies:
       prettier: 3.8.3
 
+  prettier-plugin-toml@2.0.6(prettier@3.8.3):
+    dependencies:
+      '@taplo/lib': 0.5.0
+      prettier: 3.8.3
+
   prettier@2.8.8: {}
 
   prettier@3.8.3: {}
@@ -5199,6 +5255,10 @@ snapshots:
     dependencies:
       '@sindresorhus/base62': 1.0.0
       reserved-identifiers: 1.2.0
+
+  toml-eslint-parser@1.0.3:
+    dependencies:
+      eslint-visitor-keys: 5.0.1
 
   ts-api-utils@2.5.0(typescript@6.0.3):
     dependencies:

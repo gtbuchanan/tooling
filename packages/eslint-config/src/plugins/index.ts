@@ -13,6 +13,7 @@ import pnpm from './pnpm.ts';
 import promise from './promise.ts';
 import regexp from './regexp.ts';
 import stylistic from './stylistic.ts';
+import toml from './toml.ts';
 import typescript from './typescript.ts';
 import unicorn from './unicorn.ts';
 import vitest from './vitest.ts';
@@ -21,7 +22,7 @@ import yamllint from './yamllint.ts';
 
 /** Ordered plugin factories. Later entries override earlier ones for the same file. */
 export const plugins: readonly PluginFactory[] = [
-  typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint, pnpm, node,
-  format, markdownlint, markdown, agentSkills, stylistic, eslintComments, importX,
-  core, vitest,
+  typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint, toml, pnpm,
+  node, format, markdownlint, markdown, agentSkills, stylistic, eslintComments,
+  importX, core, vitest,
 ];

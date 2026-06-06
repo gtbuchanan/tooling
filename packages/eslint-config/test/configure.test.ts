@@ -171,7 +171,7 @@ describe.concurrent(configure, () => {
 
     expect(targetedFiles).toStrictEqual(expect.arrayContaining([
       '**/*.css', '**/*.json', '**/*.md',
-      '**/*.scss', '**/*.xml', '**/*.yaml',
+      '**/*.scss', '**/*.toml', '**/*.xml', '**/*.yaml',
       '**/package.json',
     ]));
   });

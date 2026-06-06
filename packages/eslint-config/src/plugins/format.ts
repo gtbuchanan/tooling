@@ -20,6 +20,7 @@ const cssOrderPlugin = resolvePlugin('prettier-plugin-css-order');
 const multilineArraysPlugin = resolvePlugin('prettier-plugin-multiline-arrays');
 const packageJsonPlugin = resolvePlugin('prettier-plugin-packagejson');
 const sortJsonPlugin = resolvePlugin('prettier-plugin-sort-json');
+const tomlPlugin = resolvePlugin('prettier-plugin-toml');
 const xmlPlugin = resolvePlugin('@prettier/plugin-xml');
 
 /*
@@ -102,6 +103,21 @@ const plugin: PluginFactory = () => [
       // HACK: YAML prose is not handled correctly yet
       // https://github.com/prettier/prettier/issues/16126#issuecomment-1987616924
       proseWrap: 'preserve',
+    }),
+  },
+  {
+    /*
+     * Prettier has no native TOML parser; prettier-plugin-toml (taplo)
+     * registers one. eslint-plugin-toml handles lint-only correctness
+     * rules (see toml.ts), so formatting is owned here.
+     */
+    files: ['**/*.toml'],
+    languageOptions: { parser: format.parserPlain },
+    plugins: { format },
+    rules: prettierRule('toml', {
+      plugins: [tomlPlugin],
+      // Justification: Alphabetical keys reduce merge conflicts, matching JSON/YAML
+      reorderKeys: true,
     }),
   },
   {

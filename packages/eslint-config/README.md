@@ -67,6 +67,7 @@ export default configure({
 - `eslint-plugin-n` — Node.js best practices
 - `eslint-plugin-pnpm` — pnpm workspace validation (opt-in)
 - `eslint-plugin-yml` — YAML linting and key sorting
+- `eslint-plugin-toml` — TOML linting and structural key/table ordering
 - `@eslint/markdown` — Official Markdown lint plugin (commonmark AST)
 - `@gtbuchanan/eslint-plugin-markdownlint` — Markdown structural linting via markdownlint (gap-filling rules not yet covered by `@eslint/markdown`)
 - `eslint-plugin-only-warn` — Downgrades errors to warnings (opt-in)
