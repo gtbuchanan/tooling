@@ -48,6 +48,17 @@ jobs:
 
           stale=0
           while IFS=$'\t' read -r ecosystem name version; do
+            # pnpm/yarn manifest specifiers (catalog:, workspace:, link:,
+            # file:, npm: aliases, ...) are not resolvable versions. The
+            # resolved version is reported as a separate lockfile entry and
+            # checked there, so skip the specifier to avoid false positives.
+            case "$version" in
+              catalog:*|workspace:*|link:*|file:*|npm:*|git:*|http:*|https:*)
+                echo "OK  $ecosystem:$name@$version (manifest specifier, skipped)"
+                continue
+                ;;
+            esac
+
             case "$ecosystem" in
               actions)
                 # SHA pins are intentional immutable pinning.
