@@ -145,6 +145,9 @@ const checkTsconfigs = (
 
 const CodecovYamlSchema = v.nullable(
   v.looseObject({
+    codecov: v.optional(
+      v.looseObject({ require_ci_to_pass: v.optional(v.boolean()) }),
+    ),
     component_management: v.optional(
       v.looseObject({
         individual_components: v.optional(
@@ -155,6 +158,8 @@ const CodecovYamlSchema = v.nullable(
     flags: v.optional(v.record(v.string(), v.unknown())),
   }),
 );
+
+interface ActualCodecov { readonly require_ci_to_pass?: boolean | undefined }
 
 interface ActualComponent { readonly component_id?: string | undefined }
 
@@ -183,6 +188,14 @@ const checkCodecovFlags = (
     .filter(name => actualFlags === undefined || !(name in actualFlags))
     .map(name => `codecov.yml: missing flag '${name}'`);
 
+const checkCodecovSettings = (
+  actualCodecov: ActualCodecov | undefined,
+  expected: CodecovSections,
+): readonly string[] =>
+  actualCodecov?.require_ci_to_pass === expected.codecov.require_ci_to_pass
+    ? []
+    : ['codecov.yml: codecov.require_ci_to_pass must be false (run gtb sync)'];
+
 const checkCodecovComponents = (
   actualComponents: readonly ActualComponent[],
   expected: CodecovSections,
@@ -209,9 +222,14 @@ const checkCodecovSections = (
   if (!parseResult.success || parseResult.output === null) {
     return ['codecov.yml: failed to parse'];
   }
-  const { flags: actualFlags, component_management: actualCm } = parseResult.output;
+  const {
+    codecov: actualCodecov,
+    flags: actualFlags,
+    component_management: actualCm,
+  } = parseResult.output;
   const expected = generateCodecovSections(discovery);
   return [
+    ...checkCodecovSettings(actualCodecov, expected),
     ...checkCodecovFlags(actualFlags, expected, ignored),
     ...checkCodecovComponents(actualCm?.individual_components ?? [], expected, ignored),
   ];

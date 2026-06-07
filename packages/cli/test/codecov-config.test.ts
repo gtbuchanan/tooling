@@ -54,6 +54,15 @@ const createMonorepo = (): CodecovMonorepo => {
 };
 
 describe.concurrent(generateCodecovSections, () => {
+  it('forces codecov.require_ci_to_pass false', ({ expect }) => {
+    const { root } = createMonorepo();
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { codecov } = generateCodecovSections(discovery);
+
+    expect(codecov).toStrictEqual({ require_ci_to_pass: false });
+  });
+
   it('generates a flag per coverage package', ({ expect }) => {
     const { alpha, beta, gamma, root } = createMonorepo();
     const discovery = discoverWorkspace({ cwd: root });

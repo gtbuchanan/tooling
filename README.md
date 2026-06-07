@@ -114,7 +114,11 @@ jobs:
 To customize coverage targets, add a `codecov.yml` to your repo root.
 
 **Drift risk:** The Codecov job uses `continue-on-error` so upload
-failures never block PRs. Flags use `carryforward: true` because
+failures never block PRs, and `gtb sync` forces
+`codecov.require_ci_to_pass: false` so Codecov's status and PR comment —
+informational here, never a merge gate — still post when an unrelated
+check fails (e.g. a missing changeset) instead of being withheld. Flags
+use `carryforward: true` because
 Codecov treats missing flags as 0% coverage, which would cause false
 failures on PRs that only touch a subset of packages. The tradeoff is
 that a failed upload carries forward stale data. In practice this

@@ -4,6 +4,7 @@ import { Writable } from 'node:stream';
 import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import { describe, it } from 'vitest';
+import { parse as parseYaml } from 'yaml';
 import { runSync, syncCommand } from '#src/commands/root/sync.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
@@ -244,19 +245,19 @@ describe.concurrent(runSync, () => {
     expect(content).toContain('carryforward');
   });
 
-  it('preserves existing codecov.yml user config', ({ expect }) => {
+  it('preserves user config but forces require_ci_to_pass false', ({ expect }) => {
     const { root } = createConsumerProject();
     writeFileSync(
       path.join(root, 'codecov.yml'),
-      'codecov:\n  require_ci_to_pass: true\n',
+      'codecov:\n  require_ci_to_pass: true\ncomment:\n  require_changes: true\n',
     );
 
     runSync({ cwd: root, logger: silentLogger });
 
-    const content = readFileSync(path.join(root, 'codecov.yml'), 'utf8');
+    const parsed: unknown = parseYaml(readFileSync(path.join(root, 'codecov.yml'), 'utf8'));
 
-    expect(content).toContain('require_ci_to_pass');
-    expect(content).toContain('carryforward');
+    expect(parsed).toHaveProperty('codecov.require_ci_to_pass', false);
+    expect(parsed).toHaveProperty('comment.require_changes', true);
   });
 
   it('force overwrites existing scripts', ({ expect }) => {
