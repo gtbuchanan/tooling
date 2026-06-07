@@ -98,10 +98,11 @@ export const writeYamlFile = (path: string, data: unknown): void => {
   writeFileSync(path, stringifyYaml(data, { directives: true, singleQuote: true }));
 };
 
+/* Non-object values (e.g. `codecov: true`) fall back to `{}` so sync repairs them. */
 const ExistingCodecovSchema = v.nullable(
   v.looseObject({
-    codecov: v.optional(v.nullable(v.looseObject({}))),
-    component_management: v.optional(v.nullable(v.looseObject({}))),
+    codecov: v.optional(v.fallback(v.looseObject({}), {})),
+    component_management: v.optional(v.fallback(v.looseObject({}), {})),
   }),
 );
 

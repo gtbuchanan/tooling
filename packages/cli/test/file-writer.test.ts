@@ -264,6 +264,18 @@ describe.concurrent(mergeCodecovSections, () => {
     expect(parsed).toHaveProperty('codecov.max_report_age', 24);
   });
 
+  it('repairs a non-object codecov value instead of throwing', ({ expect }) => {
+    const dir = createTempDir();
+    const filePath = path.join(dir, 'codecov.yml');
+    writeFileSync(filePath, 'codecov: true\n');
+
+    mergeCodecovSections(filePath, sections);
+
+    const parsed: unknown = parseYaml(readFileSync(filePath, 'utf8'));
+
+    expect(parsed).toHaveProperty('codecov.require_ci_to_pass', false);
+  });
+
   it('sorts keys and uses single quotes', ({ expect }) => {
     const dir = createTempDir();
     const filePath = path.join(dir, 'codecov.yml');
