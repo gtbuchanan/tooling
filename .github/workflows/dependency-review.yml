@@ -25,6 +25,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MIN_RELEASE_AGE_DAYS: ${{ inputs.minimum-release-age-days }}
         name: Check newly-added deps are at latest version
         run: |
           set -euo pipefail
@@ -33,6 +34,15 @@ jobs:
             echo "::warning::No PR context; skipping version check."
             exit 0
           fi
+
+          # "Latest" means the newest release old enough to clear our
+          # supply-chain quarantine (Renovate's minimumReleaseAge). A
+          # release published within the window is intentionally not yet
+          # adopted, so it must not count as the version we should be at —
+          # otherwise every dep fails the moment upstream cuts a release.
+          # Set the input to 0 to compare against the absolute latest.
+          window_days=${MIN_RELEASE_AGE_DAYS:-3}
+          cutoff=$(date -u -d "${window_days} days ago" +%s)
 
           added=$(gh api \
             "/repos/${GITHUB_REPOSITORY}/dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}" \
@@ -46,8 +56,34 @@ jobs:
 
           echo "Checking $count newly-added dependencies..."
 
+          # GitHub's dep-graph compare reports every lockfile entry —
+          # direct and transitive alike. For pnpm/npm/yarn the only
+          # manifest is the lockfile, so a single-package update surfaces
+          # all of that package's transitive deps as "added". Their
+          # versions are dictated by our direct deps, not chosen by us, so
+          # restrict the staleness check to deps the PR actually declares:
+          # those whose name appears on an added line of a changed file
+          # that is not a dependency lockfile (package.json, requirements,
+          # pnpm catalog, workflow `uses:`, ...).
+          lockfile_re='(^|/)(Cargo\\.lock|Gemfile\\.lock|bun\\.lockb?|composer\\.lock|go\\.sum|npm-shrinkwrap\\.json|package-lock\\.json|packages\\.lock\\.json|pnpm-lock\\.yaml|poetry\\.lock|yarn\\.lock)$'
+          manifest_adds=$(
+            gh api --paginate \
+              "/repos/${GITHUB_REPOSITORY}/compare/${BASE_SHA}...${HEAD_SHA}" \
+              --jq ".files[] | select((.filename | test(\"${lockfile_re}\")) | not) | .patch // empty" \
+              | grep '^+' || true
+          )
+
           stale=0
           while IFS=$'\t' read -r ecosystem name version; do
+            # Skip transitive deps: only flag deps the PR declares in a
+            # manifest. Match the name as a whole token; for npm/actions
+            # package names only '.' is regex-special, so escape just that.
+            name_re=$(printf '%s' "$name" | sed 's/\./\\./g')
+            if ! grep -qE "(^|[^A-Za-z0-9._/-])${name_re}([^A-Za-z0-9._/-]|\$)" <<<"$manifest_adds"; then
+              echo "OK  $ecosystem:$name@$version (transitive, skipped)"
+              continue
+            fi
+
             # pnpm/yarn manifest specifiers (catalog:, workspace:, link:,
             # file:, npm: aliases, ...) are not resolvable versions. The
             # resolved version is reported as a separate lockfile entry and
@@ -68,7 +104,15 @@ jobs:
                 fi
                 # Strip any sub-action path (actions/cache/save → actions/cache).
                 repo=$(awk -F/ '{print $1"/"$2}' <<<"$name")
-                latest=$(gh api "repos/${repo}/releases/latest" --jq '.tag_name' 2>/dev/null) || latest=""
+                # Newest stable release whose publish date clears the window.
+                latest=$(
+                  gh api "repos/${repo}/releases?per_page=100" \
+                    --jq "[ .[]
+                            | select(.draft == false and .prerelease == false)
+                            | select((.published_at | fromdateiso8601) <= ${cutoff})
+                            | .tag_name ] | .[]" 2>/dev/null \
+                    | sed 's/^v//' | grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tail -n1
+                ) || latest=""
                 ;;
               npm|pip|maven|nuget|rubygems|go|cargo)
                 case "$ecosystem" in
@@ -76,9 +120,17 @@ jobs:
                   *)   system=$ecosystem ;;
                 esac
                 encoded=$(jq -nr --arg n "$name" '$n | @uri')
+                # Newest non-deprecated stable version published before the
+                # quarantine cutoff. `sort -V` picks the max; the absolute
+                # latest may be too fresh to qualify.
                 latest=$(
                   curl -sf "https://api.deps.dev/v3/systems/${system}/packages/${encoded}" \
-                    | jq -r '.versions | map(select(.isDefault == true)) | .[0].versionKey.version // empty'
+                    | jq -r --argjson cutoff "$cutoff" '
+                        .versions[]
+                        | select(.isDeprecated == false)
+                        | select((.publishedAt | fromdateiso8601) <= $cutoff)
+                        | .versionKey.version' \
+                    | grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tail -n1
                 ) || latest=""
                 ;;
               *)
@@ -92,21 +144,36 @@ jobs:
               continue
             fi
 
-            # GitHub's dep-graph normalizes major/minor tags to semver
-            # wildcards (e.g. `@v6` -> `6.*.*`, `@v6.0` -> `6.0.*`).
-            # Strip leading 'v' from latest, drop the wildcard suffix
-            # from pinned, and accept any latest that matches the
-            # constrained prefix.
             norm_v=${version#v}
             norm_l=${latest#v}
-            constrained=${norm_v%%[*]*}
-            constrained=${constrained%.}
-            if [ "$norm_v" = "$norm_l" ] \
-              || { [[ "$constrained" =~ ^[0-9]+(\.[0-9]+)*$ ]] \
-                   && { [ "$constrained" = "$norm_l" ] || [[ "$norm_l" == "$constrained".* ]]; }; }; then
-              echo "OK  $ecosystem:$name@$version (latest $latest)"
+            if [[ "$norm_v" == *'*'* ]]; then
+              # GitHub's dep-graph normalizes a major/minor tag to a semver
+              # wildcard (e.g. `@v6` -> `6.*.*`, `@v6.0` -> `6.0.*`). Accept
+              # any eligible latest that falls under the constrained prefix.
+              constrained=${norm_v%%[*]*}
+              constrained=${constrained%.}
+              if [[ "$constrained" =~ ^[0-9]+(\.[0-9]+)*$ ]] \
+                && { [ "$constrained" = "$norm_l" ] || [[ "$norm_l" == "$constrained".* ]]; }; then
+                ok=1
+              else
+                ok=0
+              fi
             else
-              echo "::error title=Stale dependency::$ecosystem:$name pinned to $version, latest is $latest"
+              # Exact pin: stale only if behind the eligible latest. Being
+              # at or ahead of it (e.g. a dep exempt from the quarantine) is
+              # fine. `sort -V` orders semver, so a pin >= latest sorts last.
+              newest=$(printf '%s\n%s\n' "$norm_v" "$norm_l" | sort -V | tail -n1)
+              if [ "$newest" = "$norm_v" ]; then
+                ok=1
+              else
+                ok=0
+              fi
+            fi
+
+            if [ "$ok" -eq 1 ]; then
+              echo "OK  $ecosystem:$name@$version (eligible latest $latest)"
+            else
+              echo "::error title=Stale dependency::$ecosystem:$name pinned to $version, eligible latest is $latest"
               stale=$((stale + 1))
             fi
           done < <(jq -r '.[] | [.ecosystem, .name, .version] | @tsv' <<<"$added")
@@ -144,6 +211,17 @@ on:
           Minimum advisory severity that fails the check
           (low, moderate, high, critical).
         type: string
+      minimum-release-age-days:
+        default: 3
+        description: >-
+          Quarantine window, in days, for the Version Check.
+          A release published within this window is too fresh
+          to count as "latest", mirroring Renovate's
+          minimumReleaseAge so newly-cut releases don't fail
+          the check. Set 0 to compare against the absolute
+          latest.
+        required: false
+        type: number
 
 permissions:
   contents: read
