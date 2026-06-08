@@ -2,5 +2,19 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>gtbuchanan/tooling"
+  ],
+  "packageRules": [
+    {
+      "description": "Throttle noisy renovate CLI (mise npm:renovate, used by hk's renovate-config-validator step) to bi-monthly",
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "renovate"
+      ],
+      "schedule": [
+        "* * 1,15 * *"
+      ]
+    }
   ]
 }

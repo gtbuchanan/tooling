@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+#MISE description="Run hk on files changed from a base ref (fixes locally, checks in CI)"
+set -eu
+
+# First non-flag arg is the base ref; the rest forward to hk (e.g. -S <step>
+# to run one hook), so you can target a step without repeating the base:
+#   mise run hk:base -- -S eslint
+base=origin/main
+case "${1:-}" in
+  "" | -*) ;;
+  *) base=$1; shift ;;
+esac
+
+# We diff ourselves rather than use `hk check --from-ref/--to-ref`, which
+# resolves a merge base and errors on shallow clones with no two-dot fallback
+# (jdx/hk discussion #972: https://github.com/jdx/hk/discussions/972).
+#
+# Shallow clones (CI) lack the base commit; fetch it (depth 1) so the diff
+# resolves. HEAD is then GitHub's test-merge commit, so `diff base HEAD` is
+# exactly the PR's changes; locally (full clone) it's the branch's changes vs
+# origin/main, including unpushed commits when run on main itself.
+if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+  git fetch --no-tags --depth=1 origin "$base"
+fi
+
+# Like prek's `run`, apply fixes locally; keep CI a non-modifying gate.
+cmd=fix
+[ -z "${CI:-}" ] || cmd=check
+
+files="$(git diff --name-only --diff-filter=d "$base" HEAD)"
+[ -z "$files" ] || hk "$cmd" "$@" $files

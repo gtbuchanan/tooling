@@ -2,13 +2,14 @@
 
 ## Prerequisites
 
-[mise] manages Node, pnpm, and prek for every contributor and CI.
-Run `mise install` to get the versions the repo pins. Node and prek
-versions live in `mise.toml`; pnpm's version lives in
+[mise] manages the repo's pinned dev tools for every contributor and
+CI. Run `mise install` to get the versions the repo pins (it also
+installs [hk]'s git hooks via the `postinstall` mise hook).
+Those versions live in `mise.toml`; pnpm's version lives in
 `package.json`'s `packageManager` field because turbo requires that
 field for workspace resolution (mise reads the version from there via
 `idiomatic_version_file_enable_tools`). `mise.lock` carries
-per-platform binary checksums for all three.
+per-platform binary checksums for the aqua-backed tools.
 
 Install mise:
 
@@ -63,18 +64,22 @@ All commands go through Turbo for caching:
 
 ## Pre-commit
 
-`mise run bootstrap` installs [prek] hooks (via the `prepare` script
-that pnpm runs during install) that verify changed files each time
-you commit. If the hooks find issues they autofix what they can and
-fail the commit — review the corrections, stage them, and try again.
+`mise install` installs [hk] hooks (via the `postinstall` mise hook
+running `hk install --mise`) that verify changed files each time you
+commit. If the hooks find issues they autofix what they can and fail
+the commit — review the corrections, stage them, and try again.
 Commit often so issues stay small.
 
-To run prek without committing:
+To run hk without committing:
 
-| Action          | Command                                         |
-| :-------------- | :---------------------------------------------- |
-| Simulate commit | `prek run`                                      |
-| Simulate PR run | `prek run --from-ref=origin/main --to-ref=HEAD` |
+| Action            | Command            |
+| :---------------- | :----------------- |
+| Fix changed files | `mise run hk:base` |
+| Fix all files     | `mise run hk:all`  |
+
+Both fix locally and check in CI. `hk:base` diffs against `origin/main`
+(pass a ref to override); `hk:all` covers every file. Forward args to
+hk — e.g. `mise run hk:base -- -S eslint` targets a single hook.
 
 ## Versioning
 
@@ -99,12 +104,12 @@ mise() { SSL_CERT_FILE="$PREFIX/etc/tls/cert.pem" termux-chroot command mise "$@
 
 (`pkg install termux-chroot` if it isn't already installed.)
 
-**Mixed setup: Termux packages for Node + pnpm, mise for prek.** mise
+**Mixed setup: Termux packages for Node + pnpm, mise for hk.** mise
 shims exec downloaded glibc/musl ELFs directly, bypassing
 `termux-chroot` and ENOENTing on Bionic's missing dynamic linker.
 Install Node, pnpm, and turbo via `pkg install nodejs pnpm turbo`
-(Bionic-native) and let mise handle prek (static musl aarch64). Tell mise to ignore
-the broken tools:
+(Bionic-native) and let mise handle hk (static musl aarch64, runs
+unmodified). Tell mise to ignore the broken tools:
 
 ```toml
 # ~/.config/mise/config.toml
@@ -116,15 +121,23 @@ disable_tools = ["node", "pnpm"]
 `rm ~/.local/share/mise/shims/{node,pnpm}` if you've installed them
 in the past.
 
-**prek/uv libc detection.** prek's bundled `uv` aborts during
-managed-Python discovery because Bionic isn't recognized as glibc or
-musl. Set `UV_LIBC=none` in your shell rc so `uv` falls back to
-Termux's system Python:
+**pkl bootstrap.** hk evaluates `hk.pkl` with the `pkl` CLI, and
+Apple's only aarch64-Linux Pkl artifact (`pkl-linux-aarch64`) is
+glibc-dynamic — it ENOENTs on Bionic's missing loader. Until a static
+aarch64 Pkl ships, wire up `pkl` via one of two workarounds (~270 MB),
+then put the wrapper on `PATH` as `pkl`:
 
-```sh
-export UV_LIBC=none
-```
+- **jpkl (JVM).** `pkg install openjdk-21` + the `jpkl` jar, wrapped in
+  a `bash` shim named `pkl`.
+- **grun (glibc-runner).** `pkg install glibc-runner`, then
+  `grun -c pkl-linux-aarch64` once to patch the loader and wrap
+  `grun pkl-linux-aarch64 "$@"` as `pkl`.
+
+`hk migrate` (pure Rust) and `hk` itself don't need Pkl; only
+`validate`/`check`/`fix`/`install` do. See
+[issue #81](https://github.com/gtbuchanan/tooling/issues/81) for the
+full end-to-end evaluation of both paths.
 
 [changesets]: https://github.com/changesets/changesets
+[hk]: https://hk.jdx.dev
 [mise]: https://mise.jdx.dev
-[prek]: https://github.com/j178/prek

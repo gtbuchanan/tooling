@@ -19,8 +19,8 @@ jobs:
 
   pre-commit:
     name: Pre-Commit
-    # This repo's eslint hook is `language: system` (pnpm exec eslint),
-    # so prek needs the project's deps installed.
+    # This repo's eslint step shells out to `pnpm exec eslint`, so hk
+    # needs the project's deps installed.
     uses: ./.github/workflows/pre-commit.yml
     with:
       use-pnpm: true

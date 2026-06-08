@@ -14,16 +14,12 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/ci.yml
 
-  pre-commit:
-    name: Pre-Commit
-    uses: ./.github/workflows/pre-commit-seed.yml
-
 name: Release
 
 # The main-branch pipeline: re-run CI as a gate, then CD (version +
-# publish via cd.yml), plus prek cache seeding. CI and CD are peer
-# jobs. The CD job grants the superset its publish step needs — a
-# called workflow can only narrow the caller's token, never elevate it.
+# publish via cd.yml). CI and CD are peer jobs. The CD job grants the
+# superset its publish step needs — a called workflow can only narrow
+# the caller's token, never elevate it.
 on:
   push:
     branches: [main]

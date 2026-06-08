@@ -68,9 +68,6 @@ jobs:
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
     secrets: inherit
-  pre-commit:
-    name: Pre-Commit
-    uses: gtbuchanan/tooling/.github/workflows/pre-commit-seed.yml@main
 ```
 
 The reusable workflows each job calls:
@@ -81,8 +78,7 @@ The reusable workflows each job calls:
 | `cd.yml`                | changesets version + publish (OIDC)      |
 | `changeset-check.yml`   | Verify changeset exists                  |
 | `dependency-review.yml` | Scan PR dep changes for vulns + licenses |
-| `pre-commit.yml`        | Run prek hooks on changed files          |
-| `pre-commit-seed.yml`   | Warm prek cache for PR builds            |
+| `pre-commit.yml`        | Run hk hooks on changed files            |
 
 Permissions narrow down the call chain but never elevate, so each
 pipeline grants the superset its jobs need (shown above). Required
@@ -154,9 +150,9 @@ dependencies:
 Both jobs require GitHub's Dependency Graph to be enabled at
 _Settings → Code security and analysis_. Coverage is limited to
 ecosystems the dep graph indexes — for JS/TS projects, that's npm and
-GitHub Actions. mise tools and `.pre-commit-config.yaml` hooks aren't
-covered; Renovate's managers handle those independently on their
-normal cadence.
+GitHub Actions. mise tools and `hk.pkl` steps aren't covered;
+Renovate's managers handle those independently on their normal
+cadence.
 
 A failure summary is posted as a PR comment, so the PR pipeline must
 grant `pull-requests: write` (shown in the setup above).

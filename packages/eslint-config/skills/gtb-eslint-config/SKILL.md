@@ -56,10 +56,12 @@ All optional except `tsconfigRootDir` (recommended for type-aware rules):
 [pre-commit](https://pre-commit.com/) and [prek](https://prek.dev) run
 hooks in an isolated environment where the project's `node_modules` is
 not available — the import `'@gtbuchanan/eslint-config'` would fail
-under default ESM resolution.
+under default ESM resolution. ([hk](https://hk.jdx.dev) runs steps in
+the repo with `node_modules` present, so a `pnpm exec eslint` step
+needs none of the below.)
 
-Use `createRequire` to bridge ESM → CJS resolution, which respects the
-`NODE_PATH` the hook manager sets:
+Under pre-commit/prek, use `createRequire` to bridge ESM → CJS
+resolution, which respects the `NODE_PATH` the hook manager sets:
 
 ```typescript
 // eslint.config.ts

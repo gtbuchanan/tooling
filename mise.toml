@@ -1,4 +1,7 @@
 [settings]
+# Required for the `[hooks]` table below (mise gates hooks behind
+# the experimental flag).
+experimental = true
 # pnpm's version comes from `packageManager` in package.json (turbo
 # requires that field, and mise reads it natively when listed here).
 # Keeps the pnpm pin in one place instead of mirroring it in mise.toml.
@@ -9,9 +12,25 @@ lockfile = true
 # below bypasses it, and Renovate already gates automated bumps at 3 days.
 minimum_release_age = "3d"
 
+[env]
+# hk wraps hook steps in `mise x` so mise-managed tools resolve without
+# activation. Set here so it applies to `hk install`, `hk check`/`fix`,
+# and the installed git hook alike.
+HK_MISE = "1"
+
 [tools]
+# actionlint + renovate are invoked by hk steps; pkl evaluates hk.pkl.
+actionlint = "1.7.12"
+hk = "1.46.0"
 node = "24.16.0"
-prek = "0.4.3"
+"npm:renovate" = "43.213.1"
+pkl = "0.31.1"
+
+[hooks]
+# Install hk's git hooks on `mise install` (config-based, Git 2.54+),
+# wrapping them in `mise x` so mise tools resolve. Idempotent and a
+# silent no-op once hk is configured globally, so it's safe to re-run.
+postinstall = "hk install --mise"
 
 # pnpm ignores the `os` field on workspace packages, so the Termux shim's
 # bin doesn't get auto-symlinked into node_modules/.bin via the usual

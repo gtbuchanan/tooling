@@ -57,8 +57,8 @@ inside any individual package — under pnpm strict layout, only the
 root's `node_modules/.bin/` is on turbo's PATH at spawn time). The
 shim's `os: ["android"]` filter keeps it off non-Android hosts.
 
-The `prepare` script must be declared so pnpm runs it on install to set
-up pre-commit hooks via prek:
+The `prepare` script must be declared so pnpm runs it on install to
+sync skills from installed packages:
 
 ```json
 {
@@ -88,7 +88,7 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 | `verify`  | Validate generated config against workspace state       |
 | `sync`    | Reconcile `turbo.json`, tsconfigs, scripts, codecov.yml |
 | `turbo`   | Run turbo (with an Android escape hatch)                |
-| `prepare` | Install pre-commit hooks via prek                       |
+| `prepare` | Sync skills from installed packages                     |
 
 ### Task leaves (`gtb task <name>`)
 
