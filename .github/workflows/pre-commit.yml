@@ -1,8 +1,10 @@
 ---
 env:
+  # GitHub Actions has no TTY, so force color: hk honors CLICOLOR_FORCE
+  # and Node tools (eslint etc.) honor FORCE_COLOR. Actions renders the ANSI.
+  CLICOLOR_FORCE: '1'
+  FORCE_COLOR: '1'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # Pin prek cache to a known path for reliable GitHub Actions caching
-  PREK_HOME: ~/.prek-cache
 
 jobs:
   run:
@@ -11,46 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Shallow fetch of all branch tips so prek can diff against the base
-      - name: Fetch branch refs for diff
-        run: git fetch --no-tags --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      # The local eslint hook is `language: system` (entry `pnpm exec
-      # eslint`), so it needs node_modules. Node-free consumers set
-      # `use-pnpm: false` to skip this and run prek (from mise) alone.
+      # The eslint step shells out to `pnpm exec eslint`, so it needs
+      # node_modules. Node-free consumers set `use-pnpm: false` to skip
+      # this and run the builtin/tool-backed hooks alone.
       - if: inputs.use-pnpm
         uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
-      # mise.lock is in the cache key because prek bakes absolute Node
-      # binary paths into its cached hook environments (j178/prek#1993);
-      # a Node bump must invalidate the cache. The restore-keys
-      # fallback is mise.lock-aware so a partial restore on
-      # .pre-commit-config.yaml edits still pulls hooks built against
-      # the current Node patch; an OS-only fallback would restore
-      # stale-path blobs the cache can never heal back (GH caches are
-      # immutable).
-      - id: prek-cache
-        uses: actions/cache@v5
-        with:
-          key: prek-${{ runner.os }}-${{ hashFiles('mise.lock') }}-${{ hashFiles('.pre-commit-config.yaml') }}
-          path: ${{ env.PREK_HOME }}
-          restore-keys: |
-            prek-${{ runner.os }}-${{ hashFiles('mise.lock') }}-
-
-      - name: Run pre-commit hooks
-        run: |
-          prek run \
-            --color=always \
-            --show-diff-on-failure \
-            --verbose \
-            --from-ref=origin/${{ github.base_ref }} \
-            --to-ref=${{ github.event.pull_request.head.sha }}
-
-      - if: steps.prek-cache.outputs.cache-hit != 'true'
-        name: Prune stale environments
-        run: prek cache gc
+      - env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        name: Run hk on the PR's changed files
+        run: mise run hk:base -- "$BASE_SHA"
 
 name: Pre-Commit
 
@@ -60,9 +34,9 @@ on:
       use-pnpm:
         default: false
         description: >-
-          Run `pnpm install` so prek hooks that shell out to the
-          project's pnpm deps (e.g. a `language: system` eslint hook)
-          can resolve them. Leave false when no hook needs them.
+          Run `pnpm install` so hk steps that shell out to the project's
+          pnpm deps (e.g. the `pnpm exec eslint` step) can resolve them.
+          Leave false when no step needs them.
         type: boolean
 
 permissions:

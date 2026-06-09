@@ -8,8 +8,13 @@ TypeScript, Vitest configuration, and a shared build CLI.
 ```text
 README.md              — Consumer-facing documentation
 default.json           — Shareable Renovate preset (consumed via `github>gtbuchanan/tooling`)
+hk.pkl                 — hk pre-commit hook config (Pkl)
 mise.lock              — Per-platform binary checksums + download URLs
-mise.toml              — Pin Node, pnpm, prek versions for local + CI
+mise.toml              — Pin dev-tool versions for local + CI; postinstall hook installs hk
+mise-tasks/
+  lib.sh               — Sourced helper (run_native): run a binary with a native PATH under Git Bash
+  hk/all               — File task (mise run hk:all): run hk across all files
+  hk/base              — File task (mise run hk:base): run hk on a base-ref diff
 .github/
   actions/
     mise-setup/          — Composite action: install + cache mise tools
@@ -24,9 +29,8 @@ mise.toml              — Pin Node, pnpm, prek versions for local + CI
     ci.yml                 — Reusable: build + slow + e2e + coverage
     dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
     pr.yml                 — Pipeline (PR): ci + changeset + deps + pre-commit
-    pre-commit-seed.yml    — Reusable: seed prek cache
-    pre-commit.yml         — Reusable: run prek hooks
-    release.yml            — Pipeline (push): CI gate + CD + pre-commit seed
+    pre-commit.yml         — Reusable: run hk hooks
+    release.yml            — Pipeline (push): CI gate + CD
 packages/
   cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
     skills/                     — Authored Agent Skills deployed by `gtb task deploy:skills`
@@ -87,11 +91,28 @@ coverage, setupFiles, and mock reset.
 
 ### Pre-commit hooks
 
-- **prek** — Rust-based pre-commit hook manager (drop-in replacement for
-  Python pre-commit). Installed automatically via `prepare` script on
-  `pnpm install`. Hooks defined in `.pre-commit-config.yaml`:
-  - `pre-commit-hooks` — file hygiene (large files, EOF newlines, BOM, trailing whitespace, no commit to branch)
-  - `eslint` — linting, formatting, and Markdown structural checks with `--fix`
+- **hk** — Rust pre-commit hook runner configured in Pkl (`hk.pkl`). No
+  Python/venv layer: file-hygiene checks are native `Builtins.*`, and
+  external tools come from mise. Installed automatically by mise's
+  `[hooks] postinstall = "hk install --mise"` on `mise install` (Git
+  2.54+ config-based hooks, wrapped in `mise x`). Steps in `hk.pkl`:
+  - File hygiene via `Builtins.*` — large files, EOF newline, BOM,
+    trailing whitespace, no-commit-to-branch
+  - `actionlint` (`Builtins.actionlint`, binary via mise `aqua:rhysd/actionlint`)
+  - `forbid-submodules` — custom per-OS gitlink guard (no builtin)
+  - `renovate-preset` / `renovate-config` — validate the preset and repo
+    config (binary via mise `npm:renovate`); `check-illegal-windows-names`
+    was dropped (no builtin; redundant on a Windows-primary repo)
+  - `eslint` — `pnpm exec eslint`; `check` is non-modifying, `fix`
+    autofixes on commit
+- **Windows `cmd.exe` arg limit.** hk runs each step's command via
+  `cmd.exe` on Windows, whose 8191-char limit a full-repo run overflows;
+  hk's auto-batching is tuned for Unix `ARG_MAX`. The `batch = batchFiles`
+  steps gate batching on `HK_BATCH`, which the `hk:all` task sets so hk
+  chunks files (~one batch per core) under the limit. Commits and
+  `hk:base` leave it unset — batching splits small changesets into
+  one-file batches (repeated linter startup), so the common path stays
+  single-invocation. Tracked upstream: jdx/hk discussion #971.
 
 ### CI/CD workflows
 
@@ -101,11 +122,11 @@ as peer jobs, each calling a single-concern **reusable** workflow:
 - **`pr.yml`** (on `pull_request`) — jobs `CI`, `Changeset`,
   `Dependencies`, `Pre-Commit`.
 - **`release.yml`** (on `push` to main) — jobs `CI` (gate), `CD`
-  (`needs: ci`), `Pre-Commit`. `CI` and `CD` are peers.
+  (`needs: ci`). `CI` and `CD` are peers.
 
 The reusables (`workflow_call`-only): `ci.yml`, `cd.yml`,
-`changeset-check.yml`, `dependency-review.yml`, `pre-commit.yml`,
-`pre-commit-seed.yml`. Consumers copy `pr.yml` / `release.yml`,
+`changeset-check.yml`, `dependency-review.yml`, `pre-commit.yml`.
+Consumers copy `pr.yml` / `release.yml`,
 swapping `./` for `gtbuchanan/tooling/.github/workflows/<name>@main`:
 
 ```yaml
@@ -154,9 +175,6 @@ jobs:
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
     secrets: inherit
-  pre-commit:
-    name: Pre-Commit
-    uses: gtbuchanan/tooling/.github/workflows/pre-commit-seed.yml@main
 ```
 
 **Naming / required checks.** Branch protection keys on the **leaf job
@@ -194,7 +212,7 @@ dynamic alternative (`uses:` can't interpolate a ref; GitHub's
 same-SHA `$/` syntax isn't GA). Do **not** "simplify" these back to
 `./`.
 
-Every job that needs Node, pnpm, or prek prepends `mise-setup`, which
+Every job that needs Node, pnpm, hk, or pkl prepends `mise-setup`, which
 installs the exact versions pinned in `mise.toml` / `mise.lock`. Tool
 caching is owned by `mise-setup` (mise data dir) and `pnpm-tasks`
 (pnpm store) separately so a single-tool bump in `mise.lock` only
@@ -225,16 +243,13 @@ through `package.json` scripts backed by `gtb` leaf commands.
   failure; caller must grant `pull-requests: write`. Both jobs
   require GitHub's Dependency Graph enabled; coverage is limited to
   ecosystems it indexes (npm + Actions here), so mise tools and
-  `.pre-commit-config.yaml` hooks aren't covered — Renovate's
-  managers handle those independently.
-- **`pre-commit.yml`** — Runs prek hooks against PR changed files via
-  bare `prek` (resolved from mise, no pnpm needed to invoke it). The
-  `use-pnpm` input (default `false`) opts into `pnpm install` for hooks
-  that shell out to the project's deps — this repo's `language: system`
-  eslint hook sets it `true`; everything else runs prek alone.
-- **`pre-commit-seed.yml`** — Warms the prek hook environment cache on
-  push so PR builds get cache hits. Uses only mise + bare prek
-  (`prepare-hooks`); each hook's env is isolated, so no `pnpm install`.
+  `hk.pkl` steps aren't covered — Renovate's managers handle those
+  independently.
+- **`pre-commit.yml`** — Runs the `hk:base` mise task on PR changed
+  files (hk resolved from mise). The `use-pnpm` input (default
+  `false`) opts into `pnpm install` for steps that shell out to the
+  project's deps — this repo's `pnpm exec eslint` step sets it `true`;
+  everything else runs hk alone.
 
 Composite actions:
 
@@ -281,11 +296,18 @@ Beyond `config:recommended`, the preset overrides these defaults:
   `lockFileMaintenance` schedule inherited from
   `:maintainLockFilesWeekly`.
 
-Plus a single `packageRules` entry to cap
-`renovatebot/pre-commit-hooks` updates at bi-monthly (`1,15`) — Renovate
-releases multiple times per week, so without throttling we'd get a
-hook-bump PR every few days. The rule clears `minimumReleaseAge` so the
-3-day quarantine doesn't push releases past the schedule window.
+Plus `packageRules` throttles that cap fast-moving deps at bi-monthly
+(`1,15`) — currently `renovatebot/pre-commit-hooks` and the `renovate`
+CLI npm package (mise's `npm:renovate`, which drives hk's
+`renovate-config-validator` step). Such deps release multiple times per
+week, so without throttling we'd get a bump PR every few days. Each
+throttle clears `minimumReleaseAge` so the 3-day quarantine doesn't
+push a release past its schedule window.
+
+A `customManagers` regex entry keeps the hk version embedded in
+`hk.pkl`'s `amends`/`import` package URLs in lockstep with the hk
+release. Renovate's mise manager bumps `mise.toml`, but the pkl URLs
+are a second copy of the version it can't track natively.
 
 ### Turbo cache miss on workspace edits
 
@@ -306,7 +328,7 @@ no config scopes this hash.
 ### Why turbo isn't in mise.toml
 
 Turbo is a Rust binary and philosophically belongs alongside Node,
-pnpm, and prek in `mise.toml`. We tried, reverted, and recorded the
+pnpm, hk, and pkl in `mise.toml`. We tried, reverted, and recorded the
 reasoning here so the question doesn't get re-litigated:
 
 - Mise's only registered backend for turbo is `npm:turbo` (no aqua /
