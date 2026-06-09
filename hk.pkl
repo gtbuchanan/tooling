@@ -4,7 +4,6 @@ import "package://github.com/jdx/hk/releases/download/v1.46.0/hk@1.46.0#/Builtin
 // Lockfiles are machine-generated; keep the file-hygiene hooks off them.
 local lockfiles = Regex(#"[-.]lock(\.|$)"#)
 
-// renovate-config-validator invocation, shared by the preset + repo steps.
 local renovateCheck = "renovate-config-validator --strict {{files}}"
 
 // POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
@@ -19,7 +18,6 @@ local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 '
 local batchFiles = (read?("env:HK_BATCH") ?? "0") == "1"
 
 local allSteps = new Mapping<String, Step> {
-    // File hygiene — native hk builtins, no Python/venv layer.
     ["check-added-large-files"] = (Builtins.check_added_large_files) { exclude = lockfiles; batch = batchFiles }
     ["end-of-file-fixer"] = (Builtins.newlines) { exclude = lockfiles; batch = batchFiles }
     ["fix-byte-order-marker"] = (Builtins.byte_order_marker) { exclude = lockfiles; batch = batchFiles }
@@ -30,8 +28,6 @@ local allSteps = new Mapping<String, Step> {
     // it runs unconditionally and fails when the index contains a
     // submodule (mode 160000) entry.
     ["forbid-submodules"] {
-        // hk runs steps under cmd.exe on Windows and sh elsewhere, so the
-        // gitlink (mode 160000) guard needs a per-OS command string.
         check = new Script {
             windows = "git ls-files -s | findstr /b /c:\"160000 \" >nul && exit /b 1 || exit /b 0"
             linux = gitlinkGuardPosix
@@ -52,10 +48,9 @@ local allSteps = new Mapping<String, Step> {
         check = renovateCheck
     }
 
-    // The config packages aren't published yet, so eslint runs against
-    // the repo's own `node_modules`; consumers point this at their
-    // installed `@gtbuchanan/eslint-config`. `fix` autofixes on commit;
-    // `check` is non-modifying for CI.
+    // Config packages aren't published yet, so eslint runs against the
+    // repo's own node_modules; consumers point this at their installed
+    // @gtbuchanan/eslint-config.
     ["eslint"] {
         batch = batchFiles
         check = "pnpm exec eslint --max-warnings=0 --no-warn-ignored {{files}}"

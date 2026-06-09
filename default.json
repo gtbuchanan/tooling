@@ -1,5 +1,22 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "jdx/hk",
+      "description": "Keep the hk version embedded in hk.pkl's package URLs in sync with the hk release (Renovate's mise manager bumps mise.toml, but not the pkl URLs)",
+      "extractVersionTemplate": "^v(?<version>.+)$",
+      "managerFilePatterns": [
+        "/(^|/)hk\\.pkl$/"
+      ],
+      "matchStrings": [
+        "releases/download/v(?<currentValue>[^/]+?)/",
+        "hk@(?<currentValue>[^#\"]+?)#"
+      ],
+      "versioningTemplate": "semver"
+    }
+  ],
   "description": [
     "Shared Renovate config for @gtbuchanan repositories"
   ],
@@ -33,6 +50,19 @@
       "description": "Restrict noisy pre-commit hook updates to bi-monthly",
       "matchSourceUrls": [
         "https://github.com/renovatebot/pre-commit-hooks"
+      ],
+      "minimumReleaseAge": "0 days",
+      "schedule": [
+        "* * 1,15 * *"
+      ]
+    },
+    {
+      "description": "Throttle the noisy renovate CLI (mise npm:renovate, used by hk's renovate-config-validator step) to bi-monthly",
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "renovate"
       ],
       "minimumReleaseAge": "0 days",
       "schedule": [

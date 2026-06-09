@@ -1,6 +1,5 @@
 [settings]
-# Required for the `[hooks]` table below (mise gates hooks behind
-# the experimental flag).
+# Required for the `[hooks]` table below.
 experimental = true
 # pnpm's version comes from `packageManager` in package.json (turbo
 # requires that field, and mise reads it natively when listed here).
@@ -14,12 +13,10 @@ minimum_release_age = "3d"
 
 [env]
 # hk wraps hook steps in `mise x` so mise-managed tools resolve without
-# activation. Set here so it applies to `hk install`, `hk check`/`fix`,
-# and the installed git hook alike.
+# activation.
 HK_MISE = "1"
 
 [tools]
-# actionlint + renovate are invoked by hk steps; pkl evaluates hk.pkl.
 actionlint = "1.7.12"
 hk = "1.46.0"
 node = "24.16.0"
@@ -27,9 +24,6 @@ node = "24.16.0"
 pkl = "0.31.1"
 
 [hooks]
-# Install hk's git hooks on `mise install` (config-based, Git 2.54+),
-# wrapping them in `mise x` so mise tools resolve. Idempotent and a
-# silent no-op once hk is configured globally, so it's safe to re-run.
 postinstall = "hk install --mise"
 
 # pnpm ignores the `os` field on workspace packages, so the Termux shim's

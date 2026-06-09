@@ -3,8 +3,7 @@
 ## Prerequisites
 
 [mise] manages the repo's pinned dev tools for every contributor and
-CI. Run `mise install` to get the versions the repo pins (it also
-installs [hk]'s git hooks via the `postinstall` mise hook).
+CI. Run `mise install` to get the versions the repo pins.
 Those versions live in `mise.toml`; pnpm's version lives in
 `package.json`'s `packageManager` field because turbo requires that
 field for workspace resolution (mise reads the version from there via

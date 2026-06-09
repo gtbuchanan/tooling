@@ -294,11 +294,18 @@ Beyond `config:recommended`, the preset overrides these defaults:
   `lockFileMaintenance` schedule inherited from
   `:maintainLockFilesWeekly`.
 
-Plus a single `packageRules` entry to cap
-`renovatebot/pre-commit-hooks` updates at bi-monthly (`1,15`) — Renovate
-releases multiple times per week, so without throttling we'd get a
-hook-bump PR every few days. The rule clears `minimumReleaseAge` so the
-3-day quarantine doesn't push releases past the schedule window.
+Plus `packageRules` throttles that cap fast-moving deps at bi-monthly
+(`1,15`) — currently `renovatebot/pre-commit-hooks` and the `renovate`
+CLI npm package (mise's `npm:renovate`, which drives hk's
+`renovate-config-validator` step). Such deps release multiple times per
+week, so without throttling we'd get a bump PR every few days. Each
+throttle clears `minimumReleaseAge` so the 3-day quarantine doesn't
+push a release past its schedule window.
+
+A `customManagers` regex entry keeps the hk version embedded in
+`hk.pkl`'s `amends`/`import` package URLs in lockstep with the hk
+release. Renovate's mise manager bumps `mise.toml`, but the pkl URLs
+are a second copy of the version it can't track natively.
 
 ### Turbo cache miss on workspace edits
 
