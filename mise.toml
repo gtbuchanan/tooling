@@ -1,5 +1,13 @@
+[env]
+# hk wraps hook steps in `mise x` so mise-managed tools resolve without
+# activation.
+HK_MISE = "1"
+
+[hooks]
+postinstall = "hk install --mise"
+
 [settings]
-# Required for the `[hooks]` table below.
+# Required for the `[hooks]` table.
 experimental = true
 # pnpm's version comes from `packageManager` in package.json (turbo
 # requires that field, and mise reads it natively when listed here).
@@ -8,23 +16,9 @@ idiomatic_version_file_enable_tools = ["pnpm"]
 lockfile = true
 # Matches the Renovate/pnpm 3-day quarantine. Only filters fuzzy/`latest`
 # resolution (e.g. manual `mise up --bump`); install of the exact pins
-# below bypasses it, and Renovate already gates automated bumps at 3 days.
+# in `[tools]` bypasses it, and Renovate already gates automated bumps at
+# 3 days.
 minimum_release_age = "3d"
-
-[env]
-# hk wraps hook steps in `mise x` so mise-managed tools resolve without
-# activation.
-HK_MISE = "1"
-
-[tools]
-actionlint = "1.7.12"
-hk = "1.46.0"
-node = "24.16.0"
-"npm:renovate" = "43.213.1"
-pkl = "0.31.1"
-
-[hooks]
-postinstall = "hk install --mise"
 
 # pnpm ignores the `os` field on workspace packages, so the Termux shim's
 # bin doesn't get auto-symlinked into node_modules/.bin via the usual
@@ -36,3 +30,10 @@ run = [
   'if [ "$(uname -o)" = "Android" ]; then ln -sfn ../../packages/pnpm-termux-shim/bin/pnpm node_modules/.bin/pnpm; fi',
 ]
 run_windows = "pnpm install --frozen-lockfile"
+
+[tools]
+actionlint = "1.7.12"
+hk = "1.46.0"
+node = "24.16.0"
+"npm:renovate" = "43.213.1"
+pkl = "0.31.1"

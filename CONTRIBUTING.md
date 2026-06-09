@@ -7,8 +7,7 @@ CI. Run `mise install` to get the versions the repo pins.
 Those versions live in `mise.toml`; pnpm's version lives in
 `package.json`'s `packageManager` field because turbo requires that
 field for workspace resolution (mise reads the version from there via
-`idiomatic_version_file_enable_tools`). `mise.lock` carries
-per-platform binary checksums for the aqua-backed tools.
+`idiomatic_version_file_enable_tools`).
 
 Install mise:
 
@@ -63,9 +62,8 @@ All commands go through Turbo for caching:
 
 ## Pre-commit
 
-`mise install` installs [hk] hooks (via the `postinstall` mise hook
-running `hk install --mise`) that verify changed files each time you
-commit. If the hooks find issues they autofix what they can and fail
+`mise install` installs [hk] hooks that verify changed files each time
+you commit. If the hooks find issues they autofix what they can and fail
 the commit — review the corrections, stage them, and try again.
 Commit often so issues stay small.
 
@@ -91,52 +89,41 @@ changeset — CI enforces this.
 
 ## Termux/Android setup
 
-**mise via `termux-chroot`.** mise's downloaded binaries are standard
-Linux builds that hardcode `/lib`, `/usr`, etc. Termux's prefix is
-`/data/data/com.termux/files/usr`, so those paths don't resolve
-without a chroot wrapper. Add this to your shell rc so `mise` always
-runs through `termux-chroot`:
-
-```sh
-mise() { SSL_CERT_FILE="$PREFIX/etc/tls/cert.pem" termux-chroot command mise "$@"; }
-```
-
-(`pkg install termux-chroot` if it isn't already installed.)
-
-**Mixed setup: Termux packages for Node + pnpm, mise for hk.** mise
-shims exec downloaded glibc/musl ELFs directly, bypassing
-`termux-chroot` and ENOENTing on Bionic's missing dynamic linker.
-Install Node, pnpm, and turbo via `pkg install nodejs pnpm turbo`
-(Bionic-native) and let mise handle hk (static musl aarch64, runs
-unmodified). Tell mise to ignore the broken tools:
+mise itself is Termux-packaged here (`pkg install mise`), but **mise's
+install backends have no Android targets for this repo's tools** —
+`node`, `pnpm`, `hk`, `pkl`, and `actionlint` all key off
+`android/arm64`, for which aqua/core ship no assets. Each is installed
+out of band and disabled in mise so it doesn't try to manage them:
 
 ```toml
 # ~/.config/mise/config.toml
 [settings]
-disable_tools = ["node", "pnpm"]
+disable_tools = ["node", "pnpm", "hk", "pkl", "actionlint"]
 ```
 
-`disable_tools` doesn't garbage-collect previously-created shims —
-`rm ~/.local/share/mise/shims/{node,pnpm}` if you've installed them
-in the past.
+- **node** — `pkg install nodejs-lts`; mise's `core:node` only builds
+  from source on Bionic, which doesn't compile. mise picks up system
+  node from `PATH`.
+- **pnpm** — `npm i -g pnpm` (no `android/arm64` aqua asset).
+- **turbo** — `pkg install turbo`.
+- **hk** — download the static musl aarch64 release tarball
+  (`hk-aarch64-unknown-linux-musl.tar.gz`); it runs unmodified on
+  Bionic.
+- **actionlint** — download the prebuilt `linux_arm64` release; it's a
+  static Go binary that runs unmodified. hk orchestrates it as a
+  workflow-lint step but doesn't depend on it at runtime.
+- **pkl** — Apple ships only `pkl-linux-aarch64`, a glibc-dynamic binary
+  that ENOENTs on Bionic's missing loader. Install glibc-runner
+  (`pkg install glibc-runner`), run `grun -c pkl-linux-aarch64` once to
+  patch the ELF interpreter, then put a `grun pkl-linux-aarch64 "$@"`
+  wrapper on `PATH` as `pkl`. hk only invokes `pkl` for
+  `validate`/`check`/`fix`/`install`.
 
-**pkl bootstrap.** hk evaluates `hk.pkl` with the `pkl` CLI, and
-Apple's only aarch64-Linux Pkl artifact (`pkl-linux-aarch64`) is
-glibc-dynamic — it ENOENTs on Bionic's missing loader. Until a static
-aarch64 Pkl ships, wire up `pkl` via one of two workarounds (~270 MB),
-then put the wrapper on `PATH` as `pkl`:
-
-- **jpkl (JVM).** `pkg install openjdk-21` + the `jpkl` jar, wrapped in
-  a `bash` shim named `pkl`.
-- **grun (glibc-runner).** `pkg install glibc-runner`, then
-  `grun -c pkl-linux-aarch64` once to patch the loader and wrap
-  `grun pkl-linux-aarch64 "$@"` as `pkl`.
-
-`hk migrate` (pure Rust) and `hk` itself don't need Pkl; only
-`validate`/`check`/`fix`/`install` do. See
-[issue #81](https://github.com/gtbuchanan/tooling/issues/81) for the
-full end-to-end evaluation of both paths.
+The maintainer's [dotfiles] automate this end to end and pin the
+versions to match `mise.toml`; consult its Android chezmoi scripts for
+the exact install steps.
 
 [changesets]: https://github.com/changesets/changesets
+[dotfiles]: https://github.com/gtbuchanan/dotfiles
 [hk]: https://hk.jdx.dev
 [mise]: https://mise.jdx.dev

@@ -6,6 +6,9 @@ local lockfiles = Regex(#"[-.]lock(\.|$)"#)
 
 local renovateCheck = "renovate-config-validator --strict {{files}}"
 
+// eslint args shared by the step's check/fix; only `--fix` differs.
+local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
+
 // POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
 // inline on the Windows branch below.
 local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 ' || true)\""
@@ -48,13 +51,10 @@ local allSteps = new Mapping<String, Step> {
         check = renovateCheck
     }
 
-    // Config packages aren't published yet, so eslint runs against the
-    // repo's own node_modules; consumers point this at their installed
-    // @gtbuchanan/eslint-config.
     ["eslint"] {
         batch = batchFiles
-        check = "pnpm exec eslint --max-warnings=0 --no-warn-ignored {{files}}"
-        fix = "pnpm exec eslint --fix --max-warnings=0 --no-warn-ignored {{files}}"
+        check = "pnpm exec eslint \(eslintArgs)"
+        fix = "pnpm exec eslint --fix \(eslintArgs)"
     }
 }
 
