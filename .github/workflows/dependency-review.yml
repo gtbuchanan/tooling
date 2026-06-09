@@ -104,9 +104,12 @@ jobs:
                 fi
                 # Strip any sub-action path (actions/cache/save → actions/cache).
                 repo=$(awk -F/ '{print $1"/"$2}' <<<"$name")
-                # Newest stable release whose publish date clears the window.
+                # Newest stable release whose publish date clears the
+                # window. Paginate so the max isn't missed when the repo
+                # has >100 releases (gh streams the jq filter per page;
+                # sort -V still picks the global max across pages).
                 latest=$(
-                  gh api "repos/${repo}/releases?per_page=100" \
+                  gh api --paginate "repos/${repo}/releases?per_page=100" \
                     --jq "[ .[]
                             | select(.draft == false and .prerelease == false)
                             | select((.published_at | fromdateiso8601) <= ${cutoff})
