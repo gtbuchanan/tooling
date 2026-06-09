@@ -6,7 +6,7 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "jdx/hk",
       "description": "Keep the hk version embedded in hk.pkl's package URLs in sync with the hk release (Renovate's mise manager bumps mise.toml, but not the pkl URLs)",
-      "extractVersionTemplate": "^v(?<version>.+)$",
+      "extractVersionTemplate": "^v?(?<version>.+)$",
       "managerFilePatterns": [
         "/(^|/)hk\\.pkl$/"
       ],

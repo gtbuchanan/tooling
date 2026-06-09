@@ -245,8 +245,8 @@ through `package.json` scripts backed by `gtb` leaf commands.
   ecosystems it indexes (npm + Actions here), so mise tools and
   `hk.pkl` steps aren't covered — Renovate's managers handle those
   independently.
-- **`pre-commit.yml`** — Runs `hk check --from-ref/--to-ref` against PR
-  changed files (hk resolved from mise). The `use-pnpm` input (default
+- **`pre-commit.yml`** — Runs the `hk:base` mise task on PR changed
+  files (hk resolved from mise). The `use-pnpm` input (default
   `false`) opts into `pnpm install` for steps that shell out to the
   project's deps — this repo's `pnpm exec eslint` step sets it `true`;
   everything else runs hk alone.

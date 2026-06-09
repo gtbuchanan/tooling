@@ -30,4 +30,10 @@ cmd=fix
 
 files="$(git diff --name-only --diff-filter=d "$base" HEAD)"
 [ -n "$files" ] || exit 0
+
+# Split the file list on newlines only (so paths with spaces survive) and
+# disable globbing so glob metacharacters in paths stay literal.
+IFS=$'\n'
+set -f
+# shellcheck disable=SC2086 -- deliberate newline-split of the file list
 run_native hk "$cmd" "$@" $files

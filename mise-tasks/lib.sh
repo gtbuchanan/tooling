@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Sourced by file tasks (not run directly).
 
 # Run a native binary, forwarding all args. bash resolves commands with the
