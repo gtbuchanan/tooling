@@ -12,6 +12,8 @@ hk.pkl                 — hk pre-commit hook config (Pkl)
 mise.lock              — Per-platform binary checksums + download URLs
 mise.toml              — Pin dev-tool versions for local + CI; postinstall hook installs hk
 mise-tasks/
+  lib.sh               — Sourced helper (run_native): run a binary with a native PATH under Git Bash
+  hk/all               — File task (mise run hk:all): run hk across all files
   hk/base              — File task (mise run hk:base): run hk on a base-ref diff
 .github/
   actions/

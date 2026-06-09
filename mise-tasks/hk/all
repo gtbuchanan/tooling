@@ -1,6 +1,7 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 #MISE description="Run hk across all files (fixes locally, checks in CI)"
 set -eu
+. "$(dirname "$0")/../lib.sh"
 
 # Like prek's `run`, apply fixes locally; keep CI a non-modifying gate.
 cmd=fix
@@ -11,4 +12,5 @@ cmd=fix
 # batching in hk.pkl, so hk chunks files (~one batch per core) to sizes it
 # keeps under the limit. Extra args forward to hk (e.g. -S <step>).
 # See jdx/hk discussion #971: https://github.com/jdx/hk/discussions/971
-HK_BATCH=1 hk "$cmd" --all "$@"
+export HK_BATCH=1
+run_native hk "$cmd" --all "$@"

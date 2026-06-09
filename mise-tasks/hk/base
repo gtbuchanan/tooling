@@ -1,6 +1,7 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 #MISE description="Run hk on files changed from a base ref (fixes locally, checks in CI)"
 set -eu
+. "$(dirname "$0")/../lib.sh"
 
 # First non-flag arg is the base ref; the rest forward to hk (e.g. -S <step>
 # to run one hook), so you can target a step without repeating the base:
@@ -28,4 +29,5 @@ cmd=fix
 [ -z "${CI:-}" ] || cmd=check
 
 files="$(git diff --name-only --diff-filter=d "$base" HEAD)"
-[ -z "$files" ] || hk "$cmd" "$@" $files
+[ -n "$files" ] || exit 0
+run_native hk "$cmd" "$@" $files
