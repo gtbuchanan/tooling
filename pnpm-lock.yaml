@@ -112,8 +112,8 @@ catalogs:
       specifier: 2.2.0
       version: 2.2.0
     prettier-plugin-multiline-arrays:
-      specifier: 4.1.8
-      version: 4.1.8
+      specifier: 4.1.9
+      version: 4.1.9
     prettier-plugin-packagejson:
       specifier: 3.0.2
       version: 3.0.2
@@ -341,7 +341,7 @@ importers:
         version: 2.2.0(postcss@8.5.15)(prettier@3.8.3)
       prettier-plugin-multiline-arrays:
         specifier: 'catalog:'
-        version: 4.1.8(prettier@3.8.3)
+        version: 4.1.9(prettier@3.8.3)
       prettier-plugin-packagejson:
         specifier: 'catalog:'
         version: 3.0.2(prettier@3.8.3)
@@ -507,16 +507,16 @@ importers:
 
 packages:
 
-  '@augment-vir/assert@31.68.4':
-    resolution: {integrity: sha512-TMmsuWXewtP49ZQbrYK87vMFOMzm/+xqgZ7p0Cg69EYRNvpoRoknWSzv16VInvzrErI8BMCyRFBZ1eFyfvJZLg==}
+  '@augment-vir/assert@31.72.0':
+    resolution: {integrity: sha512-h7xg5Ctm5dvkmacEvuRCotcY/97/PfR6bLGIVypCLklnSVZWTARed0ob5zGbGyZ9Eljnu3Tq66+3rjKmCDyRqg==}
     engines: {node: '>=22'}
 
-  '@augment-vir/common@31.68.4':
-    resolution: {integrity: sha512-bjp7HurCZV7pvwD0mzFkhNWfklrusUxjk3BtzLfjEEBLfZRffilIP6IDMvTp2wwILxvhPjaL/vjgDz6GYSvSlQ==}
+  '@augment-vir/common@31.72.0':
+    resolution: {integrity: sha512-zf4vPBA+/h65evmKV0w7gubr0c1qNxcDiJa14vp002AgjbJOi6V0pT1D6uspO+FEukIMXYYygMG7YxTDOGeSOA==}
     engines: {node: '>=22'}
 
-  '@augment-vir/core@31.68.4':
-    resolution: {integrity: sha512-j1dLnvmfw1hCyFgscArMumCgLqbMH6VSPdM7+sVpBpHX13CrYDgBQvKbCorsSA16xjK3RjPxO7UfeSYb7rAWeA==}
+  '@augment-vir/core@31.72.0':
+    resolution: {integrity: sha512-iUFV13o9JcbpU66o6VFciLDAZGdIDC9WuyQCrBNITGUZhkHyN06UZkktZcLp1VDS6sGIRe8P0CXwA5nCQNUqzA==}
     engines: {node: '>=22'}
 
   '@babel/helper-string-parser@7.29.7':
@@ -605,8 +605,8 @@ packages:
   '@clack/prompts@1.2.0':
     resolution: {integrity: sha512-4jmztR9fMqPMjz6H/UZXj0zEmE43ha1euENwkckKKel4XpSfokExPo5AiVStdHSAlHekz4d0CA/r45Ok1E4D3w==}
 
-  '@date-vir/duration@8.3.1':
-    resolution: {integrity: sha512-IfTchf2IoyCAXpKGedi/z+s7JTnT8Mmvp4Zj82fxfSstT/bcbFyItQIf0IfJd3h/z3hG399yNUzr9fg/2mZNAA==}
+  '@date-vir/duration@8.4.0':
+    resolution: {integrity: sha512-O9H4cpFdIEagYQCphwc5CvWd4sqVUsLBIuZcIvB7fNarHxeEK8db8Iv/TX9TdlmysTaJl8doK5YaPnZgBfOURg==}
     engines: {node: '>=22'}
 
   '@dprint/formatter@0.5.1':
@@ -740,6 +740,10 @@ packages:
     peerDependencies:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
+
+  '@noble/hashes@2.2.0':
+    resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
+    engines: {node: '>= 20.19.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -884,6 +888,10 @@ packages:
 
   '@package-json/types@0.0.12':
     resolution: {integrity: sha512-uu43FGU34B5VM9mCNjXCwLaGHYjXdNincqKLaraaCW+7S2+SmiBg1Nv8bPnmschrIfZmfKNY9f3fC376MRrObw==}
+
+  '@paralleldrive/cuid2@3.3.0':
+    resolution: {integrity: sha512-OqiFvSOF0dBSesELYY2CAMa4YINvlLpvKOz/rv6NeZEqiyttlHgv98Juwv4Ch+GrEV7IZ8jfI2VcEoYUjXXCjw==}
+    hasBin: true
 
   '@pkgr/core@0.2.9':
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
@@ -1399,6 +1407,9 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
+  bignumber.js@9.3.1:
+    resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
+
   brace-expansion@5.0.6:
     resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
     engines: {node: 18 || 20 || >=22}
@@ -1543,8 +1554,8 @@ packages:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  diff@8.0.4:
-    resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
     engines: {node: '>=0.3.1'}
 
   dir-glob@3.0.1:
@@ -1565,6 +1576,9 @@ packages:
   enquirer@2.4.1:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
     engines: {node: '>=8.6'}
+
+  error-causes@3.0.2:
+    resolution: {integrity: sha512-i0B8zq1dHL6mM85FGoxaJnVtx6LD5nL2v0hlpGdntg5FOSyzQ46c9lmz5qx0xRS2+PWHGOHcYxGIBC5Le2dRMw==}
 
   es-module-lexer@2.1.0:
     resolution: {integrity: sha512-n27zTYMjYu1aj4MjCWzSP7G9r75utsaoc8m61weK+W8JMBGGQybd43GstCXZ3WNmSFtGT9wi59qQTW6mhTR5LQ==}
@@ -2448,8 +2462,8 @@ packages:
     peerDependencies:
       prettier: 3.x
 
-  prettier-plugin-multiline-arrays@4.1.8:
-    resolution: {integrity: sha512-crMXJTtHLQMLKax6T4YFUU6ho4IiLBNaUM79PwN8jdwxaXzMEZS6LJxqTjxXMoCsLaCyEa+M8SCv2+JGCH5X7Q==}
+  prettier-plugin-multiline-arrays@4.1.9:
+    resolution: {integrity: sha512-rI4HdfJAFkXkvmh0LSE0ItPrRwJrR6TBaNWamrwOOnHzRLGoVuuuBhljU1pnsf9K/oU/ZsZpjQcuAle471yZ8A==}
     engines: {node: '>=20'}
     peerDependencies:
       prettier: '>=3.0.0 <4.0.0'
@@ -2915,30 +2929,31 @@ packages:
 
 snapshots:
 
-  '@augment-vir/assert@31.68.4':
+  '@augment-vir/assert@31.72.0':
     dependencies:
-      '@augment-vir/core': 31.68.4
-      '@date-vir/duration': 8.3.1
+      '@augment-vir/core': 31.72.0
+      '@date-vir/duration': 8.4.0
       deep-eql: 5.0.2
       expect-type: 1.3.0
       type-fest: 5.6.0
 
-  '@augment-vir/common@31.68.4':
+  '@augment-vir/common@31.72.0':
     dependencies:
-      '@augment-vir/assert': 31.68.4
-      '@augment-vir/core': 31.68.4
-      '@date-vir/duration': 8.3.1
+      '@augment-vir/assert': 31.72.0
+      '@augment-vir/core': 31.72.0
+      '@date-vir/duration': 8.4.0
+      '@paralleldrive/cuid2': 3.3.0
       ansi-styles: 6.2.3
       deepcopy-esm: 2.1.1
       json5: 2.2.3
       type-fest: 5.6.0
       typed-event-target: 4.3.0
 
-  '@augment-vir/core@31.68.4':
+  '@augment-vir/core@31.72.0':
     dependencies:
-      '@date-vir/duration': 8.3.1
+      '@date-vir/duration': 8.4.0
       browser-or-node: 3.0.0
-      diff: 8.0.4
+      diff: 9.0.0
       json5: 2.2.3
       type-fest: 5.6.0
 
@@ -3114,9 +3129,9 @@ snapshots:
       fast-wrap-ansi: 0.1.6
       sisteransi: 1.0.5
 
-  '@date-vir/duration@8.3.1':
+  '@date-vir/duration@8.4.0':
     dependencies:
-      '@augment-vir/assert': 31.68.4
+      '@augment-vir/assert': 31.72.0
       '@types/luxon': 3.7.1
       luxon: 3.7.2
       type-fest: 5.6.0
@@ -3278,6 +3293,8 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
+  '@noble/hashes@2.2.0': {}
+
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -3352,6 +3369,12 @@ snapshots:
     optional: true
 
   '@package-json/types@0.0.12': {}
+
+  '@paralleldrive/cuid2@3.3.0':
+    dependencies:
+      '@noble/hashes': 2.2.0
+      bignumber.js: 9.3.1
+      error-causes: 3.0.2
 
   '@pkgr/core@0.2.9': {}
 
@@ -3795,6 +3818,8 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
+  bignumber.js@9.3.1: {}
+
   brace-expansion@5.0.6:
     dependencies:
       balanced-match: 4.0.4
@@ -3899,7 +3924,7 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
-  diff@8.0.4: {}
+  diff@9.0.0: {}
 
   dir-glob@3.0.1:
     dependencies:
@@ -3918,6 +3943,8 @@ snapshots:
     dependencies:
       ansi-colors: 4.1.3
       strip-ansi: 6.0.1
+
+  error-causes@3.0.2: {}
 
   es-module-lexer@2.1.0: {}
 
@@ -5020,10 +5047,10 @@ snapshots:
     transitivePeerDependencies:
       - postcss
 
-  prettier-plugin-multiline-arrays@4.1.8(prettier@3.8.3):
+  prettier-plugin-multiline-arrays@4.1.9(prettier@3.8.3):
     dependencies:
-      '@augment-vir/assert': 31.68.4
-      '@augment-vir/common': 31.68.4
+      '@augment-vir/assert': 31.72.0
+      '@augment-vir/common': 31.72.0
       prettier: 3.8.3
       proxy-vir: 2.0.2
 
@@ -5048,8 +5075,8 @@ snapshots:
 
   proxy-vir@2.0.2:
     dependencies:
-      '@augment-vir/assert': 31.68.4
-      '@augment-vir/common': 31.68.4
+      '@augment-vir/assert': 31.72.0
+      '@augment-vir/common': 31.72.0
 
   punycode@2.3.1: {}
 
@@ -5286,9 +5313,9 @@ snapshots:
 
   typed-event-target@4.3.0:
     dependencies:
-      '@augment-vir/assert': 31.68.4
-      '@augment-vir/common': 31.68.4
-      '@augment-vir/core': 31.68.4
+      '@augment-vir/assert': 31.72.0
+      '@augment-vir/common': 31.72.0
+      '@augment-vir/core': 31.72.0
 
   typescript-eslint@8.60.1(eslint@10.4.1(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
