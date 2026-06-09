@@ -234,15 +234,22 @@ through `package.json` scripts backed by `gtb` leaf commands.
   `Dependency Review` runs `actions/dependency-review-action` (fails on
   advisories at `fail-on-severity`, default `moderate`, and on
   non-permissive licenses per `.github/dependency-review-config.yml`).
-  `Version Check` fails if any newly-added dep isn't at its latest
-  version. Resolves the change set via GitHub's dep-graph compare
-  API; looks up latest via deps.dev (npm, pip, maven, nuget,
-  rubygems, go, cargo) or GitHub Releases (Actions). The `config-file`
-  input defaults to a remote ref pointing at this repo's shared license
-  policy, so consumers inherit it. Posts a PR summary comment on
-  failure; caller must grant `pull-requests: write`. Both jobs
-  require GitHub's Dependency Graph enabled; coverage is limited to
-  ecosystems it indexes (npm + Actions here), so mise tools and
+  `Version Check` fails if a newly-added dep the PR _declares_ (in a
+  changed non-lockfile manifest) is behind its latest eligible release
+  — catching stale pins before they land and trigger an immediate
+  Renovate bump. Lockfile-only (transitive) entries are skipped, and
+  "latest" respects the `minimum-release-age-days` quarantine (default
+  `3`, mirroring Renovate's `minimumReleaseAge`; set `0` for the
+  absolute latest) so a just-cut release doesn't fail the check. Known
+  gap: a version duplicated into a new manifest with no matching
+  removal still reads as new. Resolves the change set via GitHub's
+  dep-graph compare API; looks up latest via deps.dev (npm, pip, maven,
+  nuget, rubygems, go, cargo) or GitHub Releases (Actions). The
+  `config-file` input defaults to a remote ref pointing at this repo's
+  shared license policy, so consumers inherit it. Posts a PR summary
+  comment on failure; caller must grant `pull-requests: write`. Both
+  jobs require GitHub's Dependency Graph enabled; coverage is limited
+  to ecosystems it indexes (npm + Actions here), so mise tools and
   `hk.pkl` steps aren't covered — Renovate's managers handle those
   independently.
 - **`pre-commit.yml`** — Runs the `hk:base` mise task on PR changed
