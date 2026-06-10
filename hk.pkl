@@ -1,58 +1,27 @@
 amends "package://github.com/jdx/hk/releases/download/v1.46.0/hk@1.46.0#/Config.pkl"
 import "package://github.com/jdx/hk/releases/download/v1.46.0/hk@1.46.0#/Builtins.pkl"
 
-// Lockfiles are machine-generated; keep the file-hygiene hooks off them.
-local lockfiles = Regex(#"[-.]lock(\.|$)"#)
-
-local renovateCheck = "renovate-config-validator --strict {{files}}"
+// Shared hk preset (@gtbuchanan/tooling). Self-host imports it by relative
+// path because tooling can't `package://`-import its own unpublished
+// release — the same own-repo-vs-consumer split as the `./` workflow refs
+// documented in AGENTS.md. Consumers import it via the published package URL.
+import "hk/Defaults.pkl"
 
 // eslint args shared by the step's check/fix; only `--fix` differs.
 local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
 
-// POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
-// inline on the Windows branch below.
-local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 ' || true)\""
-
-// `hk:all` exports HK_BATCH=1 to batch file-heavy steps for a full-repo run,
-// keeping hk's per-step command under Windows' cmd.exe 8191-char limit
-// (jdx/hk discussion #971: https://github.com/jdx/hk/discussions/971). Off by
-// default so commits invoke each linter once — batching runs them per chunk,
-// which is slower on the small changesets commits and PRs produce.
-local batchFiles = (read?("env:HK_BATCH") ?? "0") == "1"
-
 local allSteps = new Mapping<String, Step> {
-    ["check-added-large-files"] = (Builtins.check_added_large_files) { exclude = lockfiles; batch = batchFiles }
-    ["end-of-file-fixer"] = (Builtins.newlines) { exclude = lockfiles; batch = batchFiles }
-    ["fix-byte-order-marker"] = (Builtins.byte_order_marker) { exclude = lockfiles; batch = batchFiles }
-    ["trailing-whitespace"] = (Builtins.trailing_whitespace) { exclude = lockfiles; batch = batchFiles }
+    ...Defaults.fileHygiene
     ["actionlint"] = Builtins.actionlint
+    ["forbid-submodules"] = Defaults.forbidSubmodules
 
-    // No hk builtin for this, so check the index directly. No `glob`, so
-    // it runs unconditionally and fails when the index contains a
-    // submodule (mode 160000) entry.
-    ["forbid-submodules"] {
-        check = new Script {
-            windows = "git ls-files -s | findstr /b /c:\"160000 \" >nul && exit /b 1 || exit /b 0"
-            linux = gitlinkGuardPosix
-            macos = gitlinkGuardPosix
-            other = gitlinkGuardPosix
-        }
-    }
-
-    // renovate-config-validator ships only inside the `renovate` npm
-    // package (pinned via mise `npm:renovate`); resolved on PATH by
-    // `hk install --mise`. One step per validated config file.
-    ["renovate-preset"] {
-        glob = "default.json"
-        check = renovateCheck
-    }
-    ["renovate-config"] {
-        glob = ".github/renovate.json"
-        check = renovateCheck
-    }
+    // Both validate via Defaults.renovateConfig (npm:renovate on PATH from
+    // `hk install --mise`); renovate-preset retargets the shareable preset.
+    ["renovate-preset"] = (Defaults.renovateConfig) { glob = "default.json" }
+    ["renovate-config"] = Defaults.renovateConfig
 
     ["eslint"] {
-        batch = batchFiles
+        batch = Defaults.batchFiles
         check = "pnpm exec eslint \(eslintArgs)"
         fix = "pnpm exec eslint --fix \(eslintArgs)"
     }
