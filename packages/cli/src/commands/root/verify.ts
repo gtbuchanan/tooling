@@ -7,6 +7,7 @@ import { type CodecovSections, generateCodecovSections } from '../../lib/codecov
 import { type WorkspaceDiscovery, discoverWorkspace } from '../../lib/discovery.ts';
 import { readJsonFile } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
+import { checkMiseTasksInclude } from '../../lib/mise-tasks.ts';
 import {
   type GeneratedTsconfig,
   planTsconfigs,
@@ -265,6 +266,7 @@ export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => 
     ...(discovery.packages.some(pkg => pkg.hasVitestTests)
       ? checkCodecovSections(discovery.rootDir, discovery, ignored)
       : []),
+    ...(discovery.hasMise ? checkMiseTasksInclude(discovery.rootDir) : []),
   ];
 };
 

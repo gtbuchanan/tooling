@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import { generateCodecovSections } from '../../lib/codecov-config.ts';
@@ -8,6 +9,7 @@ import {
   type MergeResult, mergeCodecovSections, mergePackageScripts, sortKeysDeep, writeJsonFile,
 } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
+import { generateMiseTasks, miseTasksFileName } from '../../lib/mise-tasks.ts';
 import { planTsconfigs, readUserCompilerOptions } from '../../lib/tsconfig-gen.ts';
 import {
   generatePackageScripts,
@@ -58,6 +60,21 @@ const writePackageScripts = (
   );
 };
 
+/*
+ * The hk task wiring is only useful in repos that pin tools with mise, so
+ * gate generation on a mise.toml at the root. The `[task_config] includes`
+ * line that loads this file stays a manual, one-time edit (verify checks
+ * it) so sync never round-trips the hand-authored mise.toml.
+ */
+const writeMiseTasks = (logger: Logger, discovery: WorkspaceDiscovery): void => {
+  if (!discovery.hasMise) {
+    return;
+  }
+  const filePath = path.join(discovery.rootDir, miseTasksFileName);
+  writeFileSync(filePath, generateMiseTasks(discovery));
+  logger.info(`wrote ${filePath}`);
+};
+
 const writeCodecovConfig = (logger: Logger, discovery: WorkspaceDiscovery): void => {
   if (!discovery.packages.some(pkg => pkg.hasVitestTests)) {
     return;
@@ -67,61 +84,136 @@ const writeCodecovConfig = (logger: Logger, discovery: WorkspaceDiscovery): void
   logger.info(`wrote ${filePath}`);
 };
 
+const writeTurboJson = (logger: Logger, discovery: WorkspaceDiscovery): void => {
+  writeSortedAndLog(
+    logger, path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery),
+  );
+};
+
+const writeTsconfigFiles = (logger: Logger, discovery: WorkspaceDiscovery): void => {
+  for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
+    const userOpts = readUserCompilerOptions(descriptor.path);
+    writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));
+  }
+};
+
+const writeAllScripts = (
+  logger: Logger, discovery: WorkspaceDiscovery, force: boolean,
+): void => {
+  for (const pkg of discovery.packages) {
+    writePackageScripts(logger, pkg, discovery, force);
+  }
+  writeRootScripts(logger, discovery, force);
+};
+
+/**
+ * Selectable sync scopes — each maps to one generated artifact. Passed as
+ * positional args (`gtb sync mise turbo`); no args means all scopes.
+ */
+export const syncScopes = ['codecov', 'mise', 'scripts', 'tsconfig', 'turbo'] as const;
+
+/** One {@link syncScopes} entry. */
+export type SyncScope = (typeof syncScopes)[number];
+
+/** Result of {@link parseSyncScopes}: the selected scopes, or parse errors. */
+export type ParsedSyncScopes =
+  | { readonly errors: readonly string[] }
+  | { readonly scopes: ReadonlySet<SyncScope> };
+
+/**
+ * Resolves positional scope tokens to a {@link SyncScope} set. No tokens
+ * selects every scope (the default full sync); unknown tokens are errors.
+ */
+export const parseSyncScopes = (tokens: readonly string[]): ParsedSyncScopes => {
+  if (tokens.length === 0) {
+    return { scopes: new Set(syncScopes) };
+  }
+  const scopes = new Set<SyncScope>();
+  const errors: string[] = [];
+  for (const token of tokens) {
+    const match = syncScopes.find(scope => scope === token);
+    if (match === undefined) {
+      errors.push(`sync: unknown scope '${token}' (expected: ${syncScopes.join(', ')})`);
+    } else {
+      scopes.add(match);
+    }
+  }
+
+  return errors.length > 0 ? { errors } : { scopes };
+};
+
 /** Options for {@link runSync}. */
 export interface RunSyncOptions {
   readonly cwd?: string;
   readonly force?: boolean;
   readonly logger?: Logger;
+  /** Artifacts to generate. Defaults to all {@link SYNC_SCOPES}. */
+  readonly scopes?: ReadonlySet<SyncScope>;
 }
 
 /**
  * Reconciles generated config with the current workspace state.
  *
- * Writes `turbo.json`, per-package tsconfigs, `package.json` scripts,
- * and `codecov.yml` from discovery. With `force: false` (default),
- * existing script values are preserved; with `force: true`, they're
- * overwritten.
+ * Writes the artifacts selected by `scopes` (default all): `turbo.json`,
+ * per-package tsconfigs, `package.json` scripts, `mise.tasks.toml` (when
+ * the root has a `mise.toml`), and `codecov.yml`. With `force: false`
+ * (default), existing script values are preserved; with `force: true`,
+ * they're overwritten.
  */
 export const runSync = (options: RunSyncOptions = {}): void => {
   const cwd = options.cwd ?? process.cwd();
   const force = options.force ?? false;
   const logger = options.logger ?? createLogger();
+  const scopes = options.scopes ?? new Set(syncScopes);
   const discovery = discoverWorkspace({ cwd });
 
-  writeSortedAndLog(
-    logger, path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery),
-  );
+  const writers: Record<SyncScope, () => void> = {
+    codecov: () => { writeCodecovConfig(logger, discovery); },
+    mise: () => { writeMiseTasks(logger, discovery); },
+    scripts: () => { writeAllScripts(logger, discovery, force); },
+    tsconfig: () => { writeTsconfigFiles(logger, discovery); },
+    turbo: () => { writeTurboJson(logger, discovery); },
+  };
 
-  for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
-    const userOpts = readUserCompilerOptions(descriptor.path);
-    writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));
+  for (const scope of syncScopes) {
+    if (scopes.has(scope)) {
+      writers[scope]();
+    }
   }
-
-  for (const pkg of discovery.packages) {
-    writePackageScripts(logger, pkg, discovery, force);
-  }
-  writeRootScripts(logger, discovery, force);
-  writeCodecovConfig(logger, discovery);
 };
 
 /** Parsed citty args for {@link sync}. */
 export interface SyncCommandArgs {
   readonly cwd?: string | undefined;
   readonly force?: boolean | undefined;
+  /** Positional scope tokens (citty `args._`). Empty means all scopes. */
+  readonly scopes?: readonly string[] | undefined;
 }
 
 /**
  * Translates citty args into {@link RunSyncOptions} and invokes
  * {@link runSync}. Lives between the citty wrapper and the pure
  * function so the args translation is testable without going through
- * citty's `runCommand`.
+ * citty's `runCommand`. Returns the exit code (1 on an unknown scope).
  */
-export const syncCommand = (args: SyncCommandArgs, logger: Logger): void => {
+export const syncCommand = (args: SyncCommandArgs, logger: Logger): number => {
+  const parsed = parseSyncScopes(args.scopes ?? []);
+  if ('errors' in parsed) {
+    for (const message of parsed.errors) {
+      logger.error(message);
+    }
+
+    return 1;
+  }
+
   runSync({
     ...(args.cwd !== undefined && { cwd: args.cwd }),
     force: args.force ?? false,
     logger,
+    scopes: parsed.scopes,
   });
+
+  return 0;
 };
 
 /** Citty command wrapper for {@link syncCommand}. */
@@ -138,10 +230,18 @@ export const sync = defineCommand({
     },
   },
   meta: {
-    description: 'Reconcile generated config with the current workspace',
+    description:
+      'Reconcile generated config with the current workspace ' +
+      `(optionally scope to: ${syncScopes.join(', ')})`,
     name: rootNames.sync,
   },
   run: ({ args }) => {
-    syncCommand(args, createLogger());
+    const exitCode = syncCommand(
+      { cwd: args.cwd, force: args.force, scopes: args._ },
+      createLogger(),
+    );
+    if (exitCode !== 0) {
+      process.exitCode = exitCode;
+    }
   },
 });

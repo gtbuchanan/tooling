@@ -221,6 +221,38 @@ describe.concurrent(runVerify, () => {
       'codecov.yml: codecov.require_ci_to_pass must be false (run gtb sync)',
     ]);
   });
+
+  it('skips the mise include check when there is no mise.toml', ({ expect }) => {
+    const { root } = createConsumerProject();
+    initProject(root);
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
+  });
+
+  it('reports drift when mise.toml omits the tasks include', ({ expect }) => {
+    const { root } = createConsumerProject();
+    initProject(root);
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('[task_config] includes'))).toBe(true);
+  });
+
+  it('passes the mise include check when the include is present', ({ expect }) => {
+    const { root } = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      path.join(root, 'mise.toml'),
+      '[task_config]\nincludes = ["mise.tasks.toml"]\n',
+    );
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
+  });
 });
 
 describe.concurrent(parseIgnoreArgs, () => {

@@ -30,6 +30,7 @@
     "citty": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
+    "smol-toml": "catalog:",
     "valibot": "catalog:",
     "yaml": "catalog:"
   },
