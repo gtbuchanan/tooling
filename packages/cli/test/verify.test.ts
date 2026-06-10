@@ -221,6 +221,55 @@ describe.concurrent(runVerify, () => {
       'codecov.yml: codecov.require_ci_to_pass must be false (run gtb sync)',
     ]);
   });
+
+  it('skips the mise include check when there is no mise.toml', ({ expect }) => {
+    const { root } = createConsumerProject();
+    initProject(root);
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
+  });
+
+  it('reports drift when mise.toml omits the tasks include', ({ expect }) => {
+    const { root } = createConsumerProject();
+    initProject(root);
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('[task_config] includes'))).toBe(true);
+  });
+
+  it('passes the mise include check when the include is present', ({ expect }) => {
+    const { root } = createConsumerProject();
+    initProject(root);
+    writeFileSync(
+      path.join(root, 'mise.toml'),
+      '[task_config]\nincludes = ["mise.tasks.toml"]\n',
+    );
+
+    const drift = runVerify({ cwd: root });
+
+    expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
+  });
+
+  it('scoped to mise ignores turbo/script drift', ({ expect }) => {
+    const { root } = createConsumerProject();
+    // Un-synced project: a full verify flags missing turbo.json, scripts, etc.
+
+    expect(runVerify({ cwd: root }).length).toBeGreaterThan(0);
+    expect(runVerify({ cwd: root, scopes: new Set(['mise']) })).toStrictEqual([]);
+  });
+
+  it('scoped to mise reports only the mise include drift', ({ expect }) => {
+    const { root } = createConsumerProject();
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+
+    expect(runVerify({ cwd: root, scopes: new Set(['mise']) })).toStrictEqual([
+      expect.stringContaining('[task_config] includes'),
+    ]);
+  });
 });
 
 describe.concurrent(parseIgnoreArgs, () => {
@@ -254,6 +303,16 @@ describe.concurrent(parseIgnoreArgs, () => {
 });
 
 describe.concurrent(verifyCommand, () => {
+  it('returns 1 and logs when given an unknown scope', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger, err } = captureLogger();
+
+    const code = verifyCommand([], { cwd: root, scopes: ['bogus'] }, logger);
+
+    expect(code).toBe(1);
+    expect(err()).toContain('unknown scope');
+  });
+
   it('returns 0 and logs success when there is no drift', ({ expect }) => {
     const { root } = createConsumerProject();
     initProject(root);

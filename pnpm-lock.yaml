@@ -129,6 +129,9 @@ catalogs:
     skills-npm:
       specifier: 1.1.1
       version: 1.1.1
+    smol-toml:
+      specifier: 1.6.1
+      version: 1.6.1
     turbo:
       specifier: ^2.5.4
       version: 2.9.16
@@ -238,6 +241,9 @@ importers:
       skills-npm:
         specifier: ^1.1.1
         version: 1.1.1
+      smol-toml:
+        specifier: 'catalog:'
+        version: 1.6.1
       typescript:
         specifier: '>=5.0.0'
         version: 6.0.3
@@ -2611,6 +2617,10 @@ packages:
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
+
+  smol-toml@1.6.1:
+    resolution: {integrity: sha512-dWUG8F5sIIARXih1DTaQAX4SsiTXhInKf1buxdY9DIg4ZYPZK5nGM1VRIYmEbDbsHt7USo99xSLFu5Q1IqTmsg==}
+    engines: {node: '>= 18'}
 
   sort-object-keys@2.1.0:
     resolution: {integrity: sha512-SOiEnthkJKPv2L6ec6HMwhUcN0/lppkeYuN1x63PbyPRrgSPIuBJCiYxYyvWRTtjMlOi14vQUCGUJqS6PLVm8g==}
@@ -5191,6 +5201,8 @@ snapshots:
       yaml: 2.9.0
 
   slash@3.0.0: {}
+
+  smol-toml@1.6.1: {}
 
   sort-object-keys@2.1.0: {}
 

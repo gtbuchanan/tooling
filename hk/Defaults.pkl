@@ -1,0 +1,50 @@
+/// Shared hk building blocks for @gtbuchanan/tooling consumers. Import this
+/// and spread `fileHygiene` / add `forbidSubmodules` into your hooks; use
+/// `lockfiles` / `batchFiles` to wire the same exclude+batch onto your own
+/// tool steps (eslint, etc.).
+@ModuleInfo { minPklVersion = "0.27.2" }
+module gtbuchanan.hk.Defaults
+
+import "package://github.com/jdx/hk/releases/download/v1.46.0/hk@1.46.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.46.0/hk@1.46.0#/Builtins.pkl"
+
+/// Machine-generated lockfiles — exempt from the file-hygiene fixers.
+lockfiles: Regex = Regex(#"[-.]lock(\.|$)"#)
+
+/// `gtb hk all` exports HK_BATCH=1 so file-heavy steps chunk under Windows'
+/// cmd.exe 8191-char limit (jdx/hk#971). Off by default elsewhere so commits
+/// invoke each linter once instead of per-chunk.
+batchFiles: Boolean = (read?("env:HK_BATCH") ?? "0") == "1"
+
+/// File-hygiene builtins with lockfile-exclude + batch already wired.
+fileHygiene: Mapping<String, Config.Step> = new {
+  ["check-added-large-files"] = (Builtins.check_added_large_files) { exclude = lockfiles; batch = batchFiles }
+  ["end-of-file-fixer"] = (Builtins.newlines) { exclude = lockfiles; batch = batchFiles }
+  ["fix-byte-order-marker"] = (Builtins.byte_order_marker) { exclude = lockfiles; batch = batchFiles }
+  ["trailing-whitespace"] = (Builtins.trailing_whitespace) { exclude = lockfiles; batch = batchFiles }
+}
+
+// POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
+// inline on the Windows branch below.
+local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 ' || true)\""
+
+/// Per-OS gitlink (submodule) guard — no hk builtin exists. Runs
+/// unconditionally and fails when the index contains a mode-160000 entry.
+forbidSubmodules: Config.Step = new {
+  check = new Config.Script {
+    windows = "git ls-files -s | findstr /b /c:\"160000 \" >nul && exit /b 1 || exit /b 0"
+    linux = gitlinkGuardPosix
+    macos = gitlinkGuardPosix
+    other = gitlinkGuardPosix
+  }
+}
+
+/// Validates `.github/renovate.json` (every repo extending the shared
+/// Renovate preset has one). renovate-config-validator ships only inside
+/// the `renovate` npm package, so add `npm:renovate` to your mise [tools].
+/// Preset-authoring repos can target `default.json` by amending the glob:
+/// `(Defaults.renovateConfig) { glob = "default.json" }`.
+renovateConfig: Config.Step = new {
+  glob = ".github/renovate.json"
+  check = "renovate-config-validator --strict {{files}}"
+}

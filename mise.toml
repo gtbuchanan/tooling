@@ -20,6 +20,11 @@ lockfile = true
 # 3 days.
 minimum_release_age = "3d"
 
+# mise.tasks.toml is generated and owned by `gtb sync`; this include is
+# the one manual hookup (gtb verify checks it).
+[task_config]
+includes = ["mise.tasks.toml"]
+
 # pnpm ignores the `os` field on workspace packages, so the Termux shim's
 # bin doesn't get auto-symlinked into node_modules/.bin via the usual
 # optionalDependencies path. `bootstrap` does it explicitly on Termux.

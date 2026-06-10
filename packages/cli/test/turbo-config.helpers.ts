@@ -30,6 +30,8 @@ export const makeCapabilities = (
 };
 
 export interface MakeDiscoveryOverrides extends Partial<PackageCapabilities> {
+  /** Overrides {@link WorkspaceDiscovery.dependsOnCli} (defaults to `false`). */
+  readonly dependsOnCli?: boolean;
   /** Overrides {@link WorkspaceDiscovery.hasMise} (defaults to `false`). */
   readonly hasMise?: boolean;
   /** Overrides {@link WorkspaceDiscovery.isSelfHosted} (defaults to `false`). */
@@ -40,8 +42,11 @@ export const makeDiscovery = (
   packages: readonly PackageCapabilities[],
   overrides: MakeDiscoveryOverrides = {},
 ): WorkspaceDiscovery => {
-  const { hasMise = false, isSelfHosted = false, ...rootOverrides } = overrides;
+  const {
+    dependsOnCli = false, hasMise = false, isSelfHosted = false, ...rootOverrides
+  } = overrides;
   return {
+    dependsOnCli,
     hasMise,
     isMonorepo: packages.length > 1,
     isSelfHosted,

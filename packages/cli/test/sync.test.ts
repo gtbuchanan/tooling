@@ -231,6 +231,31 @@ describe.concurrent(runSync, () => {
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
   });
 
+  it('writes mise.tasks.toml only when the root has a mise.toml', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const tasksPath = path.join(root, 'mise.tasks.toml');
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    expect(existsSync(tasksPath)).toBe(false);
+
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+    runSync({ cwd: root, logger: silentLogger });
+
+    expect(existsSync(tasksPath)).toBe(true);
+    expect(readFileSync(tasksPath, 'utf8')).toContain('hk:all');
+  });
+
+  it('scoped to mise writes only mise.tasks.toml, not turbo.json', ({ expect }) => {
+    const { root } = createConsumerProject();
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+
+    runSync({ cwd: root, logger: silentLogger, scopes: new Set(['mise']) });
+
+    expect(existsSync(path.join(root, 'mise.tasks.toml'))).toBe(true);
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(false);
+  });
+
   it('generates codecov.yml when packages have vitest tests', ({ expect }) => {
     const { app, root } = createConsumerProject();
     runSync({ cwd: root, logger: silentLogger });
@@ -278,6 +303,23 @@ describe.concurrent(runSync, () => {
 });
 
 describe.concurrent(syncCommand, () => {
+  it('returns 1 and logs when given an unknown scope', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger, err } = captureLogger();
+
+    const code = syncCommand({ cwd: root, scopes: ['bogus'] }, logger);
+
+    expect(code).toBe(1);
+    expect(err()).toContain('unknown scope');
+  });
+
+  it('returns 0 for a valid scope', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger } = captureLogger();
+
+    expect(syncCommand({ cwd: root, scopes: ['turbo'] }, logger)).toBe(0);
+  });
+
   it('passes cwd from args through to runSync', ({ expect }) => {
     const { root } = createConsumerProject();
     const { logger } = captureLogger();

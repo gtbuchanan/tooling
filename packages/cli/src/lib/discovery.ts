@@ -44,6 +44,8 @@ export interface PackageCapabilities {
 
 /** Full workspace discovery result. */
 export interface WorkspaceDiscovery {
+  /** Root manifest declares an `@gtbuchanan/cli` dependency (any version). */
+  readonly dependsOnCli: boolean;
   /** Workspace root has a `mise.toml` pinning dev tool versions. */
   readonly hasMise: boolean;
   /** Whether a pnpm-workspace.yaml was found. */
@@ -142,6 +144,7 @@ export const discoverWorkspace = (
   const rootDeps = mergeDeps(rootManifest);
 
   return {
+    dependsOnCli: '@gtbuchanan/cli' in rootDeps,
     hasMise: existsSync(path.join(ctx.rootDir, 'mise.toml')),
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
