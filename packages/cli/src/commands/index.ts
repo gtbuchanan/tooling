@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { hk } from './root/hk.ts';
 import { rootNames } from './root/names.ts';
 import { prepare } from './root/prepare.ts';
 import { sync } from './root/sync.ts';
@@ -14,6 +15,7 @@ export const main = defineCommand({
     name: 'gtb',
   },
   subCommands: {
+    [rootNames.hk]: hk,
     [rootNames.prepare]: prepare,
     [rootNames.sync]: sync,
     [rootNames.turbo]: turbo,

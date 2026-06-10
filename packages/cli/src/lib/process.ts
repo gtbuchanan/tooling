@@ -29,6 +29,29 @@ export const run = async (
   });
 };
 
+/** Spawns a command and resolves its trimmed stdout (rejects on non-zero). */
+export const capture = async (
+  command: string,
+  args: readonly string[],
+): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const child = crossSpawn(command, [...args], {
+      stdio: ['ignore', 'pipe', 'inherit'],
+    });
+    let stdout = '';
+    child.stdout?.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(`${command} exited with code ${String(code)}`));
+      }
+    });
+  });
+
 /**
  * Spawns a command. Resolves true on exit 0, false on ENOENT
  * (command not found), and rejects on other failures.
