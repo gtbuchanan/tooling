@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb verify, gtb turbo, gtb task, compile:ts, pack:npm, deploy:skills, task graph.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -74,15 +74,28 @@ Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so loc
 
 `gtb sync` reconciles generated state:
 
-- `turbo.json` tasks + aggregates
-- per-package `tsconfig.json` / `tsconfig.build.json`
-- per-package `package.json` scripts
-- root `package.json` scripts
-- `codecov.yml` flags + components
+- `turbo.json` tasks + aggregates (scope: `turbo`)
+- per-package `tsconfig.json` / `tsconfig.build.json` (scope: `tsconfig`)
+- per-package + root `package.json` scripts (scope: `scripts`)
+- `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml` (scope: `mise`)
+- `codecov.yml` flags + components (scope: `codecov`)
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
-`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift.
+**Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync mise`, `gtb verify mise turbo`. No args means all scopes. This lets a repo regenerate or check just one artifact — e.g. an hk-preset adopter runs `gtb sync mise` to write `mise.tasks.toml` without a full workspace sync. An unknown scope exits non-zero.
+
+`mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify mise` asserts the include is present. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
+
+`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The `mise`/`codecov` checks self-skip when the repo doesn't use those tools (no `mise.toml` / no vitest tests).
+
+## Pre-commit hooks (`gtb hk`)
+
+`gtb hk` runs the [hk](https://hk.jdx.dev) pre-commit hooks, and is what the generated `hk:all` / `hk:base` mise tasks call. It locally applies fixes and in CI runs a non-modifying check (keyed on the `CI` env var), mirroring prek's `run`.
+
+- `gtb hk base [ref] [-- <hk args>]` — runs hk on files changed from a base ref (default `origin/main`; pass a ref to override). On shallow clones it fetches the base first, then diffs `base..HEAD`. Forward args to hk after the ref, e.g. `gtb hk base -- -S eslint` targets a single hook.
+- `gtb hk all [-- <hk args>]` — runs hk across every file. Sets `HK_BATCH=1` so hk chunks the file list under Windows' `cmd.exe` 8191-char arg limit (the per-step commands hk shells out otherwise overflow). `base` and plain commits leave batching off so the common path stays single-invocation.
+
+Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The mise task resolves `gtb` itself per repo shape — see the `mise.tasks.toml` notes above.
 
 ## Android-Termux setup
 
