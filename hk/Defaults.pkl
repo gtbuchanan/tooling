@@ -16,10 +16,6 @@ lockfiles: Regex = Regex(#"[-.]lock(\.|$)"#)
 /// invoke each linter once instead of per-chunk.
 batchFiles: Boolean = (read?("env:HK_BATCH") ?? "0") == "1"
 
-// POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
-// inline on the Windows branch below.
-local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 ' || true)\""
-
 /// File-hygiene builtins with lockfile-exclude + batch already wired.
 fileHygiene: Mapping<String, Config.Step> = new {
   ["check-added-large-files"] = (Builtins.check_added_large_files) { exclude = lockfiles; batch = batchFiles }
@@ -27,6 +23,10 @@ fileHygiene: Mapping<String, Config.Step> = new {
   ["fix-byte-order-marker"] = (Builtins.byte_order_marker) { exclude = lockfiles; batch = batchFiles }
   ["trailing-whitespace"] = (Builtins.trailing_whitespace) { exclude = lockfiles; batch = batchFiles }
 }
+
+// POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
+// inline on the Windows branch below.
+local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 ' || true)\""
 
 /// Per-OS gitlink (submodule) guard — no hk builtin exists. Runs
 /// unconditionally and fails when the index contains a mode-160000 entry.
