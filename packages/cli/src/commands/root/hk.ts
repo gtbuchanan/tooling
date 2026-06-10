@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { capture, run } from '../../lib/process.ts';
+import { type RunOptions, capture, run } from '../../lib/process.ts';
 import { rootNames } from './names.ts';
 
 /**
@@ -76,14 +76,54 @@ export const planHkBase = (options: PlanHkBaseOptions): HkBasePlan =>
         kind: 'spawn',
       };
 
-const isShallowRepository = async (): Promise<boolean> =>
-  (await capture('git', ['rev-parse', '--is-shallow-repository'])) === 'true';
+/**
+ * Side-effecting I/O the runners depend on. Injected so the orchestration
+ * (shallow fetch, diff, skip-vs-spawn) is unit-testable without spawning
+ * git/hk; the citty wrappers wire the real implementations.
+ */
+export interface HkRunnerDeps {
+  readonly capture: (command: string, args: readonly string[]) => Promise<string>;
+  readonly env: NodeJS.ProcessEnv;
+  readonly run: (command: string, options?: RunOptions) => Promise<void>;
+}
 
-const changedFiles = async (base: string): Promise<readonly string[]> => {
-  const out = await capture('git', [
-    'diff', '--name-only', '--diff-filter=d', base, 'HEAD',
-  ]);
-  return out.length === 0 ? [] : out.split('\n');
+const defaultDeps: HkRunnerDeps = { capture, env: process.env, run };
+
+/** Runs hk across all files (full-repo, with batching forced on). */
+export const executeHkAll = async (
+  rawArgs: readonly string[],
+  deps: HkRunnerDeps = defaultDeps,
+): Promise<void> => {
+  const plan = planHkAll({ env: deps.env, rawArgs });
+  await deps.run(plan.bin, { args: plan.args, env: plan.env });
+};
+
+/** Runs hk over the files changed from the resolved base ref. */
+export const executeHkBase = async (
+  rawArgs: readonly string[],
+  deps: HkRunnerDeps = defaultDeps,
+): Promise<void> => {
+  const { base, rest } = resolveBaseRef(rawArgs);
+  /*
+   * We diff ourselves rather than use hk's `--from-ref/--to-ref`, which
+   * resolves a merge base and errors on shallow clones with no two-dot
+   * fallback (jdx/hk#972). Shallow clones (CI) lack the base commit, so
+   * fetch it (depth 1) first; HEAD is then GitHub's test-merge commit,
+   * making `diff base HEAD` exactly the PR's changes.
+   */
+  const shallow = await deps.capture('git', ['rev-parse', '--is-shallow-repository']);
+  if (shallow === 'true') {
+    await deps.run('git', { args: ['fetch', '--no-tags', '--depth=1', 'origin', base] });
+  }
+  const diff = await deps.capture('git', ['diff', '--name-only', '--diff-filter=d', base, 'HEAD']);
+  const plan = planHkBase({
+    files: diff.length === 0 ? [] : diff.split('\n'),
+    mode: hkMode(deps.env),
+    rest,
+  });
+  if (plan.kind === 'spawn') {
+    await deps.run(plan.bin, { args: plan.args });
+  }
 };
 
 const all = defineCommand({
@@ -91,10 +131,7 @@ const all = defineCommand({
     description: 'Run hk across all files (fixes locally, checks in CI)',
     name: 'all',
   },
-  run: async ({ rawArgs }) => {
-    const plan = planHkAll({ env: process.env, rawArgs });
-    await run(plan.bin, { args: plan.args, env: plan.env });
-  },
+  run: ({ rawArgs }) => executeHkAll(rawArgs),
 });
 
 const base = defineCommand({
@@ -102,30 +139,7 @@ const base = defineCommand({
     description: 'Run hk on files changed from a base ref',
     name: 'base',
   },
-  run: async ({ rawArgs }) => {
-    const { base: baseRef, rest } = resolveBaseRef(rawArgs);
-    /*
-     * We diff ourselves rather than use hk's `--from-ref/--to-ref`, which
-     * resolves a merge base and errors on shallow clones with no two-dot
-     * fallback (jdx/hk#972). Shallow clones (CI) lack the base commit, so
-     * fetch it (depth 1) first; HEAD is then GitHub's test-merge commit,
-     * making `diff base HEAD` exactly the PR's changes.
-     */
-    if (await isShallowRepository()) {
-      await run('git', {
-        args: ['fetch', '--no-tags', '--depth=1', 'origin', baseRef],
-      });
-    }
-    const plan = planHkBase({
-      files: await changedFiles(baseRef),
-      mode: hkMode(process.env),
-      rest,
-    });
-    if (plan.kind === 'skip') {
-      return;
-    }
-    await run(plan.bin, { args: plan.args });
-  },
+  run: ({ rawArgs }) => executeHkBase(rawArgs),
 });
 
 /** `gtb hk` — runs hk pre-commit hooks across all or changed files. */
