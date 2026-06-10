@@ -253,6 +253,23 @@ describe.concurrent(runVerify, () => {
 
     expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
   });
+
+  it('scoped to mise ignores turbo/script drift', ({ expect }) => {
+    const { root } = createConsumerProject();
+    // Un-synced project: a full verify flags missing turbo.json, scripts, etc.
+
+    expect(runVerify({ cwd: root }).length).toBeGreaterThan(0);
+    expect(runVerify({ cwd: root, scopes: new Set(['mise']) })).toStrictEqual([]);
+  });
+
+  it('scoped to mise reports only the mise include drift', ({ expect }) => {
+    const { root } = createConsumerProject();
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+
+    expect(runVerify({ cwd: root, scopes: new Set(['mise']) })).toStrictEqual([
+      expect.stringContaining('[task_config] includes'),
+    ]);
+  });
 });
 
 describe.concurrent(parseIgnoreArgs, () => {
@@ -286,6 +303,16 @@ describe.concurrent(parseIgnoreArgs, () => {
 });
 
 describe.concurrent(verifyCommand, () => {
+  it('returns 1 and logs when given an unknown scope', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger, err } = captureLogger();
+
+    const code = verifyCommand([], { cwd: root, scopes: ['bogus'] }, logger);
+
+    expect(code).toBe(1);
+    expect(err()).toContain('unknown scope');
+  });
+
   it('returns 0 and logs success when there is no drift', ({ expect }) => {
     const { root } = createConsumerProject();
     initProject(root);

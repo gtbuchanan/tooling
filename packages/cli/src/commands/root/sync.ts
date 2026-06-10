@@ -10,6 +10,9 @@ import {
 } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
 import { generateMiseTasks, miseTasksFileName } from '../../lib/mise-tasks.ts';
+import {
+  type SyncScope, parseSyncScopes, syncScopes,
+} from '../../lib/sync-scopes.ts';
 import { planTsconfigs, readUserCompilerOptions } from '../../lib/tsconfig-gen.ts';
 import {
   generatePackageScripts,
@@ -104,42 +107,6 @@ const writeAllScripts = (
     writePackageScripts(logger, pkg, discovery, force);
   }
   writeRootScripts(logger, discovery, force);
-};
-
-/**
- * Selectable sync scopes — each maps to one generated artifact. Passed as
- * positional args (`gtb sync mise turbo`); no args means all scopes.
- */
-export const syncScopes = ['codecov', 'mise', 'scripts', 'tsconfig', 'turbo'] as const;
-
-/** One {@link syncScopes} entry. */
-export type SyncScope = (typeof syncScopes)[number];
-
-/** Result of {@link parseSyncScopes}: the selected scopes, or parse errors. */
-export type ParsedSyncScopes =
-  | { readonly errors: readonly string[] }
-  | { readonly scopes: ReadonlySet<SyncScope> };
-
-/**
- * Resolves positional scope tokens to a {@link SyncScope} set. No tokens
- * selects every scope (the default full sync); unknown tokens are errors.
- */
-export const parseSyncScopes = (tokens: readonly string[]): ParsedSyncScopes => {
-  if (tokens.length === 0) {
-    return { scopes: new Set(syncScopes) };
-  }
-  const scopes = new Set<SyncScope>();
-  const errors: string[] = [];
-  for (const token of tokens) {
-    const match = syncScopes.find(scope => scope === token);
-    if (match === undefined) {
-      errors.push(`sync: unknown scope '${token}' (expected: ${syncScopes.join(', ')})`);
-    } else {
-      scopes.add(match);
-    }
-  }
-
-  return errors.length > 0 ? { errors } : { scopes };
 };
 
 /** Options for {@link runSync}. */

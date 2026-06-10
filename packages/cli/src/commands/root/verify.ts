@@ -9,6 +9,9 @@ import { readJsonFile } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
 import { checkMiseTasksInclude } from '../../lib/mise-tasks.ts';
 import {
+  type SyncScope, parseSyncScopes, syncScopes,
+} from '../../lib/sync-scopes.ts';
+import {
   type GeneratedTsconfig,
   planTsconfigs,
   readUserCompilerOptions,
@@ -236,43 +239,53 @@ const checkCodecovSections = (
   ];
 };
 
+const checkAllScripts = (
+  discovery: WorkspaceDiscovery,
+  ignored: ReadonlySet<string>,
+): readonly string[] => [
+  ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
+  ...discovery.packages.flatMap(pkg => checkScripts(
+    pkg.dir, generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir), ignored,
+  )),
+];
+
 /** Options for {@link runVerify}. */
 export interface RunVerifyOptions {
   readonly cwd?: string;
   readonly ignored?: ReadonlySet<string>;
+  /** Artifacts to check. Defaults to all {@link syncScopes}. */
+  readonly scopes?: ReadonlySet<SyncScope>;
 }
 
 /**
- * Validates project config against the expected baseline from discovery.
- * Returns drift messages — empty array means no drift.
+ * Validates the artifacts selected by `scopes` (default all) against the
+ * baseline from discovery (empty result = no drift). The codecov/mise
+ * checks self-skip when the repo lacks those tools.
  */
 export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
   const cwd = options.cwd ?? process.cwd();
   const ignored = options.ignored ?? new Set<string>();
+  const scopes = options.scopes ?? new Set(syncScopes);
   const discovery = discoverWorkspace({ cwd });
-  const expected = generateTurboJson(discovery);
 
-  return [
-    ...checkTurboTasks(discovery.rootDir, expected, ignored),
-    ...checkTsconfigs(discovery),
-    ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
-    ...discovery.packages.flatMap(
-      pkg => checkScripts(
-        pkg.dir,
-        generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir),
-        ignored,
-      ),
-    ),
-    ...(discovery.packages.some(pkg => pkg.hasVitestTests)
+  const checks: Record<SyncScope, () => readonly string[]> = {
+    codecov: () => (discovery.packages.some(pkg => pkg.hasVitestTests)
       ? checkCodecovSections(discovery.rootDir, discovery, ignored)
       : []),
-    ...(discovery.hasMise ? checkMiseTasksInclude(discovery.rootDir) : []),
-  ];
+    mise: () => (discovery.hasMise ? checkMiseTasksInclude(discovery.rootDir) : []),
+    scripts: () => checkAllScripts(discovery, ignored),
+    tsconfig: () => checkTsconfigs(discovery),
+    turbo: () => checkTurboTasks(discovery.rootDir, generateTurboJson(discovery), ignored),
+  };
+
+  return syncScopes.filter(scope => scopes.has(scope)).flatMap(scope => checks[scope]());
 };
 
 /** Parsed citty args for {@link verify}. */
 export interface VerifyCommandArgs {
   readonly cwd?: string | undefined;
+  /** Positional scope tokens (citty `args._`). Empty means all scopes. */
+  readonly scopes?: readonly string[] | undefined;
 }
 
 /**
@@ -287,9 +300,19 @@ export const verifyCommand = (
   args: VerifyCommandArgs,
   logger: Logger,
 ): number => {
+  const parsed = parseSyncScopes(args.scopes ?? []);
+  if ('errors' in parsed) {
+    for (const message of parsed.errors) {
+      logger.error(message);
+    }
+
+    return 1;
+  }
+
   const drift = runVerify({
     ...(args.cwd !== undefined && { cwd: args.cwd }),
     ignored: parseIgnoreArgs(rawArgs),
+    scopes: parsed.scopes,
   });
 
   if (drift.length === 0) {
@@ -318,11 +341,15 @@ export const verify = defineCommand({
     },
   },
   meta: {
-    description: 'Verify generated config matches the expected baseline',
+    description:
+      'Verify generated config matches the expected baseline ' +
+      `(optionally scope to: ${syncScopes.join(', ')})`,
     name: rootNames.verify,
   },
   run: ({ rawArgs, args }) => {
-    const exitCode = verifyCommand(rawArgs, args, createLogger());
+    const exitCode = verifyCommand(
+      rawArgs, { cwd: args.cwd, scopes: args._ }, createLogger(),
+    );
     if (exitCode !== 0) {
       process.exitCode = exitCode;
     }

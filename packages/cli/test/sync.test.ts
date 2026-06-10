@@ -5,9 +5,7 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import { describe, it } from 'vitest';
 import { parse as parseYaml } from 'yaml';
-import {
-  parseSyncScopes, runSync, syncCommand, syncScopes,
-} from '#src/commands/root/sync.js';
+import { runSync, syncCommand } from '#src/commands/root/sync.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
 import { createLogger } from '#src/lib/logger.js';
@@ -301,24 +299,6 @@ describe.concurrent(runSync, () => {
     const result: unknown = JSON.parse(readFileSync(appPkg, 'utf8'));
 
     expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
-  });
-});
-
-describe.concurrent(parseSyncScopes, () => {
-  it('selects all scopes when no tokens are given', ({ expect }) => {
-    expect(parseSyncScopes([])).toStrictEqual({ scopes: new Set(syncScopes) });
-  });
-
-  it('selects only the named scopes', ({ expect }) => {
-    expect(parseSyncScopes(['mise', 'turbo'])).toStrictEqual({
-      scopes: new Set(['mise', 'turbo']),
-    });
-  });
-
-  it('reports unknown scopes as errors', ({ expect }) => {
-    expect(parseSyncScopes(['mise', 'bogus'])).toMatchObject({
-      errors: [expect.stringContaining("unknown scope 'bogus'")],
-    });
   });
 });
 
