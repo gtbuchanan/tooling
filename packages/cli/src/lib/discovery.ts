@@ -1,6 +1,7 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import type { Manifest } from './manifest.ts';
+import { hasPackageBlock } from './pkl-project.ts';
 import { buildInclude, resolveBuildIncludes } from './tsconfig-gen.ts';
 import {
   type ResolveWorkspaceOptions,
@@ -20,6 +21,22 @@ export interface PackageCapabilities {
   readonly hasE2e: boolean;
   /** Has one or more `generate:*` scripts in package.json. */
   readonly hasGenerate: boolean;
+  /**
+   * Has hand-authored Pkl package source — a `*.pkl` file other than the hk
+   * config `hk.pkl`. Excluding `hk.pkl` keeps a single-package repo that
+   * merely *uses* hk (its root is the lone package) from being mistaken for a
+   * Pkl package. Drives `typecheck:pkl` (all Pkl source is validated), not
+   * publishing — see {@link hasPklPackage}.
+   */
+  readonly hasPkl: boolean;
+  /**
+   * Has a *publishable* Pkl package: {@link hasPkl} and its `PklProject`
+   * declares a `package {}` block. The block is Pkl's own definition of a
+   * distributable package (`pkl project package` needs it), so its presence is
+   * the publish signal — a deps-only or block-less Pkl project stays internal.
+   * Drives `PklProject` version-stamping, `pack:pkl`, and `gtb publish`.
+   */
+  readonly hasPklPackage: boolean;
   /** Names of `generate:*` scripts found in package.json. */
   readonly generateScripts: readonly string[];
   /** Has ESLint config or `@gtbuchanan/eslint-config` dependency. */
@@ -77,6 +94,15 @@ const listFiles = (dir: string): readonly string[] => {
 const hasFilePrefix = (files: readonly string[], prefix: string): boolean =>
   files.some(file => file.startsWith(`${prefix}.`));
 
+/** Reads a package's `PklProject` source, or `''` when absent. */
+const readPklProject = (dir: string): string => {
+  try {
+    return readFileSync(path.join(dir, 'PklProject'), 'utf8');
+  } catch {
+    return '';
+  }
+};
+
 const hasDep = (deps: Record<string, string>, name: string): boolean =>
   name in deps;
 
@@ -109,6 +135,8 @@ const buildCapabilities = (
   const hasTest = hasDir(dir, 'test');
   const generateScripts = collectGenerateScripts(manifest);
   const isPublished = manifest.private !== true && manifest.publishConfig?.directory !== undefined;
+  const hasPkl = files.some(file => file.endsWith('.pkl') && file !== 'hk.pkl');
+  const hasPklPackage = hasPkl && hasPackageBlock(readPklProject(dir));
 
   return {
     buildIncludes: isPublished ? resolveBuildIncludes(dir) : buildInclude,
@@ -118,6 +146,8 @@ const buildCapabilities = (
     hasE2e: hasDir(dir, 'e2e'),
     hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasFilePrefix(files, 'eslint.config'),
     hasGenerate: generateScripts.length > 0,
+    hasPkl,
+    hasPklPackage,
     hasScripts: hasDir(dir, 'scripts'),
     hasSkills: hasDir(dir, 'skills'),
     hasTest,

@@ -41,6 +41,58 @@ describe.concurrent(discoverPackage, () => {
     expect(result.hasEslint).toBe(true);
   });
 
+  it('detects a Pkl package via a .pkl source file', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasPkl).toBe(true);
+  });
+
+  it('does not treat an hk.pkl config as a Pkl package', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    writeFile(dir, 'hk.pkl', 'amends "..."\n');
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasPkl).toBe(false);
+  });
+
+  it('treats a Pkl package with a package block as publishable', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
+    writeFile(dir, 'PklProject', 'amends "pkl:Project"\n\npackage {\n  name = "x"\n}\n');
+
+    const result = discoverPackage(dir);
+
+    expect(result).toMatchObject({ hasPkl: true, hasPklPackage: true });
+  });
+
+  it('treats a Pkl project without a package block as internal (not publishable)', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
+    writeFile(dir, 'PklProject', 'amends "pkl:Project"\n\ndependencies {}\n');
+
+    const result = discoverPackage(dir);
+
+    expect(result).toMatchObject({ hasPkl: true, hasPklPackage: false });
+  });
+
+  it('treats Pkl source with no PklProject as internal (not publishable)', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
+
+    const result = discoverPackage(dir);
+
+    expect(result).toMatchObject({ hasPkl: true, hasPklPackage: false });
+  });
+
   it('detects eslint via dependency', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {

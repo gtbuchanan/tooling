@@ -17,9 +17,14 @@ const generateAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTas
 
 const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
-    condition: flags.hasTypeScript,
+    condition: flags.hasTypeScript || flags.hasPkl,
     key: Aggregate.typecheck,
-    value: { dependsOn: [taskNames.typecheckTs] },
+    value: {
+      dependsOn: [
+        ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
+        ...(flags.hasPkl ? [taskNames.typecheckPkl] : []),
+      ],
+    },
   },
 ];
 
@@ -38,9 +43,14 @@ const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask
 
 const packAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
-    condition: flags.hasPublished,
+    condition: flags.hasPackable,
     key: Aggregate.pack,
-    value: { dependsOn: [taskNames.packNpm] },
+    value: {
+      dependsOn: [
+        ...(flags.hasPublished ? [taskNames.packNpm] : []),
+        ...(flags.hasPklPackage ? [taskNames.packPkl] : []),
+      ],
+    },
   },
 ];
 
@@ -67,7 +77,7 @@ const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
     key: Aggregate.check,
     value: {
       dependsOn: [
-        ...(flags.hasTypeScript ? [Aggregate.typecheck] : []),
+        ...(flags.hasTypeScript || flags.hasPkl ? [Aggregate.typecheck] : []),
         ...(flags.hasLint ? [Aggregate.lint] : []),
         ...(flags.hasVitest ? [taskNames.testVitestFast] : []),
       ],
@@ -95,7 +105,8 @@ const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>
   ];
   const ciDeps = [
     ...(flags.hasCheck ? [Aggregate.check] : []),
-    ...(flags.hasPublished ? [Aggregate.compile, Aggregate.pack] : []),
+    ...(flags.hasPublished ? [Aggregate.compile] : []),
+    ...(flags.hasPackable ? [Aggregate.pack] : []),
   ];
   const fullDeps = [
     ...ciDeps,

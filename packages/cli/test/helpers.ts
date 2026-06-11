@@ -1,7 +1,8 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Writable } from 'node:stream';
+import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import { generateCodecovSections } from '#src/lib/codecov-config.js';
 import { type PackageCapabilities, discoverWorkspace } from '#src/lib/discovery.js';
@@ -9,6 +10,7 @@ import {
   mergeCodecovSections, mergePackageScripts, writeJsonFile,
 } from '#src/lib/file-writer.js';
 import { type Logger, createLogger } from '#src/lib/logger.js';
+import { unscopedName } from '#src/lib/manifest-sync.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
 import { planTsconfigs } from '#src/lib/tsconfig-gen.js';
 import {
@@ -61,6 +63,80 @@ export const writeTsconfigs = (
 /** Writes a JSON file to a directory. */
 export const writeJson = (dir: string, name: string, data: unknown): void => {
   writeFileSync(path.join(dir, name), JSON.stringify(data));
+};
+
+/** A scaffolded temp monorepo containing one Pkl package. */
+export interface PklWorkspace {
+  /** Unscoped package name (`hk-config`). */
+  readonly name: string;
+  /** Absolute path of the Pkl package directory. */
+  readonly pkgDir: string;
+  /** Repo URL minus scheme, e.g. `github.com/owner/repo`. */
+  readonly repoPath: string;
+  /** Workspace root directory. */
+  readonly root: string;
+  /** Pkl package version. */
+  readonly version: string;
+}
+
+/**
+ * Author-owned `PklProject` for a publishable monorepo Pkl package — the
+ * `package {}` block with sync's `\(name)`/`\(version)` interpolation
+ * templates. Byte-identical to what `patchPackageBlock` produces, so the
+ * fixture round-trips through `gtb sync`/`verify` without drift.
+ */
+export const pklProjectSource = (
+  { name, repoPath, version }: { name: string; repoPath: string; version: string },
+): string => {
+  const basename = String.raw`\(name)@\(version)`;
+
+  return [
+    'amends "pkl:Project"',
+    '',
+    'package {',
+    `  name = "${name}"`,
+    `  version = "${version}"`,
+    String.raw`  baseUri = "package://${repoPath}/\(name)"`,
+    `  packageZipUrl = "https://${repoPath}/releases/download/${basename}/${basename}.zip"`,
+    '}',
+    '',
+  ].join('\n');
+};
+
+/** Options for {@link createPklWorkspace}. */
+export interface PklWorkspaceOptions {
+  /**
+   * Whether the Pkl package declares a `package {}` block (⇒ publishable).
+   * `false` writes a block-less, deps-only `PklProject` — an internal package.
+   * Defaults to `true`.
+   */
+  readonly publishable?: boolean;
+}
+
+/** Scaffolds a temp monorepo with a single Pkl package and returns its facts. */
+export const createPklWorkspace = (options: PklWorkspaceOptions = {}): PklWorkspace => {
+  const root = createTempDir();
+  const homepage = build.gitHubRepoUrl();
+  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
+  writeJson(root, 'package.json', { homepage, name: build.packageName(), private: true });
+
+  const scopedName = build.scopedPackageName();
+  const version = build.semverVersion();
+  const pkgDir = path.join(root, 'packages', build.packageName());
+  mkdirSync(pkgDir, { recursive: true });
+  writeJson(pkgDir, 'package.json', { name: scopedName, version });
+  writeFileSync(path.join(pkgDir, 'Defaults.pkl'), 'module Defaults\n');
+
+  const name = unscopedName(scopedName);
+  const repoPath = homepage.replace(/^https?:\/\//v, '');
+  writeFileSync(
+    path.join(pkgDir, 'PklProject'),
+    options.publishable === false
+      ? 'amends "pkl:Project"\n'
+      : pklProjectSource({ name, repoPath, version }),
+  );
+
+  return { name, pkgDir, repoPath, root, version };
 };
 
 const TurboJsonSchema = v.looseObject({

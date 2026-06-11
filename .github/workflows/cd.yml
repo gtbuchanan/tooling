@@ -27,6 +27,17 @@ jobs:
         name: Publish packages
         run: pnpm dlx @changesets/cli@${{ needs.version.outputs.changesets-version }} publish
 
+      # `pnpm-tasks` restores node_modules for `pnpm exec gtb`, since turbo-run
+      # skips install on a pack cache hit.
+      - if: ${{ inputs.publish-native }}
+        uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        if: ${{ inputs.publish-native }}
+        name: Publish non-npm packages
+        run: pnpm exec gtb publish
+
   version:
     name: Version
     outputs:
@@ -46,10 +57,26 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
+      # Deps for the `gtb sync manifest` chained onto the version command below.
+      - if: ${{ inputs.publish-native }}
+        uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
       - id: changesets
         uses: gtbuchanan/tooling/.github/actions/pnpm-resolve-pinned@main
         with:
           package: '@changesets/cli'
+
+      # `gtb sync manifest` must chain onto `version` (changesets runs it as one
+      # command) to land in the same version PR. Built as a real conditional.
+      - env:
+          PINNED: ${{ steps.changesets.outputs.version }}
+        id: version-command
+        run: |
+          command="pnpm dlx @changesets/cli@$PINNED version"
+          if [ '${{ inputs.publish-native }}' = 'true' ]; then
+            command="$command && pnpm exec gtb sync manifest"
+          fi
+          echo "value=$command" >> "$GITHUB_OUTPUT"
 
       - env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -57,7 +84,7 @@ jobs:
         uses: changesets/action@v1
         with:
           github-token: ${{ steps.app-token.outputs.token }}
-          version: pnpm dlx @changesets/cli@${{ steps.changesets.outputs.version }} version
+          version: ${{ steps.version-command.outputs.value }}
 
 name: CD
 
@@ -68,6 +95,16 @@ name: CD
 # `id-token: write` and define a `release` environment.
 on:
   workflow_call:
+    inputs:
+      publish-native:
+        default: false
+        description: >-
+          Enable non-npm package handling for repos that ship one (e.g. a Pkl
+          package): regenerate native manifests during the version PR (keeping
+          `gtb verify manifest` drift-free) and publish them to their release
+          channels after the npm publish. Leave false (default) for plain-npm
+          repos — no extra job or work is added.
+        type: boolean
     secrets:
       APP_PRIVATE_KEY:
         description: >-

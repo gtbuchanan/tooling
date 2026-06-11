@@ -446,6 +446,15 @@ importers:
         version: link:../vitest-config
     publishDirectory: dist/source
 
+  packages/hk-config:
+    devDependencies:
+      '@gtbuchanan/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@gtbuchanan/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+
   packages/pnpm-termux-shim:
     devDependencies:
       '@gtbuchanan/eslint-config':

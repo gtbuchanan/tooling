@@ -7,10 +7,12 @@ export const taskNames = {
   deploySkills: 'deploy:skills',
   lintEslint: 'lint:eslint',
   packNpm: 'pack:npm',
+  packPkl: 'pack:pkl',
   testVitest: 'test:vitest',
   testVitestE2e: 'test:vitest:e2e',
   testVitestFast: 'test:vitest:fast',
   testVitestSlow: 'test:vitest:slow',
+  typecheckPkl: 'typecheck:pkl',
   typecheckTs: 'typecheck:ts',
 } as const;
 

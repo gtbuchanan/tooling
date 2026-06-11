@@ -34,9 +34,11 @@ export type RootManifest = v.InferOutput<typeof RootManifestSchema>;
 export const ManifestSchema = v.looseObject({
   dependencies: v.optional(v.record(v.string(), v.string())),
   devDependencies: v.optional(v.record(v.string(), v.string())),
+  name: v.optional(v.string()),
   private: v.optional(v.boolean()),
   publishConfig: v.optional(PublishConfigSchema),
   scripts: v.optional(v.record(v.string(), v.string())),
+  version: v.optional(v.string()),
 });
 
 /** Inferred type from {@link ManifestSchema}. */

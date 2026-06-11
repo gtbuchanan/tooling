@@ -44,6 +44,8 @@ const packageScriptEntries = (
       value: cmd(taskNames.compileSkills),
     },
     { condition: caps.isPublished, key: taskNames.packNpm, value: cmd(taskNames.packNpm) },
+    { condition: caps.hasPkl, key: taskNames.typecheckPkl, value: cmd(taskNames.typecheckPkl) },
+    { condition: caps.hasPklPackage, key: taskNames.packPkl, value: cmd(taskNames.packPkl) },
     { condition: caps.hasEslint, key: taskNames.lintEslint, value: cmd(taskNames.lintEslint) },
     {
       condition: caps.hasVitestTests,
@@ -154,12 +156,12 @@ const aliasRootScriptEntries = (
   return [
     { condition: flags.hasCheck, key: Aggregate.check, value: cmd(Aggregate.check) },
     {
-      condition: flags.hasCheck || flags.hasPublished,
+      condition: flags.hasCheck || flags.hasPackable,
       key: Aggregate.buildCi,
       value: cmd(Aggregate.buildCi),
     },
     {
-      condition: flags.hasCheck || flags.hasPublished || flags.hasE2e,
+      condition: flags.hasCheck || flags.hasPackable || flags.hasE2e,
       key: Aggregate.build,
       value: cmd(Aggregate.build),
     },
@@ -169,7 +171,7 @@ const aliasRootScriptEntries = (
       value: cmd(Aggregate.coverageMerge),
     },
     {
-      condition: flags.hasPublished,
+      condition: flags.hasPackable,
       key: Aggregate.pack,
       value: cmd(Aggregate.pack),
     },

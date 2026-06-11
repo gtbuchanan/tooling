@@ -8,6 +8,8 @@ jobs:
       id-token: write
     secrets: inherit
     uses: ./.github/workflows/cd.yml
+    with:
+      publish-native: true
 
   ci:
     name: CI

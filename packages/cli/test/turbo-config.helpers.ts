@@ -12,6 +12,8 @@ export const makeCapabilities = (
     hasE2e: false,
     hasEslint: false,
     hasGenerate: false,
+    hasPkl: false,
+    hasPklPackage: false,
     hasScripts: false,
     hasSkills: false,
     hasTest: false,
@@ -25,6 +27,9 @@ export const makeCapabilities = (
   return {
     ...merged,
     hasGenerate: overrides.hasGenerate ?? merged.generateScripts.length > 0,
+    // A Pkl package is publishable by default in fixtures; override to false
+    // for the internal (block-less PklProject) case.
+    hasPklPackage: overrides.hasPklPackage ?? merged.hasPkl,
     hasVitestTests: overrides.hasVitestTests ?? (merged.hasVitest && merged.hasTest),
   };
 };
