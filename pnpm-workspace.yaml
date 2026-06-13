@@ -35,7 +35,7 @@ catalog:
   eslint-plugin-yml: 3.4.0
   find-up-simple: ^1.0.1
   jiti: ^2.6.1
-  markdownlint: ^0.40.0
+  markdownlint: ^0.41.0
   prettier: ^3.8.3
   prettier-plugin-css-order: 2.2.0
   prettier-plugin-multiline-arrays: 4.1.9
