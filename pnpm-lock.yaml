@@ -124,8 +124,8 @@ catalogs:
       specifier: 2.0.6
       version: 2.0.6
     skills:
-      specifier: 1.5.10
-      version: 1.5.10
+      specifier: 1.5.11
+      version: 1.5.11
     skills-npm:
       specifier: 1.1.1
       version: 1.1.1
@@ -207,7 +207,7 @@ importers:
         version: 3.8.4
       skills:
         specifier: 'catalog:'
-        version: 1.5.10
+        version: 1.5.11
       skills-npm:
         specifier: 'catalog:'
         version: 1.1.1
@@ -237,7 +237,7 @@ importers:
         version: 1.0.1
       skills:
         specifier: ^1.5.1
-        version: 1.5.10
+        version: 1.5.11
       skills-npm:
         specifier: ^1.1.1
         version: 1.1.1
@@ -2598,8 +2598,8 @@ packages:
     resolution: {integrity: sha512-qbRSzorWK3fVdpKzZquehYlWzmC29/MOh8AqWoX7NAZiCSAX/RuTpyqAml7hWBe7NM9DDx472kZ0hKO7CCXRkA==}
     hasBin: true
 
-  skills@1.5.10:
-    resolution: {integrity: sha512-5d9lKHeF4qcF/7LRd8h1arnPGJtRu6GxVoWyt9hh0u1RUe+UrjzXIc6PITE+HMzgqR8sZ/vJtGDi8lrOZTGS7w==}
+  skills@1.5.11:
+    resolution: {integrity: sha512-QDGca7EqRpbFQFKESTZm0+rlY8yg4PTAQatvJu+jsTmtDLfApsHdNG+QaKc0MuRhzOH7OW0FdDRcSPTDM+KpNg==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -5176,7 +5176,7 @@ snapshots:
       xdg-basedir: 5.1.0
       yaml: 2.9.0
 
-  skills@1.5.10:
+  skills@1.5.11:
     dependencies:
       yaml: 2.9.0
 
