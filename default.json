@@ -30,6 +30,13 @@
   "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
+      "description": "Group hk updates (mise tool + .pkl package URLs share one release)",
+      "groupName": "hk",
+      "matchSourceUrls": [
+        "https://github.com/jdx/hk"
+      ]
+    },
+    {
       "description": "Group playwright-cli monorepo",
       "groupName": "playwright-cli monorepo",
       "matchSourceUrls": [
