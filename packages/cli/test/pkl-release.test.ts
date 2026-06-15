@@ -133,6 +133,17 @@ describe.concurrent(executePublishPkl, () => {
     expect(runCalls).toHaveLength(0);
   });
 
+  it('throws when the PklProject is missing its package identity', async ({ expect }) => {
+    const ws = createPklWorkspace();
+    writeFileSync(
+      path.join(ws.pkgDir, 'PklProject'),
+      'amends "pkl:Project"\n\npackage {\n  version = "1.0.0"\n}\n',
+    );
+    const { deps } = stubDeps(ws.root, { exists: false });
+
+    await expect(executePublishPkl(deps)).rejects.toThrow(/package\.name or package\.version/v);
+  });
+
   it('no-ops when there are no Pkl packages', async ({ expect }) => {
     const root = createTempDir();
     writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");

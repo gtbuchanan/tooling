@@ -121,8 +121,11 @@ export const executePublishPkl = async (deps: PklReleaseDeps): Promise<void> => 
 
   for (const pkg of packages) {
     const source = readFileSync(path.join(pkg.dir, 'PklProject'), 'utf8');
-    const name = readPackageName(source) ?? path.basename(pkg.dir);
-    const version = readPackageVersion(source) ?? '0.0.0';
+    const name = readPackageName(source);
+    const version = readPackageVersion(source);
+    if (name === undefined || version === undefined) {
+      throw new Error(`${pkg.dir}: PklProject is missing package.name or package.version`);
+    }
     const { assets, tag } = planPklRelease(pkg.dir, name, version, discovery.isMonorepo);
     if (await releaseExists(deps, tag)) {
       deps.logger.info(`release ${tag} already exists — skipping`);

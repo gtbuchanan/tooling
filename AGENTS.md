@@ -137,12 +137,16 @@ coverage, setupFiles, and mock reset.
   **Publishability is the presence of a `package {}` block** — Pkl's own
   definition of a distributable package — so a deps-only or block-less
   `PklProject` stays internal. Turbo wires `typecheck:pkl` (`pkl eval`,
-  validation-only) on the `hasPkl` capability (any `*.pkl` other than `hk.pkl`;
-  all Pkl source is validated), and `pack:pkl` (`pkl project package` →
-  `dist/packages/pkl/`) plus publishing on `hasPklPackage` (`hasPkl` and
-  the `PklProject` declares a `package {}` block). `gtb publish` (the generic
-  non-npm publish command, which dispatches every channel — Pkl today) reads
-  the release identity from that block.
+  validation-only) on the `hasPkl` capability (a top-level `*.pkl` other than
+  `hk.pkl`), and `pack:pkl` (`pkl project package` → `dist/packages/pkl/`) plus
+  publishing on `hasPklPackage` (`hasPkl` and the `PklProject` declares a
+  `package {}` block). `gtb publish` (the generic non-npm publish command, which
+  dispatches every channel — Pkl today) reads the release identity from that
+  block.
+  - **Convention: Pkl modules live at the package root**, alongside the
+    (root-only) `PklProject` — detection, `typecheck:pkl`, and the `*.pkl`
+    cache inputs are all top-level, not recursive. Keep sources at the root
+    rather than under a `src/` subdirectory.
 - **Release tag mirrors changesets** (`pklReleaseTag`). The
   `packageZipUrl` tag segment and the `gtb publish` release tag follow
   changesets' own convention by repo shape: plain `v<version>` for a

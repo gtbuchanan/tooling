@@ -75,10 +75,16 @@ const pklWriter: ManifestWriter = {
   kind: 'pkl',
   render: (pkg, ctx) => {
     const filePath = path.join(pkg.dir, 'PklProject');
+    const { version } = readParsedManifest(pkg.dir);
+    if (version === undefined) {
+      throw new Error(
+        `${path.join(pkg.dir, 'package.json')}: missing "version" for manifest sync`,
+      );
+    }
     const content = patchPackageBlock(readFileSync(filePath, 'utf8'), {
       isMonorepo: ctx.isMonorepo,
       repoPath: ctx.repoPath,
-      version: readParsedManifest(pkg.dir).version ?? '0.0.0',
+      version,
     });
 
     return { content, filePath };
@@ -88,26 +94,47 @@ const pklWriter: ManifestWriter = {
 /** Registered manifest writers (one per package kind). */
 const manifestWriters: readonly ManifestWriter[] = [pklWriter];
 
+/** Strips scheme/suffix noise from a repo URL down to `host/owner/repo`. */
+const normalizeRepoPath = (url: string): string =>
+  url
+    .replace(/^git\+/v, '')
+    .replace(/^https?:\/\//v, '')
+    .replace(/^git@(?<host>[^:]+):/v, '$<host>/')
+    .replace(/\.git$/v, '')
+    .replace(/\/$/v, '');
+
 /** Resolves the scheme-less repo path from the root manifest. */
 const resolveRepoPath = (rootDir: string): string => {
   const root = v.parse(RootManifestSchema, readManifest(rootDir));
-  const url = root.homepage ?? root.repository?.url ?? '';
+  const repoPath = normalizeRepoPath(root.homepage ?? root.repository?.url ?? '');
+  if (repoPath === '') {
+    throw new Error(
+      `${path.join(rootDir, 'package.json')}: set homepage or repository.url for manifest sync`,
+    );
+  }
 
-  return url.replace(/^https?:\/\//v, '').replace(/\.git$/v, '').replace(/\/$/v, '');
+  return repoPath;
 };
 
 /** Generates every native manifest the workspace's packages require. */
 export const generateManifests = (
   discovery: WorkspaceDiscovery,
 ): readonly ManifestFile[] => {
+  const matches = discovery.packages.flatMap(pkg =>
+    manifestWriters.filter(writer => writer.detect(pkg)).map(writer => ({ pkg, writer })),
+  );
+  // Resolve repoPath (and enforce its presence) only when a package actually
+  // needs a manifest — a repo with no native package doesn't require homepage.
+  if (matches.length === 0) {
+    return [];
+  }
+
   const ctx: ManifestContext = {
     isMonorepo: discovery.isMonorepo,
     repoPath: resolveRepoPath(discovery.rootDir),
   };
 
-  return discovery.packages.flatMap(pkg =>
-    manifestWriters.filter(writer => writer.detect(pkg)).map(writer => writer.render(pkg, ctx)),
-  );
+  return matches.map(({ pkg, writer }) => writer.render(pkg, ctx));
 };
 
 /**

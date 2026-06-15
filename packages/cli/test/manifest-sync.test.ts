@@ -6,6 +6,20 @@ import { discoverWorkspace } from '#src/lib/discovery.js';
 import { checkManifests, generateManifests, unscopedName } from '#src/lib/manifest-sync.js';
 import { createPklWorkspace, createTempDir, pklProjectSource, writeJson } from './helpers.ts';
 
+/** Scaffolds a single-package repo (root = package) with a publishable Pkl package. */
+const writePublishablePkg = (
+  root: string,
+  manifest: Record<string, unknown>,
+  name: string,
+): void => {
+  writeJson(root, 'package.json', manifest);
+  writeFileSync(path.join(root, 'Defaults.pkl'), 'module Defaults\n');
+  writeFileSync(
+    path.join(root, 'PklProject'),
+    `amends "pkl:Project"\n\npackage {\n  name = "${name}"\n}\n`,
+  );
+};
+
 describe.concurrent(unscopedName, () => {
   it('strips an npm scope', ({ expect }) => {
     expect(unscopedName('@gtbuchanan/hk-config')).toBe('hk-config');
@@ -35,13 +49,11 @@ describe.concurrent(generateManifests, () => {
   it('inserts a v<version> packageZipUrl tag for a single-package repo', ({ expect }) => {
     const root = createTempDir();
     const homepage = build.gitHubRepoUrl();
-    const version = build.semverVersion();
     const name = build.packageName();
-    writeJson(root, 'package.json', { homepage, name: `@scope/${name}`, version });
-    writeFileSync(path.join(root, 'Defaults.pkl'), 'module Defaults\n');
-    writeFileSync(
-      path.join(root, 'PklProject'),
-      `amends "pkl:Project"\n\npackage {\n  name = "${name}"\n}\n`,
+    writePublishablePkg(
+      root,
+      { homepage, name: `@scope/${name}`, version: build.semverVersion() },
+      name,
     );
 
     const [manifest] = generateManifests(discoverWorkspace({ cwd: root }));
@@ -50,6 +62,38 @@ describe.concurrent(generateManifests, () => {
     expect(manifest?.content).toContain(
       String.raw`packageZipUrl = "https://${repoPath}/releases/download/v\(version)/`,
     );
+  });
+
+  it('throws when a publishable package is missing its version', ({ expect }) => {
+    const root = createTempDir();
+    const name = build.packageName();
+    writePublishablePkg(root, { homepage: build.gitHubRepoUrl(), name: `@scope/${name}` }, name);
+
+    expect(() => generateManifests(discoverWorkspace({ cwd: root })))
+      .toThrow(/missing "version"/v);
+  });
+
+  it('throws when the repository URL is missing', ({ expect }) => {
+    const root = createTempDir();
+    const name = build.packageName();
+    writePublishablePkg(root, { name: `@scope/${name}`, version: build.semverVersion() }, name);
+
+    expect(() => generateManifests(discoverWorkspace({ cwd: root })))
+      .toThrow(/homepage or repository\.url/v);
+  });
+
+  it('normalizes a git+https repository URL in the package baseUri', ({ expect }) => {
+    const root = createTempDir();
+    const name = build.packageName();
+    writePublishablePkg(root, {
+      name: `@scope/${name}`,
+      repository: { type: 'git', url: 'git+https://github.com/o/r.git' },
+      version: build.semverVersion(),
+    }, name);
+
+    const [manifest] = generateManifests(discoverWorkspace({ cwd: root }));
+
+    expect(manifest?.content).toContain(String.raw`baseUri = "package://github.com/o/r/\(name)"`);
   });
 
   it('ignores packages without Pkl source', ({ expect }) => {
