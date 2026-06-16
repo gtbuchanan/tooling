@@ -36,6 +36,9 @@ catalogs:
     '@types/cross-spawn':
       specifier: ^6.0.6
       version: 6.0.6
+    '@types/hosted-git-info':
+      specifier: ^3.0.5
+      version: 3.0.5
     '@types/mdast':
       specifier: ^4.0.4
       version: 4.0.4
@@ -99,6 +102,9 @@ catalogs:
     find-up-simple:
       specifier: ^1.0.1
       version: 1.0.1
+    hosted-git-info:
+      specifier: ^10.1.1
+      version: 10.1.1
     jiti:
       specifier: ^2.6.1
       version: 2.7.0
@@ -235,6 +241,9 @@ importers:
       find-up-simple:
         specifier: 'catalog:'
         version: 1.0.1
+      hosted-git-info:
+        specifier: 'catalog:'
+        version: 10.1.1
       skills:
         specifier: ^1.5.1
         version: 1.5.11
@@ -269,6 +278,9 @@ importers:
       '@types/cross-spawn':
         specifier: 'catalog:'
         version: 6.0.6
+      '@types/hosted-git-info':
+        specifier: 'catalog:'
+        version: 3.0.5
     publishDirectory: dist/source
 
   packages/eslint-config:
@@ -445,6 +457,15 @@ importers:
         specifier: workspace:*
         version: link:../vitest-config
     publishDirectory: dist/source
+
+  packages/hk-config:
+    devDependencies:
+      '@gtbuchanan/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@gtbuchanan/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
 
   packages/pnpm-termux-shim:
     devDependencies:
@@ -1100,6 +1121,9 @@ packages:
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
+
+  '@types/hosted-git-info@3.0.5':
+    resolution: {integrity: sha512-Dmngh7U003cOHPhKGyA7LWqrnvcTyILNgNPmNCxlx7j8MIi54iBliiT8XqVLIQ3GchoOjVAyBzNJVyuaJjqokg==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -1904,6 +1928,10 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
+  hosted-git-info@10.1.1:
+    resolution: {integrity: sha512-DeOnSPAvOndYKfw075gt8yZzQ7S2hNztw34zBTfhIzLhmBTswIBg5/y+pqu/VD5cYWm5goAFTusDmUEmKZ0PEQ==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+
   html-entities@2.6.0:
     resolution: {integrity: sha512-kig+rMn/QOVRvr7c86gQ8lWXq+Hkv6CbAH1hLu+RG338StTpE8Z0b44SDVaqVu7HGKf27frdmUYEs9hTUX/cLQ==}
 
@@ -2143,6 +2171,10 @@ packages:
 
   longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
+
+  lru-cache@11.5.1:
+    resolution: {integrity: sha512-RPimw/7aMdv2oqRrxKwvZXcPfwBrn/JZ2xYcY9Hus/6LaS3VOAKVWKWgNLCFSiOm1ESXinjsDlidVU7JlnCN2A==}
+    engines: {node: 20 || >=22}
 
   luxon@3.7.2:
     resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
@@ -3520,6 +3552,8 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
+  '@types/hosted-git-info@3.0.5': {}
+
   '@types/json-schema@7.0.15': {}
 
   '@types/katex@0.16.8': {}
@@ -4326,6 +4360,10 @@ snapshots:
 
   has-flag@4.0.0: {}
 
+  hosted-git-info@10.1.1:
+    dependencies:
+      lru-cache: 11.5.1
+
   html-entities@2.6.0: {}
 
   html-escaper@2.0.2: {}
@@ -4504,6 +4542,8 @@ snapshots:
   lodash.startcase@4.4.0: {}
 
   longest-streak@3.1.0: {}
+
+  lru-cache@11.5.1: {}
 
   luxon@3.7.2: {}
 

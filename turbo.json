@@ -132,7 +132,8 @@
     },
     "pack": {
       "dependsOn": [
-        "pack:npm"
+        "pack:npm",
+        "pack:pkl"
       ]
     },
     "pack:npm": {
@@ -149,6 +150,19 @@
       "outputs": [
         "dist/packages/npm/**",
         "dist/source/package.json"
+      ]
+    },
+    "pack:pkl": {
+      "dependsOn": [
+        "typecheck:pkl"
+      ],
+      "inputs": [
+        "*.pkl",
+        "PklProject",
+        "package.json"
+      ],
+      "outputs": [
+        "dist/packages/pkl/**"
       ]
     },
     "test:e2e": {
@@ -219,8 +233,16 @@
     },
     "typecheck": {
       "dependsOn": [
-        "typecheck:ts"
+        "typecheck:ts",
+        "typecheck:pkl"
       ]
+    },
+    "typecheck:pkl": {
+      "inputs": [
+        "*.pkl",
+        "PklProject"
+      ],
+      "outputs": []
     },
     "typecheck:ts": {
       "dependsOn": [],

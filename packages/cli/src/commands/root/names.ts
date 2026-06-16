@@ -2,6 +2,7 @@
 export const rootNames = {
   hk: 'hk',
   prepare: 'prepare',
+  publish: 'publish',
   sync: 'sync',
   turbo: 'turbo',
   verify: 'verify',

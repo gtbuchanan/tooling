@@ -30,6 +30,7 @@
     "citty": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
+    "hosted-git-info": "catalog:",
     "smol-toml": "catalog:",
     "valibot": "catalog:",
     "yaml": "catalog:"
@@ -39,7 +40,8 @@
     "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
-    "@types/cross-spawn": "catalog:"
+    "@types/cross-spawn": "catalog:",
+    "@types/hosted-git-info": "catalog:"
   },
   "peerDependencies": {
     "skills": "^1.5.1",

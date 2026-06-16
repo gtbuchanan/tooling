@@ -48,6 +48,24 @@ describe.concurrent(generatePackageScripts, () => {
     expect(result).toHaveProperty('test:vitest:e2e', 'gtb task test:vitest:e2e');
   });
 
+  it('generates pkl scripts for Pkl packages', ({ expect }) => {
+    const caps = makeCapabilities({ hasPkl: true });
+
+    const result = generatePackageScripts(caps, false);
+
+    expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
+    expect(result).toHaveProperty('pack:pkl', 'gtb task pack:pkl');
+  });
+
+  it('omits pack:pkl for an internal Pkl package (no package block)', ({ expect }) => {
+    const caps = makeCapabilities({ hasPkl: true, hasPklPackage: false });
+
+    const result = generatePackageScripts(caps, false);
+
+    expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
+    expect(result).not.toHaveProperty('pack:pkl');
+  });
+
   it('generates gtb shim for self-hosted packages', ({ expect }) => {
     const caps = makeCapabilities({ dir: '/root/packages/app', hasTypeScript: true });
 
@@ -115,6 +133,15 @@ describe.concurrent(generateRootScripts, () => {
     const result = generateRootScripts(discovery);
 
     expect(result).not.toHaveProperty('pack');
+  });
+
+  it('generates pack and build aliases for a Pkl-only package', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities({ hasPkl: true })]);
+
+    const result = generateRootScripts(discovery);
+
+    expect(result).toHaveProperty('pack', 'gtb turbo run pack');
+    expect(result).toHaveProperty('build', 'gtb turbo run build');
   });
 });
 

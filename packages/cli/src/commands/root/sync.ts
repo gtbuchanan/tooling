@@ -9,6 +9,7 @@ import {
   type MergeResult, mergeCodecovSections, mergePackageScripts, sortKeysDeep, writeJsonFile,
 } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
+import { generateManifests } from '../../lib/manifest-sync.ts';
 import { generateMiseTasks, miseTasksFileName } from '../../lib/mise-tasks.ts';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
@@ -78,6 +79,13 @@ const writeMiseTasks = (logger: Logger, discovery: WorkspaceDiscovery): void => 
   logger.info(`wrote ${filePath}`);
 };
 
+const writeManifests = (logger: Logger, discovery: WorkspaceDiscovery): void => {
+  for (const { content, filePath } of generateManifests(discovery)) {
+    writeFileSync(filePath, content);
+    logger.info(`wrote ${filePath}`);
+  }
+};
+
 const writeCodecovConfig = (logger: Logger, discovery: WorkspaceDiscovery): void => {
   if (!discovery.packages.some(pkg => pkg.hasVitestTests)) {
     return;
@@ -136,6 +144,7 @@ export const runSync = (options: RunSyncOptions = {}): void => {
 
   const writers: Record<SyncScope, () => void> = {
     codecov: () => { writeCodecovConfig(logger, discovery); },
+    manifest: () => { writeManifests(logger, discovery); },
     mise: () => { writeMiseTasks(logger, discovery); },
     scripts: () => { writeAllScripts(logger, discovery, force); },
     tsconfig: () => { writeTsconfigFiles(logger, discovery); },

@@ -60,6 +60,15 @@ export interface ToolFlags {
   readonly hasGenerate: boolean;
   readonly generateScripts: readonly string[];
   readonly hasLint: boolean;
+  /**
+   * Some package produces a release artifact to pack — an npm-published
+   * package or a Pkl package. The union a future kind (.NET, etc.) extends.
+   */
+  readonly hasPackable: boolean;
+  /** Some package has Pkl source (drives `typecheck:pkl`). */
+  readonly hasPkl: boolean;
+  /** Some package is a publishable Pkl package (drives `pack:pkl`, publish). */
+  readonly hasPklPackage: boolean;
   readonly hasPublished: boolean;
   /**
    * Workspace root has its own ESLint config and is a monorepo (so root
@@ -83,6 +92,9 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     discovery.packages.flatMap(pkg => pkg.generateScripts),
   )].toSorted();
   const hasTypeScript = discovery.packages.some(pkg => pkg.hasTypeScript);
+  const hasPkl = discovery.packages.some(pkg => pkg.hasPkl);
+  const hasPklPackage = discovery.packages.some(pkg => pkg.hasPklPackage);
+  const hasPublished = discovery.packages.some(pkg => pkg.isPublished);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
   const compileIncludes = [...new Set(
     discovery.packages.filter(pkg => pkg.isPublished).flatMap(pkg => pkg.buildIncludes),
@@ -91,12 +103,15 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   return {
     compileIncludes,
     generateScripts,
-    hasCheck: hasTypeScript || hasLint || hasVitest,
+    hasCheck: hasTypeScript || hasLint || hasVitest || hasPkl,
     hasE2e: discovery.root.hasVitestE2e || discovery.packages.some(pkg => pkg.hasVitestE2e),
     hasEslint,
     hasGenerate: generateScripts.length > 0,
     hasLint,
-    hasPublished: discovery.packages.some(pkg => pkg.isPublished),
+    hasPackable: hasPublished || hasPklPackage,
+    hasPkl,
+    hasPklPackage,
+    hasPublished,
     hasRootEslint: discovery.isMonorepo && discovery.root.hasEslint,
     hasSkills: discovery.packages.some(pkg => pkg.hasSkills),
     hasTypeScript,
@@ -189,6 +204,33 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
         'package.json',
       ],
       outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
+    },
+  },
+];
+
+/*
+ * Pkl package tasks. `typecheck:pkl` evaluates the modules to validate them
+ * (`pkl eval` renders to stdout, which the handler discards — pure
+ * validation, hence no outputs, mirroring `typecheck:ts`). `pack:pkl` is the
+ * sole artifact-producing step (`pkl project package` → the release zip),
+ * mirroring `pack:npm`. There is no `compile:pkl`: nothing consumes a rendered
+ * intermediate — consumers import the source `.pkl` shipped inside the zip.
+ */
+const pklInputs = ['*.pkl', 'PklProject'];
+
+const pklTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasPkl,
+    key: taskNames.typecheckPkl,
+    value: { inputs: pklInputs, outputs: [] },
+  },
+  {
+    condition: flags.hasPklPackage,
+    key: taskNames.packPkl,
+    value: {
+      dependsOn: [taskNames.typecheckPkl],
+      inputs: [...pklInputs, 'package.json'],
+      outputs: ['dist/packages/pkl/**'],
     },
   },
 ];
@@ -331,6 +373,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...compileTasks(flags),
     ...compileSkillsTasks(flags),
     ...packTasks(flags),
+    ...pklTasks(flags),
     ...lintTasks(flags),
     ...rootLintTasks(flags, discovery.packageGlobs),
     ...testTasks(flags),

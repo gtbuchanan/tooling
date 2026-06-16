@@ -13,6 +13,7 @@ catalog:
   '@stylistic/eslint-plugin': 5.10.0
   '@tsconfig/strictest': ^2.0.8
   '@types/cross-spawn': ^6.0.6
+  '@types/hosted-git-info': ^3.0.5
   '@types/mdast': ^4.0.4
   '@types/node': ^25.5.0
   '@vitest/coverage-v8': ^4.1.2
@@ -34,6 +35,7 @@ catalog:
   eslint-plugin-unicorn: ^65.0.0
   eslint-plugin-yml: 3.4.0
   find-up-simple: ^1.0.1
+  hosted-git-info: ^10.1.1
   jiti: ^2.6.1
   markdownlint: ^0.41.0
   prettier: ^3.8.3
