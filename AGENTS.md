@@ -108,7 +108,7 @@ coverage, setupFiles, and mock reset.
   - `eslint` / `no-commit-to-branch` — repo-specific, stay in `hk.pkl`
 - **`@gtbuchanan/hk-config` preset** (`packages/hk-config/Defaults.pkl`).
   The reusable building blocks (`fileHygiene`, `forbidSubmodules`,
-  `renovateConfig`, and the `lockfiles`/`batchFiles` primitives) ship as a
+  `renovateConfig`, and the `defaultExclude`/`batchFiles` primitives) ship as a
   Pkl package — private to npm, published as a **GitHub release** so
   consumers `package://`-import it with sha256 integrity (see CD below).
   Consumer import:
