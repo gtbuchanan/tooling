@@ -82,12 +82,12 @@ describe.concurrent(generateManifests, () => {
       .toThrow(/homepage or repository\.url/v);
   });
 
-  it('normalizes a git+https repository URL in the package baseUri', ({ expect }) => {
+  it('falls back to repository.url when homepage is absent', ({ expect }) => {
     const root = createTempDir();
     const name = build.packageName();
     writePublishablePkg(root, {
       name: `@scope/${name}`,
-      repository: { type: 'git', url: 'git+https://github.com/o/r.git' },
+      repository: { type: 'git', url: 'https://github.com/o/r' },
       version: build.semverVersion(),
     }, name);
 

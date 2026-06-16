@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import hostedGitInfo from 'hosted-git-info';
 import * as v from 'valibot';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
 import { RootManifestSchema } from './manifest.ts';
@@ -94,26 +95,22 @@ const pklWriter: ManifestWriter = {
 /** Registered manifest writers (one per package kind). */
 const manifestWriters: readonly ManifestWriter[] = [pklWriter];
 
-/** Strips scheme/suffix noise from a repo URL down to `host/owner/repo`. */
-const normalizeRepoPath = (url: string): string =>
-  url
-    .replace(/^git\+/v, '')
-    .replace(/^https?:\/\//v, '')
-    .replace(/^git@(?<host>[^:]+):/v, '$<host>/')
-    .replace(/\.git$/v, '')
-    .replace(/\/$/v, '');
-
-/** Resolves the scheme-less repo path from the root manifest. */
+/**
+ * Resolves the scheme-less repo path (`host/owner/repo`) from the root
+ * manifest, parsing the URL with `hosted-git-info` so every Git URL form
+ * (https, git+ssh, scp-style `git@`, …) normalizes the same way.
+ */
 const resolveRepoPath = (rootDir: string): string => {
   const root = v.parse(RootManifestSchema, readManifest(rootDir));
-  const repoPath = normalizeRepoPath(root.homepage ?? root.repository?.url ?? '');
-  if (repoPath === '') {
+  const info = hostedGitInfo.fromUrl(root.homepage ?? '') ??
+    hostedGitInfo.fromUrl(root.repository?.url ?? '');
+  if (info === undefined) {
     throw new Error(
       `${path.join(rootDir, 'package.json')}: set homepage or repository.url for manifest sync`,
     );
   }
 
-  return repoPath;
+  return `${info.domain}/${info.user}/${info.project}`;
 };
 
 /** Generates every native manifest the workspace's packages require. */
