@@ -65,10 +65,10 @@ export const unscopedName = (name: string): string =>
  * `evaluatorSettings`, package metadata). Sync owns only the three
  * version-derived fields in the `package {}` block (see {@link
  * patchPackageBlock}); `name` and everything else are preserved verbatim.
- * `baseUri`/`packageZipUrl` are written as `\(name)`/`\(version)`
- * interpolations, so they are byte-stable and only the `version` literal
- * changes across releases. A publishable package without a `package {}` block
- * is an error — sync stamps, it does not author.
+ * `baseUri` and `packageZipUrl` are written as `\(name)` and
+ * `\(name)@\(version)` interpolations respectively — byte-stable, so only the
+ * `version` literal changes across releases. A publishable package without a
+ * `package {}` block is an error — sync stamps, it does not author.
  */
 const pklWriter: ManifestWriter = {
   detect: pkg => pkg.hasPklPackage,

@@ -127,8 +127,8 @@ coverage, setupFiles, and mock reset.
   package metadata), so `gtb sync` (the `manifest` scope) does **not** generate
   the file — it patches only the three convention fields in the `package {}`
   block: `version` (stamped from the changeset-managed `package.json`) and
-  `baseUri`/`packageZipUrl` (written as `\(name)`/`\(version)` interpolations),
-  leaving `name` and everything else verbatim. The interpolations are
+  `baseUri`/`packageZipUrl` (written as `\(name)` and `\(name)@\(version)`
+  interpolations respectively), leaving `name` and everything else verbatim. The interpolations are
   byte-stable, so a version bump changes only the `version` line. This is the
   generic non-npm-manifest seam (`lib/manifest-sync.ts`, a kind-keyed writer
   registry; the source-text helper — brace-match + line patch, no Pkl parser —
