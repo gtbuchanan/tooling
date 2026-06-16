@@ -37,11 +37,14 @@ only inside the `renovate` npm package — add `npm:renovate` to your mise
 ## Building Blocks
 
 - `fileHygiene` — large-file, end-of-file-newline, byte-order-marker, and
-  trailing-whitespace fixers, each pre-wired with a lockfile exclude and
+  trailing-whitespace fixers, each pre-wired with the default exclude and
   `HK_BATCH`-gated batching.
 - `forbidSubmodules` — a per-OS gitlink (submodule) guard.
 - `renovateConfig` — validates `.github/renovate.json` via
   `renovate-config-validator`. Amend its `glob` to target a different file
   (e.g. `default.json` for preset-authoring repos).
-- `lockfiles` / `batchFiles` — the exclude regex and batch toggle, exposed so
-  you can wire the same behavior onto your own tool steps.
+- `defaultExclude` / `batchFiles` — the default exclude regex (lockfiles plus
+  a root `vendor/`) and batch toggle, exposed so you can wire the same
+  behavior onto your own tool steps.
+- `lockfileExclude` / `vendorExclude` — the individual exclude regexes that
+  compose `defaultExclude`, for steps that need only one.

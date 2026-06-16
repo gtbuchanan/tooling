@@ -1,7 +1,7 @@
 /// Shared hk building blocks for @gtbuchanan/tooling consumers. Import this
 /// and spread `fileHygiene` / add `forbidSubmodules` into your hooks; use
-/// `lockfiles` / `batchFiles` to wire the same exclude+batch onto your own
-/// tool steps (eslint, etc.).
+/// `defaultExclude` / `batchFiles` to wire the same exclude+batch onto your
+/// own tool steps (eslint, etc.).
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
@@ -9,7 +9,14 @@ import "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Config.
 import "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Builtins.pkl"
 
 /// Machine-generated lockfiles — exempt from the file-hygiene fixers.
-lockfiles: Regex = Regex(#"[-.]lock(\.|$)"#)
+lockfileExclude: Regex = Regex(#"[-.]lock(\.|$)"#)
+
+/// Vendored third-party sources under a root `vendor/` — not ours to fix.
+vendorExclude: Regex = Regex(#"^vendor/"#)
+
+/// Default exclude for file-hygiene (and consumer tool) steps: lockfiles plus
+/// vendored sources. Wire onto your own steps with `exclude = Defaults.defaultExclude`.
+defaultExclude: Regex = Regex("\(lockfileExclude.pattern)|\(vendorExclude.pattern)")
 
 /// `gtb hk all` exports HK_BATCH=1 so file-heavy steps chunk under Windows'
 /// cmd.exe 8191-char limit (jdx/hk#971). Off by default elsewhere so commits
@@ -18,10 +25,10 @@ batchFiles: Boolean = (read?("env:HK_BATCH") ?? "0") == "1"
 
 /// File-hygiene builtins with lockfile-exclude + batch already wired.
 fileHygiene: Mapping<String, Config.Step> = new {
-  ["check-added-large-files"] = (Builtins.check_added_large_files) { exclude = lockfiles; batch = batchFiles }
-  ["end-of-file-fixer"] = (Builtins.newlines) { exclude = lockfiles; batch = batchFiles }
-  ["fix-byte-order-marker"] = (Builtins.byte_order_marker) { exclude = lockfiles; batch = batchFiles }
-  ["trailing-whitespace"] = (Builtins.trailing_whitespace) { exclude = lockfiles; batch = batchFiles }
+  ["check-added-large-files"] = (Builtins.check_added_large_files) { exclude = defaultExclude; batch = batchFiles }
+  ["end-of-file-fixer"] = (Builtins.newlines) { exclude = defaultExclude; batch = batchFiles }
+  ["fix-byte-order-marker"] = (Builtins.byte_order_marker) { exclude = defaultExclude; batch = batchFiles }
+  ["trailing-whitespace"] = (Builtins.trailing_whitespace) { exclude = defaultExclude; batch = batchFiles }
 }
 
 // POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
