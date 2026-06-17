@@ -35,7 +35,7 @@ runs:
     - uses: jdx/mise-action@v4.1.0
       with:
         cache: false
-        version: 2026.5.15
+        version: 2026.6.11
 
     # Prune unreferenced tool versions on inexact cache restore so the
     # re-saved cache does not grow unbounded across mise.lock changes

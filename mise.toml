@@ -1,3 +1,7 @@
+# Soft floor for minimum_release_age_excludes (below): older mise warns and
+# ignores the field instead of failing.
+min_version = { soft = "2026.6.2" }
+
 [env]
 # hk wraps hook steps in `mise x` so mise-managed tools resolve without
 # activation.
@@ -19,6 +23,9 @@ lockfile = true
 # in `[tools]` bypasses it, and Renovate already gates automated bumps at
 # 3 days.
 minimum_release_age = "3d"
+# Self-published packages never need the supply-chain quarantine — exclude
+# them so fuzzy/`latest` resolution picks up our own just-cut releases.
+minimum_release_age_excludes = ["npm:@gtbuchanan/*"]
 
 # mise.tasks.toml is generated and owned by `gtb sync`; this include is
 # the one manual hookup (gtb verify checks it).
