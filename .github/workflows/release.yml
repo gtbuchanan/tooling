@@ -9,7 +9,9 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/cd.yml
     with:
-      publish-native: true
+      # tooling vendors @gtbuchanan/cli as a workspace package, so CD runs gtb
+      # from source (`pnpm run gtb`) rather than an installed bin.
+      gtb-from-source: true
 
   ci:
     name: CI

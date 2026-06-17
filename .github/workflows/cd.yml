@@ -22,26 +22,22 @@ jobs:
         with:
           task: pack
 
-      - env:
-          NPM_CONFIG_PROVENANCE: 'true'
-        name: Publish packages
-        run: pnpm dlx @changesets/cli@${{ needs.version.outputs.changesets-version }} publish
-
       # `pnpm-tasks` restores node_modules for `pnpm exec gtb`, since turbo-run
       # skips install on a pack cache hit.
-      - if: ${{ inputs.publish-native }}
-        uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
+      # `gtb publish` runs `changeset publish` (npm) then every non-npm channel.
+      # OIDC trusted publishing + provenance flow through the ambient env set
+      # here (the `release` environment + `id-token: write` grant them).
       - env:
           GH_TOKEN: ${{ github.token }}
-        if: ${{ inputs.publish-native }}
-        name: Publish non-npm packages
-        run: pnpm exec gtb publish
+          NPM_CONFIG_PROVENANCE: 'true'
+        name: Publish packages
+        run: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} publish
 
   version:
     name: Version
     outputs:
-      changesets-version: ${{ steps.changesets.outputs.version }}
       hasChangesets: ${{ steps.changesets-action.outputs.hasChangesets }}
     runs-on: ubuntu-latest
     steps:
@@ -57,53 +53,45 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      # Deps for the `gtb sync manifest` chained onto the version command below.
-      - if: ${{ inputs.publish-native }}
-        uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      # `gtb version` needs node_modules (the local changeset bin + gtb itself).
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
-      - id: changesets
-        uses: gtbuchanan/tooling/.github/actions/pnpm-resolve-pinned@main
-        with:
-          package: '@changesets/cli'
-
-      # `gtb sync manifest` must chain onto `version` (changesets runs it as one
-      # command) to land in the same version PR. Built as a real conditional.
-      - env:
-          PINNED: ${{ steps.changesets.outputs.version }}
-        id: version-command
-        run: |
-          command="pnpm dlx @changesets/cli@$PINNED version"
-          if [ '${{ inputs.publish-native }}' = 'true' ]; then
-            command="$command && pnpm exec gtb sync manifest"
-          fi
-          echo "value=$command" >> "$GITHUB_OUTPUT"
-
+      # `gtb version` runs `changeset version` then a `manifest`-scoped sync in
+      # one process so regenerated native manifests land in the same version
+      # commit/PR (the sync no-ops for plain-npm repos). It can't be a `&&`
+      # chain in this input: changesets/action splits `version` on whitespace
+      # and execs it without a shell, so `&&` (and everything after) would be
+      # passed to changesets as bogus positional args ("Too many arguments
+      # passed to changesets").
       - env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         id: changesets-action
         uses: changesets/action@v1
         with:
           github-token: ${{ steps.app-token.outputs.token }}
-          version: ${{ steps.version-command.outputs.value }}
+          version: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} version
 
 name: CD
 
-# Reusable: changesets version + npm publish (OIDC) — the deploy phase.
-# Run by the Release pipeline (release.yml) as its `CD` job after CI
-# passes. The publish job's `release` environment and OIDC token resolve
-# in the caller's repo, so the caller must grant `contents: write` +
-# `id-token: write` and define a `release` environment.
+# Reusable: changesets version + publish (npm via OIDC, plus any non-npm
+# channels) — the deploy phase. Run by the Release pipeline (release.yml) as
+# its `CD` job after CI passes. Both phases go through `gtb` (version: changeset
+# version + manifest sync; publish: changeset publish + non-npm channels), so
+# the caller must depend on `@gtbuchanan/cli`. The publish job's `release`
+# environment and OIDC token resolve in the caller's repo, so the caller must
+# grant `contents: write` + `id-token: write` and define a `release`
+# environment.
 on:
   workflow_call:
     inputs:
-      publish-native:
+      gtb-from-source:
         default: false
         description: >-
-          Enable non-npm package handling for repos that ship one (e.g. a Pkl
-          package): regenerate native manifests during the version PR (keeping
-          `gtb verify manifest` drift-free) and publish them to their release
-          channels after the npm publish. Leave false (default) for plain-npm
-          repos — no extra job or work is added.
+          Run gtb from the workspace source (`pnpm run gtb`) instead of the
+          installed bin (`pnpm exec gtb`). Set true only by the repo that
+          vendors `@gtbuchanan/cli` as a workspace package (tooling itself),
+          whose bin is not built in these jobs. Consumers leave it false and
+          run their installed, prebuilt bin.
         type: boolean
     secrets:
       APP_PRIVATE_KEY:

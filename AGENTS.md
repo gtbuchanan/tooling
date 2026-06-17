@@ -21,7 +21,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
   dependency-review-config.yml — License allowlist for dependency-review.yml
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
-    cd.yml                 — Reusable: changesets version + npm publish (OIDC); opt-in non-npm release publish (publish-native input)
+    cd.yml                 — Reusable: gtb version (changesets + manifest sync) then gtb publish (npm via OIDC + non-npm channels)
     changeset-check.yml    — Reusable: verify a changeset exists
     ci.yml                 — Reusable: build + slow + e2e + coverage
     dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
@@ -140,9 +140,9 @@ coverage, setupFiles, and mock reset.
   validation-only) on the `hasPkl` capability (a top-level `*.pkl` other than
   `hk.pkl`), and `pack:pkl` (`pkl project package` → `dist/packages/pkl/`) plus
   publishing on `hasPklPackage` (`hasPkl` and the `PklProject` declares a
-  `package {}` block). `gtb publish` (the generic non-npm publish command, which
-  dispatches every channel — Pkl today) reads the release identity from that
-  block.
+  `package {}` block). `gtb publish` (CD's publish command, which runs
+  `changeset publish` for npm and then dispatches every non-npm channel — Pkl
+  today) reads the release identity from that block.
   - **Convention: Pkl modules live at the package root**, alongside the
     (root-only) `PklProject` — detection, `typecheck:pkl`, and the `*.pkl`
     cache inputs are all top-level, not recursive. Keep sources at the root
@@ -287,20 +287,31 @@ through `package.json` scripts backed by `gtb` leaf commands.
   Uploads artifacts: `packages` (e2e tarballs) and `coverage` (final
   report). When `run-slow-tests` is enabled, fast and slow coverage are
   merged in a separate `coverage` job.
-- **`cd.yml`** — The deploy phase: `version` (changesets) then `publish`
-  (npm trusted publishing via OIDC, `release` environment), gated on
+- **`cd.yml`** — The deploy phase: `version` then `publish` (npm trusted
+  publishing via OIDC, `release` environment), gated on
   `hasChangesets == 'false'`. Run by `release.yml` as its `CD` job after CI
-  passes. Non-npm publishing is **opt-in** via the `publish-native` input
-  (default `false`) so plain-npm repos add no skipped job and do no extra
-  work. When `true` (this repo sets it in `release.yml`): the version
-  command also runs `gtb sync manifest` (keeping `PklProject` drift-free
-  against `gtb verify manifest`), and the `publish` job gains two
-  conditional STEPS (`pnpm-tasks` + `gtb publish`) that idempotently
-  upload each non-npm package (the Pkl zip to a `hk-config@<ver>` GitHub
-  release) using the assets the `pack` step already built. The input is
-  generic, not Pkl-specific, and `gtb publish` dispatches every channel, so
-  a future `.NET` channel adds no new input — just another `executePublish*`
-  in the command.
+  passes. Both phases go through `gtb`, so the caller must depend on
+  `@gtbuchanan/cli`:
+  - **`gtb version`** is changesets/action's `version` command —
+    `changeset version` then a `manifest`-scoped sync, in one process so any
+    regenerated `PklProject` lands in the same version commit/PR (keeping
+    `gtb verify manifest` drift-free). The chaining lives inside `gtb`
+    because changesets/action splits its `version` input on whitespace and
+    execs it without a shell, so a `&&` chain would be passed to changesets
+    as bogus args.
+  - **`gtb publish`** runs `changeset publish` (npm, honoring the ambient
+    OIDC + `NPM_CONFIG_PROVENANCE` env) and then dispatches every non-npm
+    channel (the Pkl zip to a `hk-config@<ver>` GitHub release), using the
+    assets the `pack` step already built. Each channel is idempotent and
+    no-ops when the workspace ships no such package, so CD runs `gtb publish`
+    unconditionally; a future `.NET` channel adds just another
+    `executePublish*` with no workflow change.
+  - The `gtb-from-source` input (default `false`) flips the gtb invocation:
+    consumers run their installed bin (`pnpm exec gtb`); the only repo that
+    vendors `@gtbuchanan/cli` as a workspace package (tooling itself) sets it
+    `true` in `release.yml` to run gtb from source (`pnpm run gtb`), whose
+    bin these jobs don't build. This mirrors the `gtbPrefix` repo-shape
+    resolution used for generated scripts and mise tasks.
 - **`changeset-check.yml`** — Verifies a changeset exists on every PR.
   Use `pnpm changeset --empty` for PRs that don't need a version bump.
 - **`dependency-review.yml`** — Two PR gates on newly-changed deps.
