@@ -8,13 +8,15 @@ import { createTempDir } from './helpers.ts';
 
 const jsonIndent = 2;
 
+interface ScaffoldPackageOverrides {
+  pkgManifest?: Record<string, unknown>;
+  rootManifest?: Record<string, unknown>;
+}
+
 /** Scaffolds a workspace with one publishable package, returning its dirs. */
 const scaffoldPackage = (
   root: string,
-  overrides: {
-    pkgManifest?: Record<string, unknown>;
-    rootManifest?: Record<string, unknown>;
-  } = {},
+  overrides: ScaffoldPackageOverrides = {},
 ): { publishDir: string; pkgDir: string } => {
   const publishDir = build.publishDirectory();
   const pkgDir = path.join(root, 'packages', build.packageName());
@@ -223,6 +225,18 @@ describe.concurrent(prepack, () => {
     );
   });
 
+  it('does not fall back to the root README (README is package-specific)', ({
+    expect,
+  }) => {
+    const root = createTempDir();
+    const { pkgDir, publishDir } = scaffoldPackage(root);
+    writeFileSync(path.join(root, 'README.md'), faker.lorem.paragraph());
+
+    prepack({ cwd: root });
+
+    expect(existsSync(path.join(pkgDir, publishDir, 'README.md'))).toBe(false);
+  });
+
   it('prefers a package-level LICENSE over the root', ({ expect }) => {
     const root = createTempDir();
     const { pkgDir, publishDir } = scaffoldPackage(root);
@@ -245,6 +259,20 @@ describe.concurrent(prepack, () => {
 
     expect(existsSync(path.join(pkgDir, publishDir, 'README.md'))).toBe(false);
     expect(existsSync(path.join(pkgDir, publishDir, 'LICENSE'))).toBe(false);
+  });
+
+  it('removes a stale doc left by a prior run when the source disappears', ({
+    expect,
+  }) => {
+    const root = createTempDir();
+    const { pkgDir, publishDir } = scaffoldPackage(root);
+    const stale = path.join(pkgDir, publishDir, 'README.md');
+    mkdirSync(path.dirname(stale), { recursive: true });
+    writeFileSync(stale, faker.lorem.paragraph());
+
+    prepack({ cwd: root });
+
+    expect(existsSync(stale)).toBe(false);
   });
 
   it('writes the license field from the root manifest', ({ expect }) => {

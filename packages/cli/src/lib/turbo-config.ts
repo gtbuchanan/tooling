@@ -192,15 +192,15 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
         ...(flags.hasSkills ? [taskNames.compileSkills] : []),
       ],
       /*
-       * pack:npm copies the package README and the root (or package-level)
-       * LICENSE into dist/source so the published tarball ships them, and
-       * writes dist/source/package.json. Those self-generated files are
-       * excluded from the dist/source input glob — like the manifest, an
-       * input whose presence depends on a prior run salts the hash and
-       * prevents cache hits across fresh worktrees. Their sources (the repo
-       * LICENSE and per-package README/LICENSE) are inputs so an edit
-       * invalidates the cache, and the copies are outputs so a cache-hit
-       * publish restores them.
+       * pack:npm copies the package README and the package-or-root LICENSE
+       * into dist/source so the published tarball ships them, and writes
+       * dist/source/package.json. Those self-generated files are excluded
+       * from the dist/source input glob — like the manifest, an input whose
+       * presence depends on a prior run salts the hash and prevents cache
+       * hits across fresh worktrees. Their sources (the root LICENSE and
+       * per-package README/LICENSE) are inputs so an edit invalidates the
+       * cache, and the copies are outputs so a cache-hit publish restores
+       * them.
        */
       inputs: [
         '$TURBO_ROOT$/LICENSE',

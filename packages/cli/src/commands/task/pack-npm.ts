@@ -59,37 +59,38 @@ const writeSourceManifest = (
   writeFileSync(path.join(target, '.npmignore'), npmignoreContent);
 };
 
-/**
- * Resolves a doc file by package-then-root precedence: a package-level copy
- * overrides the shared workspace-root one. Returns `undefined` when neither
- * exists.
- */
-const resolveDoc = (
-  rootDir: string,
-  pkgDir: string,
-  name: string,
-): string | undefined =>
-  [path.join(pkgDir, name), path.join(rootDir, name)].find(file =>
-    existsSync(file),
-  );
+/** Returns the first candidate path that exists, or `undefined`. */
+const firstExisting = (...candidates: string[]): string | undefined =>
+  candidates.find(file => existsSync(file));
 
 /*
  * npm auto-includes README/LICENSE only from the package directory, which
  * `publishConfig.directory` redirects to `dist/source/` — so they must be
- * copied there. A package-level README/LICENSE wins over the shared
- * workspace-root file. In single-package mode `rootDir === pkgDir`, so both
- * resolve to the same root.
+ * copied there. A README is package-specific (only the package's own), while
+ * a LICENSE is repo-wide and falls back to the workspace-root copy when the
+ * package has none. In single-package mode `rootDir === pkgDir`, so both
+ * resolve to the root.
  */
 const copyPackageDocs = (
   rootDir: string,
   pkgDir: string,
   target: string,
 ): void => {
-  for (const name of ['README.md', 'LICENSE']) {
-    const source = resolveDoc(rootDir, pkgDir, name);
-    if (source !== undefined) {
-      cpSync(source, path.join(target, name));
+  const docs: readonly (readonly [name: string, source: string | undefined])[] = [
+    ['README.md', firstExisting(path.join(pkgDir, 'README.md'))],
+    ['LICENSE', firstExisting(path.join(pkgDir, 'LICENSE'), path.join(rootDir, 'LICENSE'))],
+  ];
+  for (const [name, source] of docs) {
+    const destination = path.join(target, name);
+    if (source === undefined) {
+      /*
+       * Drop a copy left by a prior run so a since-deleted doc isn't
+       * republished from a stale dist/source.
+       */
+      rmSync(destination, { force: true });
+      continue;
     }
+    cpSync(source, destination);
   }
 };
 
