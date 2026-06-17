@@ -10,9 +10,26 @@ import "packages/hk-config/Defaults.pkl"
 // eslint args shared by the step's check/fix; only `--fix` differs.
 local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
 
+// actionlint pipes each `run:` script to shellcheck's stdin before starting
+// the process, so a script larger than the kernel pipe buffer deadlocks the
+// hook (rhysd/actionlint#650). Buffer sizes are smaller on Windows/macOS than
+// on Linux, so it bites our Windows-primary dev loop but not CI. Disable
+// shellcheck on Windows only; CI (Linux) and other platforms reuse the
+// builtin's command verbatim (no drift) and keep full shellcheck coverage.
+// The upstream fix (#651) is merged but unreleased as of actionlint 1.7.12 —
+// drop this guard once a release containing it lands.
+local actionlintCheck: String = Builtins.actionlint.check
+
 local allSteps = new Mapping<String, Step> {
     ...Defaults.fileHygiene
-    ["actionlint"] = Builtins.actionlint
+    ["actionlint"] = (Builtins.actionlint) {
+        check = new Script {
+            windows = "actionlint -shellcheck= {{ files }}"
+            linux = actionlintCheck
+            macos = actionlintCheck
+            other = actionlintCheck
+        }
+    }
     ["forbid-submodules"] = Defaults.forbidSubmodules
 
     // Both validate via Defaults.renovateConfig (npm:renovate on PATH from

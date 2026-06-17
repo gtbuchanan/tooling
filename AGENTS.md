@@ -97,7 +97,11 @@ coverage, setupFiles, and mock reset.
   shared `packages/hk-config/Defaults.pkl` preset and composes its steps:
   - File hygiene — `Defaults.fileHygiene` (large files, EOF newline, BOM,
     trailing whitespace, each with the lockfile-exclude pre-wired)
-  - `actionlint` (`Builtins.actionlint`, binary via mise `aqua:rhysd/actionlint`)
+  - `actionlint` (`Builtins.actionlint`, binary via mise `aqua:rhysd/actionlint`).
+    actionlint runs `shellcheck` (mise `aqua:koalaman/shellcheck`) on workflow
+    `run:` scripts when it's on PATH; the hk.pkl step wraps the builtin to
+    disable shellcheck on Windows only, working around an actionlint deadlock
+    (see the comment there for mechanism and removal trigger).
   - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)
   - `renovate-preset` / `renovate-config` — both derive from
