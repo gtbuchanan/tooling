@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import crossSpawn from 'cross-spawn';
@@ -9,6 +9,7 @@ import {
   RootManifestSchema,
   buildOutput,
   buildRepoFields,
+  resolveLicense,
 } from '../../lib/manifest.ts';
 import { toPosixRelative } from '../../lib/paths.ts';
 import {
@@ -44,13 +45,52 @@ const writeSourceManifest = (
   directory: string,
 ): void => {
   mkdirSync(target, { recursive: true });
+  const license = resolveLicense(manifest, root);
   const json = JSON.stringify(
-    { ...buildOutput(manifest), ...buildRepoFields(root, directory) },
+    {
+      ...buildOutput(manifest),
+      ...buildRepoFields(root, directory),
+      ...(license !== undefined && { license }),
+    },
     undefined,
     jsonIndent,
   );
   writeFileSync(path.join(target, 'package.json'), `${json}\n`);
   writeFileSync(path.join(target, '.npmignore'), npmignoreContent);
+};
+
+/**
+ * Resolves a doc file by package-then-root precedence: a package-level copy
+ * overrides the shared workspace-root one. Returns `undefined` when neither
+ * exists.
+ */
+const resolveDoc = (
+  rootDir: string,
+  pkgDir: string,
+  name: string,
+): string | undefined =>
+  [path.join(pkgDir, name), path.join(rootDir, name)].find(file =>
+    existsSync(file),
+  );
+
+/*
+ * npm auto-includes README/LICENSE only from the package directory, which
+ * `publishConfig.directory` redirects to `dist/source/` — so they must be
+ * copied there. A package-level README/LICENSE wins over the shared
+ * workspace-root file. In single-package mode `rootDir === pkgDir`, so both
+ * resolve to the same root.
+ */
+const copyPackageDocs = (
+  rootDir: string,
+  pkgDir: string,
+  target: string,
+): void => {
+  for (const name of ['README.md', 'LICENSE']) {
+    const source = resolveDoc(rootDir, pkgDir, name);
+    if (source !== undefined) {
+      cpSync(source, path.join(target, name));
+    }
+  }
 };
 
 const preparePackage = (
@@ -67,6 +107,7 @@ const preparePackage = (
   const target = path.join(pkgDir, dir);
   const directory = toPosixRelative(rootDir, pkgDir);
   writeSourceManifest(manifest, root, target, directory);
+  copyPackageDocs(rootDir, pkgDir, target);
 };
 
 const execPnpmPack = (pkgDir: string, destination: string): void => {
@@ -102,6 +143,7 @@ const prepareAndPack = (
   const target = path.join(pkgDir, dir);
   const directory = toPosixRelative(rootDir, pkgDir);
   writeSourceManifest(manifest, root, target, directory);
+  copyPackageDocs(rootDir, pkgDir, target);
   execPnpmPack(pkgDir, path.join(pkgDir, packDestination));
 };
 

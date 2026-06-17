@@ -142,13 +142,20 @@
         "compile:skills"
       ],
       "inputs": [
+        "$TURBO_ROOT$/LICENSE",
         "$TURBO_ROOT$/package.json",
+        "LICENSE",
+        "README.md",
         "dist/source/**",
+        "!dist/source/LICENSE",
+        "!dist/source/README.md",
         "!dist/source/package.json",
         "package.json"
       ],
       "outputs": [
         "dist/packages/npm/**",
+        "dist/source/LICENSE",
+        "dist/source/README.md",
         "dist/source/package.json"
       ]
     },

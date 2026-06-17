@@ -1,6 +1,11 @@
+import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
-import { buildOutput, buildRepoFields } from '#src/lib/manifest.js';
+import {
+  buildOutput,
+  buildRepoFields,
+  resolveLicense,
+} from '#src/lib/manifest.js';
 
 describe.concurrent(buildOutput, () => {
   it('strips devDependencies and scripts', ({ expect }) => {
@@ -134,5 +139,34 @@ describe.concurrent(buildRepoFields, () => {
     expect(result).toStrictEqual({
       homepage: `${homepage}/tree/main/${directory}`,
     });
+  });
+
+  it('omits license (resolved separately)', ({ expect }) => {
+    const result = buildRepoFields(
+      { license: faker.lorem.word() },
+      build.packageDirectory(),
+    );
+
+    expect(result).not.toHaveProperty('license');
+  });
+});
+
+describe.concurrent(resolveLicense, () => {
+  it('prefers the package license over the root', ({ expect }) => {
+    const license = faker.lorem.word();
+
+    expect(resolveLicense({ license }, { license: faker.lorem.word() })).toBe(
+      license,
+    );
+  });
+
+  it('falls back to the root license', ({ expect }) => {
+    const license = faker.lorem.word();
+
+    expect(resolveLicense({}, { license })).toBe(license);
+  });
+
+  it('returns undefined when neither sets a license', ({ expect }) => {
+    expect(resolveLicense({}, {})).toBeUndefined();
   });
 });

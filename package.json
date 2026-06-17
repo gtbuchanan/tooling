@@ -7,6 +7,7 @@
     "type": "git",
     "url": "https://github.com/gtbuchanan/tooling.git"
   },
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "pnpm run gtb turbo run build",
