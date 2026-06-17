@@ -63,8 +63,14 @@ jobs:
       # and execs it without a shell, so `&&` (and everything after) would be
       # passed to changesets as bogus positional args ("Too many arguments
       # passed to changesets").
+      #
+      # `HK=0` skips the hk pre-commit hook on changesets/action's automated
+      # commit (mise's postinstall installs the hook in CI too). A
+      # machine-generated release commit shouldn't run dev hooks — the release
+      # PR's own `Pre-Commit` CI is the enforcement point.
       - env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          HK: '0'
         id: changesets-action
         uses: changesets/action@v1
         with:
