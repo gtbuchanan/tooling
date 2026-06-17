@@ -94,8 +94,8 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 `gtb hk` runs the [hk](https://hk.jdx.dev) pre-commit hooks, and is what the generated `hk:all` / `hk:base` mise tasks call. It locally applies fixes and in CI runs a non-modifying check (keyed on the `CI` env var), mirroring prek's `run`.
 
-- `gtb hk base [ref] [-- <hk args>]` — runs hk on files changed from a base ref (default `origin/main`; pass a ref to override). On shallow clones it fetches the base first, then diffs `base..HEAD`. Forward args to hk after the ref, e.g. `gtb hk base -- -S eslint` targets a single hook.
-- `gtb hk all [-- <hk args>]` — runs hk across every file. Sets `HK_BATCH=1` so hk chunks the file list under Windows' `cmd.exe` 8191-char arg limit (the per-step commands hk shells out otherwise overflow). `base` and plain commits leave batching off so the common path stays single-invocation.
+- `gtb hk base [ref] [-- <hk args>]` — runs hk on files changed from a base ref (default `origin/main`; pass a ref to override). On shallow clones it fetches the base first, then hands the range to hk as `--from-ref=<base> --to-ref=HEAD`. Forward args to hk after the ref, e.g. `gtb hk base -- -S eslint` targets a single hook.
+- `gtb hk all [-- <hk args>]` — runs hk across every file.
 
 Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The mise task resolves `gtb` itself per repo shape — see the `mise.tasks.toml` notes above.
 

@@ -21,7 +21,6 @@ local allSteps = new Mapping<String, Step> {
     ["renovate-config"] = Defaults.renovateConfig
 
     ["eslint"] {
-        batch = Defaults.batchFiles
         check = "pnpm exec eslint \(eslintArgs)"
         fix = "pnpm exec eslint --fix \(eslintArgs)"
     }
