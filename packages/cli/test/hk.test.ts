@@ -148,7 +148,7 @@ describe.concurrent(executeHkBase, () => {
     });
   });
 
-  it('strips the origin/ prefix from the fetched ref on a shallow clone', async ({
+  it('derives the remote and branch from a remote-tracking base ref', async ({
     expect,
   }) => {
     const { deps, runCalls } = stubDeps({ 'rev-parse': 'true' });
@@ -162,6 +162,19 @@ describe.concurrent(executeHkBase, () => {
     expect(runCalls[1]).toMatchObject({
       args: ['fix', '--from-ref=origin/main', '--to-ref=HEAD'],
       command: 'hk',
+    });
+  });
+
+  it('fetches a non-origin remote from the base ref, keeping nested branches', async ({
+    expect,
+  }) => {
+    const { deps, runCalls } = stubDeps({ 'rev-parse': 'true' });
+
+    await executeHkBase(['upstream/release/v2'], deps);
+
+    expect(runCalls[0]).toMatchObject({
+      args: ['fetch', '--no-tags', '--depth=1', 'upstream', 'release/v2'],
+      command: 'git',
     });
   });
 });
