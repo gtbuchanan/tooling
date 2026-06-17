@@ -6,6 +6,7 @@ import { publish } from './root/publish.ts';
 import { sync } from './root/sync.ts';
 import { turbo } from './root/turbo.ts';
 import { verify } from './root/verify.ts';
+import { version } from './root/version.ts';
 import { task } from './task/index.ts';
 import { taskCommandName } from './task/names.ts';
 
@@ -22,6 +23,7 @@ export const main = defineCommand({
     [rootNames.sync]: sync,
     [rootNames.turbo]: turbo,
     [rootNames.verify]: verify,
+    [rootNames.version]: version,
     [taskCommandName]: task,
   },
 });

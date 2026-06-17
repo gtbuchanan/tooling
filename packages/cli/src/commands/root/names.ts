@@ -6,4 +6,5 @@ export const rootNames = {
   sync: 'sync',
   turbo: 'turbo',
   verify: 'verify',
+  version: 'version',
 } as const;
