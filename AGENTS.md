@@ -96,7 +96,7 @@ coverage, setupFiles, and mock reset.
   2.54+ config-based hooks, wrapped in `mise x`). `hk.pkl` imports the
   shared `packages/hk-config/Defaults.pkl` preset and composes its steps:
   - File hygiene — `Defaults.fileHygiene` (large files, EOF newline, BOM,
-    trailing whitespace, each with the lockfile-exclude + batch pre-wired)
+    trailing whitespace, each with the lockfile-exclude pre-wired)
   - `actionlint` (`Builtins.actionlint`, binary via mise `aqua:rhysd/actionlint`)
   - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)

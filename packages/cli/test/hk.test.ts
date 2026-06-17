@@ -147,4 +147,21 @@ describe.concurrent(executeHkBase, () => {
       command: 'hk',
     });
   });
+
+  it('strips the origin/ prefix from the fetched ref on a shallow clone', async ({
+    expect,
+  }) => {
+    const { deps, runCalls } = stubDeps({ 'rev-parse': 'true' });
+
+    await executeHkBase([], deps);
+
+    expect(runCalls[0]).toMatchObject({
+      args: ['fetch', '--no-tags', '--depth=1', 'origin', 'main'],
+      command: 'git',
+    });
+    expect(runCalls[1]).toMatchObject({
+      args: ['fix', '--from-ref=origin/main', '--to-ref=HEAD'],
+      command: 'hk',
+    });
+  });
 });

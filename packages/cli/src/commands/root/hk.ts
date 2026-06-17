@@ -88,9 +88,11 @@ export const executeHkBase = async (
 ): Promise<void> => {
   const { base, rest } = resolveBaseRef(rawArgs);
   // Shallow clones lack the base commit; fetch it so hk can diff against it.
+  // `git fetch origin` wants a remote branch name, so strip any `origin/`.
   const shallow = await deps.capture('git', ['rev-parse', '--is-shallow-repository']);
   if (shallow === 'true') {
-    await deps.run('git', { args: ['fetch', '--no-tags', '--depth=1', 'origin', base] });
+    const fetchRef = base.startsWith('origin/') ? base.slice('origin/'.length) : base;
+    await deps.run('git', { args: ['fetch', '--no-tags', '--depth=1', 'origin', fetchRef] });
   }
   const plan = planHkBase({ base, mode: hkMode(deps.env), rest });
   await deps.run(plan.bin, { args: plan.args });
