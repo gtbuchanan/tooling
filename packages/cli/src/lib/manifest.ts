@@ -24,6 +24,7 @@ export const RepositorySchema = v.object({
 export const RootManifestSchema = v.object({
   bugs: v.optional(v.string()),
   homepage: v.optional(v.string()),
+  license: v.optional(v.string()),
   repository: v.optional(RepositorySchema),
 });
 
@@ -34,6 +35,7 @@ export type RootManifest = v.InferOutput<typeof RootManifestSchema>;
 export const ManifestSchema = v.looseObject({
   dependencies: v.optional(v.record(v.string(), v.string())),
   devDependencies: v.optional(v.record(v.string(), v.string())),
+  license: v.optional(v.string()),
   name: v.optional(v.string()),
   private: v.optional(v.boolean()),
   publishConfig: v.optional(PublishConfigSchema),
@@ -46,7 +48,10 @@ export type Manifest = v.InferOutput<typeof ManifestSchema>;
 
 /**
  * Copies `bugs`, `homepage`, and `repository` from the root manifest,
- * scoping `homepage` and `repository.directory` to the given path.
+ * scoping `homepage` and `repository.directory` to the given path. These
+ * are repo coordinates and intentionally override any package-level value.
+ * `license` is handled separately ({@link resolveLicense}) because a
+ * package's own declaration takes precedence over the root default.
  */
 export const buildRepoFields = (
   root: RootManifest,
@@ -60,6 +65,15 @@ export const buildRepoFields = (
     repository: { ...root.repository, directory },
   }),
 });
+
+/**
+ * Resolves the published `license`, preferring a package's own declaration
+ * over the workspace-root default. Returns `undefined` when neither sets one.
+ */
+export const resolveLicense = (
+  manifest: Manifest,
+  root: RootManifest,
+): string | undefined => manifest.license ?? root.license;
 
 /**
  * `publishConfig` fields hoisted to top-level on packed manifests.

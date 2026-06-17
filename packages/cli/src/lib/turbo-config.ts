@@ -192,18 +192,28 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
         ...(flags.hasSkills ? [taskNames.compileSkills] : []),
       ],
       /*
-       * Exclude the generated manifest from inputs: pack:npm writes
-       * `dist/source/package.json` as one of its outputs, and including it
-       * in the input glob makes the task's hash depend on whether a prior
-       * run left the file on disk. That prevents cache hits across fresh
-       * worktrees even when the source inputs are identical.
+       * pack:npm copies the package README and the package-or-root LICENSE
+       * into dist/source so the published tarball ships them, and writes
+       * dist/source/package.json. Those self-generated files are excluded
+       * from the dist/source input glob — like the manifest, an input whose
+       * presence depends on a prior run salts the hash and prevents cache
+       * hits across fresh worktrees. Their sources (the root LICENSE and
+       * per-package README/LICENSE) are inputs so an edit invalidates the
+       * cache, and the copies are outputs so a cache-hit publish restores
+       * them.
        */
       inputs: [
+        '$TURBO_ROOT$/LICENSE',
         '$TURBO_ROOT$/package.json',
-        'dist/source/**', '!dist/source/package.json',
+        'LICENSE', 'README.md',
+        'dist/source/**',
+        '!dist/source/LICENSE', '!dist/source/README.md', '!dist/source/package.json',
         'package.json',
       ],
-      outputs: ['dist/packages/npm/**', 'dist/source/package.json'],
+      outputs: [
+        'dist/packages/npm/**',
+        'dist/source/LICENSE', 'dist/source/README.md', 'dist/source/package.json',
+      ],
     },
   },
 ];

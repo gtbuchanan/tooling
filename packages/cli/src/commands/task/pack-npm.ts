@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import crossSpawn from 'cross-spawn';
@@ -9,6 +9,7 @@ import {
   RootManifestSchema,
   buildOutput,
   buildRepoFields,
+  resolveLicense,
 } from '../../lib/manifest.ts';
 import { toPosixRelative } from '../../lib/paths.ts';
 import {
@@ -44,13 +45,53 @@ const writeSourceManifest = (
   directory: string,
 ): void => {
   mkdirSync(target, { recursive: true });
+  const license = resolveLicense(manifest, root);
   const json = JSON.stringify(
-    { ...buildOutput(manifest), ...buildRepoFields(root, directory) },
+    {
+      ...buildOutput(manifest),
+      ...buildRepoFields(root, directory),
+      ...(license !== undefined && { license }),
+    },
     undefined,
     jsonIndent,
   );
   writeFileSync(path.join(target, 'package.json'), `${json}\n`);
   writeFileSync(path.join(target, '.npmignore'), npmignoreContent);
+};
+
+/** Returns the first candidate path that exists, or `undefined`. */
+const firstExisting = (...candidates: string[]): string | undefined =>
+  candidates.find(file => existsSync(file));
+
+/*
+ * npm auto-includes README/LICENSE only from the package directory, which
+ * `publishConfig.directory` redirects to `dist/source/` — so they must be
+ * copied there. A README is package-specific (only the package's own), while
+ * a LICENSE is repo-wide and falls back to the workspace-root copy when the
+ * package has none. In single-package mode `rootDir === pkgDir`, so both
+ * resolve to the root.
+ */
+const copyPackageDocs = (
+  rootDir: string,
+  pkgDir: string,
+  target: string,
+): void => {
+  const docs: readonly (readonly [name: string, source: string | undefined])[] = [
+    ['README.md', firstExisting(path.join(pkgDir, 'README.md'))],
+    ['LICENSE', firstExisting(path.join(pkgDir, 'LICENSE'), path.join(rootDir, 'LICENSE'))],
+  ];
+  for (const [name, source] of docs) {
+    const destination = path.join(target, name);
+    if (source === undefined) {
+      /*
+       * Drop a copy left by a prior run so a since-deleted doc isn't
+       * republished from a stale dist/source.
+       */
+      rmSync(destination, { force: true });
+      continue;
+    }
+    cpSync(source, destination);
+  }
 };
 
 const preparePackage = (
@@ -67,6 +108,7 @@ const preparePackage = (
   const target = path.join(pkgDir, dir);
   const directory = toPosixRelative(rootDir, pkgDir);
   writeSourceManifest(manifest, root, target, directory);
+  copyPackageDocs(rootDir, pkgDir, target);
 };
 
 const execPnpmPack = (pkgDir: string, destination: string): void => {
@@ -102,6 +144,7 @@ const prepareAndPack = (
   const target = path.join(pkgDir, dir);
   const directory = toPosixRelative(rootDir, pkgDir);
   writeSourceManifest(manifest, root, target, directory);
+  copyPackageDocs(rootDir, pkgDir, target);
   execPnpmPack(pkgDir, path.join(pkgDir, packDestination));
 };
 

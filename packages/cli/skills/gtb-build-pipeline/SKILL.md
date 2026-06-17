@@ -50,7 +50,9 @@ Leaf tasks, per-package, run via `gtb task <name>`:
 - `typecheck:ts` — TypeScript type checking
 - `compile:ts` — TypeScript compilation to `dist/source/`
 - `lint:eslint` — ESLint with cache + zero-warning threshold
-- `pack:npm` — npm tarball creation (publishable packages only)
+- `pack:npm` — npm tarball creation (publishable packages only); also copies
+  the package `README.md` and its `LICENSE` (the package's own, else the
+  workspace-root one) into `dist/source/` so the tarball ships them
 - `test:vitest:fast` — fast unit/integration tests with coverage
 - `test:vitest:slow` — slow tests (testcontainers, etc.) with coverage
 - `test:vitest:e2e` — e2e tests against packed tarballs, no coverage
