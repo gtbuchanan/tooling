@@ -81,6 +81,25 @@ export const executeHkAll = async (
   await deps.run(plan.bin, { args: plan.args });
 };
 
+/**
+ * Resolves the `git fetch` remote and ref for a base. Only a `<remote>/…`
+ * prefix that names a configured remote is split off (so `origin/main` →
+ * `origin main`); a bare SHA or a local branch with a slash (`feat/x`) is
+ * fetched from origin as-is.
+ */
+export const resolveFetchTarget = async (
+  base: string,
+  deps: HkRunnerDeps,
+): Promise<readonly [remote: string, ref: string]> => {
+  const slash = base.indexOf('/');
+  if (slash === -1) return ['origin', base];
+  const remote = base.slice(0, slash);
+  const configured = await deps.capture('git', ['remote']);
+  return configured.split('\n').includes(remote)
+    ? [remote, base.slice(slash + 1)]
+    : ['origin', base];
+};
+
 /** Runs hk over the files changed from the resolved base ref. */
 export const executeHkBase = async (
   rawArgs: readonly string[],
@@ -88,12 +107,9 @@ export const executeHkBase = async (
 ): Promise<void> => {
   const { base, rest } = resolveBaseRef(rawArgs);
   // Shallow clones lack the base commit; fetch it so hk can diff against it.
-  // A `<remote>/<branch>` base names the remote; a bare SHA/ref uses origin.
   const shallow = await deps.capture('git', ['rev-parse', '--is-shallow-repository']);
   if (shallow === 'true') {
-    const slash = base.indexOf('/');
-    const [remote, ref] =
-      slash === -1 ? ['origin', base] : [base.slice(0, slash), base.slice(slash + 1)];
+    const [remote, ref] = await resolveFetchTarget(base, deps);
     await deps.run('git', { args: ['fetch', '--no-tags', '--depth=1', remote, ref] });
   }
   const plan = planHkBase({ base, mode: hkMode(deps.env), rest });

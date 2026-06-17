@@ -151,7 +151,7 @@ describe.concurrent(executeHkBase, () => {
   it('derives the remote and branch from a remote-tracking base ref', async ({
     expect,
   }) => {
-    const { deps, runCalls } = stubDeps({ 'rev-parse': 'true' });
+    const { deps, runCalls } = stubDeps({ 'remote': 'origin', 'rev-parse': 'true' });
 
     await executeHkBase([], deps);
 
@@ -165,15 +165,28 @@ describe.concurrent(executeHkBase, () => {
     });
   });
 
-  it('fetches a non-origin remote from the base ref, keeping nested branches', async ({
+  it('fetches a configured non-origin remote, keeping nested branches', async ({
     expect,
   }) => {
-    const { deps, runCalls } = stubDeps({ 'rev-parse': 'true' });
+    const { deps, runCalls } = stubDeps({ 'remote': 'origin\nupstream', 'rev-parse': 'true' });
 
     await executeHkBase(['upstream/release/v2'], deps);
 
     expect(runCalls[0]).toMatchObject({
       args: ['fetch', '--no-tags', '--depth=1', 'upstream', 'release/v2'],
+      command: 'git',
+    });
+  });
+
+  it('treats a slashed base whose prefix is not a remote as a branch on origin', async ({
+    expect,
+  }) => {
+    const { deps, runCalls } = stubDeps({ 'remote': 'origin', 'rev-parse': 'true' });
+
+    await executeHkBase(['feat/name'], deps);
+
+    expect(runCalls[0]).toMatchObject({
+      args: ['fetch', '--no-tags', '--depth=1', 'origin', 'feat/name'],
       command: 'git',
     });
   });
