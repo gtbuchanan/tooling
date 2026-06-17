@@ -108,7 +108,7 @@ coverage, setupFiles, and mock reset.
   - `eslint` / `no-commit-to-branch` — repo-specific, stay in `hk.pkl`
 - **`@gtbuchanan/hk-config` preset** (`packages/hk-config/Defaults.pkl`).
   The reusable building blocks (`fileHygiene`, `forbidSubmodules`,
-  `renovateConfig`, and the `defaultExclude`/`batchFiles` primitives) ship as a
+  `renovateConfig`, and the `defaultExclude` primitive) ship as a
   Pkl package — private to npm, published as a **GitHub release** so
   consumers `package://`-import it with sha256 integrity (see CD below).
   Consumer import:
@@ -161,7 +161,7 @@ coverage, setupFiles, and mock reset.
 `hk:all` / `hk:base` are mise tasks that run hk. They live in a generated,
 sync-owned `mise.tasks.toml` and call the `gtb hk` leaf command (ported
 from the old `mise-tasks/` bash: CI `check` vs local `fix`, shallow-clone
-base fetch, file diffing — see the `gtb-build-pipeline` skill).
+base fetch, base-ref diffing — see the `gtb-build-pipeline` skill).
 
 - **Generation.** `gtb sync` (or just `gtb sync mise`) writes
   `mise.tasks.toml`. It's loaded via a one-time manual
@@ -175,14 +175,6 @@ base fetch, file diffing — see the `gtb-build-pipeline` skill).
   `pnpm run gtb`; depends on `@gtbuchanan/cli` → `pnpm exec gtb`; neither
   (hk-only adopter) → bare `gtb` from mise's `npm:` backend (add
   `npm:@gtbuchanan/cli` to `[tools]`; no `node_modules` needed).
-- **Windows `cmd.exe` arg limit.** hk runs each step's command via
-  `cmd.exe` on Windows, whose 8191-char limit a full-repo run overflows;
-  hk's auto-batching is tuned for Unix `ARG_MAX`. `Defaults.fileHygiene`
-  (and the `eslint` step) gate batching on `HK_BATCH`, which `gtb hk all`
-  sets so hk chunks files (~one batch per core) under the limit. Commits
-  and `gtb hk base` leave it unset — batching splits small changesets into
-  one-file batches (repeated linter startup), so the common path stays
-  single-invocation. Tracked upstream: jdx/hk discussion #971.
 
 ### CI/CD workflows
 

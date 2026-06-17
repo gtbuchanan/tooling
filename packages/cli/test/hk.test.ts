@@ -80,88 +80,71 @@ describe.concurrent(hkMode, () => {
 });
 
 describe.concurrent(planHkAll, () => {
-  it('runs --all and forces batching to stay under the cmd.exe limit', ({ expect }) => {
-    const plan = planHkAll({ env: { CI: 'true' }, rawArgs: ['-S', 'eslint'] });
-
-    expect(plan).toMatchObject({
+  it('runs the mode against --all with forwarded args', ({ expect }) => {
+    expect(planHkAll({ env: { CI: 'true' }, rawArgs: ['-S', 'eslint'] })).toStrictEqual({
       args: ['check', '--all', '-S', 'eslint'],
       bin: 'hk',
     });
-    expect(plan.env['HK_BATCH']).toBe('1');
-  });
-
-  it('preserves the inherited env alongside HK_BATCH', ({ expect }) => {
-    const plan = planHkAll({ env: { FOO: 'bar' }, rawArgs: [] });
-
-    expect(plan.env).toMatchObject({ FOO: 'bar', HK_BATCH: '1' });
   });
 });
 
 describe.concurrent(planHkBase, () => {
-  it('skips when no files changed', ({ expect }) => {
-    expect(planHkBase({ files: [], mode: 'fix', rest: [] })).toStrictEqual({
-      kind: 'skip',
+  it('diffs the base ref against HEAD', ({ expect }) => {
+    expect(planHkBase({ base: 'origin/main', mode: 'fix', rest: [] })).toStrictEqual({
+      args: ['fix', '--from-ref=origin/main', '--to-ref=HEAD'],
+      bin: 'hk',
     });
   });
 
-  it('passes changed files after forwarded args', ({ expect }) => {
+  it('forwards passthrough args after the ref range', ({ expect }) => {
     expect(
-      planHkBase({ files: ['a.ts', 'b.ts'], mode: 'check', rest: ['-S', 'eslint'] }),
+      planHkBase({ base: 'HEAD~3', mode: 'check', rest: ['-S', 'eslint'] }),
     ).toStrictEqual({
-      args: ['check', '-S', 'eslint', 'a.ts', 'b.ts'],
+      args: ['check', '--from-ref=HEAD~3', '--to-ref=HEAD', '-S', 'eslint'],
       bin: 'hk',
-      kind: 'spawn',
     });
   });
 });
 
 describe.concurrent(executeHkAll, () => {
-  it('runs hk --all with batching forced on', async ({ expect }) => {
+  it('runs hk --all in the resolved mode', async ({ expect }) => {
     const { deps, runCalls } = stubDeps({}, { CI: 'true' });
 
     await executeHkAll(['-S', 'eslint'], deps);
 
-    expect(runCalls).toHaveLength(1);
-    expect(runCalls[0]).toMatchObject({
-      args: ['check', '--all', '-S', 'eslint'],
-      command: 'hk',
-    });
-    expect(runCalls[0]?.env?.['HK_BATCH']).toBe('1');
+    expect(runCalls).toStrictEqual([
+      { args: ['check', '--all', '-S', 'eslint'], command: 'hk', env: undefined },
+    ]);
   });
 });
 
 describe.concurrent(executeHkBase, () => {
-  it('fixes changed files without fetching on a full clone', async ({ expect }) => {
-    const { deps, runCalls, captureCalls } = stubDeps({
-      'diff': 'a.ts\nb.ts',
-      'rev-parse': 'false',
-    });
+  it('diffs the base against HEAD without fetching on a full clone', async ({ expect }) => {
+    const { deps, runCalls } = stubDeps({ 'rev-parse': 'false' });
 
     await executeHkBase([], deps);
 
     expect(runCalls).toStrictEqual([
-      { args: ['fix', 'a.ts', 'b.ts'], command: 'hk', env: undefined },
+      {
+        args: ['fix', '--from-ref=origin/main', '--to-ref=HEAD'],
+        command: 'hk',
+        env: undefined,
+      },
     ]);
-    expect(captureCalls.some(args => args.includes('origin/main'))).toBe(true);
   });
 
   it('fetches the base ref first on a shallow clone', async ({ expect }) => {
-    const { deps, runCalls } = stubDeps({ 'diff': 'a.ts', 'rev-parse': 'true' });
+    const { deps, runCalls } = stubDeps({ 'rev-parse': 'true' }, { CI: 'true' });
 
-    await executeHkBase(['HEAD~2'], deps);
+    await executeHkBase(['HEAD~2', '-S', 'eslint'], deps);
 
     expect(runCalls[0]).toMatchObject({
       args: ['fetch', '--no-tags', '--depth=1', 'origin', 'HEAD~2'],
       command: 'git',
     });
-    expect(runCalls[1]).toMatchObject({ args: ['fix', 'a.ts'], command: 'hk' });
-  });
-
-  it('skips hk entirely when nothing changed', async ({ expect }) => {
-    const { deps, runCalls } = stubDeps({ 'diff': '', 'rev-parse': 'false' });
-
-    await executeHkBase([], deps);
-
-    expect(runCalls).toHaveLength(0);
+    expect(runCalls[1]).toMatchObject({
+      args: ['check', '--from-ref=HEAD~2', '--to-ref=HEAD', '-S', 'eslint'],
+      command: 'hk',
+    });
   });
 });
