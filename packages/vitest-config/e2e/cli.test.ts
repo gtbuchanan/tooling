@@ -21,9 +21,9 @@ const createFixture = () => {
 
   // Add subpath imports for #src/* resolution
   const pkgJsonPath = path.join(fixture.projectDir, 'package.json');
-  const stringRecord = v.record(v.string(), v.string());
+  const StringRecord = v.record(v.string(), v.string());
   const pkg = v.parse(
-    v.looseObject({ imports: v.optional(stringRecord) }),
+    v.looseObject({ imports: v.optional(StringRecord) }),
     JSON.parse(readFileSync(pkgJsonPath, 'utf8')),
   );
   pkg.imports = { '#src/*': './src/*' };
