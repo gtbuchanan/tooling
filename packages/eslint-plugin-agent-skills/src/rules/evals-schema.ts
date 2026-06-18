@@ -33,11 +33,12 @@ type EvalsSchemaRule = JSRuleDefinition<{
 
 /* `validateSchema: false` skips the meta-schema lookup so the
    imported schema doesn't need a matching meta-schema registered. */
-const validate: ValidateFunction<EvalsFile> = new Ajv({
+const ajv = new Ajv({
   allErrors: true,
   strict: false,
   validateSchema: false,
-}).compile<EvalsFile>(schema);
+});
+const validate: ValidateFunction<EvalsFile> = ajv.compile<EvalsFile>(schema);
 
 const fileLoc = {
   end: { column: 0, line: 1 },
@@ -166,7 +167,7 @@ export const evalsSchema: EvalsSchemaRule = {
     };
     return {
       // Key off the actual AST root so this fires under any JSON
-      // parser (e.g. @eslint/json's `Document`) or generic parser.
+      // parser (e.g. `@eslint/json`'s `Document`) or generic parser.
       [context.sourceCode.ast.type]() {
         const { filename } = context;
         if (!filename) return;
@@ -175,7 +176,7 @@ export const evalsSchema: EvalsSchemaRule = {
         try {
           parsed = JSON.parse(context.sourceCode.getText());
         } catch {
-          /* @eslint/json reports syntax errors; nothing
+          /* `@eslint/json` reports syntax errors; nothing
              schema-meaningful to add here. */
           return;
         }

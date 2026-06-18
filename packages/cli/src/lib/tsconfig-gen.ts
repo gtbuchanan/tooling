@@ -3,6 +3,7 @@ import ts from 'typescript';
 import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
 import { readJsonFile } from './file-writer.ts';
+import { StringArray, UnknownRecord } from './schemas.ts';
 
 /** Directories and file patterns included in tsconfig.json for type-checking. */
 export const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*', '.*'] as const;
@@ -16,7 +17,7 @@ const ReadConfigSchema = v.object({
 });
 
 const ResolvedConfigSchema = v.object({
-  include: v.optional(v.array(v.string())),
+  include: v.optional(StringArray),
 });
 
 const readFile = (path: string): string | undefined => ts.sys.readFile(path);
@@ -67,7 +68,7 @@ const mergeCompilerOptions = (
   ({ ...existing, ...generated });
 
 const TsconfigSchema = v.object({
-  compilerOptions: v.optional(v.record(v.string(), v.unknown())),
+  compilerOptions: v.optional(UnknownRecord),
 });
 
 /**

@@ -8,6 +8,7 @@ import { readJsonFile } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
 import { checkManifests } from '../../lib/manifest-sync.ts';
 import { checkMiseTasksInclude } from '../../lib/mise-tasks.ts';
+import { StringArray, UnknownRecord } from '../../lib/schemas.ts';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '../../lib/sync-scopes.ts';
@@ -26,7 +27,7 @@ import { readParsedManifest } from '../../lib/workspace.ts';
 import { rootNames } from './names.ts';
 
 const TurboJsonSchema = v.looseObject({
-  tasks: v.optional(v.record(v.string(), v.unknown())),
+  tasks: v.optional(UnknownRecord),
 });
 
 /** Parses `--ignore <name>` flags from raw CLI args. */
@@ -63,7 +64,7 @@ const checkTurboTasks = (
 
   return Object.keys(expected.tasks)
     .filter(name => !ignored.has(name))
-    .filter(name => tasks === undefined || !(name in tasks))
+    .filter(name => tasks === undefined || !Object.hasOwn(tasks, name))
     .map(name => `turbo.json: missing task '${name}'`);
 };
 
@@ -84,14 +85,14 @@ const checkScripts = (
 
   return Object.keys(expected)
     .filter(name => !ignored.has(name))
-    .filter(name => scripts === undefined || !(name in scripts))
+    .filter(name => scripts === undefined || !Object.hasOwn(scripts, name))
     .map(name => `${dir}: missing script '${name}'`);
 };
 
 const TsconfigCheckSchema = v.looseObject({
-  compilerOptions: v.optional(v.record(v.string(), v.unknown())),
+  compilerOptions: v.optional(UnknownRecord),
   extends: v.optional(v.string()),
-  include: v.optional(v.array(v.string())),
+  include: v.optional(StringArray),
 });
 
 const checkOwnedCompilerOptions = (
@@ -187,7 +188,7 @@ export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => 
     turbo: () => checkTurboTasks(discovery.rootDir, generateTurboJson(discovery), ignored),
   };
 
-  return syncScopes.filter(scope => scopes.has(scope)).flatMap(scope => checks[scope]());
+  return syncScopes.flatMap(scope => (scopes.has(scope) ? checks[scope]() : []));
 };
 
 /** Parsed citty args for {@link verify}. */

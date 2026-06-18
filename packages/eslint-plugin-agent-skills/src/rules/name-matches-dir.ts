@@ -21,43 +21,41 @@ export const nameMatchesDir: Rule.RuleModule = {
     type: 'problem',
   },
 
-  create(context) {
-    return {
-      // Key off the actual AST root so this fires under any markdown
-      // parser or language (e.g. @eslint/markdown's `root` mdast node).
-      [context.sourceCode.ast.type]() {
-        const { filename } = context;
-        if (!filename) return;
-        const text = context.sourceCode.getText();
-        const { frontmatter, lineCounter } = parseMarkdown(
-          context.sourceCode,
-          text,
-        );
-        if (!frontmatter) return;
+  create: context => ({
+    // Key off the actual AST root so this fires under any markdown
+    // parser or language (e.g. `@eslint/markdown`'s `root` mdast node).
+    [context.sourceCode.ast.type]() {
+      const { filename } = context;
+      if (!filename) return;
+      const text = context.sourceCode.getText();
+      const { frontmatter, lineCounter } = parseMarkdown(
+        context.sourceCode,
+        text,
+      );
+      if (!frontmatter) return;
 
-        const root = frontmatter.document.contents;
-        if (!isMap(root)) return;
-        const pair = root.items.find(
-          item => isScalar(item.key) && item.key.value === 'name',
-        );
-        if (!pair || !isScalar(pair.value)) return;
-        const { range, value } = pair.value;
-        if (typeof value !== 'string') return;
+      const root = frontmatter.document.contents;
+      if (!isMap(root)) return;
+      const pair = root.items.find(
+        item => isScalar(item.key) && item.key.value === 'name',
+      );
+      if (!pair || !isScalar(pair.value)) return;
+      const { range, value } = pair.value;
+      if (typeof value !== 'string') return;
 
-        const parentDir = path.basename(path.dirname(filename));
-        if (value === parentDir) return;
+      const parentDir = path.basename(path.dirname(filename));
+      if (value === parentDir) return;
 
-        const [start, end] = range;
-        context.report({
-          loc: {
-            end: toEslintLoc(lineCounter, frontmatter.contentOffset + end),
-            start: toEslintLoc(lineCounter, frontmatter.contentOffset + start),
-          },
-          message:
-            '`name` must match the parent directory name ' +
-            `(expected \`${parentDir}\`, got \`${value}\`)`,
-        });
-      },
-    };
-  },
+      const [start, end] = range;
+      context.report({
+        loc: {
+          end: toEslintLoc(lineCounter, frontmatter.contentOffset + end),
+          start: toEslintLoc(lineCounter, frontmatter.contentOffset + start),
+        },
+        message:
+          '`name` must match the parent directory name ' +
+          `(expected \`${parentDir}\`, got \`${value}\`)`,
+      });
+    },
+  }),
 };

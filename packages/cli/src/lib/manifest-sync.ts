@@ -98,7 +98,7 @@ const manifestWriters: readonly ManifestWriter[] = [pklWriter];
 /**
  * Resolves the scheme-less repo path (`host/owner/repo`) from the root
  * manifest, parsing the URL with `hosted-git-info` so every Git URL form
- * (https, git+ssh, scp-style `git@`, …) normalizes the same way.
+ * (`https`, `git+ssh`, scp-style `git@`, …) normalizes the same way.
  */
 const resolveRepoPath = (rootDir: string): string => {
   const root = v.parse(RootManifestSchema, readManifest(rootDir));

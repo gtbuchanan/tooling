@@ -5,11 +5,13 @@ import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
 import { run } from '../../lib/process.ts';
 
+const HeadSchema = v.object({
+  sha: v.string(),
+});
+
 const PullRequestEventSchema = v.object({
   pull_request: v.object({
-    head: v.object({
-      sha: v.string(),
-    }),
+    head: HeadSchema,
   }),
 });
 

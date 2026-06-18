@@ -62,7 +62,7 @@ export const planHkBase = (options: PlanHkBaseOptions): HkInvocation => ({
 /**
  * Side-effecting I/O the runners depend on. Injected so the orchestration
  * (shallow detection, base fetch, hk spawn) is unit-testable without
- * spawning git/hk; the citty wrappers wire the real implementations.
+ * spawning Git/hk; the citty wrappers wire the real implementations.
  */
 export interface HkRunnerDeps {
   readonly capture: (command: string, args: readonly string[]) => Promise<string>;

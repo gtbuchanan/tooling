@@ -4,20 +4,25 @@ import * as v from 'valibot';
 import { parse as parseYaml } from 'yaml';
 import { type CodecovSections, generateCodecovSections } from './codecov-config.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import { UnknownRecord } from './schemas.ts';
+
+const CodecovSettingsSchema = v.looseObject({
+  require_ci_to_pass: v.optional(v.boolean()),
+});
+
+const ComponentSchema = v.looseObject({
+  component_id: v.optional(v.string()),
+});
+
+const ComponentManagementSchema = v.looseObject({
+  individual_components: v.optional(v.array(ComponentSchema)),
+});
 
 const CodecovYamlSchema = v.nullable(
   v.looseObject({
-    codecov: v.optional(
-      v.looseObject({ require_ci_to_pass: v.optional(v.boolean()) }),
-    ),
-    component_management: v.optional(
-      v.looseObject({
-        individual_components: v.optional(
-          v.array(v.looseObject({ component_id: v.optional(v.string()) })),
-        ),
-      }),
-    ),
-    flags: v.optional(v.record(v.string(), v.unknown())),
+    codecov: v.optional(CodecovSettingsSchema),
+    component_management: v.optional(ComponentManagementSchema),
+    flags: v.optional(UnknownRecord),
   }),
 );
 
@@ -47,7 +52,7 @@ const checkCodecovFlags = (
 ): readonly string[] =>
   Object.keys(expected.flags)
     .filter(name => !ignored.has(name))
-    .filter(name => actualFlags === undefined || !(name in actualFlags))
+    .filter(name => actualFlags === undefined || !Object.hasOwn(actualFlags, name))
     .map(name => `codecov.yml: missing flag '${name}'`);
 
 const checkCodecovSettings = (

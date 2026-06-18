@@ -3,6 +3,7 @@ import path from 'node:path';
 import { parse as parseToml, stringify } from 'smol-toml';
 import * as v from 'valibot';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import { StringArray } from './schemas.ts';
 
 /** Filename of the generated, fully-owned mise tasks include. */
 export const miseTasksFileName = 'mise.tasks.toml';
@@ -12,9 +13,9 @@ export const miseTasksFileName = 'mise.tasks.toml';
  * bare `gtb` won't resolve the way it does in package.json scripts. Resolve
  * gtb per repo shape:
  *   - self-hosted: the `pnpm run gtb` script shim (source, no build needed)
- *   - depends on @gtbuchanan/cli: `pnpm exec` finds it in node_modules
+ *   - depends on `@gtbuchanan/cli`: `pnpm exec` finds it in node_modules
  *   - neither (hk-only adopter): bare `gtb` from mise's npm: backend, so no
- *     node_modules/pnpm project is needed — add npm:@gtbuchanan/cli to [tools]
+ *     node_modules/pnpm project is needed — add `npm:@gtbuchanan/cli` to [tools]
  */
 const miseTaskPrefix = (
   discovery: Pick<WorkspaceDiscovery, 'dependsOnCli' | 'isSelfHosted'>,
@@ -60,10 +61,12 @@ export const generateMiseTasks = (
   return `${header}\n\n${stringify(tasks).trimEnd()}\n`;
 };
 
+const TaskConfigSchema = v.looseObject({
+  includes: v.optional(StringArray),
+});
+
 const MiseConfigSchema = v.looseObject({
-  task_config: v.optional(
-    v.looseObject({ includes: v.optional(v.array(v.string())) }),
-  ),
+  task_config: v.optional(TaskConfigSchema),
 });
 
 /**

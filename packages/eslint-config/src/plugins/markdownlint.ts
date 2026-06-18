@@ -3,7 +3,7 @@ import { markdownIgnores } from '../files.ts';
 import type { PluginFactory } from '../index.ts';
 
 /*
- * Rules also enforced by @eslint/markdown — disabled here so a single
+ * Rules also enforced by `@eslint/markdown` — disabled here so a single
  * violation does not report twice.
  */
 const coveredByEslintMarkdown = {

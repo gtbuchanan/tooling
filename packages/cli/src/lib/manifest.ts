@@ -1,16 +1,17 @@
 import * as v from 'valibot';
+import { StringArray, StringRecord } from './schemas.ts';
 
 /** Valibot schema for the `publishConfig` field of package.json. */
 export const PublishConfigSchema = v.object({
-  bin: v.optional(v.record(v.string(), v.string())),
-  cpu: v.optional(v.array(v.string())),
+  bin: v.optional(StringRecord),
+  cpu: v.optional(StringArray),
   directory: v.optional(v.string()),
-  exports: v.optional(v.record(v.string(), v.string())),
-  imports: v.optional(v.record(v.string(), v.string())),
-  libc: v.optional(v.array(v.string())),
+  exports: v.optional(StringRecord),
+  imports: v.optional(StringRecord),
+  libc: v.optional(StringArray),
   linkDirectory: v.optional(v.boolean()),
-  os: v.optional(v.array(v.string())),
-  scripts: v.optional(v.record(v.string(), v.string())),
+  os: v.optional(StringArray),
+  scripts: v.optional(StringRecord),
 });
 
 /** Valibot schema for the `repository` field of package.json. */
@@ -33,13 +34,13 @@ export type RootManifest = v.InferOutput<typeof RootManifestSchema>;
 
 /** Valibot schema for per-package package.json. Uses `looseObject` to preserve extra fields. */
 export const ManifestSchema = v.looseObject({
-  dependencies: v.optional(v.record(v.string(), v.string())),
-  devDependencies: v.optional(v.record(v.string(), v.string())),
+  dependencies: v.optional(StringRecord),
+  devDependencies: v.optional(StringRecord),
   license: v.optional(v.string()),
   name: v.optional(v.string()),
   private: v.optional(v.boolean()),
   publishConfig: v.optional(PublishConfigSchema),
-  scripts: v.optional(v.record(v.string(), v.string())),
+  scripts: v.optional(StringRecord),
   version: v.optional(v.string()),
 });
 

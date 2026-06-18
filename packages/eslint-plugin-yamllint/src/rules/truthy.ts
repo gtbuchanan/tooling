@@ -43,47 +43,45 @@ export const truthy: Rule.RuleModule = {
     type: 'problem',
   },
 
-  create(context) {
-    return {
-      Program() {
-        const options = (context.options[0] ?? {}) as TruthyOptions;
-        const checkKeys = options['check-keys'] ?? false;
-        const allowedValues = new Set(options['allowed-values']);
-        const text = context.sourceCode.getText();
-        const { documents, lineCounter } =
-          parseYaml(context.sourceCode, text);
+  create: context => ({
+    Program() {
+      const options = (context.options[0] ?? {}) as TruthyOptions;
+      const checkKeys = options['check-keys'] ?? false;
+      const allowedValues = new Set(options['allowed-values']);
+      const text = context.sourceCode.getText();
+      const { documents, lineCounter } =
+        parseYaml(context.sourceCode, text);
 
-        for (const doc of documents) {
-          visit(doc, (_key, node) => {
-            if (!isScalar(node)) return;
-            if (node.type !== Scalar.PLAIN) return;
-            const { source } = node;
-            if (source === undefined) return;
-            if (!yaml11Booleans.has(source)) return;
-            if (allowedValues.has(source)) return;
+      for (const doc of documents) {
+        visit(doc, (_key, node) => {
+          if (!isScalar(node)) return;
+          if (node.type !== Scalar.PLAIN) return;
+          const { source } = node;
+          if (source === undefined) return;
+          if (!yaml11Booleans.has(source)) return;
+          if (allowedValues.has(source)) return;
 
-            if (_key === 'key' && !checkKeys) return;
+          if (_key === 'key' && !checkKeys) return;
 
-            const range = node.range;
-            if (!range) return;
+          const range = node.range;
+          if (!range) return;
 
-            context.report({
-              fix: fixer =>
-                fixer.replaceTextRange(
-                  [range[0], range[1]],
-                  `"${source}"`,
-                ),
-              loc: {
-                end: toEslintLoc(lineCounter, range[1]),
-                start: toEslintLoc(lineCounter, range[0]),
-              },
-              message:
+          context.report({
+            fix: fixer =>
+              fixer.replaceTextRange(
+                [range[0], range[1]],
+                `"${source}"`,
+              ),
+            loc: {
+              end: toEslintLoc(lineCounter, range[1]),
+              start: toEslintLoc(lineCounter, range[0]),
+            },
+            message:
                 `truthy value "${source}" should be quoted` +
                 ' to avoid YAML 1.1 boolean coercion',
-            });
           });
-        }
-      },
-    };
-  },
+        });
+      }
+    },
+  }),
 };

@@ -141,7 +141,7 @@ const requiredRootScripts = (
  * and emitting one would collide with the leaf.
  *
  * Aliases route through `gtb turbo` rather than `turbo` directly so the
- * Android escape hatch (resolve linux platform binary, bypass turbo's
+ * Android escape hatch (resolve Linux platform binary, bypass turbo's
  * launcher) activates transparently. On every other platform `gtb turbo`
  * is a thin pass-through, so this does not change behavior.
  */

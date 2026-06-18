@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverPackage, discoverWorkspace } from '#src/lib/discovery.js';
+import { localeComparer } from '#src/lib/sort.js';
 import { createTempDir, writeJson } from './helpers.ts';
 
 const writeFile = (dir: string, name: string, content = ''): void => {
@@ -217,7 +218,7 @@ describe.concurrent(discoverPackage, () => {
     const generateKeys = [
       `generate:${faker.lorem.word()}`,
       `generate:${faker.lorem.word()}`,
-    ].toSorted();
+    ].toSorted(localeComparer);
     writeJson(dir, 'package.json', {
       scripts: Object.fromEntries(
         generateKeys.map(key => [key, faker.lorem.words({ min: 1, max: 3 })]),

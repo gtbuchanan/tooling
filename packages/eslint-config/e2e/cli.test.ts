@@ -175,7 +175,7 @@ describe.concurrent('eslint CLI integration', () => {
 
   it('detects markdownlint violations in markdown files', async ({ fixture, expect }) => {
     // MD026 (no-trailing-punctuation) — markdownlint-only, not covered
-    // by @eslint/markdown's recommended set.
+    // by `@eslint/markdown`'s recommended set.
     const result = await fixture.run({
       files: { 'doc.md': '# Title.\n' },
     });
@@ -198,7 +198,7 @@ describe.concurrent('eslint CLI integration', () => {
      * All three plugins target *.md. The misformatted table trips
      * format/prettier; trailing punctuation in the heading trips
      * markdownlint MD026; the duplicate H1 trips
-     * markdown/no-multiple-h1 from @eslint/markdown.
+     * markdown/no-multiple-h1 from `@eslint/markdown`.
      */
     const result = await fixture.run({
       files: {

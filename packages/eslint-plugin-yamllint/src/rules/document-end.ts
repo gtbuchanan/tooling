@@ -64,25 +64,23 @@ export const documentEnd: Rule.RuleModule = {
     type: 'layout',
   },
 
-  create(context) {
-    return {
-      Program() {
-        const options = (context.options[0] ?? {}) as DocumentEndOptions;
-        const present = options.present ?? false;
-        const text = context.sourceCode.getText();
-        const { documents, lineCounter } =
-          parseYaml(context.sourceCode, text);
+  create: context => ({
+    Program() {
+      const options = (context.options[0] ?? {}) as DocumentEndOptions;
+      const present = options.present ?? false;
+      const text = context.sourceCode.getText();
+      const { documents, lineCounter } =
+        parseYaml(context.sourceCode, text);
 
-        for (const doc of documents) {
-          if (!doc.contents) continue;
+      for (const doc of documents) {
+        if (!doc.contents) continue;
 
-          if (present && !doc.directives.docEnd) {
-            reportMissing(context, doc, lineCounter);
-          } else if (!present && doc.directives.docEnd) {
-            reportUnwanted(context, doc, text, lineCounter);
-          }
+        if (present && !doc.directives.docEnd) {
+          reportMissing(context, doc, lineCounter);
+        } else if (!present && doc.directives.docEnd) {
+          reportUnwanted(context, doc, text, lineCounter);
         }
-      },
-    };
-  },
+      }
+    },
+  }),
 };

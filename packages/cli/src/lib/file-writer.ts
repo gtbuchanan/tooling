@@ -3,6 +3,8 @@ import * as v from 'valibot';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { CodecovSections } from './codecov-config.ts';
 import { ManifestSchema } from './manifest.ts';
+import { UnknownRecord } from './schemas.ts';
+import { localeComparer } from './sort.ts';
 
 const jsonIndent = 2;
 
@@ -15,7 +17,7 @@ export const sortKeysDeep = (value: unknown): unknown => {
     const entries: [string, unknown][] = Object.entries(value);
     return Object.fromEntries(
       entries
-        .toSorted(([left], [right]) => left.localeCompare(right))
+        .toSorted(([left], [right]) => localeComparer(left, right))
         .map(([key, val]) => [key, sortKeysDeep(val)]),
     );
   }
@@ -32,7 +34,7 @@ export interface MergeResult {
 
 /** Reads and parses a JSON file as a plain object. */
 export const readJsonFile = (path: string): Record<string, unknown> =>
-  v.parse(v.record(v.string(), v.unknown()), JSON.parse(readFileSync(path, 'utf8')));
+  v.parse(UnknownRecord, JSON.parse(readFileSync(path, 'utf8')));
 
 /** Writes a JSON object to a file with formatting and trailing newline. */
 export const writeJsonFile = (path: string, data: unknown): void => {
@@ -49,7 +51,7 @@ const classifyScripts = (
   const merged = { ...existing };
 
   for (const [name, value] of Object.entries(expected)) {
-    if (!force && name in existing) {
+    if (!force && Object.hasOwn(existing, name)) {
       skipped.push(name);
     } else {
       merged[name] = value;
@@ -99,10 +101,12 @@ export const writeYamlFile = (path: string, data: unknown): void => {
 };
 
 /* Non-object values (e.g. `codecov: true`) fall back to `{}` so sync repairs them. */
+const EmptyObjectFallback = v.fallback(v.looseObject({}), {});
+
 const ExistingCodecovSchema = v.nullable(
   v.looseObject({
-    codecov: v.optional(v.fallback(v.looseObject({}), {})),
-    component_management: v.optional(v.fallback(v.looseObject({}), {})),
+    codecov: v.optional(EmptyObjectFallback),
+    component_management: v.optional(EmptyObjectFallback),
   }),
 );
 

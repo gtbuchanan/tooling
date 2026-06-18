@@ -29,8 +29,8 @@ export const parseYaml = (
 };
 
 /**
- * Converts a yaml `LineCounter` offset to an ESLint source location.
- * The yaml package uses 1-based columns; ESLint uses 0-based.
+ * Converts a `yaml` `LineCounter` offset to an ESLint source location.
+ * The `yaml` package uses 1-based columns; ESLint uses 0-based.
  */
 export const toEslintLoc = (
   lineCounter: LineCounter,

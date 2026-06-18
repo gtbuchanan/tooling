@@ -71,7 +71,7 @@ const plugin: PluginFactory = (options) => {
     {
       files: [...scriptFiles],
       rules: {
-        // Justification: Prevents subtle unicode bugs; /v for server, /u for browser compat
+        // Justification: Prevents subtle Unicode bugs; /v for server, /u for browser compat
         'require-unicode-regexp': ['warn', { requireFlag: unicodeFlag }],
       },
     },
