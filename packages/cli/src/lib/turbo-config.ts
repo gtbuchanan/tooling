@@ -90,15 +90,15 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasLint = hasEslint;
   const generateScripts = [...new Set(
     discovery.packages.flatMap(pkg => pkg.generateScripts),
-  )].toSorted();
+  )].toSorted((left, right) => left.localeCompare(right));
   const hasTypeScript = discovery.packages.some(pkg => pkg.hasTypeScript);
   const hasPkl = discovery.packages.some(pkg => pkg.hasPkl);
   const hasPklPackage = discovery.packages.some(pkg => pkg.hasPklPackage);
   const hasPublished = discovery.packages.some(pkg => pkg.isPublished);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
   const compileIncludes = [...new Set(
-    discovery.packages.filter(pkg => pkg.isPublished).flatMap(pkg => pkg.buildIncludes),
-  )].toSorted();
+    discovery.packages.flatMap(pkg => (pkg.isPublished ? pkg.buildIncludes : [])),
+  )].toSorted((left, right) => left.localeCompare(right));
 
   return {
     compileIncludes,
@@ -366,7 +366,7 @@ const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTas
        * Same-package lint only (no `^`): skills are authored independently
        * per package and don't depend on sibling packages' lint state.
        * Lint dep is conditional on the workspace having ESLint at all —
-       * referencing lint:eslint when it isn't generated would dangle.
+       * referencing lint:ESLint when it isn't generated would dangle.
        */
       dependsOn: flags.hasEslint ? [taskNames.lintEslint] : [],
       inputs: [`$TURBO_ROOT$/${skillsConfigFilename}`, 'skills/**'],

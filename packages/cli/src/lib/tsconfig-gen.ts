@@ -10,13 +10,19 @@ export const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*', '.
 /** Directories included in tsconfig.build.json for compilation. */
 export const buildInclude = ['bin', 'src'] as const;
 
+/** Reusable `string[]` schema. */
+const StringArray = v.array(v.string());
+
+/** Reusable `Record<string, unknown>` schema (e.g. compilerOptions). */
+const UnknownRecord = v.record(v.string(), v.unknown());
+
 const ReadConfigSchema = v.object({
   config: v.unknown(),
   error: v.optional(v.unknown()),
 });
 
 const ResolvedConfigSchema = v.object({
-  include: v.optional(v.array(v.string())),
+  include: v.optional(StringArray),
 });
 
 const readFile = (path: string): string | undefined => ts.sys.readFile(path);
@@ -67,7 +73,7 @@ const mergeCompilerOptions = (
   ({ ...existing, ...generated });
 
 const TsconfigSchema = v.object({
-  compilerOptions: v.optional(v.record(v.string(), v.unknown())),
+  compilerOptions: v.optional(UnknownRecord),
 });
 
 /**

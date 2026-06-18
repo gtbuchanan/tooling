@@ -109,8 +109,9 @@ const readField = (source: string, key: string): string | undefined => {
   if (block === undefined) return undefined;
   const body = source.slice(block.open, block.close);
   const pattern = String.raw`(?:^|\n)[ \t]*${key}[ \t]*=[ \t]*"(?<value>[^"]*)"`;
+  const regExp = new RegExp(pattern, 'v');
 
-  return new RegExp(pattern, 'v').exec(body)?.groups?.['value'];
+  return regExp.exec(body)?.groups?.['value'];
 };
 
 /** The package's identity `name` literal — the source of truth for releases. */
@@ -156,7 +157,10 @@ const indentOf = (line: string): string => line.slice(0, line.length - line.trim
 
 /** The owned key a line assigns (`version`/`baseUri`/`packageZipUrl`), if any. */
 const ownedKeyOf = (line: string): OwnedKey | undefined =>
-  ownedKeys.find(key => new RegExp(String.raw`^[ \t]*${key}[ \t]*=`, 'v').test(line));
+  ownedKeys.find((key) => {
+    const regExp = new RegExp(String.raw`^[ \t]*${key}[ \t]*=`, 'v');
+    return regExp.test(line);
+  });
 
 /**
  * Patches the sync-owned fields ({@link ownedKeys}) into an author-owned

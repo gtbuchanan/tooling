@@ -104,33 +104,31 @@ export const anchors: Rule.RuleModule = {
     type: 'problem',
   },
 
-  create(context) {
-    return {
-      Program() {
-        const options = (context.options[0] ?? {}) as AnchorsOptions;
-        const forbidDuplicated =
-          options['forbid-duplicated-anchors'] ?? true;
-        const forbidUndeclared =
-          options['forbid-undeclared-aliases'] ?? true;
-        const forbidUnused =
-          options['forbid-unused-anchors'] ?? true;
-        const text = context.sourceCode.getText();
-        const { documents, lineCounter } =
-          parseYaml(context.sourceCode, text);
+  create: context => ({
+    Program() {
+      const options = (context.options[0] ?? {}) as AnchorsOptions;
+      const forbidDuplicated =
+        options['forbid-duplicated-anchors'] ?? true;
+      const forbidUndeclared =
+        options['forbid-undeclared-aliases'] ?? true;
+      const forbidUnused =
+        options['forbid-unused-anchors'] ?? true;
+      const text = context.sourceCode.getText();
+      const { documents, lineCounter } =
+        parseYaml(context.sourceCode, text);
 
-        for (const doc of documents) {
-          const collected = collectAnchors(doc);
-          reportAnchorIssues(
+      for (const doc of documents) {
+        const collected = collectAnchors(doc);
+        reportAnchorIssues(
+          context, collected, lineCounter,
+          { forbidDuplicated, forbidUnused },
+        );
+        if (forbidUndeclared) {
+          reportUndeclaredAliases(
             context, collected, lineCounter,
-            { forbidDuplicated, forbidUnused },
           );
-          if (forbidUndeclared) {
-            reportUndeclaredAliases(
-              context, collected, lineCounter,
-            );
-          }
         }
-      },
-    };
-  },
+      }
+    },
+  }),
 };

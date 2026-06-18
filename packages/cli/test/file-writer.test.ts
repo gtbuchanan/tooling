@@ -284,8 +284,10 @@ describe.concurrent(mergeCodecovSections, () => {
     mergeCodecovSections(filePath, sections);
 
     const content = readFileSync(filePath, 'utf8');
-    const keys = [...content.matchAll(/^(?<key>\w+):/gmv)]
-      .map(match => match.groups?.['key'] ?? '');
+    const keys = Array.from(
+      content.matchAll(/^(?<key>\w+):/gmv),
+      match => match.groups?.['key'] ?? '',
+    );
 
     expect(keys).toStrictEqual([...keys].toSorted((left, right) => left.localeCompare(right)));
     expect(content).toContain("'**/dist/**'");

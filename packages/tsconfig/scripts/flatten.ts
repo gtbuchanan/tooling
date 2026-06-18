@@ -10,9 +10,12 @@ const jsonIndent = 2;
 const pkgDir = path.join(import.meta.dirname, '..');
 const outDir = path.join(pkgDir, 'dist', 'source');
 
+const CompilerOptionsSchema = v.record(v.string(), v.unknown());
+const ExtendsSchema = v.union([v.string(), v.array(v.string())]);
+
 const TsconfigSchema = v.looseObject({
-  compilerOptions: v.optional(v.record(v.string(), v.unknown()), {}),
-  extends: v.optional(v.union([v.string(), v.array(v.string())])),
+  compilerOptions: v.optional(CompilerOptionsSchema, {}),
+  extends: v.optional(ExtendsSchema),
 });
 
 const readTsconfig = (path: string): v.InferOutput<typeof TsconfigSchema> =>

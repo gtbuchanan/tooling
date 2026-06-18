@@ -6,10 +6,14 @@ import * as v from 'valibot';
 /** Filename of the workspace-root skills-npm configuration. */
 export const skillsConfigFilename = 'skills-npm.config.ts';
 
+const StringArray = v.array(v.string());
+
+const SkillsConfigDefaultSchema = v.object({
+  agents: v.optional(StringArray),
+});
+
 const SkillsConfigModuleSchema = v.object({
-  default: v.optional(v.object({
-    agents: v.optional(v.array(v.string())),
-  })),
+  default: v.optional(SkillsConfigDefaultSchema),
 });
 
 /**

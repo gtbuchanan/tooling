@@ -20,7 +20,7 @@ interface GitEnv extends NodeJS.ProcessEnv {
 }
 
 /**
- * Creates a git environment isolated from user/system config (e.g. GPG signing, hooks).
+ * Creates a Git environment isolated from user/system config (e.g. GPG signing, hooks).
  * Optionally includes a committer identity for commands that require one.
  */
 export const createGitEnv = (identity?: { email: string; name: string }): GitEnv => ({

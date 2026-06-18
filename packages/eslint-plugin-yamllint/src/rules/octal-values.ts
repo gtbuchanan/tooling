@@ -28,46 +28,44 @@ export const octalValues: Rule.RuleModule = {
     type: 'problem',
   },
 
-  create(context) {
-    return {
-      Program() {
-        const options = (context.options[0] ?? {}) as OctalValuesOptions;
-        const forbidImplicit = options['forbid-implicit-octal'] ?? true;
-        const forbidExplicit = options['forbid-explicit-octal'] ?? true;
-        const text = context.sourceCode.getText();
-        const { documents, lineCounter } =
-          parseYaml(context.sourceCode, text);
+  create: context => ({
+    Program() {
+      const options = (context.options[0] ?? {}) as OctalValuesOptions;
+      const forbidImplicit = options['forbid-implicit-octal'] ?? true;
+      const forbidExplicit = options['forbid-explicit-octal'] ?? true;
+      const text = context.sourceCode.getText();
+      const { documents, lineCounter } =
+        parseYaml(context.sourceCode, text);
 
-        for (const doc of documents) {
-          visit(doc, (_key, node) => {
-            if (!isScalar(node)) return;
-            if (node.type !== Scalar.PLAIN) return;
-            if (!node.source) return;
+      for (const doc of documents) {
+        visit(doc, (_key, node) => {
+          if (!isScalar(node)) return;
+          if (node.type !== Scalar.PLAIN) return;
+          if (!node.source) return;
 
-            const range = node.range;
-            if (!range) return;
+          const range = node.range;
+          if (!range) return;
 
-            const isImplicit =
-              forbidImplicit && implicitOctalPattern.test(node.source);
-            const isExplicit =
-              forbidExplicit && explicitOctalPattern.test(node.source);
+          const isImplicit =
+            forbidImplicit && implicitOctalPattern.test(node.source);
+          const isExplicit =
+            forbidExplicit && explicitOctalPattern.test(node.source);
 
-            if (!isImplicit && !isExplicit) return;
+          if (!isImplicit && !isExplicit) return;
 
-            const kind = isImplicit ? 'implicit' : 'explicit';
+          const kind = isImplicit ? 'implicit' : 'explicit';
 
-            context.report({
-              loc: {
-                end: toEslintLoc(lineCounter, range[1]),
-                start: toEslintLoc(lineCounter, range[0]),
-              },
-              message:
+          context.report({
+            loc: {
+              end: toEslintLoc(lineCounter, range[1]),
+              start: toEslintLoc(lineCounter, range[0]),
+            },
+            message:
                 `${kind} octal value "${node.source}"` +
                 ' may be interpreted differently across YAML versions',
-            });
           });
-        }
-      },
-    };
-  },
+        });
+      }
+    },
+  }),
 };

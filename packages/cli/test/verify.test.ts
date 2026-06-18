@@ -83,7 +83,7 @@ describe.concurrent('verify drift detection', () => {
     const discovery = discoverWorkspace({ cwd: root });
     const expected = generateTurboJson(discovery);
     const actual = readTurboTasks(root);
-    const missing = Object.keys(expected.tasks).filter(name => !(name in actual));
+    const missing = Object.keys(expected.tasks).filter(name => !Object.hasOwn(actual, name));
 
     expect(missing).toContain('typecheck:ts');
   });
@@ -100,7 +100,7 @@ describe.concurrent('verify drift detection', () => {
     const pkg = discovery.packages[0]!;
     const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
     const actual = readScripts(app.dir);
-    const missing = Object.keys(expected).filter(name => !(name in actual));
+    const missing = Object.keys(expected).filter(name => !Object.hasOwn(actual, name));
 
     expect(missing).toContain('typecheck:ts');
   });
@@ -117,7 +117,7 @@ describe.concurrent('verify drift detection', () => {
     const pkg = discovery.packages[0]!;
     const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
     const actual = readScripts(app.dir);
-    const missing = Object.keys(expected).filter(name => !(name in actual));
+    const missing = Object.keys(expected).filter(name => !Object.hasOwn(actual, name));
 
     expect(missing).toHaveLength(0);
   });

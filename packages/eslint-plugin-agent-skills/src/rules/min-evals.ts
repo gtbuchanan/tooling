@@ -49,32 +49,30 @@ export const minEvals: MinEvalsRule = {
     type: 'problem',
   },
 
-  create(context) {
-    return {
-      // Key off the actual AST root so this fires under any markdown
-      // parser or language (e.g. @eslint/markdown's `root` mdast node).
-      [context.sourceCode.ast.type]() {
-        const { filename } = context;
-        if (!filename) return;
-        const { min = defaultMin } = context.options[0] ?? {};
+  create: context => ({
+    // Key off the actual AST root so this fires under any markdown
+    // parser or language (e.g. @ESLint/markdown's `root` mdast node).
+    [context.sourceCode.ast.type]() {
+      const { filename } = context;
+      if (!filename) return;
+      const { min = defaultMin } = context.options[0] ?? {};
 
-        const evalsPath = path.join(
-          path.dirname(filename),
-          'evals',
-          'evals.json',
-        );
-        const actual = countEvals(evalsPath);
-        if (actual >= min) return;
+      const evalsPath = path.join(
+        path.dirname(filename),
+        'evals',
+        'evals.json',
+      );
+      const actual = countEvals(evalsPath);
+      if (actual >= min) return;
 
-        context.report({
-          data: { actual: String(actual), min: String(min) },
-          loc: {
-            end: { column: 0, line: 1 },
-            start: { column: 0, line: 1 },
-          },
-          messageId: 'tooFew',
-        });
-      },
-    };
-  },
+      context.report({
+        data: { actual: String(actual), min: String(min) },
+        loc: {
+          end: { column: 0, line: 1 },
+          start: { column: 0, line: 1 },
+        },
+        messageId: 'tooFew',
+      });
+    },
+  }),
 };

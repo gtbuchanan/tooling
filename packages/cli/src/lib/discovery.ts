@@ -104,7 +104,7 @@ const readPklProject = (dir: string): string => {
 };
 
 const hasDep = (deps: Record<string, string>, name: string): boolean =>
-  name in deps;
+  Object.hasOwn(deps, name);
 
 const parseManifest = (dir: string): Manifest => {
   try {
@@ -122,7 +122,7 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
     .filter(name => name.startsWith('generate:'))
-    .toSorted();
+    .toSorted((left, right) => left.localeCompare(right));
 
 const buildCapabilities = (
   dir: string,

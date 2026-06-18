@@ -3,9 +3,11 @@ import path from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
 
+const StringRecord = v.record(v.string(), v.string());
+
 /** Minimal package.json schema used for fixture workspace resolution. */
 export const PackageJson = v.object({
-  dependencies: v.optional(v.record(v.string(), v.string())),
+  dependencies: v.optional(StringRecord),
   name: v.optional(v.string()),
   version: v.string(),
 });

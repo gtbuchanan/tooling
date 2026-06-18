@@ -1,10 +1,13 @@
 import * as v from 'valibot';
 
+/** Reusable `string[]` schema. */
+const StringArray = v.array(v.string());
+
 const SchedulerTaskSchema = v.object({
-  dependsOn: v.optional(v.array(v.string())),
-  env: v.optional(v.array(v.string())),
-  inputs: v.optional(v.array(v.string())),
-  outputs: v.optional(v.array(v.string())),
+  dependsOn: v.optional(StringArray),
+  env: v.optional(StringArray),
+  inputs: v.optional(StringArray),
+  outputs: v.optional(StringArray),
 });
 
 /** Valibot schema for parsing turbo.json into scheduler input. */
@@ -123,13 +126,16 @@ export const resolveSchedule = (
   const schedule: string[][] = [];
 
   while (remaining.size > 0) {
-    const ready = [...remaining.entries()]
+    const ready = [...remaining]
       .filter(([, depSet]) => depSet.size === 0)
       .map(([name]) => name)
-      .toSorted();
+      .toSorted((left, right) => left.localeCompare(right));
 
     if (ready.length === 0) {
-      const cycle = [...remaining.keys()].toSorted().join(', ');
+      const cycle = [...remaining]
+        .map(([name]) => name)
+        .toSorted((left, right) => left.localeCompare(right))
+        .join(', ');
       throw new Error(`Cycle detected in task graph: ${cycle}`);
     }
 

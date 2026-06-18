@@ -74,7 +74,7 @@ const findNode = (
       current = isNode(next) ? next : undefined;
     } else if (isSeq(current)) {
       const index = Number(seg);
-      if (!Number.isInteger(index)) return undefined;
+      if (!Number.isSafeInteger(index)) return undefined;
       const next = current.items[index];
       current = isNode(next) ? next : undefined;
     } else {
@@ -157,55 +157,53 @@ export const schema: Rule.RuleModule = {
     type: 'problem',
   },
 
-  create(context) {
-    return {
-      // Key off the actual AST root so this fires under any markdown
-      // parser or language (e.g. @eslint/markdown's `root` mdast node).
-      [context.sourceCode.ast.type]() {
-        const options = context.options[0] as SchemaRuleOptions | undefined;
-        if (!options) return;
+  create: context => ({
+    // Key off the actual AST root so this fires under any markdown
+    // parser or language (e.g. @ESLint/markdown's `root` mdast node).
+    [context.sourceCode.ast.type]() {
+      const options = context.options[0] as SchemaRuleOptions | undefined;
+      if (!options) return;
 
-        const validate = compile(options.schema);
-        const text = context.sourceCode.getText();
-        const { frontmatter, lineCounter } = parseMarkdown(
-          context.sourceCode,
-          text,
+      const validate = compile(options.schema);
+      const text = context.sourceCode.getText();
+      const { frontmatter, lineCounter } = parseMarkdown(
+        context.sourceCode,
+        text,
+      );
+
+      if (!frontmatter) {
+        context.report({
+          loc: {
+            end: { column: 0, line: 1 },
+            start: { column: 0, line: 1 },
+          },
+          message:
+            'Markdown file must begin with YAML frontmatter delimited by `---`',
+        });
+        return;
+      }
+
+      const data: unknown = frontmatter.document.toJS();
+      if (validate(data)) return;
+
+      const errors = validate.errors ?? [];
+      const fallbackLoc: AST.SourceLocation = {
+        end: toEslintLoc(lineCounter, frontmatter.endOffset),
+        start: toEslintLoc(lineCounter, frontmatter.contentOffset),
+      };
+
+      for (const error of errors) {
+        reportError(
+          {
+            context,
+            contentOffset: frontmatter.contentOffset,
+            document: frontmatter.document,
+            fallbackLoc,
+            lineCounter,
+          },
+          error,
         );
-
-        if (!frontmatter) {
-          context.report({
-            loc: {
-              end: { column: 0, line: 1 },
-              start: { column: 0, line: 1 },
-            },
-            message:
-              'Markdown file must begin with YAML frontmatter delimited by `---`',
-          });
-          return;
-        }
-
-        const data: unknown = frontmatter.document.toJS();
-        if (validate(data)) return;
-
-        const errors = validate.errors ?? [];
-        const fallbackLoc: AST.SourceLocation = {
-          end: toEslintLoc(lineCounter, frontmatter.endOffset),
-          start: toEslintLoc(lineCounter, frontmatter.contentOffset),
-        };
-
-        for (const error of errors) {
-          reportError(
-            {
-              context,
-              contentOffset: frontmatter.contentOffset,
-              document: frontmatter.document,
-              fallbackLoc,
-              lineCounter,
-            },
-            error,
-          );
-        }
-      },
-    };
-  },
+      }
+    },
+  }),
 };

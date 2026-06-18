@@ -22,9 +22,9 @@ export interface ParsedMarkdown {
 const cache = new WeakMap<object, ParsedMarkdown>();
 
 const buildLineCounter = (text: string): LineCounter => {
-  /* yaml's LineCounter expects each call to register the first
+  /* YAML's LineCounter expects each call to register the first
      character of a new line (one past the `\n`), with line 1 seeded
-     at offset 0 — matches what yaml's own Parser does internally. */
+     at offset 0 — matches what YAML's own Parser does internally. */
   const lc = new LineCounter();
   lc.addNewLine(0);
   let offset = text.indexOf('\n');
@@ -67,8 +67,8 @@ export const parseMarkdown = (
 };
 
 /**
- * Converts a yaml `LineCounter` offset to an ESLint source location.
- * The yaml package uses 1-based columns; ESLint uses 0-based.
+ * Converts a YAML `LineCounter` offset to an ESLint source location.
+ * The YAML package uses 1-based columns; ESLint uses 0-based.
  */
 export const toEslintLoc = (
   lineCounter: LineCounter,

@@ -6,7 +6,7 @@ import { capture } from '../../lib/process.ts';
 export const pklModules = (dir: string): readonly string[] =>
   readdirSync(dir)
     .filter(file => file.endsWith('.pkl'))
-    .toSorted();
+    .toSorted((left, right) => left.localeCompare(right));
 
 /**
  * Validates the package's Pkl modules via `pkl eval`. Evaluation is how Pkl

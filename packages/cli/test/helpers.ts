@@ -139,8 +139,10 @@ export const createPklWorkspace = (options: PklWorkspaceOptions = {}): PklWorksp
   return { name, pkgDir, repoPath, root, version };
 };
 
+const UnknownRecord = v.record(v.string(), v.unknown());
+
 const TurboJsonSchema = v.looseObject({
-  tasks: v.optional(v.record(v.string(), v.unknown())),
+  tasks: v.optional(UnknownRecord),
 });
 
 /** Reads the tasks from a project's turbo.json. */

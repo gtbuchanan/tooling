@@ -49,7 +49,7 @@ const classifyScripts = (
   const merged = { ...existing };
 
   for (const [name, value] of Object.entries(expected)) {
-    if (!force && name in existing) {
+    if (!force && Object.hasOwn(existing, name)) {
       skipped.push(name);
     } else {
       merged[name] = value;
@@ -99,10 +99,12 @@ export const writeYamlFile = (path: string, data: unknown): void => {
 };
 
 /* Non-object values (e.g. `codecov: true`) fall back to `{}` so sync repairs them. */
+const EmptyObjectFallback = v.fallback(v.looseObject({}), {});
+
 const ExistingCodecovSchema = v.nullable(
   v.looseObject({
-    codecov: v.optional(v.fallback(v.looseObject({}), {})),
-    component_management: v.optional(v.fallback(v.looseObject({}), {})),
+    codecov: v.optional(EmptyObjectFallback),
+    component_management: v.optional(EmptyObjectFallback),
   }),
 );
 

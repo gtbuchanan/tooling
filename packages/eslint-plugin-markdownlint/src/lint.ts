@@ -85,30 +85,28 @@ export const lint: Rule.RuleModule = {
     type: 'problem',
   },
 
-  create(context) {
-    return {
-      // Key off the actual AST root so this fires under any markdown
-      // parser or language (e.g. @eslint/markdown's `root` mdast node).
-      [context.sourceCode.ast.type]() {
-        const config = (context.options[0] ?? {}) as Configuration;
-        const text = context.sourceCode.getText();
-        const lines = text.split(/\r\n?|\n/v);
-        const lineOffsets = buildLineOffsets(lines);
+  create: context => ({
+    // Key off the actual AST root so this fires under any markdown
+    // parser or language (e.g. @ESLint/markdown's `root` mdast node).
+    [context.sourceCode.ast.type]() {
+      const config = (context.options[0] ?? {}) as Configuration;
+      const text = context.sourceCode.getText();
+      const lines = text.split(/\r\n?|\n/v);
+      const lineOffsets = buildLineOffsets(lines);
 
-        const results = lintSync({
-          config,
-          strings: { content: text },
+      const results = lintSync({
+        config,
+        strings: { content: text },
+      });
+
+      for (const error of results['content'] ?? []) {
+        const fix = createFix(error, lines, lineOffsets);
+        context.report({
+          ...(fix !== undefined && { fix }),
+          loc: getLocation(error),
+          message: formatMessage(error),
         });
-
-        for (const error of results['content'] ?? []) {
-          const fix = createFix(error, lines, lineOffsets);
-          context.report({
-            ...(fix !== undefined && { fix }),
-            loc: getLocation(error),
-            message: formatMessage(error),
-          });
-        }
-      },
-    };
-  },
+      }
+    },
+  }),
 };

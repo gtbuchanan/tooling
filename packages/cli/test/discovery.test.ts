@@ -217,7 +217,7 @@ describe.concurrent(discoverPackage, () => {
     const generateKeys = [
       `generate:${faker.lorem.word()}`,
       `generate:${faker.lorem.word()}`,
-    ].toSorted();
+    ].toSorted((left, right) => left.localeCompare(right));
     writeJson(dir, 'package.json', {
       scripts: Object.fromEntries(
         generateKeys.map(key => [key, faker.lorem.words({ min: 1, max: 3 })]),

@@ -87,7 +87,7 @@ const writeManifests = (logger: Logger, discovery: WorkspaceDiscovery): void => 
 };
 
 const writeCodecovConfig = (logger: Logger, discovery: WorkspaceDiscovery): void => {
-  if (!discovery.packages.some(pkg => pkg.hasVitestTests)) {
+  if (discovery.packages.every(pkg => !pkg.hasVitestTests)) {
     return;
   }
   const filePath = path.join(discovery.rootDir, 'codecov.yml');

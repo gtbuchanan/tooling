@@ -26,22 +26,20 @@ export const maxLines: Rule.RuleModule = {
     type: 'suggestion',
   },
 
-  create(context) {
-    return {
-      [context.sourceCode.ast.type]() {
-        const { max = 500 } = (context.options[0] ?? {}) as MaxLinesOptions;
-        const { lines } = context.sourceCode;
-        if (lines.length <= max) return;
+  create: context => ({
+    [context.sourceCode.ast.type]() {
+      const { max = 500 } = (context.options[0] ?? {}) as MaxLinesOptions;
+      const { lines } = context.sourceCode;
+      if (lines.length <= max) return;
 
-        context.report({
-          data: { actual: String(lines.length), max: String(max) },
-          loc: {
-            end: { column: lines.at(-1)?.length ?? 0, line: lines.length },
-            start: { column: 0, line: max + 1 },
-          },
-          messageId: 'tooLong',
-        });
-      },
-    };
-  },
+      context.report({
+        data: { actual: String(lines.length), max: String(max) },
+        loc: {
+          end: { column: lines.at(-1)?.length ?? 0, line: lines.length },
+          start: { column: 0, line: max + 1 },
+        },
+        messageId: 'tooLong',
+      });
+    },
+  }),
 };

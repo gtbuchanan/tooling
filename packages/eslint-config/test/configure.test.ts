@@ -150,7 +150,7 @@ describe.concurrent(configure, () => {
     const linter = new Linter();
 
     // `# Heading.` trips markdownlint-only MD026; `[]()` trips
-    // @eslint/markdown-only no-empty-links.
+    // @ESLint/markdown-only no-empty-links.
     const code = '# Heading.\n\n[]()\n';
     const messages = linter.verify(code, configs, 'foo.md');
     const ruleIds = new Set(messages.map(msg => msg.ruleId));

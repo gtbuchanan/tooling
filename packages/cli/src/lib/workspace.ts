@@ -44,8 +44,10 @@ export const resolveWorkspace = (
   return { packageDirs: [cwd], packageGlobs: [], rootDir: cwd };
 };
 
+const StringArray = v.array(v.string());
+
 const WorkspaceSchema = v.object({
-  packages: v.optional(v.nullable(v.array(v.string()))),
+  packages: v.optional(v.nullable(StringArray)),
 });
 
 /** Extracts package glob patterns from pnpm-workspace.yaml. */

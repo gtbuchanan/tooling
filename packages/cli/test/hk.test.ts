@@ -21,7 +21,7 @@ interface StubDeps {
   readonly captureCalls: readonly (readonly string[])[];
 }
 
-/** Records run/capture calls; `captures` maps a git subcommand to its stdout. */
+/** Records run/capture calls; `captures` maps a Git subcommand to its stdout. */
 const stubDeps = (
   captures: Record<string, string>,
   env: NodeJS.ProcessEnv = {},
