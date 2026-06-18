@@ -3,6 +3,7 @@ import * as v from 'valibot';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { CodecovSections } from './codecov-config.ts';
 import { ManifestSchema } from './manifest.ts';
+import { UnknownRecord } from './schemas.ts';
 
 const jsonIndent = 2;
 
@@ -32,7 +33,7 @@ export interface MergeResult {
 
 /** Reads and parses a JSON file as a plain object. */
 export const readJsonFile = (path: string): Record<string, unknown> =>
-  v.parse(v.record(v.string(), v.unknown()), JSON.parse(readFileSync(path, 'utf8')));
+  v.parse(UnknownRecord, JSON.parse(readFileSync(path, 'utf8')));
 
 /** Writes a JSON object to a file with formatting and trailing newline. */
 export const writeJsonFile = (path: string, data: unknown): void => {
