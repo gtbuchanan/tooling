@@ -4,6 +4,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { CodecovSections } from './codecov-config.ts';
 import { ManifestSchema } from './manifest.ts';
 import { UnknownRecord } from './schemas.ts';
+import { localeComparer } from './sort.ts';
 
 const jsonIndent = 2;
 
@@ -16,7 +17,7 @@ export const sortKeysDeep = (value: unknown): unknown => {
     const entries: [string, unknown][] = Object.entries(value);
     return Object.fromEntries(
       entries
-        .toSorted(([left], [right]) => left.localeCompare(right))
+        .toSorted(([left], [right]) => localeComparer(left, right))
         .map(([key, val]) => [key, sortKeysDeep(val)]),
     );
   }
