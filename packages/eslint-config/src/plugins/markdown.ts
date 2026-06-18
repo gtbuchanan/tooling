@@ -36,13 +36,21 @@ const plugin: PluginFactory = () => [
     rules: { ...cfg.rules, ...extraRules, ...prettierConflicts },
   })),
   {
-    /*
-     * Changesets writes `[<commit>] <message>` for each entry, where
-     * `[<commit>]` is parsed as a reference-style link with no matching
-     * definition. The rule otherwise applies on authored Markdown.
-     */
     files: ['**/CHANGELOG.md'],
-    rules: { 'markdown/no-missing-label-refs': 'off' },
+    rules: {
+      /*
+       * Each version section repeats `### Minor Changes` / `### Patch
+       * Changes`, duplicates only across (non-sibling) version headings.
+       * `checkSiblingsOnly` still flags genuine duplicate siblings within a
+       * section. The rule otherwise applies fully to authored Markdown.
+       */
+      'markdown/no-duplicate-headings': ['warn', { checkSiblingsOnly: true }],
+      /*
+       * Changesets writes `[<commit>] <message>` per entry, where
+       * `[<commit>]` parses as a reference-style link with no definition.
+       */
+      'markdown/no-missing-label-refs': 'off',
+    },
   },
 ];
 
