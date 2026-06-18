@@ -87,7 +87,7 @@ export const lint: Rule.RuleModule = {
 
   create: context => ({
     // Key off the actual AST root so this fires under any markdown
-    // parser or language (e.g. @ESLint/markdown's `root` mdast node).
+    // parser or language (e.g. `@eslint/markdown`'s `root` mdast node).
     [context.sourceCode.ast.type]() {
       const config = (context.options[0] ?? {}) as Configuration;
       const text = context.sourceCode.getText();

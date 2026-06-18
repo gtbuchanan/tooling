@@ -5,6 +5,7 @@ import * as v from 'valibot';
 import { parse } from 'yaml';
 import { readJsonFile } from './file-writer.ts';
 import { type Manifest, ManifestSchema } from './manifest.ts';
+import { StringArray } from './schemas.ts';
 
 /** Resolved workspace context for pack operations. */
 export interface WorkspaceContext {
@@ -43,8 +44,6 @@ export const resolveWorkspace = (
 
   return { packageDirs: [cwd], packageGlobs: [], rootDir: cwd };
 };
-
-const StringArray = v.array(v.string());
 
 const WorkspaceSchema = v.object({
   packages: v.optional(v.nullable(StringArray)),

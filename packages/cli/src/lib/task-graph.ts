@@ -1,7 +1,6 @@
 import * as v from 'valibot';
-
-/** Reusable `string[]` schema. */
-const StringArray = v.array(v.string());
+import { StringArray } from './schemas.ts';
+import { localeComparer } from './sort.ts';
 
 const SchedulerTaskSchema = v.object({
   dependsOn: v.optional(StringArray),
@@ -129,12 +128,12 @@ export const resolveSchedule = (
     const ready = [...remaining]
       .filter(([, depSet]) => depSet.size === 0)
       .map(([name]) => name)
-      .toSorted((left, right) => left.localeCompare(right));
+      .toSorted(localeComparer);
 
     if (ready.length === 0) {
       const cycle = [...remaining]
         .map(([name]) => name)
-        .toSorted((left, right) => left.localeCompare(right))
+        .toSorted(localeComparer)
         .join(', ');
       throw new Error(`Cycle detected in task graph: ${cycle}`);
     }

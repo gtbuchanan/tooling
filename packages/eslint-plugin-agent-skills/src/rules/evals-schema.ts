@@ -167,7 +167,7 @@ export const evalsSchema: EvalsSchemaRule = {
     };
     return {
       // Key off the actual AST root so this fires under any JSON
-      // parser (e.g. @ESLint/JSON's `Document`) or generic parser.
+      // parser (e.g. `@eslint/json`'s `Document`) or generic parser.
       [context.sourceCode.ast.type]() {
         const { filename } = context;
         if (!filename) return;
@@ -176,7 +176,7 @@ export const evalsSchema: EvalsSchemaRule = {
         try {
           parsed = JSON.parse(context.sourceCode.getText());
         } catch {
-          /* @ESLint/JSON reports syntax errors; nothing
+          /* `@eslint/json` reports syntax errors; nothing
              schema-meaningful to add here. */
           return;
         }

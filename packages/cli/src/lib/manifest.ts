@@ -1,10 +1,5 @@
 import * as v from 'valibot';
-
-/** Reusable `Record<string, string>` schema (e.g. dependency maps). */
-const StringRecord = v.record(v.string(), v.string());
-
-/** Reusable `string[]` schema. */
-const StringArray = v.array(v.string());
+import { StringArray, StringRecord } from './schemas.ts';
 
 /** Valibot schema for the `publishConfig` field of package.json. */
 export const PublishConfigSchema = v.object({

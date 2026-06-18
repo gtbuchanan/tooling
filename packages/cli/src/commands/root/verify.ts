@@ -8,6 +8,7 @@ import { readJsonFile } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
 import { checkManifests } from '../../lib/manifest-sync.ts';
 import { checkMiseTasksInclude } from '../../lib/mise-tasks.ts';
+import { StringArray, UnknownRecord } from '../../lib/schemas.ts';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '../../lib/sync-scopes.ts';
@@ -24,12 +25,6 @@ import {
 } from '../../lib/turbo-config.ts';
 import { readParsedManifest } from '../../lib/workspace.ts';
 import { rootNames } from './names.ts';
-
-/** Reusable `Record<string, unknown>` schema. */
-const UnknownRecord = v.record(v.string(), v.unknown());
-
-/** Reusable `string[]` schema. */
-const StringArray = v.array(v.string());
 
 const TurboJsonSchema = v.looseObject({
   tasks: v.optional(UnknownRecord),

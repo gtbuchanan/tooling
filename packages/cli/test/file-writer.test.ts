@@ -11,6 +11,7 @@ import {
   writeJsonFile,
   writeYamlFile,
 } from '#src/lib/file-writer.js';
+import { localeComparer } from '#src/lib/sort.js';
 import { createTempDir } from './helpers.ts';
 
 const readJson = (filePath: string): unknown =>
@@ -289,7 +290,7 @@ describe.concurrent(mergeCodecovSections, () => {
       match => match.groups?.['key'] ?? '',
     );
 
-    expect(keys).toStrictEqual([...keys].toSorted((left, right) => left.localeCompare(right)));
+    expect(keys).toStrictEqual([...keys].toSorted(localeComparer));
     expect(content).toContain("'**/dist/**'");
   });
 

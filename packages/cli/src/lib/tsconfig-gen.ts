@@ -3,18 +3,13 @@ import ts from 'typescript';
 import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
 import { readJsonFile } from './file-writer.ts';
+import { StringArray, UnknownRecord } from './schemas.ts';
 
 /** Directories and file patterns included in tsconfig.json for type-checking. */
 export const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*', '.*'] as const;
 
 /** Directories included in tsconfig.build.json for compilation. */
 export const buildInclude = ['bin', 'src'] as const;
-
-/** Reusable `string[]` schema. */
-const StringArray = v.array(v.string());
-
-/** Reusable `Record<string, unknown>` schema (e.g. compilerOptions). */
-const UnknownRecord = v.record(v.string(), v.unknown());
 
 const ReadConfigSchema = v.object({
   config: v.unknown(),

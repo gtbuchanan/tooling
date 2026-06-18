@@ -51,7 +51,7 @@ export const minEvals: MinEvalsRule = {
 
   create: context => ({
     // Key off the actual AST root so this fires under any markdown
-    // parser or language (e.g. @ESLint/markdown's `root` mdast node).
+    // parser or language (e.g. `@eslint/markdown`'s `root` mdast node).
     [context.sourceCode.ast.type]() {
       const { filename } = context;
       if (!filename) return;

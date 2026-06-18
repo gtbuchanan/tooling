@@ -4,6 +4,7 @@ import * as v from 'valibot';
 import { parse as parseYaml } from 'yaml';
 import { type CodecovSections, generateCodecovSections } from './codecov-config.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import { UnknownRecord } from './schemas.ts';
 
 const CodecovSettingsSchema = v.looseObject({
   require_ci_to_pass: v.optional(v.boolean()),
@@ -17,13 +18,11 @@ const ComponentManagementSchema = v.looseObject({
   individual_components: v.optional(v.array(ComponentSchema)),
 });
 
-const FlagsSchema = v.record(v.string(), v.unknown());
-
 const CodecovYamlSchema = v.nullable(
   v.looseObject({
     codecov: v.optional(CodecovSettingsSchema),
     component_management: v.optional(ComponentManagementSchema),
-    flags: v.optional(FlagsSchema),
+    flags: v.optional(UnknownRecord),
   }),
 );
 

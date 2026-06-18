@@ -12,6 +12,7 @@ import {
 import { type Logger, createLogger } from '#src/lib/logger.js';
 import { unscopedName } from '#src/lib/manifest-sync.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
+import { UnknownRecord } from '#src/lib/schemas.js';
 import { planTsconfigs } from '#src/lib/tsconfig-gen.js';
 import {
   generatePackageScripts, generateRootScripts, generateTurboJson,
@@ -138,8 +139,6 @@ export const createPklWorkspace = (options: PklWorkspaceOptions = {}): PklWorksp
 
   return { name, pkgDir, repoPath, root, version };
 };
-
-const UnknownRecord = v.record(v.string(), v.unknown());
 
 const TurboJsonSchema = v.looseObject({
   tasks: v.optional(UnknownRecord),

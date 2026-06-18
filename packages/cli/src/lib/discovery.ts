@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import type { Manifest } from './manifest.ts';
 import { hasPackageBlock } from './pkl-project.ts';
+import { localeComparer } from './sort.ts';
 import { buildInclude, resolveBuildIncludes } from './tsconfig-gen.ts';
 import {
   type ResolveWorkspaceOptions,
@@ -122,7 +123,7 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
     .filter(name => name.startsWith('generate:'))
-    .toSorted((left, right) => left.localeCompare(right));
+    .toSorted(localeComparer);
 
 const buildCapabilities = (
   dir: string,
