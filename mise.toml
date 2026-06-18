@@ -47,7 +47,7 @@ run_windows = "pnpm install --frozen-lockfile"
 actionlint = "1.7.12"
 hk = "1.48.0"
 node = "24.16.0"
-"npm:renovate" = "43.213.1"
+"npm:renovate" = "43.231.2"
 pkl = "0.31.1"
 # actionlint shells out to shellcheck to lint `run:` step scripts; without it
 # on PATH that analysis is silently skipped (and a stale shim errors locally).
