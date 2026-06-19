@@ -1,7 +1,8 @@
-/// Shared hk building blocks for @gtbuchanan/tooling consumers. Import this
-/// and spread `fileHygiene` / add `forbidSubmodules` into your hooks; use
-/// `defaultExclude` to wire the same exclude onto your own tool steps
-/// (eslint, etc.).
+/// Shared hk building blocks for @gtbuchanan/tooling consumers. The fast path:
+/// spread `...recommended` into a step mapping, add your repo-specific steps
+/// (e.g. eslint), and build the hook trio with `hooksFor(steps)`. The
+/// individual steps (`fileHygiene`, `actionlint`, `shell`, ...) and the
+/// `defaultExclude` primitive stay exported for granular composition.
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
@@ -17,6 +18,29 @@ vendorExclude: Regex = Regex(#"^vendor/"#)
 /// Default exclude for file-hygiene (and consumer tool) steps: lockfiles plus
 /// vendored sources. Wire onto your own steps with `exclude = Defaults.defaultExclude`.
 defaultExclude: Regex = Regex("\(lockfileExclude.pattern)|\(vendorExclude.pattern)")
+
+// actionlint pipes each `run:` script to shellcheck's stdin before starting
+// the process, so a script larger than the kernel pipe buffer deadlocks the
+// hook (rhysd/actionlint#650). Buffer sizes are smaller on Windows/macOS than
+// on Linux, so it bites a Windows-primary dev loop but not CI. Disable
+// shellcheck on Windows only; CI (Linux) and other platforms reuse the
+// builtin's command verbatim (no drift) and keep full shellcheck coverage.
+// The upstream fix (#651) is merged but unreleased as of actionlint 1.7.12 —
+// drop this guard once a release containing it lands.
+local actionlintCheck: String = Builtins.actionlint.check
+
+/// actionlint with the Windows shellcheck-deadlock workaround pre-wired (see
+/// the comment above for mechanism and removal trigger). Binary via mise
+/// `aqua:rhysd/actionlint`; shellcheck (`aqua:koalaman/shellcheck`) on PATH
+/// enables run-script linting on non-Windows platforms.
+actionlint: Config.Step = (Builtins.actionlint) {
+  check = new Config.Script {
+    windows = "actionlint -shellcheck= {{ files }}"
+    linux = actionlintCheck
+    macos = actionlintCheck
+    other = actionlintCheck
+  }
+}
 
 /// File-hygiene builtins with the lockfile-exclude already wired.
 fileHygiene: Mapping<String, Config.Step> = new {
@@ -49,4 +73,73 @@ forbidSubmodules: Config.Step = new {
 renovateConfig: Config.Step = new {
   glob = ".github/renovate.json"
   check = "renovate-config-validator --strict {{files}}"
+}
+
+/// shellcheck over shell sources selected by content type — extension AND
+/// shebang — so extensionless scripts (mise tasks, maintainer scripts) match.
+/// `glob = null` drops the builtin's `*.sh` glob; vendored sources excluded.
+/// Cheap: hk reads a file's shebang only when it's executable or has no
+/// extension-derived type, so extension-matched files never incur the read.
+/// Needs shellcheck on PATH (mise `aqua:koalaman/shellcheck`).
+shellcheck: Config.Step = (Builtins.shellcheck) {
+  glob = null
+  types = List("shell")
+  exclude = defaultExclude
+}
+
+/// shfmt over shell sources, selected by content type like `shellcheck`.
+/// Needs shfmt on PATH (mise `aqua:mvdan/sh`).
+shfmt: Config.Step = (Builtins.shfmt) {
+  glob = null
+  types = List("shell")
+  exclude = defaultExclude
+}
+
+/// shellcheck + shfmt as a spreadable group, for repos that lint shell and
+/// want to opt the pair in or out as a unit.
+shell: Mapping<String, Config.Step> = new {
+  ["shellcheck"] = shellcheck
+  ["shfmt"] = shfmt
+}
+
+/// The recommended step set — spread `...recommended` into a hook's steps to
+/// adopt the whole preset in one line, then add only repo-specific steps (e.g.
+/// eslint). Every step is glob/type-gated, so the ones a repo doesn't need are
+/// inert (pruned, their tool never resolved): a shell-free repo pays nothing
+/// for the shell steps. `renovate-preset` (targeting `default.json`) is
+/// intentionally omitted — it's specific to preset-authoring repos.
+recommended: Mapping<String, Config.Step> = new {
+  ...fileHygiene
+  ["actionlint"] = actionlint
+  ["forbid-submodules"] = forbidSubmodules
+  ["renovate-config"] = renovateConfig
+  ...shell
+}
+
+/// Build the standard `pre-commit` / `check` / `fix` hook trio from a step
+/// mapping, eliminating the per-repo hook boilerplate. `pre-commit` runs in fix
+/// mode and stashes unstaged changes (`patch-file` — faster than `git` and
+/// avoids the `index is locked` errors git stash hits on Windows — so a fixer
+/// touching a partially-staged file can't drag unstaged hunks into the commit)
+/// and adds the commit-time-only `no-commit-to-branch` guard (it needs a branch
+/// name, so it errors on CI's detached HEAD and is irrelevant to `check`/`fix`).
+/// `check` and `fix` run the same steps in check and fix mode (no stash — they
+/// run over all files, not a partial commit). Consumer:
+/// `hooks = Defaults.hooksFor(allSteps)`.
+function hooksFor(allSteps: Mapping<String, Config.Step>): Mapping<String, Config.Hook> = new {
+  ["pre-commit"] {
+    fix = true
+    stash = "patch-file"
+    steps {
+      ...allSteps
+      ["no-commit-to-branch"] = Builtins.no_commit_to_branch
+    }
+  }
+  ["check"] {
+    steps { ...allSteps }
+  }
+  ["fix"] {
+    fix = true
+    steps { ...allSteps }
+  }
 }

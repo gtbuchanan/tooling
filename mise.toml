@@ -49,6 +49,5 @@ hk = "1.48.0"
 node = "24.16.0"
 "npm:renovate" = "43.231.2"
 pkl = "0.31.1"
-# actionlint shells out to shellcheck to lint `run:` step scripts; without it
-# on PATH that analysis is silently skipped (and a stale shim errors locally).
 shellcheck = "0.11.0"
+shfmt = "3.13.0"
