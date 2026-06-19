@@ -1,5 +1,4 @@
 amends "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Builtins.pkl"
 
 // Shared hk preset (@gtbuchanan/tooling). Self-host imports it by relative
 // path because tooling can't `package://`-import its own unpublished
@@ -10,32 +9,12 @@ import "packages/hk-config/Defaults.pkl"
 // eslint args shared by the step's check/fix; only `--fix` differs.
 local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
 
-// actionlint pipes each `run:` script to shellcheck's stdin before starting
-// the process, so a script larger than the kernel pipe buffer deadlocks the
-// hook (rhysd/actionlint#650). Buffer sizes are smaller on Windows/macOS than
-// on Linux, so it bites our Windows-primary dev loop but not CI. Disable
-// shellcheck on Windows only; CI (Linux) and other platforms reuse the
-// builtin's command verbatim (no drift) and keep full shellcheck coverage.
-// The upstream fix (#651) is merged but unreleased as of actionlint 1.7.12 —
-// drop this guard once a release containing it lands.
-local actionlintCheck: String = Builtins.actionlint.check
-
 local allSteps = new Mapping<String, Step> {
-    ...Defaults.fileHygiene
-    ["actionlint"] = (Builtins.actionlint) {
-        check = new Script {
-            windows = "actionlint -shellcheck= {{ files }}"
-            linux = actionlintCheck
-            macos = actionlintCheck
-            other = actionlintCheck
-        }
-    }
-    ["forbid-submodules"] = Defaults.forbidSubmodules
+    ...Defaults.recommended
 
-    // Both validate via Defaults.renovateConfig (npm:renovate on PATH from
-    // `hk install --mise`); renovate-preset retargets the shareable preset.
+    // Validates the shareable preset itself; the .github/renovate.json
+    // validator (renovate-config) comes from recommended.
     ["renovate-preset"] = (Defaults.renovateConfig) { glob = "default.json" }
-    ["renovate-config"] = Defaults.renovateConfig
 
     ["eslint"] {
         check = "pnpm exec eslint \(eslintArgs)"
@@ -43,22 +22,4 @@ local allSteps = new Mapping<String, Step> {
     }
 }
 
-hooks {
-    ["pre-commit"] {
-        fix = true
-        stash = "git"
-        steps {
-            ...allSteps
-            // Commit-time guard only: it needs a branch name, so it errors on
-            // CI's detached HEAD and is irrelevant to `hk check`/`hk fix`.
-            ["no-commit-to-branch"] = Builtins.no_commit_to_branch
-        }
-    }
-    ["check"] {
-        steps { ...allSteps }
-    }
-    ["fix"] {
-        fix = true
-        steps { ...allSteps }
-    }
-}
+hooks = Defaults.hooksFor(allSteps)

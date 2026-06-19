@@ -93,27 +93,43 @@ coverage, setupFiles, and mock reset.
   Python/venv layer: file-hygiene checks are native `Builtins.*`, and
   external tools come from mise. Installed automatically by mise's
   `[hooks] postinstall = "hk install --mise"` on `mise install` (Git
-  2.54+ config-based hooks, wrapped in `mise x`). `hk.pkl` imports the
-  shared `packages/hk-config/Defaults.pkl` preset and composes its steps:
+  2.54+ config-based hooks, wrapped in `mise x`). `hk.pkl` spreads the
+  shared preset's `Defaults.recommended` step set, adds the repo-specific
+  `renovate-preset` and `eslint` steps, and builds the `pre-commit` /
+  `check` / `fix` hooks via `Defaults.hooksFor`:
   - File hygiene — `Defaults.fileHygiene` (large files, EOF newline, BOM,
     trailing whitespace, each with the lockfile-exclude pre-wired)
-  - `actionlint` (`Builtins.actionlint`, binary via mise `aqua:rhysd/actionlint`).
+  - `actionlint` — `Defaults.actionlint`, binary via mise `aqua:rhysd/actionlint`.
     actionlint runs `shellcheck` (mise `aqua:koalaman/shellcheck`) on workflow
-    `run:` scripts when it's on PATH; the hk.pkl step wraps the builtin to
-    disable shellcheck on Windows only, working around an actionlint deadlock
-    (see the comment there for mechanism and removal trigger).
+    `run:` scripts when it's on PATH; the shared preset's step wraps the builtin
+    to disable shellcheck on Windows only, working around an actionlint deadlock
+    (see the comment in `Defaults.pkl` for mechanism and removal trigger).
   - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)
+  - `shellcheck` / `shfmt` — from `Defaults.shell` (via `recommended`),
+    binaries via mise `aqua:koalaman/shellcheck` and `aqua:mvdan/sh`. Select
+    shell sources by content type (extension and shebang), so the extensionless
+    Termux pnpm shim (`packages/pnpm-termux-shim/bin/pnpm`) is covered
   - `renovate-preset` / `renovate-config` — both derive from
     `Defaults.renovateConfig` (binary via mise `npm:renovate`);
     `renovate-preset` retargets the glob to `default.json`.
     `check-illegal-windows-names` was dropped (no builtin; redundant on a
     Windows-primary repo)
-  - `eslint` / `no-commit-to-branch` — repo-specific, stay in `hk.pkl`
+  - `eslint` — repo-specific, stays in `hk.pkl`. `no-commit-to-branch` is
+    wired into `pre-commit` by `Defaults.hooksFor` (commit-time-only guard)
 - **`@gtbuchanan/hk-config` preset** (`packages/hk-config/Defaults.pkl`).
   The reusable building blocks (`fileHygiene`, `forbidSubmodules`,
-  `renovateConfig`, and the `defaultExclude` primitive) ship as a
-  Pkl package — private to npm, published as a **GitHub release** so
+  `renovateConfig`, `actionlint`, `shellcheck`, `shfmt`, and the
+  `defaultExclude` primitive) ship as a Pkl package — `shellcheck` /
+  `shfmt` select by content type (extension **and** shebang, so
+  extensionless scripts match) with `defaultExclude` pre-wired. The preset
+  also exports the `shell` group (`shellcheck` + `shfmt`), the `recommended`
+  step mapping (file hygiene + `forbid-submodules` + `renovate-config` +
+  `actionlint` + shell — every step glob/type-gated, so inapplicable ones are
+  inert) for one-line adoption, and `hooksFor(steps)` which builds the standard
+  `pre-commit` / `check` / `fix` trio (pre-commit stashes via `patch-file` and
+  adds the commit-time-only `no-commit-to-branch` guard). It's private to
+  npm, published as a **GitHub release** so
   consumers `package://`-import it with sha256 integrity (see CD below).
   Consumer import:
   `package://github.com/gtbuchanan/tooling/releases/download/hk-config@<ver>/hk-config@<ver>#/Defaults.pkl`.
