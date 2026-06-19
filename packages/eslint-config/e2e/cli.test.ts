@@ -5,7 +5,7 @@ import { it as base, describe } from 'vitest';
 import {
   type Fixture,
   createFixture,
-  createRequireOnlyWarnConfig,
+  requireOnlyWarnConfig,
 } from './fixture.ts';
 
 /* eslint-disable-next-line vitest/consistent-test-it --
@@ -119,7 +119,7 @@ describe.concurrent('eslint CLI integration', () => {
 
   it('downgrades errors to warnings with onlyWarn', async ({ fixture, expect }) => {
     const { exitCode, stdout } = await fixture.run({
-      config: createRequireOnlyWarnConfig,
+      config: requireOnlyWarnConfig,
       files: { 'bad.ts': 'process.exit(0);\n' },
     });
 
@@ -214,7 +214,7 @@ describe.concurrent('eslint CLI integration', () => {
   it('applies markdownlint autofix via --fix', async ({ fixture, expect }) => {
     // MD034: no-bare-urls (fixable, not disabled by prettier conflicts)
     const result = await fixture.run({
-      config: createRequireOnlyWarnConfig,
+      config: requireOnlyWarnConfig,
       files: { 'doc.md': '# Title\n\nVisit https://example.com today.\n' },
       flags: ['--fix'],
     });

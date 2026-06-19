@@ -10,7 +10,7 @@ interface FileReferencesOptions {
 interface ResolvedReference {
   readonly absolutePath: string;
   readonly depth: number;
-  readonly outsideRoot: boolean;
+  readonly isOutsideRoot: boolean;
 }
 
 type FileReferencesRule = MarkdownRuleDefinition<{
@@ -46,7 +46,7 @@ const resolveReference = (
   const segments = normalized
     .split('/')
     .filter(segment => segment !== '' && segment !== '.');
-  const outsideRoot =
+  const isOutsideRoot =
     normalized.startsWith('/') ||
     normalized === '..' ||
     normalized.startsWith('../');
@@ -54,7 +54,7 @@ const resolveReference = (
   return {
     absolutePath: path.resolve(skillDir, decoded),
     depth,
-    outsideRoot,
+    isOutsideRoot,
   };
 };
 
@@ -108,7 +108,7 @@ export const fileReferences: FileReferencesRule = {
 
       const ref = resolveReference(skillDir, cleanUrl);
 
-      if (ref.outsideRoot) {
+      if (ref.isOutsideRoot) {
         context.report({ data: { url }, loc, messageId: 'outsideRoot' });
         return;
       }

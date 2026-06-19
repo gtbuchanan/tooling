@@ -68,7 +68,7 @@ export const documentStart: Rule.RuleModule = {
   create: context => ({
     Program() {
       const options = (context.options[0] ?? {}) as DocumentStartOptions;
-      const present = options.present ?? true;
+      const isPresent = options.present ?? true;
       const text = context.sourceCode.getText();
       const { documents, lineCounter } =
         parseYaml(context.sourceCode, text);
@@ -76,9 +76,9 @@ export const documentStart: Rule.RuleModule = {
       for (const doc of documents) {
         if (!doc.contents) continue;
 
-        if (present && !doc.directives.docStart) {
+        if (isPresent && !doc.directives.docStart) {
           reportMissing(context, doc, lineCounter);
-        } else if (!present && doc.directives.docStart) {
+        } else if (!isPresent && doc.directives.docStart) {
           reportUnwanted(context, doc, text, lineCounter);
         }
       }

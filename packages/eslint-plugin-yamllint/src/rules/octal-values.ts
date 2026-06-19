@@ -31,8 +31,8 @@ export const octalValues: Rule.RuleModule = {
   create: context => ({
     Program() {
       const options = (context.options[0] ?? {}) as OctalValuesOptions;
-      const forbidImplicit = options['forbid-implicit-octal'] ?? true;
-      const forbidExplicit = options['forbid-explicit-octal'] ?? true;
+      const shouldForbidImplicit = options['forbid-implicit-octal'] ?? true;
+      const shouldForbidExplicit = options['forbid-explicit-octal'] ?? true;
       const text = context.sourceCode.getText();
       const { documents, lineCounter } =
         parseYaml(context.sourceCode, text);
@@ -47,9 +47,9 @@ export const octalValues: Rule.RuleModule = {
           if (!range) return;
 
           const isImplicit =
-            forbidImplicit && implicitOctalPattern.test(node.source);
+            shouldForbidImplicit && implicitOctalPattern.test(node.source);
           const isExplicit =
-            forbidExplicit && explicitOctalPattern.test(node.source);
+            shouldForbidExplicit && explicitOctalPattern.test(node.source);
 
           if (!isImplicit && !isExplicit) return;
 

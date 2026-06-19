@@ -11,19 +11,19 @@ describe.concurrent(executeVersion, () => {
     const order: string[] = [];
     const runCalls: RunCall[] = [];
     let syncScopes: readonly string[] = [];
-    let runFinished = false;
+    let hasRunFinished = false;
 
     await executeVersion({
       run: async (command, options) => {
         order.push('run:start');
         runCalls.push({ args: options?.args ?? [], command });
         await Promise.resolve();
-        runFinished = true;
+        hasRunFinished = true;
         order.push('run:end');
       },
       // `sync` is synchronous (`=> void`); it must not run until `run` settled.
       sync: (options) => {
-        expect(runFinished).toBe(true);
+        expect(hasRunFinished).toBe(true);
 
         order.push('sync');
         syncScopes = [...(options.scopes ?? [])];

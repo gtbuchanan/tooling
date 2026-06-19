@@ -10,12 +10,12 @@ describe.concurrent(executePublish, () => {
   it('awaits npm publish before starting the non-npm channels', async ({ expect }) => {
     const order: string[] = [];
     const runCalls: RunCall[] = [];
-    let npmFinished = false;
+    let hasNpmFinished = false;
 
     await executePublish({
       publishNonNpm: async () => {
         // npm publish must have fully settled before this starts.
-        expect(npmFinished).toBe(true);
+        expect(hasNpmFinished).toBe(true);
 
         order.push('non-npm:start');
         await Promise.resolve();
@@ -25,7 +25,7 @@ describe.concurrent(executePublish, () => {
         order.push('npm:start');
         runCalls.push({ args: options?.args ?? [], command });
         await Promise.resolve();
-        npmFinished = true;
+        hasNpmFinished = true;
         order.push('npm:end');
       },
     });

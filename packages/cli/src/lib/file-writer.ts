@@ -44,14 +44,14 @@ export const writeJsonFile = (path: string, data: unknown): void => {
 const classifyScripts = (
   existing: Record<string, string>,
   expected: Readonly<Record<string, string>>,
-  force: boolean,
+  shouldForce: boolean,
 ): MergeResult & { readonly merged: Record<string, string> } => {
   const added: string[] = [];
   const skipped: string[] = [];
   const merged = { ...existing };
 
   for (const [name, value] of Object.entries(expected)) {
-    if (!force && Object.hasOwn(existing, name)) {
+    if (!shouldForce && Object.hasOwn(existing, name)) {
       skipped.push(name);
     } else {
       merged[name] = value;
@@ -71,12 +71,12 @@ const classifyScripts = (
 export const mergePackageScripts = (
   path: string,
   expected: Readonly<Record<string, string>>,
-  force: boolean,
+  shouldForce: boolean,
 ): MergeResult => {
   const raw = readJsonFile(path);
   const manifest = v.parse(ManifestSchema, raw);
   const { added, merged, skipped } = classifyScripts(
-    manifest.scripts ?? {}, expected, force,
+    manifest.scripts ?? {}, expected, shouldForce,
   );
 
   /*

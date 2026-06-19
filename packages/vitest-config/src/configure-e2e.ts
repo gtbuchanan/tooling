@@ -96,7 +96,7 @@ export const configureEndToEndGlobal = (
 
 const buildCombinedE2eConfig = (
   options: VitestEndToEndConfigureOptions,
-  includeTestPatterns: boolean,
+  shouldIncludeTestPatterns: boolean,
 ): ViteUserConfig => {
   const project = configureEndToEndProject();
   return mergeConfig(
@@ -104,7 +104,7 @@ const buildCombinedE2eConfig = (
     defineConfig({
       test: {
         ...(project.test?.exclude && { exclude: project.test.exclude }),
-        ...(includeTestPatterns && project.test?.include && {
+        ...(shouldIncludeTestPatterns && project.test?.include && {
           include: project.test.include,
         }),
       },

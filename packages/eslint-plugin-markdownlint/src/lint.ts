@@ -30,7 +30,8 @@ const formatMessage = (error: LintError): string => {
 const buildLineOffsets = (lines: readonly string[]): readonly number[] => {
   const offsets: number[] = [0];
   let offset = 0;
-  for (const line of lines.slice(0, -1)) {
+  const linesExceptLast = lines.slice(0, -1);
+  for (const line of linesExceptLast) {
     offset += line.length + 1;
     offsets.push(offset);
   }
@@ -99,7 +100,8 @@ export const lint: Rule.RuleModule = {
         strings: { content: text },
       });
 
-      for (const error of results['content'] ?? []) {
+      const errors = results['content'] ?? [];
+      for (const error of errors) {
         const fix = createFix(error, lines, lineOffsets);
         context.report({
           ...(fix !== undefined && { fix }),

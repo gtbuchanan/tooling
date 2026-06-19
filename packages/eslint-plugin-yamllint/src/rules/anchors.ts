@@ -57,10 +57,10 @@ const reportAnchorIssues = (
   context: Rule.RuleContext,
   collected: CollectedAnchors,
   lineCounter: LineCounter,
-  options: { forbidDuplicated: boolean; forbidUnused: boolean },
+  options: { shouldForbidDuplicated: boolean; shouldForbidUnused: boolean },
 ): void => {
   for (const [name, ranges] of collected.anchors) {
-    if (options.forbidDuplicated && ranges.length > 1) {
+    if (options.shouldForbidDuplicated && ranges.length > 1) {
       for (const range of ranges.slice(1)) {
         context.report({
           loc: toEslintLoc(lineCounter, range[0]),
@@ -69,7 +69,7 @@ const reportAnchorIssues = (
       }
     }
 
-    if (options.forbidUnused && !collected.aliases.has(name)) {
+    if (options.shouldForbidUnused && !collected.aliases.has(name)) {
       const first = ranges[0];
       if (!first) continue;
       context.report({
@@ -107,11 +107,11 @@ export const anchors: Rule.RuleModule = {
   create: context => ({
     Program() {
       const options = (context.options[0] ?? {}) as AnchorsOptions;
-      const forbidDuplicated =
+      const shouldForbidDuplicated =
         options['forbid-duplicated-anchors'] ?? true;
-      const forbidUndeclared =
+      const shouldForbidUndeclared =
         options['forbid-undeclared-aliases'] ?? true;
-      const forbidUnused =
+      const shouldForbidUnused =
         options['forbid-unused-anchors'] ?? true;
       const text = context.sourceCode.getText();
       const { documents, lineCounter } =
@@ -121,9 +121,9 @@ export const anchors: Rule.RuleModule = {
         const collected = collectAnchors(doc);
         reportAnchorIssues(
           context, collected, lineCounter,
-          { forbidDuplicated, forbidUnused },
+          { shouldForbidDuplicated, shouldForbidUnused },
         );
-        if (forbidUndeclared) {
+        if (shouldForbidUndeclared) {
           reportUndeclaredAliases(
             context, collected, lineCounter,
           );

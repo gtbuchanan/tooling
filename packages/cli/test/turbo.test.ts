@@ -46,33 +46,33 @@ describe.concurrent(planTurboInvocation, () => {
   });
 
   it('does not invoke the resolver for darwin', ({ expect }) => {
-    let called = false;
+    let wasCalled = false;
     const plan = planTurboInvocation({
       ...baseOptions,
       platform: 'darwin',
       resolveAndroidBinary: (): string | undefined => {
-        called = true;
+        wasCalled = true;
         return undefined;
       },
     });
 
     expect(plan.kind).toBe('spawn');
-    expect(called).toBe(false);
+    expect(wasCalled).toBe(false);
   });
 
   it('does not invoke the resolver for win32', ({ expect }) => {
-    let called = false;
+    let wasCalled = false;
     const plan = planTurboInvocation({
       ...baseOptions,
       platform: 'win32',
       resolveAndroidBinary: (): string | undefined => {
-        called = true;
+        wasCalled = true;
         return undefined;
       },
     });
 
     expect(plan.kind).toBe('spawn');
-    expect(called).toBe(false);
+    expect(wasCalled).toBe(false);
   });
 
   it('uses the resolved global turbo binary on android', ({ expect }) => {
