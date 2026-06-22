@@ -10,12 +10,16 @@ const plugin: PluginFactory = () => [
   {
     files: [...scriptFiles],
     rules: {
+      // TODO: Re-enable and configure allowlist in a separate PR
+      'unicorn/name-replacements': 'off',
       // Justification: Cannot distinguish intentional from accidental arity matches
       'unicorn/no-array-callback-reference': 'off',
       // Justification: reduce is a valid functional fold; banning it pushes toward mutable loops
       'unicorn/no-array-reduce': 'off',
-      // TODO: Re-enable and configure allowlist in a separate PR
-      'unicorn/prevent-abbreviations': 'off',
+      /* Justification: Flags Symbol.dispose/Symbol.asyncDispose, which are
+         standard (Explicit Resource Management) but excluded from unicorn's
+         ECMAScript baseline; the rule has no allowlist option to permit them */
+      'unicorn/no-nonstandard-builtin-properties': 'off',
     },
   },
 ];
