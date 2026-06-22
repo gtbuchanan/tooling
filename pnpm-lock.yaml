@@ -20,7 +20,7 @@ catalogs:
       version: 8.0.2
     '@faker-js/faker':
       specifier: ^10.4.0
-      version: 10.4.0
+      version: 10.5.0
     '@pnpm/lockfile.types':
       specifier: ^1100.0.5
       version: 1100.0.11
@@ -265,7 +265,7 @@ importers:
     devDependencies:
       '@faker-js/faker':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.5.0
       '@gtbuchanan/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
@@ -375,7 +375,7 @@ importers:
     devDependencies:
       '@faker-js/faker':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.5.0
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
@@ -481,7 +481,7 @@ importers:
     dependencies:
       '@faker-js/faker':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.5.0
       cross-spawn:
         specifier: 'catalog:'
         version: 7.0.6
@@ -526,7 +526,7 @@ importers:
     devDependencies:
       '@faker-js/faker':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.5.0
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
@@ -708,8 +708,8 @@ packages:
     resolution: {integrity: sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@faker-js/faker@10.4.0':
-    resolution: {integrity: sha512-sDBWI3yLy8EcDzgobvJTWq1MJYzAkQdpjXuPukga9wXonhpMRvd1Izuo2Qgwey2OiEoRIBr35RMU9HJRoOHzpw==}
+  '@faker-js/faker@10.5.0':
+    resolution: {integrity: sha512-bsxD8WLS5lIj7aaoCx1YJkktqYj5vlBUE6HWzu2Q51ksrGJ0H737ECCKlFU7Yf8Br45z9t99frBp/J7kzbMPAg==}
     engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
 
   '@humanfs/core@0.19.2':
@@ -3261,7 +3261,7 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@faker-js/faker@10.4.0': {}
+  '@faker-js/faker@10.5.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:
