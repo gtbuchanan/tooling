@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/pnpm-termux-shim",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "pnpm wrapper with an absolute-path shebang for Termux/Android, where /usr/bin/env doesn't exist and glibc-built binaries (e.g. turbo) bypass Termux's Bionic LD_PRELOAD shebang shim",
   "homepage": "https://github.com/gtbuchanan/tooling/tree/main/packages/pnpm-termux-shim",
   "bugs": "https://github.com/gtbuchanan/tooling/issues",

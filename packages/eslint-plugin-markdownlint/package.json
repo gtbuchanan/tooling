@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/eslint-plugin-markdownlint",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ESLint plugin wrapping markdownlint for structural Markdown linting",
   "type": "module",
   "imports": {

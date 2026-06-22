@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/eslint-plugin-md-frontmatter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ESLint plugin validating Markdown YAML frontmatter against a JSON Schema",
   "type": "module",
   "imports": {
