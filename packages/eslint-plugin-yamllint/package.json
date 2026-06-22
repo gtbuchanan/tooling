@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/eslint-plugin-yamllint",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ESLint plugin implementing yamllint-equivalent rules for YAML files",
   "type": "module",
   "imports": {

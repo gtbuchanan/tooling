@@ -2,7 +2,7 @@ amends "pkl:Project"
 
 package {
   name = "hk-config"
-  version = "0.1.0"
+  version = "0.2.0"
   baseUri = "package://github.com/gtbuchanan/tooling/\(name)"
   packageZipUrl = "https://github.com/gtbuchanan/tooling/releases/download/\(name)@\(version)/\(name)@\(version).zip"
 }
