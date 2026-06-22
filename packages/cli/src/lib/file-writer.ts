@@ -120,7 +120,7 @@ const ExistingCodecovSchema = v.nullable(
  * Throws if the existing file contains invalid YAML.
  */
 export const mergeCodecovSections = (path: string, sections: CodecovSections): void => {
-  let rawYaml: unknown = undefined;
+  let rawYaml: unknown;
   if (existsSync(path)) {
     try {
       rawYaml = parseYaml(readFileSync(path, 'utf8'));
