@@ -74,6 +74,9 @@ jobs:
         id: changesets-action
         uses: changesets/action@v1
         with:
+          # GPG-sign the version commit + tags (default git-cli leaves them
+          # unverified).
+          commitMode: github-api
           github-token: ${{ steps.app-token.outputs.token }}
           version: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} version
 
