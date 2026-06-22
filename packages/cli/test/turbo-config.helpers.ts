@@ -48,10 +48,13 @@ export const makeDiscovery = (
   overrides: MakeDiscoveryOverrides = {},
 ): WorkspaceDiscovery => {
   const {
-    dependsOnCli = false, hasMise = false, isSelfHosted = false, ...rootOverrides
+    dependsOnCli: hasCliDependency = false,
+    hasMise = false,
+    isSelfHosted = false,
+    ...rootOverrides
   } = overrides;
   return {
-    dependsOnCli,
+    dependsOnCli: hasCliDependency,
     hasMise,
     isMonorepo: packages.length > 1,
     isSelfHosted,

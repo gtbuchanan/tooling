@@ -46,7 +46,7 @@ export const truthy: Rule.RuleModule = {
   create: context => ({
     Program() {
       const options = (context.options[0] ?? {}) as TruthyOptions;
-      const checkKeys = options['check-keys'] ?? false;
+      const shouldCheckKeys = options['check-keys'] ?? false;
       const allowedValues = new Set(options['allowed-values']);
       const text = context.sourceCode.getText();
       const { documents, lineCounter } =
@@ -61,7 +61,7 @@ export const truthy: Rule.RuleModule = {
           if (!yaml11Booleans.has(source)) return;
           if (allowedValues.has(source)) return;
 
-          if (_key === 'key' && !checkKeys) return;
+          if (_key === 'key' && !shouldCheckKeys) return;
 
           const range = node.range;
           if (!range) return;

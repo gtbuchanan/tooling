@@ -37,13 +37,13 @@ const writeSortedAndLog = (logger: Logger, filePath: string, data: object): void
 };
 
 const writeRootScripts = (
-  logger: Logger, discovery: WorkspaceDiscovery, force: boolean,
+  logger: Logger, discovery: WorkspaceDiscovery, shouldForce: boolean,
 ): void => {
   const rootPkgPath = path.join(discovery.rootDir, 'package.json');
   logMergeResult(
     logger,
     'root',
-    mergePackageScripts(rootPkgPath, generateRootScripts(discovery), force),
+    mergePackageScripts(rootPkgPath, generateRootScripts(discovery), shouldForce),
   );
 };
 
@@ -51,7 +51,7 @@ const writePackageScripts = (
   logger: Logger,
   pkg: PackageCapabilities,
   discovery: WorkspaceDiscovery,
-  force: boolean,
+  shouldForce: boolean,
 ): void => {
   const scripts = generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir);
   if (Object.keys(scripts).length === 0) {
@@ -60,7 +60,7 @@ const writePackageScripts = (
   logMergeResult(
     logger,
     pkg.dir,
-    mergePackageScripts(path.join(pkg.dir, 'package.json'), scripts, force),
+    mergePackageScripts(path.join(pkg.dir, 'package.json'), scripts, shouldForce),
   );
 };
 
@@ -109,12 +109,12 @@ const writeTsconfigFiles = (logger: Logger, discovery: WorkspaceDiscovery): void
 };
 
 const writeAllScripts = (
-  logger: Logger, discovery: WorkspaceDiscovery, force: boolean,
+  logger: Logger, discovery: WorkspaceDiscovery, shouldForce: boolean,
 ): void => {
   for (const pkg of discovery.packages) {
-    writePackageScripts(logger, pkg, discovery, force);
+    writePackageScripts(logger, pkg, discovery, shouldForce);
   }
-  writeRootScripts(logger, discovery, force);
+  writeRootScripts(logger, discovery, shouldForce);
 };
 
 /** Options for {@link runSync}. */
@@ -137,7 +137,7 @@ export interface RunSyncOptions {
  */
 export const runSync = (options: RunSyncOptions = {}): void => {
   const cwd = options.cwd ?? process.cwd();
-  const force = options.force ?? false;
+  const shouldForce = options.force ?? false;
   const logger = options.logger ?? createLogger();
   const scopes = options.scopes ?? new Set(syncScopes);
   const discovery = discoverWorkspace({ cwd });
@@ -146,7 +146,7 @@ export const runSync = (options: RunSyncOptions = {}): void => {
     codecov: () => { writeCodecovConfig(logger, discovery); },
     manifest: () => { writeManifests(logger, discovery); },
     mise: () => { writeMiseTasks(logger, discovery); },
-    scripts: () => { writeAllScripts(logger, discovery, force); },
+    scripts: () => { writeAllScripts(logger, discovery, shouldForce); },
     tsconfig: () => { writeTsconfigFiles(logger, discovery); },
     turbo: () => { writeTurboJson(logger, discovery); },
   };

@@ -42,7 +42,8 @@ const buildWorkspaceIndex = (): ReadonlyMap<string, PackageJson> => {
   const wsRoot = getWorkspaceRoot();
   const index = new Map<string, PackageJson>();
 
-  for (const pkgJsonPath of globSync('packages/*/package.json', { cwd: wsRoot })) {
+  const pkgJsonPaths = globSync('packages/*/package.json', { cwd: wsRoot });
+  for (const pkgJsonPath of pkgJsonPaths) {
     const abs = path.join(wsRoot, pkgJsonPath);
     const pkg = v.parse(PackageJson, JSON.parse(readFileSync(abs, 'utf8')));
     if (pkg.name !== undefined) index.set(pkg.name, pkg);

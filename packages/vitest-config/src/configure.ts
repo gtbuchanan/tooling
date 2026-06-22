@@ -101,9 +101,10 @@ export const resolveCoverageInclude = (
 
 /** Resolves the list of Vitest setup files based on feature flags. */
 export const resolveSetupFiles = (options: VitestConfigureOptions): string[] => {
-  const { consoleFailTest = true, hasAssertions = true } = options;
+  const { consoleFailTest: shouldFailOnConsole = true, hasAssertions = true } =
+    options;
   const setupFiles: string[] = [];
-  if (consoleFailTest) {
+  if (shouldFailOnConsole) {
     setupFiles.push(`${packageName}/console-fail-test`);
   }
   if (hasAssertions) {
@@ -328,7 +329,7 @@ export const configureGlobal = (
 
 const buildCombinedConfig = (
   options: VitestConfigureOptions,
-  includeTestPatterns: boolean,
+  shouldIncludeTestPatterns: boolean,
 ): ViteUserConfig => {
   const project = configureProject();
   return mergeConfig(
@@ -337,7 +338,7 @@ const buildCombinedConfig = (
       ...(project.resolve && { resolve: project.resolve }),
       test: {
         ...(project.test?.exclude && { exclude: project.test.exclude }),
-        ...(includeTestPatterns && project.test?.include && {
+        ...(shouldIncludeTestPatterns && project.test?.include && {
           include: project.test.include,
         }),
       },

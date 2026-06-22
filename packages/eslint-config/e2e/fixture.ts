@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createIsolatedFixture, runCommand } from '@gtbuchanan/test-utils';
 
-export const createRequireConfig = [
+export const requireConfig = [
   'import { createRequire } from "node:module";',
   'import { pathToFileURL } from "node:url";',
   'const { resolve } = createRequire(import.meta.url);',
@@ -14,7 +14,7 @@ export const createRequireConfig = [
   '});',
 ].join('\n');
 
-export const createRequireOnlyWarnConfig = [
+export const requireOnlyWarnConfig = [
   'import { createRequire } from "node:module";',
   'import { pathToFileURL } from "node:url";',
   'const { resolve } = createRequire(import.meta.url);',
@@ -58,7 +58,7 @@ export const createFixture = () => {
 
   const run = async ({ config, env, files, flags = [] }: RunOptions) => {
     const runDir = mkdtempSync(path.join(fixture.projectDir, 'run-'));
-    writeFileSync(path.join(runDir, 'eslint.config.ts'), config ?? createRequireConfig);
+    writeFileSync(path.join(runDir, 'eslint.config.ts'), config ?? requireConfig);
     writeFileSync(path.join(runDir, 'tsconfig.json'), tsconfig);
     writeFileSync(path.join(runDir, 'tsconfig.root.json'), tsconfigRoot);
 
