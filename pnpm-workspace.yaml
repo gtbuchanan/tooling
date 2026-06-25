@@ -46,7 +46,7 @@ catalog:
   prettier-plugin-toml: 2.0.6
   skills: 1.5.12
   skills-npm: 1.2.0
-  smol-toml: 1.6.1
+  smol-toml: 1.7.0
   turbo: ^2.5.4
   typescript: ^6.0.0
   typescript-eslint: 8.61.1
