@@ -73,8 +73,8 @@ catalogs:
       specifier: 4.17.0
       version: 4.17.0
     eslint-plugin-jsdoc:
-      specifier: 63.0.7
-      version: 63.0.7
+      specifier: 63.0.10
+      version: 63.0.10
     eslint-plugin-n:
       specifier: 18.1.0
       version: 18.1.0
@@ -326,7 +326,7 @@ importers:
         version: 4.17.0(@typescript-eslint/utils@8.61.1(eslint@10.5.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.5.0(jiti@2.7.0))
       eslint-plugin-jsdoc:
         specifier: 'catalog:'
-        version: 63.0.7(eslint@10.5.0(jiti@2.7.0))
+        version: 63.0.10(eslint@10.5.0(jiti@2.7.0))
       eslint-plugin-n:
         specifier: 'catalog:'
         version: 18.1.0(eslint@10.5.0(jiti@2.7.0))(typescript@6.0.3)
@@ -1667,8 +1667,8 @@ packages:
       eslint-import-resolver-node:
         optional: true
 
-  eslint-plugin-jsdoc@63.0.7:
-    resolution: {integrity: sha512-pxrqGO733F7xmVYB5vQOiciiT9uddxqehawnbPjZmW2YaJR6fT5cP3UQd2BNoE85ATspCMtNL8w/a5WDGX3Qwg==}
+  eslint-plugin-jsdoc@63.0.10:
+    resolution: {integrity: sha512-A9UIWsCquaKnit7rasXxYf12hhGIdDRjv65/RUE3AxbT6rdKBvr3MjH37g3gP+g4ipQMXuMn9slFKjO+vqNfkg==}
     engines: {node: ^22.13.0 || >=24}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
@@ -4037,7 +4037,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-jsdoc@63.0.7(eslint@10.5.0(jiti@2.7.0)):
+  eslint-plugin-jsdoc@63.0.10(eslint@10.5.0(jiti@2.7.0)):
     dependencies:
       '@es-joy/jsdoccomment': 0.87.0
       '@es-joy/resolve.exports': 1.2.0
