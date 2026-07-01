@@ -76,8 +76,8 @@ catalogs:
       specifier: 63.0.10
       version: 63.0.10
     eslint-plugin-n:
-      specifier: 18.1.0
-      version: 18.1.0
+      specifier: 18.2.1
+      version: 18.2.1
     eslint-plugin-only-warn:
       specifier: 1.2.1
       version: 1.2.1
@@ -329,7 +329,7 @@ importers:
         version: 63.0.10(eslint@10.6.0(jiti@2.7.0))
       eslint-plugin-n:
         specifier: 'catalog:'
-        version: 18.1.0(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3)
+        version: 18.2.1(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3)
       eslint-plugin-only-warn:
         specifier: 'catalog:'
         version: 1.2.1
@@ -1673,8 +1673,8 @@ packages:
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
 
-  eslint-plugin-n@18.1.0:
-    resolution: {integrity: sha512-hkUm9EtnFV2h2fE16jNVUfCVUqvPzI7fGLsFdun5lFt/pbmf2kCgDx6ymi9rx+NCUSggBmurJCZOfG20JBs/kg==}
+  eslint-plugin-n@18.2.1:
+    resolution: {integrity: sha512-aO3C9//yq8JIvYOi/T+jPvcZ9hZzpwzbR8esrYpFtgE9vpbyM8kn42AQOtIqYspVmpaSWr8X+nrlQuAJYxXAaw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
       eslint: '>=8.57.1'
@@ -4057,7 +4057,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-n@18.1.0(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3):
+  eslint-plugin-n@18.2.1(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3):
     dependencies:
       '@eslint-community/eslint-utils': 4.9.1(eslint@10.6.0(jiti@2.7.0))
       enhanced-resolve: 5.20.1
