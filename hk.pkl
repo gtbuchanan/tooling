@@ -1,4 +1,4 @@
-amends "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Config.pkl"
+amends "package://github.com/jdx/hk/releases/download/v1.49.0/hk@1.49.0#/Config.pkl"
 
 // Shared hk preset (@gtbuchanan/tooling). Self-host imports it by relative
 // path because tooling can't `package://`-import its own unpublished
