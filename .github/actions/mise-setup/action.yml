@@ -32,7 +32,15 @@ runs:
         restore-keys: |
           mise-${{ runner.os }}-${{ runner.arch }}-
 
-    - uses: jdx/mise-action@v4.2.0
+    # mise-action unzips mise under os.tmpdir() then renames (io.mv) the binary
+    # into MISE_DATA_DIR. On Windows os.tmpdir() is on C: but MISE_DATA_DIR sits
+    # on runner.temp (D:), and the cross-drive rename fails with EXDEV — so point
+    # the process temp at the same volume as MISE_DATA_DIR for this step.
+    - env:
+        TEMP: ${{ runner.temp }}
+        TMP: ${{ runner.temp }}
+        TMPDIR: ${{ runner.temp }}
+      uses: jdx/mise-action@v4.2.0
       with:
         cache: false
         version: 2026.6.11
