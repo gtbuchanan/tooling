@@ -6,8 +6,8 @@
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
-import "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Builtins.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.49.0/hk@1.49.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.49.0/hk@1.49.0#/Builtins.pkl"
 
 /// Machine-generated lockfiles — exempt from the file-hygiene fixers.
 lockfileExclude: Regex = Regex(#"[-.]lock(\.|$)"#)
