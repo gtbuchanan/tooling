@@ -102,6 +102,9 @@ catalogs:
     find-up-simple:
       specifier: ^1.0.1
       version: 1.0.1
+    get-tsconfig:
+      specifier: ^4.14.0
+      version: 4.14.0
     hosted-git-info:
       specifier: ^10.1.1
       version: 10.1.1
@@ -241,6 +244,9 @@ importers:
       find-up-simple:
         specifier: 'catalog:'
         version: 1.0.1
+      get-tsconfig:
+        specifier: 'catalog:'
+        version: 4.14.0
       hosted-git-info:
         specifier: 'catalog:'
         version: 10.1.1
@@ -1898,6 +1904,9 @@ packages:
 
   get-tsconfig@4.13.7:
     resolution: {integrity: sha512-7tN6rFgBlMgpBML5j8typ92BKFi2sFQvIdpAqLA2beia5avZDrMs0FLZiM5etShWq5irVyGcGMEA1jcDaK7A/Q==}
+
+  get-tsconfig@4.14.0:
+    resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
 
   git-hooks-list@4.2.1:
     resolution: {integrity: sha512-WNvqJjOxxs/8ZP9+DWdwWJ7cDsd60NHf39XnD82pDVrKO5q7xfPqpkK6hwEAmBa/ZSEE4IOoR75EzbbIuwGlMw==}
@@ -4357,6 +4366,10 @@ snapshots:
   get-east-asian-width@1.5.0: {}
 
   get-tsconfig@4.13.7:
+    dependencies:
+      resolve-pkg-maps: 1.0.0
+
+  get-tsconfig@4.14.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
 

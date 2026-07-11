@@ -30,6 +30,7 @@
     "citty": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
+    "get-tsconfig": "catalog:",
     "hosted-git-info": "catalog:",
     "smol-toml": "catalog:",
     "valibot": "catalog:",
