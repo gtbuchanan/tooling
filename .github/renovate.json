@@ -2,5 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>gtbuchanan/tooling"
+  ],
+  "packageRules": [
+    {
+      "allowedVersions": "!/^1\\.6\\.21$/",
+      "description": "Skip @vitest/eslint-plugin 1.6.21: vitest/valid-expect false-positives on expect.any (upstream vitest-dev/eslint-plugin-vitest#924, fixed in 1.6.22 via #925). Remove once >=1.6.22 is adopted.",
+      "matchPackageNames": [
+        "@vitest/eslint-plugin"
+      ]
+    }
   ]
 }
