@@ -23,7 +23,7 @@ catalogs:
       version: 10.5.0
     '@pnpm/lockfile.types':
       specifier: ^1100.0.5
-      version: 1100.0.12
+      version: 1100.0.13
     '@prettier/plugin-xml':
       specifier: ^3.4.2
       version: 3.4.2
@@ -183,7 +183,7 @@ importers:
         version: link:packages/vitest-config
       '@pnpm/lockfile.types':
         specifier: 'catalog:'
-        version: 1100.0.12
+        version: 1100.0.13
       '@tsconfig/strictest':
         specifier: 'catalog:'
         version: 2.0.8
@@ -941,16 +941,16 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@pnpm/lockfile.types@1100.0.12':
-    resolution: {integrity: sha512-40PvwRA/mJXL41bQu+qsKP1rrMUEvIvyEt0vagkjjixY73XTkV9ALBrxUzP0HIlBc2ZPCTQJ0b/7+WLg2wkA1w==}
+  '@pnpm/lockfile.types@1100.0.13':
+    resolution: {integrity: sha512-1C9VA1JNgSkgMMKZjYRk/nfX57WGY4r3LV9ba0THu/wQhQGEqkHfk0NttJpz0Z6rTA8s2JSW2YJ4QsHFguq5og==}
     engines: {node: '>=22.13'}
 
   '@pnpm/patching.types@1100.0.0':
     resolution: {integrity: sha512-trrr0UIaIEIDagZhuxjO83z+/aCvyKib+g5zXQQ7d2H3bj8GN2sHPPi/5/i8C1eMiBGNZut/8cl8ipNRbFwIow==}
     engines: {node: '>=22.13'}
 
-  '@pnpm/resolving.resolver-base@1100.5.0':
-    resolution: {integrity: sha512-bjsrTe77bxc+PJGs34waJsPevBmSYJGFnCCHcZfiPpopKkUN6BrLYLXDdFuABaW49jzplQgfcNwANiAztoSKdA==}
+  '@pnpm/resolving.resolver-base@1100.5.1':
+    resolution: {integrity: sha512-NaWzaLXHNBMkXjGgu4Uy6TdlnSheAjzk1Fz2UqNiYtdybiRf7N9BI6FLmHs70X4WG10NxnjXNTqcqUvzH8NUFA==}
     engines: {node: '>=22.13'}
 
   '@pnpm/types@1101.3.2':
@@ -3500,15 +3500,15 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
-  '@pnpm/lockfile.types@1100.0.12':
+  '@pnpm/lockfile.types@1100.0.13':
     dependencies:
       '@pnpm/patching.types': 1100.0.0
-      '@pnpm/resolving.resolver-base': 1100.5.0
+      '@pnpm/resolving.resolver-base': 1100.5.1
       '@pnpm/types': 1101.3.2
 
   '@pnpm/patching.types@1100.0.0': {}
 
-  '@pnpm/resolving.resolver-base@1100.5.0':
+  '@pnpm/resolving.resolver-base@1100.5.1':
     dependencies:
       '@pnpm/types': 1101.3.2
 
