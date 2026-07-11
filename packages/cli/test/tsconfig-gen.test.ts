@@ -53,6 +53,15 @@ describe.concurrent(resolveBuildIncludes, () => {
     expect(resolveBuildIncludes(dir)).toStrictEqual(['lib']);
   });
 
+  it('follows a multi-level extends chain to an inherited include', ({ expect }) => {
+    const dir = createTempDir();
+    writeConfig(dir, 'grandparent.json', JSON.stringify({ include: ['lib'] }));
+    writeConfig(dir, 'parent.json', JSON.stringify({ extends: './grandparent.json' }));
+    writeConfig(dir, 'tsconfig.build.json', JSON.stringify({ extends: './parent.json' }));
+
+    expect(resolveBuildIncludes(dir)).toStrictEqual(['lib']);
+  });
+
   it('lets the nearest include win over an extended one', ({ expect }) => {
     const dir = createTempDir();
     writeConfig(dir, 'base.json', JSON.stringify({ include: ['lib'] }));
