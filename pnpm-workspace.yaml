@@ -17,7 +17,7 @@ catalog:
   '@types/mdast': ^4.0.4
   '@types/node': ^25.5.0
   '@vitest/coverage-v8': ^4.1.2
-  '@vitest/eslint-plugin': 1.6.21
+  '@vitest/eslint-plugin': 1.6.20
   ajv: ^8.20.0
   citty: ^0.2.2
   console-fail-test: 0.6.1
