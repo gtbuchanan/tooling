@@ -113,7 +113,7 @@ catalogs:
       version: 2.7.0
     markdownlint:
       specifier: ^0.41.0
-      version: 0.41.0
+      version: 0.41.1
     prettier:
       specifier: ^3.8.3
       version: 3.9.5
@@ -426,7 +426,7 @@ importers:
         version: 10.7.0(jiti@2.7.0)
       markdownlint:
         specifier: 'catalog:'
-        version: 0.41.0
+        version: 0.41.1
     devDependencies:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
@@ -1906,8 +1906,8 @@ packages:
     resolution: {integrity: sha512-939eZS4gJ3htTHAldmyyuzlrD58P03fHG49v2JfFXbV6OhvZKRC9j2yAtdHw/zrp2zXHuv05zMIy40F0ge7spA==}
     engines: {node: '>=18'}
 
-  get-east-asian-width@1.5.0:
-    resolution: {integrity: sha512-CQ+bEO+Tva/qlmw24dCejulK5pMzVnUOFOijVogd3KQs07HnRIgp8TGipvCCRT06xeYEbpbgwaCxglFyiuIcmA==}
+  get-east-asian-width@1.6.0:
+    resolution: {integrity: sha512-QRbvDIbx6YklUe6RxeTeleMR0yv3cYH6PsPZHcnVn7xv7zO1BHN8r0XETu8n6Ye3Q+ahtSarc3WgtNWmehIBfA==}
     engines: {node: '>=18'}
 
   get-tsconfig@4.14.0:
@@ -2230,8 +2230,8 @@ packages:
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
 
-  markdownlint@0.41.0:
-    resolution: {integrity: sha512-xMUI3ChBuRuxuLF4ENvCZyS8z/+Jly1coUcZwErKLIB3sDj7ojpaTBa1e9YVPhSN4jGEIjYGQCldbTJS/hqS+A==}
+  markdownlint@0.41.1:
+    resolution: {integrity: sha512-qHKeU2E1bdyNAT077go2FVTNXvYcktN5IHtF6XyeD1l0PClxzSp2tUApAV14ORI8DGX4H9bNKZEzelZp4qn8IA==}
     engines: {node: '>=22'}
 
   mdast-util-find-and-replace@3.0.2:
@@ -4412,7 +4412,7 @@ snapshots:
 
   function-timeout@1.0.2: {}
 
-  get-east-asian-width@1.5.0: {}
+  get-east-asian-width@1.6.0: {}
 
   get-tsconfig@4.14.0:
     dependencies:
@@ -4674,7 +4674,7 @@ snapshots:
 
   markdown-table@3.0.4: {}
 
-  markdownlint@0.41.0:
+  markdownlint@0.41.1:
     dependencies:
       micromark: 4.0.2
       micromark-core-commonmark: 2.0.3
@@ -5381,7 +5381,7 @@ snapshots:
 
   string-width@8.2.1:
     dependencies:
-      get-east-asian-width: 1.5.0
+      get-east-asian-width: 1.6.0
       strip-ansi: 7.2.0
 
   strip-ansi@6.0.1:
