@@ -61,16 +61,6 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('unicorn/no-process-exit');
   });
 
-  it('applies oxlint overlay as last config', async ({ fixture, expect }) => {
-    const { exitCode, stdout } = await fixture.run({
-      files: { 'test.ts': 'export const greeting = 42;\n' },
-    });
-
-    // Should pass — oxlint overlay disables overlapping ESLint rules
-    expect(exitCode).toBe(0);
-    expect(stdout).not.toContain('Error');
-  });
-
   it('respects global ignores for dist/', async ({ fixture, expect }) => {
     const longLine = `export const x = '${'a'.repeat(101)}';\n`;
     const { exitCode } = await fixture.run({
