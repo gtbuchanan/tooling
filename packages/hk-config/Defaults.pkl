@@ -24,10 +24,11 @@ defaultExclude: Regex = Regex("\(lockfileExclude.pattern)|\(vendorExclude.patter
 // hook (rhysd/actionlint#650). Buffer sizes are smaller on Windows/macOS than
 // on Linux, so it bites a Windows-primary dev loop but not CI. Disable
 // shellcheck on Windows only; CI (Linux) and other platforms reuse the
-// builtin's command verbatim (no drift) and keep full shellcheck coverage.
+// builtin's command (no drift) and keep full shellcheck coverage.
 // The upstream fix (#651) is merged but unreleased as of actionlint 1.7.12 —
 // drop this guard once a release containing it lands.
-local actionlintCheck: String = Builtins.actionlint.check
+// (`Script` holds only strings, so join the builtin's argv `Command` back into one.)
+local actionlintCheck: String = (Builtins.actionlint.check as Config.Command).argv.join(" ")
 
 /// actionlint with the Windows shellcheck-deadlock workaround pre-wired (see
 /// the comment above for mechanism and removal trigger). Binary via mise
@@ -75,21 +76,24 @@ renovateConfig: Config.Step = new {
   check = "renovate-config-validator --strict {{files}}"
 }
 
-/// shellcheck over shell sources selected by content type — extension AND
-/// shebang — so extensionless scripts (mise tasks, maintainer scripts) match.
-/// `glob = null` drops the builtin's `*.sh` glob; vendored sources excluded.
-/// Cheap: hk reads a file's shebang only when it's executable or has no
-/// extension-derived type, so extension-matched files never incur the read.
+// Select shell sources by the `shell` content type — extension AND shebang —
+// so extensionless scripts (mise tasks, the Termux pnpm shim) match. Clear the
+// builtin's `match_any`: its `sh`/`bash` clause over-matches (markdown, JSON,
+// YAML get treated as shell), and hk 1.51 rejects `match_any` alongside `types`.
+
+/// shellcheck over shell sources selected by content type.
 /// Needs shellcheck on PATH (mise `aqua:koalaman/shellcheck`).
 shellcheck: Config.Step = (Builtins.shellcheck) {
+  match_any = null
   glob = null
   types = List("shell")
   exclude = defaultExclude
 }
 
-/// shfmt over shell sources, selected by content type like `shellcheck`.
+/// shfmt over shell sources, selected like `shellcheck`.
 /// Needs shfmt on PATH (mise `aqua:mvdan/sh`).
 shfmt: Config.Step = (Builtins.shfmt) {
+  match_any = null
   glob = null
   types = List("shell")
   exclude = defaultExclude
