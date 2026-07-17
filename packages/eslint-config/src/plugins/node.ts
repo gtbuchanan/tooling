@@ -22,6 +22,9 @@ const plugin: PluginFactory = options => [
       'n/no-missing-import': 'off' as const,
       // Justification: Redundant with TypeScript module resolution
       'n/no-unpublished-import': 'off' as const,
+      /* Justification: Redundant with unicorn/no-process-exit, which is the
+         canonical rule here (its message is CLI-aware) */
+      'n/no-process-exit': 'off' as const,
     },
   }),
   {
@@ -30,7 +33,7 @@ const plugin: PluginFactory = options => [
       // Justification: Entry points use process.exit() for controlled shutdown
       'n/hashbang': 'off',
       // Justification: Entry points use process.exit() for controlled shutdown
-      'n/no-process-exit': 'off',
+      'unicorn/no-process-exit': 'off',
     },
   },
 ];

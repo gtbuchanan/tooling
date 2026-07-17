@@ -52,13 +52,13 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result).toMatchObject({ exitCode: 0 });
   });
 
-  it('detects process.exit via eslint-plugin-n', async ({ fixture, expect }) => {
+  it('detects process.exit via eslint-plugin-unicorn', async ({ fixture, expect }) => {
     const { exitCode, stdout } = await fixture.run({
       files: { 'bad.ts': 'process.exit(0);\n' },
     });
 
     expect(exitCode).not.toBe(0);
-    expect(stdout).toContain('n/no-process-exit');
+    expect(stdout).toContain('unicorn/no-process-exit');
   });
 
   it('applies oxlint overlay as last config', async ({ fixture, expect }) => {
@@ -125,7 +125,7 @@ describe.concurrent('eslint CLI integration', () => {
 
     // Warnings don't cause a non-zero exit code
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('n/no-process-exit');
+    expect(stdout).toContain('unicorn/no-process-exit');
   });
 
   it('formats JSON, Markdown, YAML, and CSS via Prettier plugins', async ({ fixture, expect }) => {
