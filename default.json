@@ -37,6 +37,13 @@
       ]
     },
     {
+      "description": "Group pkl updates (mise tool + .chezmoidata version comment share one apple/pkl release)",
+      "groupName": "pkl",
+      "matchSourceUrls": [
+        "https://github.com/apple/pkl"
+      ]
+    },
+    {
       "description": "Group playwright-cli monorepo",
       "groupName": "playwright-cli monorepo",
       "matchSourceUrls": [
