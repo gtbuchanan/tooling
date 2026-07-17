@@ -73,7 +73,7 @@ describe.concurrent(configure, () => {
       onlyWarn: false,
     });
     const entryConfig = configs.find(
-      cfg => cfg.rules?.['n/no-process-exit'] === 'off',
+      cfg => cfg.rules?.['unicorn/no-process-exit'] === 'off',
     );
 
     expect(entryConfig?.files).toStrictEqual(['**/cli.ts']);
