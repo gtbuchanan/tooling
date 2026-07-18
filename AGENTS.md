@@ -422,7 +422,13 @@ Renovate's mise manager bumps `mise.toml`, but the pkl URLs are a second
 copy of the version it can't track natively. Its matchStrings are
 hk-specific (`download/v…`, `hk@…#`), so they ignore the generated
 `hk-config@…` URLs in `PklProject` (whose version is owned by `gtb sync`,
-not Renovate).
+not Renovate). A second entry does the same for consumer imports of
+`@gtbuchanan/hk-config`: it tracks this repo's `hk-config@<version>`
+release tags (via `extractVersionTemplate`) and bumps the `hk-config@…`
+package URLs in consumer `.pkl` files. Tooling itself is unaffected —
+it imports `Defaults.pkl` by relative path, and `PklProject` neither
+matches the `.pkl` file pattern nor contains a literal version (its
+`packageZipUrl` is an interpolation).
 
 ### Turbo cache miss on workspace edits
 
