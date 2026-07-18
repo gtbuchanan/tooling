@@ -11,7 +11,8 @@
         "!packages/*/**"
       ],
       "outputs": [
-        "dist/.eslintcache"
+        "dist/.eslintcache",
+        "dist/eslint.sarif"
       ]
     },
     "build": {
@@ -127,7 +128,8 @@
         "eslint.config.*"
       ],
       "outputs": [
-        "dist/.eslintcache"
+        "dist/.eslintcache",
+        "dist/eslint.sarif"
       ]
     },
     "pack": {

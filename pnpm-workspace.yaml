@@ -8,6 +8,8 @@ catalog:
   '@eslint/json': 2.0.1
   '@eslint/markdown': 8.0.3
   '@faker-js/faker': ^10.4.0
+  '@microsoft/eslint-formatter-sarif': ^3.1.0
+  '@microsoft/sarif-multitool': ^5.5.0
   '@pnpm/lockfile.types': ^1100.0.5
   '@prettier/plugin-xml': ^3.4.2
   '@stylistic/eslint-plugin': 5.10.0
@@ -65,6 +67,13 @@ lockfileIncludeTarballUrl: false
 minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - '@gtbuchanan/*'
+
+overrides:
+  # The SARIF formatter wrongly declares eslint v8 as a regular dependency
+  # (it only uses the host ESLint via require.main.require). Left in place,
+  # its v8 bin shadows the workspace's ESLint in packages that depend on
+  # the formatter. Remove it from the graph entirely.
+  '@microsoft/eslint-formatter-sarif>eslint': '-'
 
 packages:
   - 'packages/*'

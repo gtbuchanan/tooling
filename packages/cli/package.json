@@ -7,7 +7,8 @@
     "#src/*": "./src/*"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./eslint-sarif-formatter": "./src/lib/eslint-sarif-formatter.ts"
   },
   "bin": {
     "gtb": "./dist/source/bin/gtb.js"
@@ -27,6 +28,8 @@
     "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "dependencies": {
+    "@microsoft/eslint-formatter-sarif": "catalog:",
+    "@microsoft/sarif-multitool": "catalog:",
     "citty": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
@@ -63,7 +66,8 @@
     },
     "directory": "dist/source",
     "exports": {
-      ".": "./src/index.js"
+      ".": "./src/index.js",
+      "./eslint-sarif-formatter": "./src/lib/eslint-sarif-formatter.js"
     },
     "imports": {
       "#src/*.ts": "./src/*.js"

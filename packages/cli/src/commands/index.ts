@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { hk } from './root/hk.ts';
+import { lintEslintCompare } from './root/lint-eslint-compare.ts';
 import { rootNames } from './root/names.ts';
 import { prepare } from './root/prepare.ts';
 import { publish } from './root/publish.ts';
@@ -18,6 +19,7 @@ export const main = defineCommand({
   },
   subCommands: {
     [rootNames.hk]: hk,
+    [rootNames.lintEslintCompare]: lintEslintCompare,
     [rootNames.prepare]: prepare,
     [rootNames.publish]: publish,
     [rootNames.sync]: sync,
