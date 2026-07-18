@@ -15,6 +15,22 @@
         "hk@(?<currentValue>[^#\"]+?)#"
       ],
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "hk-config",
+      "description": "Keep the hk-config version embedded in consumer .pkl package URLs in sync with the hk-config@<version> GitHub release (tooling itself imports Defaults.pkl by relative path, so this only fires in consumer repos)",
+      "extractVersionTemplate": "^hk-config@(?<version>.+)$",
+      "managerFilePatterns": [
+        "/\\.pkl$/"
+      ],
+      "matchStrings": [
+        "releases/download/hk-config@(?<currentValue>[^/]+?)/",
+        "/hk-config@(?<currentValue>[^/#\"]+?)#"
+      ],
+      "packageNameTemplate": "gtbuchanan/tooling",
+      "versioningTemplate": "semver"
     }
   ],
   "description": [
