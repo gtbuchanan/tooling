@@ -101,7 +101,7 @@ const preparePackage = (
 ): void => {
   const manifest = readParsedManifest(pkgDir);
   const dir = manifest.publishConfig?.directory;
-  if (manifest.private === true || dir === undefined) {
+  if (dir === undefined || manifest.private === true) {
     return;
   }
 
@@ -137,7 +137,7 @@ const prepareAndPack = (
 ): void => {
   const manifest = readParsedManifest(pkgDir);
   const dir = manifest.publishConfig?.directory;
-  if (manifest.private === true || dir === undefined) {
+  if (dir === undefined || manifest.private === true) {
     return;
   }
 

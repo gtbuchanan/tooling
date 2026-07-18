@@ -45,7 +45,7 @@ export const matchTarball = (files: readonly string[], packageName: string): str
     file => file.endsWith('.tgz') && pattern.test(file),
   );
   const [tgzName] = tarballs;
-  if (tarballs.length !== 1 || tgzName === undefined) {
+  if (tgzName === undefined || tarballs.length !== 1) {
     const count = String(tarballs.length);
     throw new Error(
       `Expected exactly 1 tarball matching "${needle}", found ${count}`,

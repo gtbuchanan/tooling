@@ -17,7 +17,7 @@ export const compileSkills = defineCommand({
     const pkgDir = process.cwd();
     const manifest = readParsedManifest(pkgDir);
     const dir = manifest.publishConfig?.directory;
-    if (manifest.private === true || dir === undefined) {
+    if (dir === undefined || manifest.private === true) {
       return;
     }
 
