@@ -25,7 +25,8 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
     changeset-check.yml    — Reusable: verify a changeset exists
     ci.yml                 — Reusable: build + slow + e2e + coverage
     dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
-    pr.yml                 — Pipeline (PR): ci + changeset + deps + pre-commit
+    lint-regression.yml    — Reusable: fail PRs only on lint violations new vs. the merge base (SARIF diff)
+    pr.yml                 — Pipeline (PR): ci + changeset + deps + lint regression + pre-commit
     pre-commit.yml         — Reusable: run hk hooks
     release.yml            — Pipeline (push): CI gate + CD
 packages/
@@ -86,6 +87,37 @@ coverage, setupFiles, and mock reset.
   live in the `gtb-eslint-config` skill.
 - **Vitest** — Per-package `vitest.config.ts` using `configurePackage()`
   from `@gtbuchanan/vitest-config/configure`.
+
+### SARIF lint baselining
+
+Lint enforcement is a ratchet: PRs may not introduce _new_ ESLint
+violations, while pre-existing (accepted) ones never block. Three
+layers:
+
+- **`lint:eslint` is a reporter, not a gate.** It writes a SARIF log to
+  `dist/eslint.sarif` (a turbo task output) via a formatter bundled in
+  `@gtbuchanan/cli` and prints compact console output. Warnings never
+  fail it — the eslint-config downgrades every rule to a warning — but
+  fatal errors (parse/config breakage) still do.
+- **`gtb lint:eslint:compare` is the gate.** It diffs each lint cwd's
+  `dist/eslint.sarif` against `dist/eslint-base.sarif` with
+  `sarif-multitool match-results-forward` and fails only on results
+  classified `new`. Matching is fingerprint/content-based, so baseline
+  violations that merely moved stay matched — no git-diff offset math.
+  `--base <ref>` makes it self-sufficient: it lints the merge base of
+  that ref and HEAD in a throwaway git worktree to produce the
+  baselines, so the same invocation works locally
+  (`gtb lint:eslint:compare --base origin/main`) and in CI
+  (`lint-regression.yml`). Dirs whose base commit wrote no SARIF are
+  skipped with a warning, which is what makes rollout graceful.
+- **Changed-file enforcement stays local.** The hk pre-commit `eslint`
+  step keeps `--max-warnings=0` on staged files, and the IDE shows
+  warnings inline — new violations are still caught at authoring time;
+  the ratchet only governs what lands.
+
+Accepted violations enter the baseline by merging with the override
+label (see `lint-regression.yml`) and surface in every SARIF log until
+paid down.
 
 ### Pre-commit hooks
 
@@ -202,12 +234,13 @@ Two **pipeline** workflows own this repo's triggers and define the work
 as peer jobs, each calling a single-concern **reusable** workflow:
 
 - **`pr.yml`** (on `pull_request`) — jobs `CI`, `Changeset`,
-  `Dependencies`, `Pre-Commit`.
+  `Dependencies`, `Lint`, `Pre-Commit`.
 - **`release.yml`** (on `push` to main) — jobs `CI` (gate), `CD`
   (`needs: ci`). `CI` and `CD` are peers.
 
 The reusables (`workflow_call`-only): `ci.yml`, `cd.yml`,
-`changeset-check.yml`, `dependency-review.yml`, `pre-commit.yml`.
+`changeset-check.yml`, `dependency-review.yml`, `lint-regression.yml`,
+`pre-commit.yml`.
 Consumers copy `pr.yml` / `release.yml`,
 swapping `./` for `gtbuchanan/tooling/.github/workflows/<name>@main`:
 
@@ -231,6 +264,9 @@ jobs:
   dependencies:
     name: Dependencies
     uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+  lint-regression:
+    name: Lint
+    uses: gtbuchanan/tooling/.github/workflows/lint-regression.yml@main
   pre-commit:
     name: Pre-Commit
     uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@main
@@ -356,6 +392,16 @@ through `package.json` scripts backed by `gtb` leaf commands.
   to ecosystems it indexes (npm + Actions here), so mise tools and
   `hk.pkl` steps aren't covered — Renovate's managers handle those
   independently.
+- **`lint-regression.yml`** — Fails a PR only on lint violations that
+  are new relative to its merge base (the ratchet gate; see the SARIF
+  lint baselining section). Lints HEAD, then runs
+  `gtb lint:eslint:compare --base origin/<base-ref>`, which lints the
+  merge base in a throwaway git worktree and diffs the SARIF logs via
+  `sarif-multitool`. A maintainer-applied override label (default
+  `accepted-lint-regression`, dismissed on every new push) turns a
+  failing compare into a pass while a PR comment records the accepted
+  violations. Caller must grant `pull-requests: write`; fork PRs get
+  the check failure without the comment (read-only token).
 - **`pre-commit.yml`** — Runs the `hk:base` mise task on PR changed
   files (hk resolved from mise). The `use-pnpm` input (default
   `false`) opts into `pnpm install` for steps that shell out to the

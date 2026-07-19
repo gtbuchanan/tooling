@@ -9,9 +9,17 @@ import { rootNames } from './names.ts';
  * same task output, which turbo's task model can't express.
  */
 export const lintEslintCompare = defineCommand({
+  args: {
+    base: {
+      description:
+        'Git ref to diff against; lints its merge base with HEAD in a ' +
+        'temporary worktree to produce the baseline (e.g. origin/main)',
+      type: 'string',
+    },
+  },
   meta: {
     description: 'Fail when lint violations are new relative to the SARIF baseline',
     name: rootNames.lintEslintCompare,
   },
-  run: () => executeLintEslintCompare(),
+  run: ({ args }) => executeLintEslintCompare({ baseRef: args.base }),
 });

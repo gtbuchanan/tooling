@@ -17,6 +17,12 @@ jobs:
     with:
       config-file: .github/dependency-review-config.yml
 
+  lint-regression:
+    name: Lint
+    uses: ./.github/workflows/lint-regression.yml
+    with:
+      gtb-from-source: true
+
   pre-commit:
     name: Pre-Commit
     # This repo's eslint step shells out to `pnpm exec eslint`, so hk

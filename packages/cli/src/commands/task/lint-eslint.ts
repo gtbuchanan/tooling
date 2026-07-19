@@ -11,17 +11,24 @@ const formatterPath = fileURLToPath(
   import.meta.resolve('@gtbuchanan/cli/eslint-sarif-formatter'),
 );
 
-/** Runs ESLint with caching and zero-warning threshold. */
+/**
+ * Runs ESLint as a reporter, not a gate: warnings never fail the task
+ * (the repo convention downgrades every rule to a warning), while fatal
+ * errors — parse or config breakage — still do. Enforcement lives in
+ * the changed-files pre-commit step locally and in
+ * `gtb lint:eslint:compare` (new-violations-only) in CI, so a baseline
+ * SARIF log exists for every commit, including ones carrying accepted
+ * violations.
+ */
 export const lintEslint = defineCommand({
   meta: {
-    description: 'Run ESLint with caching and --max-warnings=0',
+    description: 'Run ESLint with caching, reporting to dist/eslint.sarif',
     name: 'lint:eslint',
   },
   run: async ({ rawArgs }) => {
     await run('eslint', {
       args: [
         '--cache', '--cache-location', 'dist/.eslintcache',
-        '--max-warnings=0',
         '--format', formatterPath,
         ...rawArgs,
       ],

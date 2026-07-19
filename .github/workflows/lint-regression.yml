@@ -1,0 +1,112 @@
+---
+env:
+  # GitHub Actions has no TTY, so force color; Actions renders the ANSI.
+  FORCE_COLOR: '1'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  run:
+    name: Lint Regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The compare lints the merge base in a throwaway worktree, so
+          # the base branch history must be reachable locally.
+          fetch-depth: 0
+
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
+      # A label only vouches for the commits it was applied to. Drop it
+      # on every new push so a maintainer has to re-accept.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        if: >-
+          github.event.action == 'synchronize' &&
+          contains(github.event.pull_request.labels.*.name, inputs.override-label)
+        name: Dismiss stale regression acceptance
+        run: gh pr edit "$PR" --remove-label '${{ inputs.override-label }}'
+
+      # Produce this commit's SARIF logs. Turbo dedupes against the CI
+      # workflow's lint run via the shared remote cache when configured.
+      - name: Lint HEAD
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          turbo run lint
+
+      - continue-on-error: true
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        id: compare
+        name: Compare lint results against the merge base
+        run: |
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} \
+            lint:eslint:compare --base "origin/$BASE_REF" 2>&1 \
+            | tee lint-regression.txt
+          exit "${PIPESTATUS[0]}"
+
+      # Fork PRs run with a read-only token; the check failure alone
+      # carries the signal there.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        if: >-
+          steps.compare.outcome == 'failure' &&
+          !github.event.pull_request.head.repo.fork
+        name: Report new violations on the PR
+        run: |
+          {
+            echo '### New lint violations relative to the merge base'
+            echo
+            echo '```text'
+            cat lint-regression.txt
+            echo '```'
+            echo
+            echo 'Apply the `${{ inputs.override-label }}` label to accept.'
+          } > comment.md
+          gh pr comment "$PR" --body-file comment.md \
+            --edit-last --create-if-none
+
+      # Run-but-neutral override: the label lets the check pass, but the
+      # comment above still records what was accepted. A label present
+      # on a `synchronize` run was just dismissed, so it doesn't count.
+      - if: >-
+          steps.compare.outcome == 'failure' &&
+          (github.event.action == 'synchronize' ||
+          !contains(github.event.pull_request.labels.*.name, inputs.override-label))
+        name: Enforce
+        run: exit 1
+
+name: Lint Regression
+
+# Reusable: fail a PR only on lint violations that are new relative to
+# its merge base. `gtb lint:eslint:compare --base` lints the merge base
+# in a temporary git worktree to build the SARIF baseline, then
+# `sarif-multitool` classifies each HEAD result as new or matched —
+# pre-existing (accepted) violations never block. A maintainer-applied
+# override label turns a failing compare into a pass while the PR
+# comment keeps the accepted violations on record.
+on:
+  workflow_call:
+    inputs:
+      gtb-from-source:
+        default: false
+        description: >-
+          Run gtb from the workspace source (`pnpm run gtb`) instead of
+          the installed bin (`pnpm exec gtb`). Set true only by the repo
+          that vendors `@gtbuchanan/cli` as a workspace package (tooling
+          itself). Consumers leave it false.
+        type: boolean
+      override-label:
+        default: accepted-lint-regression
+        description: >-
+          PR label that accepts the new violations (maintainer-applied;
+          dismissed automatically on every new push).
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write

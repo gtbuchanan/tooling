@@ -1,10 +1,11 @@
-import { existsSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as v from 'valibot';
 import { readJsonFile } from './file-writer.ts';
 import { type Logger, createLogger } from './logger.ts';
-import { type RunOptions, run } from './process.ts';
+import { type RunOptions, capture, run } from './process.ts';
 import { type WorkspaceContext, resolveWorkspace } from './workspace.ts';
 
 /** SARIF artifact filenames under a lint cwd's `dist/`. */
@@ -120,16 +121,19 @@ export const formatNewViolations = (
 
 /**
  * Side-effecting I/O the compare depends on. Injected so the
- * orchestration (per-package matching, gating) is unit-testable without
- * spawning the SARIF multitool.
+ * orchestration (baseline production, per-package matching, gating) is
+ * unit-testable without spawning git, turbo, or the SARIF multitool.
  */
 export interface LintCompareDeps {
+  readonly capture: (command: string, args: readonly string[]) => Promise<string>;
+  readonly copyFile: (source: string, destination: string) => void;
   readonly exists: (filePath: string) => boolean;
   readonly logger: Logger;
+  readonly makeTempDir: () => string;
   readonly readJson: (filePath: string) => unknown;
   readonly resolveMultitool: () => string;
   readonly run: (command: string, options?: RunOptions) => Promise<void>;
-  readonly workspace: () => WorkspaceContext;
+  readonly workspace: (cwd?: string) => WorkspaceContext;
 }
 
 /**
@@ -144,12 +148,71 @@ const resolveMultitoolBinary = (): string => {
 };
 
 const defaultDeps: LintCompareDeps = {
+  capture,
+  copyFile: (source, destination) => {
+    mkdirSync(path.dirname(destination), { recursive: true });
+    copyFileSync(source, destination);
+  },
   exists: existsSync,
   logger: createLogger(),
+  makeTempDir: () => mkdtempSync(path.join(tmpdir(), 'gtb-lint-base-')),
   readJson: readJsonFile,
   resolveMultitool: resolveMultitoolBinary,
   run,
-  workspace: resolveWorkspace,
+  workspace: cwd => resolveWorkspace(cwd === undefined ? undefined : { cwd }),
+};
+
+/**
+ * Produces per-package baseline SARIF logs by linting the merge base in
+ * a throwaway git worktree and copying each `dist/eslint.sarif` into
+ * the corresponding head package as `dist/eslint-base.sarif`. A failing
+ * base lint is tolerated: the SARIF log is written before ESLint
+ * exits, and a baseline carrying violations is exactly what the ratchet
+ * diffs against. Base commits that predate SARIF output simply produce
+ * no baseline, and the compare skips those packages.
+ */
+export const produceBaseline = async (
+  baseRef: string,
+  deps: LintCompareDeps,
+): Promise<void> => {
+  const sha = await deps.capture('git', ['merge-base', baseRef, 'HEAD']);
+  const baseDir = deps.makeTempDir();
+  try {
+    await deps.run('git', { args: ['worktree', 'add', '--detach', baseDir, sha] });
+    await deps.run('pnpm', {
+      args: ['install', '--frozen-lockfile', '--prefer-offline'],
+      cwd: baseDir,
+    });
+    try {
+      await deps.run('pnpm', {
+        args: ['exec', 'turbo', 'run', 'lint', '--output-logs=errors-only'],
+        cwd: baseDir,
+      });
+    } catch {
+      // Pre-ratchet gtb fails lint on warnings after writing the SARIF log.
+      deps.logger.error(`Base lint at ${sha} failed; using whatever SARIF it wrote`);
+    }
+    copyBaselineSarifs(baseDir, deps);
+  } finally {
+    await deps.run('git', { args: ['worktree', 'remove', '--force', baseDir] });
+  }
+};
+
+const copyBaselineSarifs = (baseDir: string, deps: LintCompareDeps): void => {
+  const base = deps.workspace(baseDir);
+  const head = deps.workspace();
+  const dirs = new Set([base.rootDir, ...base.packageDirs]);
+  for (const dir of dirs) {
+    const source = path.join(dir, 'dist', sarifFileNames.current);
+    if (!deps.exists(source)) {
+      continue;
+    }
+    const relative = path.relative(base.rootDir, dir);
+    const destination = path.join(
+      head.rootDir, relative, 'dist', sarifFileNames.base,
+    );
+    deps.copyFile(source, destination);
+  }
 };
 
 const matchDirForward = async (
@@ -180,6 +243,17 @@ const matchDirForward = async (
   return extractNewViolations(log);
 };
 
+/** Options for {@link executeLintEslintCompare}. */
+export interface LintEslintCompareOptions {
+  /**
+   * Git ref to diff against. When set, the baseline is produced by
+   * linting the merge base of this ref and HEAD in a throwaway
+   * worktree. When unset, `dist/eslint-base.sarif` files must already
+   * be in place (e.g. restored from a cache or a prior run).
+   */
+  readonly baseRef?: string | undefined;
+}
+
 /**
  * Compares each lint cwd's current SARIF log against its baseline via
  * `sarif-multitool match-results-forward` and rejects when any result
@@ -188,8 +262,12 @@ const matchDirForward = async (
  * matched — only genuine regressions gate.
  */
 export const executeLintEslintCompare = async (
+  options: LintEslintCompareOptions = {},
   deps: LintCompareDeps = defaultDeps,
 ): Promise<void> => {
+  if (options.baseRef !== undefined) {
+    await produceBaseline(options.baseRef, deps);
+  }
   const { packageDirs, rootDir } = deps.workspace();
   const lintDirs = [...new Set([rootDir, ...packageDirs])];
   const violations: NewViolation[] = [];
