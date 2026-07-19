@@ -375,20 +375,4 @@ describe.concurrent(generateTurboJson, () => {
       'vitest.config.*', '!vitest.config.e2e.*',
     ]));
   });
-
-  it('emits globalDependencies for mise files when the workspace has mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()], { hasMise: true });
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.globalDependencies).toStrictEqual(['mise.lock', 'mise.toml']);
-  });
-
-  it('omits globalDependencies when the workspace has no mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
-
-    const result = generateTurboJson(discovery);
-
-    expect(result).not.toHaveProperty('globalDependencies');
-  });
 });

@@ -4,6 +4,7 @@ import { skillsConfigFilename } from './skills-config.ts';
 import { localeComparer } from './sort.ts';
 import { typeCheckInclude } from './tsconfig-gen.ts';
 import { aggregateTasks } from './turbo-aggregates.ts';
+import { toTurboGlobs } from './turbo-globs.ts';
 
 /** Turbo-only aggregate task names (no CLI handler). */
 export const Aggregate = {
@@ -121,24 +122,6 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
 
 /** Creates a topological (cross-package) task dependency. */
 const topo = (task: string): string => `^${task}`;
-
-/** Script file extensions for turbo input globs. Sorted alphabetically. */
-const scriptExts = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx'] as const;
-
-const isGlob = (pattern: string): boolean => /[*?\{]/v.test(pattern);
-
-/**
- * Converts a tsconfig `include` entry to turbo input glob(s).
- * Directories become recursive (`src` → `src/**`).
- * Root-level globs (`*`, `.*`) expand to per-extension patterns
- * since turbo globs are extension-agnostic unlike tsconfig.
- */
-const toTurboGlobs = (include: string): readonly string[] => {
-  if (include === '*') return scriptExts.map(ext => `*.${ext}`);
-  if (include === '.*') return scriptExts.map(ext => `.*.${ext}`);
-  if (isGlob(include)) return [include];
-  return [`${include}/**`];
-};
 
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
@@ -390,10 +373,25 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...deploySkillsTasks(flags),
     ...aggregateTasks(flags),
   ];
+  /*
+   * Self-hosted workspaces vendor tool-config packages (eslint-config,
+   * vitest-config) internally. Turbo hashes internal dependencies by their
+   * files only, so a lockfile-only bump to one of their plugins (e.g. an
+   * eslint plugin pinned via the root catalog) never reaches sibling tasks
+   * that consume the plugin without a task edge — CI then replays stale
+   * passes. Salting the global hash with the lockfile closes that seam.
+   * Consumers resolve those packages externally, where turbo's per-package
+   * transitive closure already invalidates correctly, so they keep
+   * granular caching.
+   */
+  const globalDependencies = [
+    ...(discovery.hasMise ? ['mise.lock', 'mise.toml'] : []),
+    ...(discovery.isSelfHosted ? ['pnpm-lock.yaml'] : []),
+  ];
 
   return {
     $schema: 'https://turbo.build/schema.json',
-    ...(discovery.hasMise && { globalDependencies: ['mise.lock', 'mise.toml'] }),
+    ...(globalDependencies.length > 0 && { globalDependencies }),
     tasks: collect(entries),
   };
 };
