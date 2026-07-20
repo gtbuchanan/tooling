@@ -16,7 +16,7 @@ const formatterPath = fileURLToPath(
  * (the repo convention downgrades every rule to a warning), while fatal
  * errors — parse or config breakage — still do. Enforcement lives in
  * the changed-files pre-commit step locally and in
- * `gtb lint:eslint:compare` (new-violations-only) in CI, so a baseline
+ * `gtb sarif compare` (new-findings-only) in CI, so a baseline
  * SARIF log exists for every commit, including ones carrying accepted
  * violations.
  */

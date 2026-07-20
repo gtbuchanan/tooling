@@ -52,18 +52,21 @@ const existing: SarifViolation = {
 
 const source = 'export const app = () => {\n  const unused = 1;\n  console.log("hi");\n};\n';
 
-describe.concurrent('gtb lint:eslint:compare', () => {
+describe.concurrent('gtb sarif compare', () => {
   it('passes when every violation is in the baseline', async ({ expect }) => {
     using fixture = createFixture();
     const file = fixture.writeFile(path.join('src', 'app.js'), source);
     const uri = pathToFileURL(file).href;
-    fixture.writeFile(path.join('dist', 'eslint-base.sarif'), sarifLog(uri, [existing]));
-    fixture.writeFile(path.join('dist', 'eslint.sarif'), sarifLog(uri, [existing]));
+    fixture.writeFile(
+      path.join('dist', 'sarif', 'base', 'eslint.sarif'),
+      sarifLog(uri, [existing]),
+    );
+    fixture.writeFile(path.join('dist', 'sarif', 'eslint.sarif'), sarifLog(uri, [existing]));
 
-    const result = await fixture.run('gtb', ['lint:eslint:compare']);
+    const result = await fixture.run('gtb', ['sarif', 'compare']);
 
     expect(result).toMatchObject({ exitCode: 0 });
-    expect(result.stdout).toContain('No new lint violations');
+    expect(result.stdout).toContain('No new findings');
   });
 
   it('fails on a violation missing from the baseline', async ({ expect }) => {
@@ -76,28 +79,32 @@ describe.concurrent('gtb lint:eslint:compare', () => {
       ruleId: 'no-console',
       snippet: 'console.log("hi");',
     };
-    fixture.writeFile(path.join('dist', 'eslint-base.sarif'), sarifLog(uri, [existing]));
     fixture.writeFile(
-      path.join('dist', 'eslint.sarif'),
+      path.join('dist', 'sarif', 'base', 'eslint.sarif'),
+      sarifLog(uri, [existing]),
+    );
+    fixture.writeFile(
+      path.join('dist', 'sarif', 'eslint.sarif'),
       sarifLog(uri, [existing, added]),
     );
 
-    const result = await fixture.run('gtb', ['lint:eslint:compare']);
+    const result = await fixture.run('gtb', ['sarif', 'compare']);
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('no-console');
     expect(result.stderr).not.toContain('no-unused-vars');
   });
 
-  it('skips and passes when no baseline exists', async ({ expect }) => {
+  it('treats every finding as new when no baseline exists', async ({ expect }) => {
     using fixture = createFixture();
     const file = fixture.writeFile(path.join('src', 'app.js'), source);
     const uri = pathToFileURL(file).href;
-    fixture.writeFile(path.join('dist', 'eslint.sarif'), sarifLog(uri, [existing]));
+    fixture.writeFile(path.join('dist', 'sarif', 'eslint.sarif'), sarifLog(uri, [existing]));
 
-    const result = await fixture.run('gtb', ['lint:eslint:compare']);
+    const result = await fixture.run('gtb', ['sarif', 'compare']);
 
-    expect(result).toMatchObject({ exitCode: 0 });
-    expect(result.stderr).toContain('No baseline SARIF');
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain('No baseline');
+    expect(result.stderr).toContain('no-unused-vars');
   });
 });

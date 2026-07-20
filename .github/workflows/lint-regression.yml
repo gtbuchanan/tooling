@@ -6,6 +6,7 @@ env:
 
 jobs:
   run:
+    if: ${{ !inputs.seed }}
     name: Lint Regression
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +38,24 @@ jobs:
           ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
           turbo run lint
 
+      - env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        id: merge-base
+        name: Resolve the merge base
+        run: echo "sha=$(git merge-base "origin/$BASE_REF" HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Restore baselines produced by an earlier run against the same
+      # merge base; the compare's stamp check skips the worktree lint on
+      # a hit. Exact key only — a near-miss baseline is a wrong baseline
+      # (the stamp check would reject it anyway).
+      - uses: actions/cache@v6
+        with:
+          key: lint-baseline-${{ steps.merge-base.outputs.sha }}
+          path: |
+            **/dist/sarif/base/**
+            !**/node_modules/**
+            dist/sarif/base.ref
+
       - continue-on-error: true
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
@@ -44,7 +63,7 @@ jobs:
         name: Compare lint results against the merge base
         run: |
           ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} \
-            lint:eslint:compare --base "origin/$BASE_REF" 2>&1 \
+            sarif compare --base "origin/$BASE_REF" 2>&1 \
             | tee lint-regression.txt
           exit "${PIPESTATUS[0]}"
 
@@ -80,10 +99,46 @@ jobs:
         name: Enforce
         run: exit 1
 
+  # On the default branch, any future PR's merge base is HEAD itself,
+  # so its baseline is just this commit's own lint output. Caches
+  # created on the default branch are readable from every PR, so this
+  # seeds a cross-PR baseline cache — PR compare runs restore it and
+  # skip merge-base production entirely.
+  seed:
+    if: ${{ inputs.seed }}
+    name: Lint Baseline Seed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
+      # Cache-hits against the CI workflow's lint run of this commit
+      # when the turbo remote cache is configured.
+      - name: Lint HEAD
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          turbo run lint
+
+      - name: Snapshot baselines
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          sarif baseline
+
+      - uses: actions/cache/save@v6
+        with:
+          key: lint-baseline-${{ github.sha }}
+          path: |
+            **/dist/sarif/base/**
+            !**/node_modules/**
+            dist/sarif/base.ref
+
 name: Lint Regression
 
 # Reusable: fail a PR only on lint violations that are new relative to
-# its merge base. `gtb lint:eslint:compare --base` lints the merge base
+# its merge base. `gtb sarif compare --base` lints the merge base
 # in a temporary git worktree to build the SARIF baseline, then
 # `sarif-multitool` classifies each HEAD result as new or matched —
 # pre-existing (accepted) violations never block. A maintainer-applied
@@ -106,6 +161,13 @@ on:
           PR label that accepts the new violations (maintainer-applied;
           dismissed automatically on every new push).
         type: string
+      seed:
+        default: false
+        description: >-
+          Snapshot HEAD's lint output as the cross-PR baseline cache
+          instead of gating. Set on default-branch pushes; the PR gate
+          restores the cache keyed on its merge-base SHA.
+        type: boolean
 
 permissions:
   contents: read

@@ -90,32 +90,44 @@ coverage, setupFiles, and mock reset.
 
 ### SARIF lint baselining
 
-Lint enforcement is a ratchet: PRs may not introduce _new_ ESLint
-violations, while pre-existing (accepted) ones never block. Three
-layers:
+Lint enforcement is a ratchet: PRs may not introduce _new_ findings,
+while pre-existing (accepted) ones never block. The machinery is
+tool-agnostic — any reporter that drops a `<tool>.sarif` into
+`dist/sarif/` is gated with no extra wiring; ESLint is the first such
+reporter. Three layers:
 
-- **`lint:eslint` is a reporter, not a gate.** It writes a SARIF log to
-  `dist/eslint.sarif` (a turbo task output) via a formatter bundled in
-  `@gtbuchanan/cli` and prints compact console output. Warnings never
-  fail it — the eslint-config downgrades every rule to a warning — but
-  fatal errors (parse/config breakage) still do.
-- **`gtb lint:eslint:compare` is the gate.** It diffs each lint cwd's
-  `dist/eslint.sarif` against `dist/eslint-base.sarif` with
-  `sarif-multitool match-results-forward` and fails only on results
+- **Reporters, not gates.** `lint:eslint` writes
+  `dist/sarif/eslint.sarif` (a turbo task output) via a formatter
+  bundled in `@gtbuchanan/cli` and prints compact console output.
+  Warnings never fail it — the eslint-config downgrades every rule to a
+  warning — but fatal errors (parse/config breakage) still do.
+- **`gtb sarif compare` is the gate.** It pairs every
+  `dist/sarif/*.sarif` in each lint cwd with
+  `dist/sarif/base/<name>.sarif` and diffs them with
+  `sarif-multitool match-results-forward`, failing only on results
   classified `new`. Matching is fingerprint/content-based, so baseline
-  violations that merely moved stay matched — no git-diff offset math.
+  findings that merely moved stay matched — no git-diff offset math.
   `--base <ref>` makes it self-sufficient: it lints the merge base of
   that ref and HEAD in a throwaway git worktree to produce the
   baselines, so the same invocation works locally
-  (`gtb lint:eslint:compare --base origin/main`) and in CI
-  (`lint-regression.yml`). Dirs whose base commit wrote no SARIF are
-  skipped with a warning, which is what makes rollout graceful.
+  (`gtb sarif compare --base origin/main`) and in CI
+  (`lint-regression.yml`). A stamp (`dist/sarif/base.ref`, recording
+  the merge-base SHA) skips production when the on-disk baselines are
+  already current; CI seeds a cross-PR baseline cache from each main
+  commit via `gtb sarif baseline` (where merge base == HEAD, the
+  baseline is just that commit's own reporter output). A missing
+  baseline is an empty baseline, not a pass: every finding in a log
+  with no baseline counterpart is new and needs acceptance, so a newly
+  added reporter (or the bootstrap PR) can't slip findings in silently.
+  Suppressed findings (reasoned in-source suppressions) are exempt from
+  the gate — the suppression is already the accepted mechanism — but
+  stay in the logs for visibility.
 - **Changed-file enforcement stays local.** The hk pre-commit `eslint`
   step keeps `--max-warnings=0` on staged files, and the IDE shows
   warnings inline — new violations are still caught at authoring time;
   the ratchet only governs what lands.
 
-Accepted violations enter the baseline by merging with the override
+Accepted findings enter the baseline by merging with the override
 label (see `lint-regression.yml`) and surface in every SARIF log until
 paid down.
 
@@ -395,7 +407,7 @@ through `package.json` scripts backed by `gtb` leaf commands.
 - **`lint-regression.yml`** — Fails a PR only on lint violations that
   are new relative to its merge base (the ratchet gate; see the SARIF
   lint baselining section). Lints HEAD, then runs
-  `gtb lint:eslint:compare --base origin/<base-ref>`, which lints the
+  `gtb sarif compare --base origin/<base-ref>`, which lints the
   merge base in a throwaway git worktree and diffs the SARIF logs via
   `sarif-multitool`. A maintainer-applied override label (default
   `accepted-lint-regression`, dismissed on every new push) turns a

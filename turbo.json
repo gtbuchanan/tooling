@@ -12,7 +12,7 @@
       ],
       "outputs": [
         "dist/.eslintcache",
-        "dist/eslint.sarif"
+        "dist/sarif/eslint.sarif"
       ]
     },
     "build": {
@@ -129,7 +129,7 @@
       ],
       "outputs": [
         "dist/.eslintcache",
-        "dist/eslint.sarif"
+        "dist/sarif/eslint.sarif"
       ]
     },
     "pack": {

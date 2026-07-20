@@ -1,9 +1,10 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import sarifFormat from '@microsoft/eslint-formatter-sarif';
+import { sarifPaths } from './sarif-paths.ts';
 
 /** SARIF log path written by the formatter, relative to the lint cwd. */
-export const sarifOutputPath = 'dist/eslint.sarif';
+export const sarifOutputPath = path.join(sarifPaths.dir, 'eslint.sarif');
 
 /** Structural subset of an ESLint lint message the console output needs. */
 export interface FormatterMessage {
