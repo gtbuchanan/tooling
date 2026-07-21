@@ -34,6 +34,7 @@ jobs:
       # events, so skipping the dismissal there costs nothing.
       - env:
           GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ inputs.override-label }}
           PR: ${{ github.event.pull_request.number }}
         if: >-
           contains(fromJSON('["synchronize", "reopened"]'), github.event.action) &&
@@ -41,7 +42,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, inputs.override-label) &&
           !github.event.pull_request.head.repo.fork
         name: Dismiss stale regression acceptance
-        run: gh pr edit "$PR" --remove-label '${{ inputs.override-label }}'
+        run: gh pr edit "$PR" --remove-label "$LABEL"
 
       # Produce this commit's SARIF logs. Turbo dedupes against the CI
       # workflow's lint run via the shared remote cache when configured.
@@ -86,6 +87,7 @@ jobs:
       # carries the signal there.
       - env:
           GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ inputs.override-label }}
           PR: ${{ github.event.pull_request.number }}
         if: >-
           steps.compare.outcome == 'failure' &&
@@ -102,7 +104,7 @@ jobs:
             echo 'Fix the new findings or suppress them in-source with' \
               'a reason (suppressed findings are exempt). For a bulk' \
               'introduction (e.g. a dependency bump adding a rule), a' \
-              'maintainer can apply the `${{ inputs.override-label }}`' \
+              "maintainer can apply the \`$LABEL\`" \
               'label and re-run this job to accept them.'
           } > comment.md
           gh pr comment "$PR" --body-file comment.md \
