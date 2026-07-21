@@ -18,6 +18,17 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/ci.yml
 
+  # Seed the cross-PR lint baseline cache from this commit's own lint
+  # output. `needs: ci` orders it after the CI gate; with a turbo
+  # remote cache configured its lint also becomes a cache hit.
+  lint-baseline:
+    name: Lint
+    needs: ci
+    uses: ./.github/workflows/lint-regression.yml
+    with:
+      gtb-from-source: true
+      seed: true
+
 name: Release
 
 # The main-branch pipeline: re-run CI as a gate, then CD (version +

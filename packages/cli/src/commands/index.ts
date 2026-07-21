@@ -3,6 +3,7 @@ import { hk } from './root/hk.ts';
 import { rootNames } from './root/names.ts';
 import { prepare } from './root/prepare.ts';
 import { publish } from './root/publish.ts';
+import { sarif } from './root/sarif.ts';
 import { sync } from './root/sync.ts';
 import { turbo } from './root/turbo.ts';
 import { verify } from './root/verify.ts';
@@ -20,6 +21,7 @@ export const main = defineCommand({
     [rootNames.hk]: hk,
     [rootNames.prepare]: prepare,
     [rootNames.publish]: publish,
+    [rootNames.sarif]: sarif,
     [rootNames.sync]: sync,
     [rootNames.turbo]: turbo,
     [rootNames.verify]: verify,

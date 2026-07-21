@@ -242,7 +242,7 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
       value: {
         dependsOn: deps,
         inputs: ['$TURBO_ROOT$/eslint.config.*', ...inputs, 'eslint.config.*'],
-        outputs: ['dist/.eslintcache'],
+        outputs: ['dist/.eslintcache', 'dist/sarif/eslint.sarif'],
       },
     },
   ];
@@ -277,7 +277,7 @@ const rootLintTasks = (
         '$TURBO_DEFAULT$',
         ...packageGlobs.map(glob => `!${toPackageIgnore(glob)}`),
       ],
-      outputs: ['dist/.eslintcache'],
+      outputs: ['dist/.eslintcache', 'dist/sarif/eslint.sarif'],
     },
   },
 ];

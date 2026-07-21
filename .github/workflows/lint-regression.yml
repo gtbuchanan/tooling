@@ -1,0 +1,255 @@
+---
+env:
+  # GitHub Actions has no TTY, so force color; Actions renders the ANSI.
+  FORCE_COLOR: '1'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  run:
+    if: ${{ !inputs.seed }}
+    name: Lint Regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Depth 2 resolves both parents of the PR merge ref the
+          # checkout lands on; the first parent is the target branch
+          # head — the merge base of the merged checkout — so no branch
+          # fetch or merge-base resolution is needed.
+          fetch-depth: 2
+
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
+      # A label only vouches for the commits it was applied to. Drop it
+      # on the first attempt of every new push — and on reopen, since
+      # labels survive closure and pushes to a closed PR emit no
+      # synchronize events, so a reopened head may have moved under a
+      # stale label — but never on re-runs, which replay the original
+      # payload and would otherwise strip a label applied after the
+      # push (re-running the job is exactly how a fresh label takes
+      # effect; see Enforce). Fork PRs run with a read-only token that
+      # can't edit labels; Enforce discounts the label on these same
+      # events, so skipping the dismissal there costs nothing.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ inputs.override-label }}
+          PR: ${{ github.event.pull_request.number }}
+        if: >-
+          contains(fromJSON('["synchronize", "reopened"]'), github.event.action) &&
+          github.run_attempt == '1' &&
+          contains(github.event.pull_request.labels.*.name, inputs.override-label) &&
+          !github.event.pull_request.head.repo.fork
+        name: Dismiss stale regression acceptance
+        run: gh pr edit "$PR" --remove-label "$LABEL"
+
+      # Produce this commit's SARIF logs. Turbo dedupes against the CI
+      # workflow's lint run via the shared remote cache when configured.
+      - name: Lint HEAD
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          turbo run lint
+
+      # Fail fast if the checkout is not the merge ref (a two-parent
+      # commit): re-checking-out the PR head would make HEAD^1 the
+      # head's own parent, silently gating against the wrong commit.
+      - id: merge-base
+        name: Resolve the merge base (merge ref first parent)
+        run: |
+          git rev-parse --verify HEAD^2 > /dev/null
+          echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
+
+      # Restore baselines produced by an earlier run against the same
+      # merge base; the compare's stamp check skips the worktree lint on
+      # a hit. Exact key only — a near-miss baseline is a wrong baseline
+      # (the stamp check would reject it anyway).
+      - uses: actions/cache@v6
+        with:
+          key: lint-baseline-${{ steps.merge-base.outputs.sha }}
+          path: |
+            **/dist/sarif/base/**
+            !**/node_modules/**
+            dist/sarif/base.ref
+
+      - continue-on-error: true
+        env:
+          BASE_SHA: ${{ steps.merge-base.outputs.sha }}
+        id: compare
+        name: Compare lint results against the merge base
+        run: |
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} \
+            sarif compare --base-sha "$BASE_SHA" 2>&1 \
+            | tee lint-regression.txt
+          exit "${PIPESTATUS[0]}"
+
+      # Fork PRs run with a read-only token; the check failure alone
+      # carries the signal there.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ inputs.override-label }}
+          PR: ${{ github.event.pull_request.number }}
+        if: >-
+          steps.compare.outcome == 'failure' &&
+          !github.event.pull_request.head.repo.fork
+        name: Report new violations on the PR
+        run: |
+          {
+            echo '### New lint violations relative to the merge base'
+            echo
+            echo '```text'
+            cat lint-regression.txt
+            echo '```'
+            echo
+            echo 'Fix the new findings or suppress them in-source with' \
+              'a reason (suppressed findings are exempt). For a bulk' \
+              'introduction (e.g. a dependency bump adding a rule), a' \
+              "maintainer can apply the \`$LABEL\`" \
+              'label and re-run this job to accept them.'
+          } > comment.md
+          gh pr comment "$PR" --body-file comment.md \
+            --edit-last --create-if-none
+
+      # Run-but-neutral override: the label lets the check pass, but the
+      # comment above still records what was accepted. Labels are read
+      # live (not from the event payload) so the accept flow is: apply
+      # the label, then re-run this job — a re-run replays the original
+      # payload, which predates the label. The label doesn't count on a
+      # first-attempt synchronize or reopened run, where the dismissal
+      # step just dropped it (or would have, for forks). GitHub has no
+      # per-label permission rules — anyone with triage can apply any
+      # label — so the label is honored only when its most recent
+      # applier holds `override-role` or higher; anything unresolvable
+      # fails closed. Known residual: cancelling a run before its
+      # dismissal step and then re-running preserves a stale label, but
+      # that needs write access and deliberate timing from someone
+      # already looking at the PR.
+      - env:
+          EVENT_ACTION: ${{ github.event.action }}
+          GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ inputs.override-label }}
+          OVERRIDE_ROLE: ${{ inputs.override-role }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        if: steps.compare.outcome == 'failure'
+        name: Enforce
+        run: |
+          if { [ "$GITHUB_RUN_ATTEMPT" -gt 1 ] ||
+            { [ "$EVENT_ACTION" != 'synchronize' ] &&
+              [ "$EVENT_ACTION" != 'reopened' ]; }; } &&
+            gh pr view "$PR" --json labels --jq '.labels[].name' |
+              grep -Fxq "$LABEL"; then
+            applier=$(gh api "repos/$REPO/issues/$PR/events" --paginate \
+              --jq '.[] | select(.event == "labeled")
+                | "\(.label.name)\t\(.actor.login)"' |
+              awk -F '\t' -v l="$LABEL" '$1 == l { a = $2 } END { print a }' \
+              || true)
+            role=$(gh api "repos/$REPO/collaborators/$applier/permission" \
+              --jq '.role_name' || true)
+            case "$OVERRIDE_ROLE" in
+              admin) allowed='admin' ;;
+              write) allowed='admin maintain write' ;;
+              *) allowed='admin maintain' ;;
+            esac
+            case " $allowed " in
+              *" $role "*)
+                echo "'$LABEL' applied by $applier ($role); accepting" \
+                  'the new findings'
+                exit 0
+                ;;
+              *)
+                echo "'$LABEL' applied by ${applier:-unknown}" \
+                  "(${role:-unknown}) — needs $OVERRIDE_ROLE or higher;" \
+                  'ignoring the label'
+                ;;
+            esac
+          fi
+          exit 1
+
+  # On the default branch, any future PR's merge base is HEAD itself,
+  # so its baseline is just this commit's own lint output. Caches
+  # created on the default branch are readable from every PR, so this
+  # seeds a cross-PR baseline cache — PR compare runs restore it and
+  # skip merge-base production entirely.
+  seed:
+    if: ${{ inputs.seed }}
+    name: Lint Baseline Seed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
+      # Cache-hits against the CI workflow's lint run of this commit
+      # when the turbo remote cache is configured.
+      - name: Lint HEAD
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          turbo run lint
+
+      - name: Snapshot baselines
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          sarif baseline
+
+      - uses: actions/cache/save@v6
+        with:
+          key: lint-baseline-${{ github.sha }}
+          path: |
+            **/dist/sarif/base/**
+            !**/node_modules/**
+            dist/sarif/base.ref
+
+name: Lint Regression
+
+# Reusable: fail a PR only on lint violations that are new relative to
+# its merge base. `gtb sarif compare --base` lints the merge base
+# in a temporary git worktree to build the SARIF baseline, then
+# `sarif-multitool` classifies each HEAD result as new or matched —
+# pre-existing (accepted) violations never block. The routine response
+# to new findings is fixing or suppressing them in-source (suppressed
+# findings are gate-exempt); for bulk introductions (e.g. a dependency
+# bump adding a rule) the override label turns a failing compare into a
+# pass for one merge — apply it, then re-run the failed job — while the
+# PR comment keeps the accepted violations on record. The label counts
+# only when applied by `override-role` or higher, since GitHub has no
+# per-label permission rules of its own.
+on:
+  workflow_call:
+    inputs:
+      gtb-from-source:
+        default: false
+        description: >-
+          Run gtb from the workspace source (`pnpm run gtb`) instead of
+          the installed bin (`pnpm exec gtb`). Set true only by the repo
+          that vendors `@gtbuchanan/cli` as a workspace package (tooling
+          itself). Consumers leave it false.
+        type: boolean
+      override-label:
+        default: accepted-lint-regression
+        description: >-
+          PR label that accepts the new violations for one merge (takes
+          effect on a job re-run; dismissed automatically on every new
+          push; honored only when applied by `override-role` or
+          higher). The escape hatch for bulk introductions — the
+          routine path is fixing or suppressing findings in-source.
+        type: string
+      override-role:
+        default: maintain
+        description: >-
+          Minimum repository role (`write`, `maintain`, or `admin`)
+          the override label's applier must hold for it to count.
+        type: string
+      seed:
+        default: false
+        description: >-
+          Snapshot HEAD's lint output as the cross-PR baseline cache
+          instead of gating. Set on default-branch pushes; the PR gate
+          restores the cache keyed on its merge-base SHA.
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: write
