@@ -183,7 +183,12 @@ const listSarifFiles = (dir: string): readonly string[] => {
     .toSorted(localeComparer);
 };
 
-const defaultDeps: SarifCompareDeps = {
+/**
+ * Real I/O implementations backing {@link SarifCompareDeps}. Exported
+ * for direct unit coverage; the commands use them via default params.
+ * @internal
+ */
+export const defaultSarifDeps: SarifCompareDeps = {
   capture,
   copyFile: (source, destination) => {
     mkdirSync(path.dirname(destination), { recursive: true });
@@ -339,7 +344,7 @@ const matchFileForward = async (
  * to restore.
  */
 export const executeSarifBaseline = async (
-  deps: SarifCompareDeps = defaultDeps,
+  deps: SarifCompareDeps = defaultSarifDeps,
 ): Promise<void> => {
   const sha = await deps.capture('git', ['rev-parse', 'HEAD']);
   const { rootDir } = deps.workspace();
@@ -392,7 +397,7 @@ const resolveBaselineSha = async (
  */
 export const executeSarifCompare = async (
   options: SarifCompareOptions = {},
-  deps: SarifCompareDeps = defaultDeps,
+  deps: SarifCompareDeps = defaultSarifDeps,
 ): Promise<void> => {
   const sha = await resolveBaselineSha(options, deps);
   if (sha !== undefined) {

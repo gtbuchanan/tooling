@@ -41,17 +41,24 @@ export const formatConsole = (results: readonly FormatterResult[]): string => {
   return `${lines.join('\n')}\n\n✖ ${problems}\n`;
 };
 
+/** Structural subset of ESLint's formatter context the writer needs. */
+export interface FormatterContext {
+  readonly cwd?: string;
+}
+
 /**
  * ESLint formatter that writes a SARIF log to {@link sarifOutputPath}
  * (for the CI lint regression compare) and returns compact console
  * output. ESLint accepts a single `--format`, so the side-effecting
- * file write is how one run feeds both consumers.
+ * file write is how one run feeds both consumers. The log lands under
+ * the lint cwd from the formatter context (ESLint always provides it;
+ * the process cwd is the fallback for direct calls).
  */
 const eslintSarifFormatter = (
   results: readonly FormatterResult[],
-  data?: unknown,
+  data?: FormatterContext,
 ): string => {
-  const outputFile = path.resolve(sarifOutputPath);
+  const outputFile = path.resolve(data?.cwd ?? process.cwd(), sarifOutputPath);
   mkdirSync(path.dirname(outputFile), { recursive: true });
   writeFileSync(outputFile, sarifFormat(results, data));
   return formatConsole(results);
