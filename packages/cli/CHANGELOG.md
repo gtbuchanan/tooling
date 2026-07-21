@@ -1,5 +1,15 @@
 # @gtbuchanan/cli
 
+## 0.2.2
+
+### Patch Changes
+
+- 865b030: Fix `coverage:vitest:merge` failing under vitest 4 by overriding the
+  reporter for the merge invocation (`--reporter=default`). Vitest 4
+  rejects `--merge-reports` while `blob` is an active reporter, and the
+  shared config enables `blob` unconditionally so the fast/slow runs can
+  produce the per-bucket blobs.
+
 ## 0.2.1
 
 ### Patch Changes
