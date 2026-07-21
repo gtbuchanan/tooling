@@ -98,8 +98,11 @@ jobs:
             cat lint-regression.txt
             echo '```'
             echo
-            echo 'Apply the `${{ inputs.override-label }}` label and' \
-              're-run this job to accept.'
+            echo 'Fix the new findings or suppress them in-source with' \
+              'a reason (suppressed findings are exempt). For a bulk' \
+              'introduction (e.g. a dependency bump adding a rule), a' \
+              'maintainer can apply the `${{ inputs.override-label }}`' \
+              'label and re-run this job to accept them.'
           } > comment.md
           gh pr comment "$PR" --body-file comment.md \
             --edit-last --create-if-none
@@ -110,12 +113,17 @@ jobs:
       # the label, then re-run this job — a re-run replays the original
       # payload, which predates the label. The label doesn't count on a
       # first-attempt synchronize, where the dismissal step just
-      # dropped it (or would have, for forks).
+      # dropped it (or would have, for forks). GitHub has no per-label
+      # permission rules — anyone with triage can apply any label — so
+      # the label is honored only when its most recent applier holds
+      # `override-role` or higher; anything unresolvable fails closed.
       - env:
           EVENT_ACTION: ${{ github.event.action }}
           GH_TOKEN: ${{ github.token }}
           LABEL: ${{ inputs.override-label }}
+          OVERRIDE_ROLE: ${{ inputs.override-role }}
           PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
         if: steps.compare.outcome == 'failure'
         name: Enforce
         run: |
@@ -123,8 +131,30 @@ jobs:
             [ "$EVENT_ACTION" != 'synchronize' ]; } &&
             gh pr view "$PR" --json labels --jq '.labels[].name' |
               grep -Fxq "$LABEL"; then
-            echo "'$LABEL' label present; accepting the new findings"
-            exit 0
+            applier=$(gh api "repos/$REPO/issues/$PR/events" --paginate \
+              --jq '.[] | select(.event == "labeled")
+                | "\(.label.name)\t\(.actor.login)"' |
+              awk -F '\t' -v l="$LABEL" '$1 == l { a = $2 } END { print a }' \
+              || true)
+            role=$(gh api "repos/$REPO/collaborators/$applier/permission" \
+              --jq '.role_name' || true)
+            case "$OVERRIDE_ROLE" in
+              admin) allowed='admin' ;;
+              write) allowed='admin maintain write' ;;
+              *) allowed='admin maintain' ;;
+            esac
+            case " $allowed " in
+              *" $role "*)
+                echo "'$LABEL' applied by $applier ($role); accepting" \
+                  'the new findings'
+                exit 0
+                ;;
+              *)
+                echo "'$LABEL' applied by ${applier:-unknown}" \
+                  "(${role:-unknown}) — needs $OVERRIDE_ROLE or higher;" \
+                  'ignoring the label'
+                ;;
+            esac
           fi
           exit 1
 
@@ -170,10 +200,14 @@ name: Lint Regression
 # its merge base. `gtb sarif compare --base` lints the merge base
 # in a temporary git worktree to build the SARIF baseline, then
 # `sarif-multitool` classifies each HEAD result as new or matched —
-# pre-existing (accepted) violations never block. A maintainer-applied
-# override label turns a failing compare into a pass — apply it, then
-# re-run the failed job — while the PR comment keeps the accepted
-# violations on record.
+# pre-existing (accepted) violations never block. The routine response
+# to new findings is fixing or suppressing them in-source (suppressed
+# findings are gate-exempt); for bulk introductions (e.g. a dependency
+# bump adding a rule) the override label turns a failing compare into a
+# pass for one merge — apply it, then re-run the failed job — while the
+# PR comment keeps the accepted violations on record. The label counts
+# only when applied by `override-role` or higher, since GitHub has no
+# per-label permission rules of its own.
 on:
   workflow_call:
     inputs:
@@ -188,9 +222,17 @@ on:
       override-label:
         default: accepted-lint-regression
         description: >-
-          PR label that accepts the new violations (maintainer-applied;
-          takes effect on a job re-run; dismissed automatically on
-          every new push).
+          PR label that accepts the new violations for one merge (takes
+          effect on a job re-run; dismissed automatically on every new
+          push; honored only when applied by `override-role` or
+          higher). The escape hatch for bulk introductions — the
+          routine path is fixing or suppressing findings in-source.
+        type: string
+      override-role:
+        default: maintain
+        description: >-
+          Minimum repository role (`write`, `maintain`, or `admin`)
+          the override label's applier must hold for it to count.
         type: string
       seed:
         default: false

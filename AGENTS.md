@@ -130,9 +130,14 @@ reporter. Three layers:
   warnings inline — new violations are still caught at authoring time;
   the ratchet only governs what lands.
 
-Accepted findings enter the baseline by merging with the override
-label (see `lint-regression.yml`) and surface in every SARIF log until
-paid down.
+Accepting new findings is an in-source act by default: fix them, or
+suppress them with a reason (suppressed findings are gate-exempt but
+stay in the logs). The override label (see `lint-regression.yml`) is
+the escape hatch for bulk introductions — e.g. a dependency bump
+shipping a new rule — where per-instance suppression would be noise
+and disabling the rule would let new violations creep in while it's
+off. Findings accepted either way enter the ephemeral baseline once
+merged and surface in every SARIF log until paid down.
 
 ### Pre-commit hooks
 
@@ -412,11 +417,14 @@ through `package.json` scripts backed by `gtb` leaf commands.
   lint baselining section). Lints HEAD, then runs
   `gtb sarif compare --base origin/<base-ref>`, which lints the
   merge base in a throwaway git worktree and diffs the SARIF logs via
-  `sarif-multitool`. A maintainer-applied override label (default
-  `accepted-lint-regression`, dismissed on every new push) turns a
-  failing compare into a pass — apply it, then re-run the failed job
-  (labels are read live, so the replayed event payload doesn't matter)
-  — while a PR comment records the accepted violations. Caller must grant `pull-requests: write`; fork PRs get
+  `sarif-multitool`. New findings are routinely fixed or suppressed
+  in-source; for bulk introductions the override label (default
+  `accepted-lint-regression`, dismissed on every new push, honored
+  only when applied by `override-role`+ — default `maintain`) turns a
+  failing compare into a pass for one merge — apply it, then re-run
+  the failed job (labels are read live, so the replayed event payload
+  doesn't matter) — while a PR comment records the accepted
+  violations. Caller must grant `pull-requests: write`; fork PRs get
   the check failure without the comment (read-only token).
 - **`pre-commit.yml`** — Runs the `hk:base` mise task on PR changed
   files (hk resolved from mise). The `use-pnpm` input (default
