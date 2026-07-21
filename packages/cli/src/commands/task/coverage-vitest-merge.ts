@@ -12,6 +12,12 @@ export const coverageVitestMerge = defineCommand({
       args: [
         '--merge-reports', 'dist/test-results/vitest/merge',
         '--coverage.reportsDirectory=dist/coverage/vitest/merged',
+        /*
+         * Replace the config's reporters for this run: vitest 4 refuses to
+         * merge while `blob` (needed by the fast/slow runs to produce the
+         * blobs) is an active reporter.
+         */
+        '--reporter=default',
         ...rawArgs,
       ],
     });
