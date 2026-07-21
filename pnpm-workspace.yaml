@@ -1,4 +1,8 @@
 allowBuilds:
+  # Platform packages chmod their bundled self-contained binary.
+  '@microsoft/sarif-multitool-darwin': true
+  '@microsoft/sarif-multitool-linux': true
+  '@microsoft/sarif-multitool-win32': true
   esbuild: true
   unrs-resolver: false
 
