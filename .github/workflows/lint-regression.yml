@@ -23,19 +23,20 @@ jobs:
       - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       # A label only vouches for the commits it was applied to. Drop it
-      # on the first attempt of every new push so a maintainer has to
-      # re-accept — but never on re-runs, which replay the original
-      # synchronize payload and would otherwise strip a label applied
-      # after the push (re-running the job is exactly how a fresh label
-      # takes effect; see Enforce). Fork PRs run with a read-only token
-      # that can't edit labels; Enforce discounts the label on
-      # first-attempt synchronize, so skipping the dismissal there
-      # costs nothing.
+      # on the first attempt of every new push — and on reopen, since
+      # labels survive closure and pushes to a closed PR emit no
+      # synchronize events, so a reopened head may have moved under a
+      # stale label — but never on re-runs, which replay the original
+      # payload and would otherwise strip a label applied after the
+      # push (re-running the job is exactly how a fresh label takes
+      # effect; see Enforce). Fork PRs run with a read-only token that
+      # can't edit labels; Enforce discounts the label on these same
+      # events, so skipping the dismissal there costs nothing.
       - env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         if: >-
-          github.event.action == 'synchronize' &&
+          contains(fromJSON('["synchronize", "reopened"]'), github.event.action) &&
           github.run_attempt == '1' &&
           contains(github.event.pull_request.labels.*.name, inputs.override-label) &&
           !github.event.pull_request.head.repo.fork
@@ -112,11 +113,15 @@ jobs:
       # live (not from the event payload) so the accept flow is: apply
       # the label, then re-run this job — a re-run replays the original
       # payload, which predates the label. The label doesn't count on a
-      # first-attempt synchronize, where the dismissal step just
-      # dropped it (or would have, for forks). GitHub has no per-label
-      # permission rules — anyone with triage can apply any label — so
-      # the label is honored only when its most recent applier holds
-      # `override-role` or higher; anything unresolvable fails closed.
+      # first-attempt synchronize or reopened run, where the dismissal
+      # step just dropped it (or would have, for forks). GitHub has no
+      # per-label permission rules — anyone with triage can apply any
+      # label — so the label is honored only when its most recent
+      # applier holds `override-role` or higher; anything unresolvable
+      # fails closed. Known residual: cancelling a run before its
+      # dismissal step and then re-running preserves a stale label, but
+      # that needs write access and deliberate timing from someone
+      # already looking at the PR.
       - env:
           EVENT_ACTION: ${{ github.event.action }}
           GH_TOKEN: ${{ github.token }}
@@ -128,7 +133,8 @@ jobs:
         name: Enforce
         run: |
           if { [ "$GITHUB_RUN_ATTEMPT" -gt 1 ] ||
-            [ "$EVENT_ACTION" != 'synchronize' ]; } &&
+            { [ "$EVENT_ACTION" != 'synchronize' ] &&
+              [ "$EVENT_ACTION" != 'reopened' ]; }; } &&
             gh pr view "$PR" --json labels --jq '.labels[].name' |
               grep -Fxq "$LABEL"; then
             applier=$(gh api "repos/$REPO/issues/$PR/events" --paginate \
