@@ -19,8 +19,8 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   # Seed the cross-PR lint baseline cache from this commit's own lint
-  # output. `needs: ci` lets the seed's lint hit the remote cache that
-  # CI just warmed instead of re-linting.
+  # output. `needs: ci` orders it after the CI gate; with a turbo
+  # remote cache configured its lint also becomes a cache hit.
   lint-baseline:
     name: Lint
     needs: ci

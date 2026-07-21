@@ -414,8 +414,9 @@ through `package.json` scripts backed by `gtb` leaf commands.
   merge base in a throwaway git worktree and diffs the SARIF logs via
   `sarif-multitool`. A maintainer-applied override label (default
   `accepted-lint-regression`, dismissed on every new push) turns a
-  failing compare into a pass while a PR comment records the accepted
-  violations. Caller must grant `pull-requests: write`; fork PRs get
+  failing compare into a pass — apply it, then re-run the failed job
+  (labels are read live, so the replayed event payload doesn't matter)
+  — while a PR comment records the accepted violations. Caller must grant `pull-requests: write`; fork PRs get
   the check failure without the comment (read-only token).
 - **`pre-commit.yml`** — Runs the `hk:base` mise task on PR changed
   files (hk resolved from mise). The `use-pnpm` input (default

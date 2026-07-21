@@ -23,13 +23,22 @@ jobs:
       - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       # A label only vouches for the commits it was applied to. Drop it
-      # on every new push so a maintainer has to re-accept.
+      # on the first attempt of every new push so a maintainer has to
+      # re-accept — but never on re-runs, which replay the original
+      # synchronize payload and would otherwise strip a label applied
+      # after the push (re-running the job is exactly how a fresh label
+      # takes effect; see Enforce). Fork PRs run with a read-only token
+      # that can't edit labels; Enforce discounts the label on
+      # first-attempt synchronize, so skipping the dismissal there
+      # costs nothing.
       - env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         if: >-
           github.event.action == 'synchronize' &&
-          contains(github.event.pull_request.labels.*.name, inputs.override-label)
+          github.run_attempt == '1' &&
+          contains(github.event.pull_request.labels.*.name, inputs.override-label) &&
+          !github.event.pull_request.head.repo.fork
         name: Dismiss stale regression acceptance
         run: gh pr edit "$PR" --remove-label '${{ inputs.override-label }}'
 
@@ -89,20 +98,35 @@ jobs:
             cat lint-regression.txt
             echo '```'
             echo
-            echo 'Apply the `${{ inputs.override-label }}` label to accept.'
+            echo 'Apply the `${{ inputs.override-label }}` label and' \
+              're-run this job to accept.'
           } > comment.md
           gh pr comment "$PR" --body-file comment.md \
             --edit-last --create-if-none
 
       # Run-but-neutral override: the label lets the check pass, but the
-      # comment above still records what was accepted. A label present
-      # on a `synchronize` run was just dismissed, so it doesn't count.
-      - if: >-
-          steps.compare.outcome == 'failure' &&
-          (github.event.action == 'synchronize' ||
-          !contains(github.event.pull_request.labels.*.name, inputs.override-label))
+      # comment above still records what was accepted. Labels are read
+      # live (not from the event payload) so the accept flow is: apply
+      # the label, then re-run this job — a re-run replays the original
+      # payload, which predates the label. The label doesn't count on a
+      # first-attempt synchronize, where the dismissal step just
+      # dropped it (or would have, for forks).
+      - env:
+          EVENT_ACTION: ${{ github.event.action }}
+          GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ inputs.override-label }}
+          PR: ${{ github.event.pull_request.number }}
+        if: steps.compare.outcome == 'failure'
         name: Enforce
-        run: exit 1
+        run: |
+          if { [ "$GITHUB_RUN_ATTEMPT" -gt 1 ] ||
+            [ "$EVENT_ACTION" != 'synchronize' ]; } &&
+            gh pr view "$PR" --json labels --jq '.labels[].name' |
+              grep -Fxq "$LABEL"; then
+            echo "'$LABEL' label present; accepting the new findings"
+            exit 0
+          fi
+          exit 1
 
   # On the default branch, any future PR's merge base is HEAD itself,
   # so its baseline is just this commit's own lint output. Caches
@@ -147,8 +171,9 @@ name: Lint Regression
 # in a temporary git worktree to build the SARIF baseline, then
 # `sarif-multitool` classifies each HEAD result as new or matched —
 # pre-existing (accepted) violations never block. A maintainer-applied
-# override label turns a failing compare into a pass while the PR
-# comment keeps the accepted violations on record.
+# override label turns a failing compare into a pass — apply it, then
+# re-run the failed job — while the PR comment keeps the accepted
+# violations on record.
 on:
   workflow_call:
     inputs:
@@ -164,7 +189,8 @@ on:
         default: accepted-lint-regression
         description: >-
           PR label that accepts the new violations (maintainer-applied;
-          dismissed automatically on every new push).
+          takes effect on a job re-run; dismissed automatically on
+          every new push).
         type: string
       seed:
         default: false
