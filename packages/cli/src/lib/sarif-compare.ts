@@ -233,10 +233,23 @@ export const hasCurrentBaseline = (sha: string, deps: SarifCompareDeps): boolean
  * Base commits that predate SARIF output simply produce no baseline,
  * and the compare skips those packages.
  */
+/**
+ * Ensures the commit's objects exist locally, fetching just that commit
+ * on shallow clones (GitHub serves reachable SHAs directly).
+ */
+const ensureCommit = async (sha: string, deps: SarifCompareDeps): Promise<void> => {
+  try {
+    await deps.capture('git', ['cat-file', '-e', sha]);
+  } catch {
+    await deps.run('git', { args: ['fetch', '--depth=1', 'origin', sha] });
+  }
+};
+
 export const produceBaseline = async (
   sha: string,
   deps: SarifCompareDeps,
 ): Promise<void> => {
+  await ensureCommit(sha, deps);
   const baseDir = deps.makeTempDir();
   try {
     await deps.run('git', { args: ['worktree', 'add', '--detach', baseDir, sha] });
@@ -338,14 +351,37 @@ export const executeSarifBaseline = async (
 /** Options for {@link executeSarifCompare}. */
 export interface SarifCompareOptions {
   /**
-   * Git ref to diff against. When set, the baseline is produced by
-   * linting the merge base of this ref and HEAD in a throwaway
-   * worktree (skipped when the stamp already records that merge base).
-   * When unset, `dist/sarif/base/` must already be populated (e.g.
-   * restored from a cache or a prior run).
+   * Git ref to diff against. The baseline commit is the merge base of
+   * this ref and HEAD (a `git merge-base` call, so it needs local
+   * history — the local mode).
    */
   readonly baseRef?: string | undefined;
+  /**
+   * Exact baseline commit, no merge-base resolution. CI passes the PR
+   * merge ref's first parent (`git rev-parse HEAD^1`): on the merged
+   * checkout, the target branch head *is* the merge base, so this
+   * needs no branch fetch or history. Mutually exclusive with
+   * `baseRef`. When neither is set, `dist/sarif/base/` must already be
+   * populated (e.g. restored from a cache or a prior run).
+   */
+  readonly baseSha?: string | undefined;
 }
+
+const resolveBaselineSha = async (
+  options: SarifCompareOptions,
+  deps: SarifCompareDeps,
+): Promise<string | undefined> => {
+  if (options.baseRef !== undefined && options.baseSha !== undefined) {
+    throw new Error('--base and --base-sha are mutually exclusive');
+  }
+  if (options.baseSha !== undefined) {
+    return options.baseSha;
+  }
+  if (options.baseRef !== undefined) {
+    return deps.capture('git', ['merge-base', options.baseRef, 'HEAD']);
+  }
+  return undefined;
+};
 
 /**
  * Compares every SARIF log under each lint cwd's `dist/sarif/` against
@@ -358,8 +394,8 @@ export const executeSarifCompare = async (
   options: SarifCompareOptions = {},
   deps: SarifCompareDeps = defaultDeps,
 ): Promise<void> => {
-  if (options.baseRef !== undefined) {
-    const sha = await deps.capture('git', ['merge-base', options.baseRef, 'HEAD']);
+  const sha = await resolveBaselineSha(options, deps);
+  if (sha !== undefined) {
     if (hasCurrentBaseline(sha, deps)) {
       deps.logger.info(`Baselines for merge base ${sha} already present; reusing`);
     } else {

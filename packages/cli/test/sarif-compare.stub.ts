@@ -71,6 +71,8 @@ export interface StubOptions {
   readonly baseWorkspace?: WorkspaceContext;
   /** `"<command> <argv0>"` prefixes whose run() rejects. */
   readonly failing?: readonly string[];
+  /** `"<argv0> <argv1>"` prefixes whose capture() rejects. */
+  readonly failingCapture?: readonly string[];
   /** Content returned by readText for any path (e.g. the stamp file). */
   readonly readTextContent?: string;
 }
@@ -101,7 +103,12 @@ export const stubDeps = (
   return {
     copyCalls,
     deps: {
-      capture: () => Promise.resolve('abc1234'),
+      capture: (_command, args) => {
+        const key = `${args[0] ?? ''} ${args[1] ?? ''}`;
+        return options?.failingCapture?.includes(key) === true
+          ? Promise.reject(new Error(`${key} failed`))
+          : Promise.resolve('abc1234');
+      },
       copyFile: (source, destination) => {
         copyCalls.push({
           destination: normalize(destination),

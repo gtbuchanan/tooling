@@ -109,9 +109,12 @@ reporter. Three layers:
   findings that merely moved stay matched — no git-diff offset math.
   `--base <ref>` makes it self-sufficient: it lints the merge base of
   that ref and HEAD in a throwaway git worktree to produce the
-  baselines, so the same invocation works locally
-  (`gtb sarif compare --base origin/main`) and in CI
-  (`lint-regression.yml`). A stamp (`dist/sarif/base.ref`, recording
+  baselines (`gtb sarif compare --base origin/main` locally, where
+  full history makes `git merge-base` cheap). CI
+  (`lint-regression.yml`) passes `--base-sha` with the PR merge ref's
+  first parent instead — on the merged checkout the target branch head
+  _is_ the merge base — so a `fetch-depth: 2` checkout suffices, and a
+  missing commit is fetched by SHA at depth 1. A stamp (`dist/sarif/base.ref`, recording
   the merge-base SHA) skips production when the on-disk baselines are
   already current; CI seeds a cross-PR baseline cache from each main
   commit via `gtb sarif baseline` (where merge base == HEAD, the

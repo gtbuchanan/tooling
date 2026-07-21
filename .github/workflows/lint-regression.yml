@@ -12,9 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # The compare lints the merge base in a throwaway worktree, so
-          # the base branch history must be reachable locally.
-          fetch-depth: 0
+          # Depth 2 resolves both parents of the PR merge ref the
+          # checkout lands on; the first parent is the target branch
+          # head — the merge base of the merged checkout — so no branch
+          # fetch or merge-base resolution is needed.
+          fetch-depth: 2
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -38,11 +40,14 @@ jobs:
           ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
           turbo run lint
 
-      - env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-        id: merge-base
-        name: Resolve the merge base
-        run: echo "sha=$(git merge-base "origin/$BASE_REF" HEAD)" >> "$GITHUB_OUTPUT"
+      # Fail fast if the checkout is not the merge ref (a two-parent
+      # commit): re-checking-out the PR head would make HEAD^1 the
+      # head's own parent, silently gating against the wrong commit.
+      - id: merge-base
+        name: Resolve the merge base (merge ref first parent)
+        run: |
+          git rev-parse --verify HEAD^2 > /dev/null
+          echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
 
       # Restore baselines produced by an earlier run against the same
       # merge base; the compare's stamp check skips the worktree lint on
@@ -58,12 +63,12 @@ jobs:
 
       - continue-on-error: true
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ steps.merge-base.outputs.sha }}
         id: compare
         name: Compare lint results against the merge base
         run: |
           ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} \
-            sarif compare --base "origin/$BASE_REF" 2>&1 \
+            sarif compare --base-sha "$BASE_SHA" 2>&1 \
             | tee lint-regression.txt
           exit "${PIPESTATUS[0]}"
 

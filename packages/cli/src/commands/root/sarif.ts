@@ -11,10 +11,16 @@ import { rootNames } from './names.ts';
  */
 const compare = defineCommand({
   args: {
-    base: {
+    'base': {
       description:
         'Git ref to diff against; lints its merge base with HEAD in a ' +
         'temporary worktree to produce the baseline (e.g. origin/main)',
+      type: 'string',
+    },
+    'base-sha': {
+      description:
+        'Exact baseline commit, skipping merge-base resolution; CI ' +
+        "passes the PR merge ref's first parent (git rev-parse HEAD^1)",
       type: 'string',
     },
   },
@@ -22,7 +28,8 @@ const compare = defineCommand({
     description: 'Fail when SARIF findings are new relative to the baseline',
     name: 'compare',
   },
-  run: ({ args }) => executeSarifCompare({ baseRef: args.base }),
+  run: ({ args }) =>
+    executeSarifCompare({ baseRef: args.base, baseSha: args['base-sha'] }),
 });
 
 /**

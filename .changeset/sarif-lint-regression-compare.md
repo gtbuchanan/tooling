@@ -12,10 +12,11 @@ with `dist/sarif/base/<name>.sarif` and fails only on findings the
 SARIF log into `dist/sarif/` is gated with no extra wiring. A missing
 baseline counts as empty (all findings new), and findings carrying
 in-source suppressions are exempt. With
-`--base <ref>` it produces the baseline itself by linting the merge
-base in a temporary git worktree, skipping production when the
-`dist/sarif/base.ref` stamp already records that merge base (locally or
-via CI caches). `gtb sarif baseline` snapshots HEAD's logs as the
+`--base <ref>` (merge-base of a ref, for local runs) or `--base-sha
+<sha>` (exact commit, for CI's shallow merge-ref checkouts) it produces
+the baseline itself by linting that commit in a temporary git worktree,
+skipping production when the `dist/sarif/base.ref` stamp already
+records it (locally or via CI caches). `gtb sarif baseline` snapshots HEAD's logs as the
 baseline so default-branch CI can seed a cross-PR cache (see the new
 `lint-regression.yml` reusable workflow). Local changed-file
 enforcement via the pre-commit ESLint step is unaffected.

@@ -193,4 +193,45 @@ describe.concurrent('executeSarifCompare --base', () => {
 
     expect(runCalls[0]?.args.slice(0, 2)).toStrictEqual(['worktree', 'add']);
   });
+
+  it('uses an exact commit from --base-sha without merge-base resolution', async ({
+    expect,
+  }) => {
+    const { deps, runCalls } = stubDeps(
+      workspace, stampedFiles, sarifLog([]),
+      { readTextContent: 'fedc987\n' },
+    );
+
+    await executeSarifCompare({ baseSha: 'fedc987' }, deps);
+
+    // Stamp matches the given SHA, so no git commands run at all.
+    expect(runCalls.map(call => call.command)).toStrictEqual(['sarif-multitool']);
+  });
+
+  it('rejects when --base and --base-sha are both given', async ({ expect }) => {
+    const { deps } = stubDeps(workspace, stampedFiles, sarifLog([]));
+
+    await expect(
+      executeSarifCompare({ baseRef: 'origin/main', baseSha: 'fedc987' }, deps),
+    ).rejects.toThrow(/mutually exclusive/v);
+  });
+
+  it('fetches the baseline commit when absent from a shallow clone', async ({
+    expect,
+  }) => {
+    const { deps, runCalls } = stubDeps(
+      workspace,
+      ['/repo/dist/sarif/eslint.sarif', '/repo/dist/sarif/base/eslint.sarif'],
+      sarifLog([]),
+      { failingCapture: ['cat-file -e'] },
+    );
+
+    await executeSarifCompare({ baseSha: 'fedc987' }, deps);
+
+    expect(runCalls[0]).toMatchObject({
+      args: ['fetch', '--depth=1', 'origin', 'fedc987'],
+      command: 'git',
+    });
+    expect(runCalls[1]?.args.slice(0, 2)).toStrictEqual(['worktree', 'add']);
+  });
 });
