@@ -45,7 +45,7 @@ run_windows = "pnpm install --frozen-lockfile"
 
 [tools]
 actionlint = "1.7.12"
-hk = "1.51.0"
+hk = "1.52.0"
 node = "24.18.0"
 "npm:renovate" = "43.265.1"
 pkl = "0.32.0"
