@@ -21,17 +21,19 @@
     "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "dependencies": {
-    "@eslint/json": "catalog:",
-    "@eslint/markdown": "catalog:",
     "@gtbuchanan/eslint-plugin-md-frontmatter": "workspace:*",
     "ajv": "catalog:",
     "yaml": "catalog:"
   },
   "devDependencies": {
+    "@eslint/json": "catalog:",
+    "@eslint/markdown": "catalog:",
     "@gtbuchanan/vitest-config": "workspace:*",
     "@types/mdast": "catalog:"
   },
   "peerDependencies": {
+    "@eslint/json": "^2.0.0",
+    "@eslint/markdown": "^8.0.0",
     "eslint": "^10.0.0"
   },
   "engines": {
