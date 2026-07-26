@@ -392,12 +392,6 @@ importers:
 
   packages/eslint-plugin-agent-skills:
     dependencies:
-      '@eslint/json':
-        specifier: 'catalog:'
-        version: 2.0.1
-      '@eslint/markdown':
-        specifier: 'catalog:'
-        version: 8.0.3(supports-color@7.2.0)
       '@gtbuchanan/eslint-plugin-md-frontmatter':
         specifier: workspace:*
         version: link:../eslint-plugin-md-frontmatter
@@ -411,6 +405,12 @@ importers:
         specifier: 'catalog:'
         version: 2.9.0
     devDependencies:
+      '@eslint/json':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@eslint/markdown':
+        specifier: 'catalog:'
+        version: 8.0.3(supports-color@7.2.0)
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config

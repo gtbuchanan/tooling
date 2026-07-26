@@ -32,10 +32,21 @@ constraints that pure schemas can't express. This package ships:
 
 ```sh
 pnpm add -D \
+  @eslint/json \
+  @eslint/markdown \
   @gtbuchanan/eslint-plugin-md-frontmatter \
   @gtbuchanan/eslint-plugin-agent-skills \
   eslint
 ```
+
+`@eslint/json` and `@eslint/markdown` are peer dependencies rather than
+regular ones because `configs.recommended` registers them under the
+`json` and `markdown` plugin namespaces. ESLint rejects a namespace that
+is registered twice unless both configs pass the identical plugin
+object, so any config that also registers `markdown` (including
+`@gtbuchanan/eslint-config`) must resolve to the same copy this plugin
+imports. A peer dependency is what guarantees that; a regular dependency
+lets the two pins drift and installs a second copy.
 
 ## Usage
 
