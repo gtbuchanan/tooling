@@ -1,5 +1,7 @@
+import frontmatter from '@gtbuchanan/eslint-plugin-md-frontmatter';
+import type { ESLint } from 'eslint';
 import { describe, it } from 'vitest';
-import { configs } from '#src/index.js';
+import plugin, { configs } from '#src/index.js';
 import manifest from '../package.json' with { type: 'json' };
 
 /*
@@ -7,30 +9,48 @@ import manifest from '../package.json' with { type: 'json' };
  * dependency. ESLint rejects a namespace registered by two configs unless
  * both pass the identical plugin object, so a consumer config that registers
  * the same namespace — `@gtbuchanan/eslint-config` registers `markdown` for
- * every Markdown file — must resolve to the copy this plugin imports. Only a peer
- * dependency guarantees that; as a regular dependency the published pins
+ * every Markdown file — must resolve to the copy this plugin imports. Only a
+ * peer dependency guarantees that; as a regular dependency the published pins
  * drift apart on the next release cut and a second copy gets installed.
  *
- * Workspace siblings (`@gtbuchanan/*`) are exempt: changesets bumps every
- * dependent in the same release, so their specs cannot drift apart.
+ * Workspace-owned plugins are exempt: changesets bumps every dependent in the
+ * same release, so their specs cannot drift apart. They are matched by object
+ * identity rather than by name because neither declares `meta`, and identity
+ * keeps the exemption correct if either ever starts to.
  */
+const isWorkspacePlugin = (candidate: ESLint.Plugin): boolean =>
+  candidate === plugin || candidate === frontmatter;
+
+const thirdPartyPlugins = [
+  ...new Set(configs.recommended.flatMap(
+    config => Object.values(config.plugins ?? {}),
+  )),
+].filter(registered => !isWorkspacePlugin(registered));
+
 const thirdPartyPluginNames = [
   ...new Set(
-    configs.recommended
-      .flatMap(config => Object.values(config.plugins ?? {}))
-      .map(plugin => plugin.meta?.name)
-      .filter(name => name !== undefined)
-      .filter(name => !name.startsWith('@gtbuchanan/')),
+    thirdPartyPlugins
+      .map(({ meta }) => meta?.name)
+      .filter(name => name !== undefined),
   ),
 ];
 
 describe('configs.recommended plugin resolution', () => {
   /*
-   * Guards the derivation itself. Every name comes from `meta.name`, which is
-   * optional — if upstream drops it the list silently empties and every
-   * assertion below passes vacuously.
+   * `meta.name` is how a third-party plugin is traced back to the package
+   * that has to be a peer. One that omits it would otherwise drop out of the
+   * derived list silently, and the peer assertions below would pass without
+   * ever covering it.
    */
-  it('identifies the third-party plugins it registers', ({ expect }) => {
+  it('exposes a package name for every third-party plugin', ({ expect }) => {
+    const unidentified = thirdPartyPlugins.filter(
+      ({ meta }) => meta?.name === undefined,
+    );
+
+    expect(unidentified).toStrictEqual([]);
+  });
+
+  it('registers at least one third-party plugin', ({ expect }) => {
     expect(thirdPartyPluginNames).not.toStrictEqual([]);
   });
 
