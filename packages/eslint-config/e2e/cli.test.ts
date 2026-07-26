@@ -5,6 +5,7 @@ import { it as base, describe } from 'vitest';
 import {
   type Fixture,
   createFixture,
+  jsTsconfig,
   requireOnlyWarnConfig,
 } from './fixture.ts';
 
@@ -59,6 +60,28 @@ describe.concurrent('eslint CLI integration', () => {
 
     expect(exitCode).not.toBe(0);
     expect(stdout).toContain('unicorn/no-process-exit');
+  });
+
+  it('allows require() in .cjs but not .js', async ({ fixture, expect }) => {
+    // The .cjs extension forces CommonJS, so require() is the only option
+    const code = "const path = require('node:path');\n\nmodule.exports = path;\n";
+
+    const cjs = await fixture.run({
+      files: { 'legacy.cjs': code },
+      tsconfig: jsTsconfig,
+    });
+    const js = await fixture.run({
+      files: { 'legacy.js': code },
+      tsconfig: jsTsconfig,
+    });
+
+    /*
+     * A parse error would suppress every rule, making the negative
+     * assertion below pass vacuously — guard against it explicitly.
+     */
+    expect(cjs.stdout).not.toContain('Parsing error');
+    expect(cjs.stdout).not.toContain('@typescript-eslint/no-require-imports');
+    expect(js.stdout).toContain('@typescript-eslint/no-require-imports');
   });
 
   it('respects global ignores for dist/', async ({ fixture, expect }) => {

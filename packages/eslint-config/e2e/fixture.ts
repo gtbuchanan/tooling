@@ -40,11 +40,27 @@ const tsconfig = `${JSON.stringify({
   include: ['**/*.ts', '**/*.mts', '**/*.cts'],
 })}\n`;
 
+/**
+ * Variant of the default tsconfig that also covers JavaScript
+ * extensions, for tests that lint `.cjs`/`.js` sources.
+ */
+export const jsTsconfig = `${JSON.stringify({
+  compilerOptions: { allowJs: true },
+  extends: './tsconfig.root.json',
+  include: ['**/*.cjs', '**/*.js', '**/*.mjs'],
+})}\n`;
+
 interface RunOptions {
   config?: string;
   env?: Record<string, string | undefined>;
   files: Record<string, string>;
   flags?: readonly string[];
+  /**
+   * Overrides the default `tsconfig.json`. Needed for tests that lint
+   * non-TypeScript extensions — the project service rejects any file no
+   * tsconfig includes, which fails the run before rules ever execute.
+   */
+  tsconfig?: string;
 }
 
 export const createFixture = () => {
@@ -56,10 +72,16 @@ export const createFixture = () => {
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
 
-  const run = async ({ config, env, files, flags = [] }: RunOptions) => {
+  const run = async ({
+    config,
+    env,
+    files,
+    flags = [],
+    tsconfig: tsconfigOverride,
+  }: RunOptions) => {
     const runDir = mkdtempSync(path.join(fixture.projectDir, 'run-'));
     writeFileSync(path.join(runDir, 'eslint.config.ts'), config ?? requireConfig);
-    writeFileSync(path.join(runDir, 'tsconfig.json'), tsconfig);
+    writeFileSync(path.join(runDir, 'tsconfig.json'), tsconfigOverride ?? tsconfig);
     writeFileSync(path.join(runDir, 'tsconfig.root.json'), tsconfigRoot);
 
     const fileNames = Object.keys(files);

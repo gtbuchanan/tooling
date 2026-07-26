@@ -7,6 +7,7 @@ import { scriptFileExtensions } from './files.ts';
 import { plugins } from './plugins/index.ts';
 
 export {
+  cjsFiles,
   scriptFileExtensions,
   scriptFiles,
   tsOnlyExtensions,
