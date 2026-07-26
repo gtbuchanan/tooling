@@ -503,6 +503,10 @@ importers:
         version: 6.0.6
 
   packages/tsconfig:
+    dependencies:
+      typescript:
+        specifier: '>=6.0.0'
+        version: 6.0.3
     devDependencies:
       '@gtbuchanan/eslint-config':
         specifier: workspace:*
