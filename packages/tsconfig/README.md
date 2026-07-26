@@ -27,8 +27,8 @@ pnpm add -D @gtbuchanan/tsconfig
 
 Includes all `@tsconfig/strictest` options plus:
 
-- `target`: ES2024
-- `lib`: ES2024
+- `target`: ES2025
+- `lib`: ES2025
 - `module`: nodenext
 - `moduleResolution`: nodenext
 - `types`: node

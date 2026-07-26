@@ -49,6 +49,24 @@ describe('tsconfig flattening', () => {
     });
   });
 
+  it('exposes the ES2025 lib surface', async ({ fixture, expect }) => {
+    fixture.writeFile(
+      'tsconfig.json',
+      JSON.stringify({
+        compilerOptions: { noEmit: true, types: [] },
+        extends: ['@gtbuchanan/tsconfig/node.json'],
+      }),
+    );
+    fixture.writeFile(
+      'index.ts',
+      'export const missing = (a: Set<string>, b: Set<string>) => a.difference(b);\n',
+    );
+
+    const result = await fixture.run('tsc', ['--noEmit']);
+
+    expect(result).toMatchObject({ exitCode: 0 });
+  });
+
   it('works without @tsconfig/strictest installed', async ({ fixture, expect }) => {
     fixture.writeFile(
       'tsconfig.json',
