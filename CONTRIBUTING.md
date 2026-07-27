@@ -4,10 +4,10 @@
 
 [mise] manages the repo's pinned dev tools for every contributor and
 CI. Run `mise install` to get the versions the repo pins.
-Those versions live in `mise.toml`; pnpm's version lives in
-`package.json`'s `packageManager` field because turbo requires that
-field for workspace resolution (mise reads the version from there via
-`idiomatic_version_file_enable_tools`).
+Those versions live in `mise.toml`. pnpm is pinned twice — in
+`mise.toml` and in `package.json`'s `packageManager` field, which turbo
+requires for workspace resolution — so keep the two in sync when
+bumping by hand (Renovate groups them into one PR).
 
 Install mise:
 
