@@ -65,7 +65,7 @@ export default configure({
 - `@eslint/json` — JSON file linting
 - `@vitest/eslint-plugin` — Vitest test-specific rules
 - `eslint-plugin-n` — Node.js best practices
-- `eslint-plugin-pnpm` — pnpm workspace validation (opt-in)
+- `eslint-plugin-pnpm` — pnpm catalog validation and `pnpm-workspace.yaml` settings policy
 - `eslint-plugin-yml` — YAML linting and key sorting
 - `eslint-plugin-toml` — TOML linting and structural key/table ordering
 - `@eslint/markdown` — Official Markdown lint plugin (commonmark AST)

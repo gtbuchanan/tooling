@@ -5,6 +5,8 @@ import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import { scriptFileExtensions } from './files.ts';
 import { plugins } from './plugins/index.ts';
+import { defaultPnpmWorkspaceSettings } from './pnpm-workspace.ts';
+import type { PnpmWorkspaceSettings } from './pnpm-workspace.ts';
 
 export {
   cjsFiles,
@@ -13,6 +15,8 @@ export {
   tsOnlyExtensions,
   tsOnlyFiles,
 } from './files.ts';
+export { defaultPnpmWorkspaceSettings } from './pnpm-workspace.ts';
+export type { PnpmWorkspaceSettings } from './pnpm-workspace.ts';
 
 const entryPointDirs = ['**/bin', '**/scripts'] as const;
 
@@ -49,6 +53,15 @@ export interface ESLintConfigureOptions {
    */
   readonly pnpm?: boolean;
   /**
+   * Policy enforced on the settings keys of `pnpm-workspace.yaml`.
+   * Replaces the default wholesale rather than merging into it — spread
+   * {@link defaultPnpmWorkspaceSettings} to extend it. Pass `false` to
+   * keep the catalog rules but drop the settings policy. Ignored when
+   * `pnpm` is `false`.
+   * @defaultValue {@link defaultPnpmWorkspaceSettings}
+   */
+  readonly pnpmWorkspaceSettings?: PnpmWorkspaceSettings | false;
+  /**
    * Target environment. Server targets enable require-unicode-regexp with
    * `/v` flag. Browser targets enable `no-console` and `no-alert`; entry
    * points are exempt from `no-console`.
@@ -82,6 +95,7 @@ export const configure = async (
     ],
     onlyWarn: options.onlyWarn ?? true,
     pnpm: options.pnpm ?? true,
+    pnpmWorkspaceSettings: options.pnpmWorkspaceSettings ?? defaultPnpmWorkspaceSettings,
     target: options.target ?? 'server',
     ...(options.tsconfigRootDir !== undefined && { tsconfigRootDir: options.tsconfigRootDir }),
   };

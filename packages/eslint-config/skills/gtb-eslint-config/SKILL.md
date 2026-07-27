@@ -50,6 +50,85 @@ All optional except `tsconfigRootDir` (recommended for type-aware rules):
   Linter class.
 - **`pnpm`** — Enables `eslint-plugin-pnpm` rules for `package.json`
   and `pnpm-workspace.yaml`. Defaults to `true`.
+- **`pnpmWorkspaceSettings`** — Policy for `pnpm/yaml-enforce-settings`,
+  which lints the settings keys of `pnpm-workspace.yaml`. Defaults to
+  `defaultPnpmWorkspaceSettings` (see below). Pass `false` to keep the
+  catalog rules but drop the settings policy. Ignored when `pnpm` is
+  `false`.
+
+## pnpm workspace settings policy
+
+`pnpm/yaml-enforce-settings` lints the settings keys of
+`pnpm-workspace.yaml` — the block that absorbed most of `.npmrc` in
+pnpm 10. The other `eslint-plugin-pnpm` rules cover only catalogs and
+package globs, so this is the one that keeps install behavior
+consistent across repos. `defaultPnpmWorkspaceSettings` enforces:
+
+- `settings` (exact key **and** value, auto-fixable) —
+  `engineStrict: true`, `hoist: false`, `minimumReleaseAge: 4320`
+  (3 days, matching the shared Renovate preset), and
+  `strictPeerDependencies: true`
+- `requiredFields` (key must exist, any value, never fixed) —
+  `minimumReleaseAgeExclude`
+- `forbiddenFields` (key must not exist, never fixed) —
+  `dangerouslyAllowAllBuilds`, `publicHoistPattern`, `shamefullyHoist`,
+  `trustLockfile`
+
+Each `settings` entry is inserted into the consumer's file by `--fix`,
+so the set is kept to values that differ from pnpm's own defaults.
+Settings that merely restate a default add a line that changes nothing.
+
+### Why the unsafe settings are forbidden keys
+
+`settings` can only express exact equality — there is no "anything but
+this value". A setting that is dangerous in one direction therefore has
+to be banned outright by key. `dangerouslyAllowAllBuilds` runs every
+dependency's install scripts without approval, bypassing `allowBuilds`.
+`publicHoistPattern` and `shamefullyHoist` both flatten dependencies
+into the root `node_modules`, undoing `hoist: false` and letting
+undeclared imports resolve — pnpm defines `shamefullyHoist` as
+`publicHoistPattern: '*'`, so banning one without the other leaves the
+hole open. `trustLockfile` skips the lockfile's supply-chain
+verification pass.
+
+Because these are key-presence checks, they also flag a harmless
+explicit value (`publicHoistPattern: []`), and a key absent from an
+older pnpm simply never appears.
+
+### Why the exclude list is required rather than value-matched
+
+`settings` compares whole values with deep equality, and its fixer
+replaces the entire key/value pair. For a list a consumer legitimately
+extends, that combination is destructive: adding `'@acme/*'` to
+`minimumReleaseAgeExclude` would read as a mismatch, and `--fix` would
+delete it. Requiring the key without pinning its value keeps the
+setting deliberate while leaving its contents to the consumer. Apply
+the same reasoning before moving any future list-valued setting into
+`settings`.
+
+### Overriding the policy
+
+`pnpmWorkspaceSettings` **replaces** the default rather than merging
+into it, and spread is shallow — a bare `...defaultPnpmWorkspaceSettings`
+still clobbers `settings` wholesale. Spread both levels:
+
+```typescript
+import {
+  configure,
+  defaultPnpmWorkspaceSettings as base,
+} from '@gtbuchanan/eslint-config';
+
+export default configure({
+  pnpmWorkspaceSettings: {
+    ...base,
+    settings: { ...base.settings, hoist: true },
+  },
+});
+```
+
+A policy with no `settings`, `requiredFields`, or `forbiddenFields`
+drops the rule instead of enabling it — the rule throws when given an
+empty policy, so `{}` and `false` behave the same.
 
 ## Pre-commit isolation
 
