@@ -5,7 +5,6 @@ import { it as base, describe } from 'vitest';
 import {
   type Fixture,
   createFixture,
-  jsTsconfig,
   requireOnlyWarnConfig,
 } from './fixture.ts';
 
@@ -68,19 +67,20 @@ describe.concurrent('eslint CLI integration', () => {
 
     const cjs = await fixture.run({
       files: { 'legacy.cjs': code },
-      tsconfig: jsTsconfig,
+      tsconfig: fixture.jsTsconfig,
     });
     const js = await fixture.run({
       files: { 'legacy.js': code },
-      tsconfig: jsTsconfig,
+      tsconfig: fixture.jsTsconfig,
     });
 
     /*
-     * A parse error would suppress every rule, making the negative
-     * assertion below pass vacuously — guard against it explicitly.
+     * Empty stdout pins the .cjs run to fully clean — no parse error
+     * silently suppressing every rule, which would make a bare "does not
+     * report" assertion pass vacuously.
      */
-    expect(cjs.stdout).not.toContain('Parsing error');
-    expect(cjs.stdout).not.toContain('@typescript-eslint/no-require-imports');
+    expect(cjs).toMatchObject({ exitCode: 0, stdout: '' });
+    expect(js).toMatchObject({ exitCode: 1 });
     expect(js.stdout).toContain('@typescript-eslint/no-require-imports');
   });
 

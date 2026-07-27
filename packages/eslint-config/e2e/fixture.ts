@@ -40,16 +40,6 @@ const tsconfig = `${JSON.stringify({
   include: ['**/*.ts', '**/*.mts', '**/*.cts'],
 })}\n`;
 
-/**
- * Variant of the default tsconfig that also covers JavaScript
- * extensions, for tests that lint `.cjs`/`.js` sources.
- */
-export const jsTsconfig = `${JSON.stringify({
-  compilerOptions: { allowJs: true },
-  extends: './tsconfig.root.json',
-  include: ['**/*.cjs', '**/*.js', '**/*.mjs'],
-})}\n`;
-
 interface RunOptions {
   config?: string;
   env?: Record<string, string | undefined>;
@@ -65,12 +55,32 @@ interface RunOptions {
 
 export const createFixture = () => {
   const fixture = createIsolatedFixture({
-    depsPackages: ['typescript'],
+    depsPackages: ['@types/node', 'typescript'],
     hookPackages: ['eslint', 'jiti'],
     packageName: '@gtbuchanan/eslint-config',
   });
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
+
+  /*
+   * Variant of the default tsconfig covering JavaScript extensions, for
+   * tests that lint .cjs/.js sources. Without node types, `require` is
+   * `any` and `module` is unresolved, so the no-unsafe-* rules fire on
+   * any CommonJS sample and drown out what those tests assert. Both
+   * fields are required to get them: `typeRoots` because the isolated
+   * deps directory is not an ancestor of the run directory, and `types`
+   * because TypeScript 6 no longer includes every package under
+   * `typeRoots` automatically.
+   */
+  const jsTsconfig = `${JSON.stringify({
+    compilerOptions: {
+      allowJs: true,
+      typeRoots: [path.join(fixture.depsDir, 'node_modules/@types')],
+      types: ['node'],
+    },
+    extends: './tsconfig.root.json',
+    include: ['**/*.cjs', '**/*.js', '**/*.mjs'],
+  })}\n`;
 
   const run = async ({
     config,
@@ -108,6 +118,7 @@ export const createFixture = () => {
 
   return {
     eslint,
+    jsTsconfig,
     nodePath: fixture.nodePath,
     projectDir: fixture.projectDir,
     run,
