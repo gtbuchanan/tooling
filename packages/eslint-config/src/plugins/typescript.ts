@@ -1,6 +1,6 @@
 import type { Linter } from 'eslint';
 import tseslint from 'typescript-eslint';
-import { scriptFiles, tsOnlyFiles } from '../files.ts';
+import { cjsFiles, scriptFiles, tsOnlyFiles } from '../files.ts';
 import type { PluginFactory, ResolvedOptions } from '../index.ts';
 
 // --- TypeScript rule overrides (on top of strictTypeChecked + stylisticTypeChecked) ---
@@ -61,6 +61,15 @@ const tsOnlyRuleOverrides: Linter.Config = {
   },
 };
 
+/** Rule overrides for files the .cjs extension forces into CommonJS. */
+const cjsRuleOverrides: Linter.Config = {
+  files: [...cjsFiles],
+  rules: {
+    // Justification: .cjs forbids import syntax, so require() is the only option
+    '@typescript-eslint/no-require-imports': 'off',
+  },
+};
+
 /** Resolves TypeScript parser options from the shared config options. */
 export const resolveParserOptions = (
   options: ResolvedOptions,
@@ -77,6 +86,7 @@ const plugin: PluginFactory = options => [
   { languageOptions: { parserOptions: resolveParserOptions(options) } },
   scriptRuleOverrides,
   tsOnlyRuleOverrides,
+  cjsRuleOverrides,
   {
     files: ['**/*'],
     ignores: [...scriptFiles],

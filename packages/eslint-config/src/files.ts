@@ -23,6 +23,13 @@ export const tsOnlyFiles: string[] = tsOnlyExtensions.map(
 );
 
 /**
+ * Glob patterns matching files whose extension forces CommonJS, making
+ * `require()` the only way to import. `.cts` is excluded — TypeScript
+ * compiles its `import` statements down to `require`.
+ */
+export const cjsFiles: string[] = ['**/*.cjs'];
+
+/**
  * Markdown files excluded from structural lint. Changesets owns the
  * format of files in `.changeset/**` and validates them against its
  * own schema.

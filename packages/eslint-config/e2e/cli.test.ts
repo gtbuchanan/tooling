@@ -61,6 +61,29 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('unicorn/no-process-exit');
   });
 
+  it('allows require() in .cjs but not .js', async ({ fixture, expect }) => {
+    // The .cjs extension forces CommonJS, so require() is the only option
+    const code = "const path = require('node:path');\n\nmodule.exports = path;\n";
+
+    const cjs = await fixture.run({
+      files: { 'legacy.cjs': code },
+      tsconfig: fixture.jsTsconfig,
+    });
+    const js = await fixture.run({
+      files: { 'legacy.js': code },
+      tsconfig: fixture.jsTsconfig,
+    });
+
+    /*
+     * Empty stdout pins the .cjs run to fully clean — no parse error
+     * silently suppressing every rule, which would make a bare "does not
+     * report" assertion pass vacuously.
+     */
+    expect(cjs).toMatchObject({ exitCode: 0, stdout: '' });
+    expect(js).toMatchObject({ exitCode: 1 });
+    expect(js.stdout).toContain('@typescript-eslint/no-require-imports');
+  });
+
   it('respects global ignores for dist/', async ({ fixture, expect }) => {
     const longLine = `export const x = '${'a'.repeat(101)}';\n`;
     const { exitCode } = await fixture.run({

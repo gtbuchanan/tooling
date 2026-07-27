@@ -17,18 +17,33 @@ interface TarballEntry {
 
 const require = createRequire(import.meta.url);
 
+/*
+ * Resolve the manifest directly so types-only packages pin too —
+ * `@types/node` and friends declare no entry point, so resolving the bare
+ * name throws. Packages that keep `./package.json` out of their exports
+ * map fall back to walking up from the entry point.
+ */
+const resolveManifest = (name: string): string => {
+  try {
+    return require.resolve(`${name}/package.json`);
+  } catch {
+    const entryDir = path.dirname(require.resolve(name));
+    const pkgPath = findUpSync('package.json', { cwd: entryDir });
+    if (pkgPath === undefined) {
+      throw new Error(`Could not find package.json for ${name}`);
+    }
+    return pkgPath;
+  }
+};
+
 /**
  * Resolves a package name to `name@version` using the version currently
  * installed in this project's node_modules. This pins e2e fixture installs
  * to the exact versions tested during development.
  */
 export const pinned = (name: string): string => {
-  const entryDir = path.dirname(require.resolve(name));
-  const pkgPath = findUpSync('package.json', { cwd: entryDir });
-  if (pkgPath === undefined) {
-    throw new Error(`Could not find package.json for ${name}`);
-  }
-  const { version } = v.parse(PackageJson, JSON.parse(readFileSync(pkgPath, 'utf8')));
+  const manifest = readFileSync(resolveManifest(name), 'utf8');
+  const { version } = v.parse(PackageJson, JSON.parse(manifest));
   return `${name}@${version}`;
 };
 

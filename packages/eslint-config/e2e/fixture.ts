@@ -45,21 +45,53 @@ interface RunOptions {
   env?: Record<string, string | undefined>;
   files: Record<string, string>;
   flags?: readonly string[];
+  /**
+   * Overrides the default `tsconfig.json`. Needed for tests that lint
+   * non-TypeScript extensions — the project service rejects any file no
+   * tsconfig includes, which fails the run before rules ever execute.
+   */
+  tsconfig?: string;
 }
 
 export const createFixture = () => {
   const fixture = createIsolatedFixture({
-    depsPackages: ['typescript'],
+    depsPackages: ['@types/node', 'typescript'],
     hookPackages: ['eslint', 'jiti'],
     packageName: '@gtbuchanan/eslint-config',
   });
 
   const eslint = path.join(fixture.hookDir, 'node_modules/.bin/eslint');
 
-  const run = async ({ config, env, files, flags = [] }: RunOptions) => {
+  /*
+   * Variant of the default tsconfig covering JavaScript extensions, for
+   * tests that lint .cjs/.js sources. Without node types, `require` is
+   * `any` and `module` is unresolved, so the no-unsafe-* rules fire on
+   * any CommonJS sample and drown out what those tests assert. Both
+   * fields are required to get them: `typeRoots` because the isolated
+   * deps directory is not an ancestor of the run directory, and `types`
+   * because TypeScript 6 no longer includes every package under
+   * `typeRoots` automatically.
+   */
+  const jsTsconfig = `${JSON.stringify({
+    compilerOptions: {
+      allowJs: true,
+      typeRoots: [path.join(fixture.depsDir, 'node_modules/@types')],
+      types: ['node'],
+    },
+    extends: './tsconfig.root.json',
+    include: ['**/*.cjs', '**/*.js', '**/*.mjs'],
+  })}\n`;
+
+  const run = async ({
+    config,
+    env,
+    files,
+    flags = [],
+    tsconfig: tsconfigOverride,
+  }: RunOptions) => {
     const runDir = mkdtempSync(path.join(fixture.projectDir, 'run-'));
     writeFileSync(path.join(runDir, 'eslint.config.ts'), config ?? requireConfig);
-    writeFileSync(path.join(runDir, 'tsconfig.json'), tsconfig);
+    writeFileSync(path.join(runDir, 'tsconfig.json'), tsconfigOverride ?? tsconfig);
     writeFileSync(path.join(runDir, 'tsconfig.root.json'), tsconfigRoot);
 
     const fileNames = Object.keys(files);
@@ -86,6 +118,7 @@ export const createFixture = () => {
 
   return {
     eslint,
+    jsTsconfig,
     nodePath: fixture.nodePath,
     projectDir: fixture.projectDir,
     run,
