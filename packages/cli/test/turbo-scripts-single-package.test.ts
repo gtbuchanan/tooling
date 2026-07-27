@@ -15,6 +15,7 @@ import { captureLogger, createTempDir, readScripts, writeJson } from './helpers.
 const createSinglePackageProject = (): string => {
   const root = createTempDir();
   writeFileSync(path.join(root, 'pnpm-workspace.yaml'), 'linkWorkspacePackages: true\n');
+  mkdirSync(path.join(root, 'skills'), { recursive: true });
   mkdirSync(path.join(root, 'src'), { recursive: true });
   mkdirSync(path.join(root, 'test'), { recursive: true });
   writeJson(root, 'package.json', {
@@ -68,6 +69,7 @@ describe.concurrent('single-package root scripts', () => {
     syncScripts(root);
 
     expect(readScripts(root)).toMatchObject({
+      'deploy:skills': 'gtb task deploy:skills',
       'lint:eslint': 'gtb task lint:eslint',
       'test:vitest:fast': 'gtb task test:vitest:fast',
       'typecheck:ts': 'gtb task typecheck:ts',

@@ -195,6 +195,17 @@ describe.concurrent(forbiddenRootScripts, () => {
     ]);
   });
 
+  /*
+   * deploy:skills is a leaf task, not a command-less aggregate — the root owns
+   * its `gtb task` script here, so listing it would make sync and verify
+   * contradict each other.
+   */
+  it('excludes deploy:skills, which the root legitimately owns', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities({ hasSkills: true })]);
+
+    expect(forbiddenRootScripts(discovery)).toStrictEqual([]);
+  });
+
   it('lists nothing for monorepos, where the aliases are legitimate', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
       hasEslint: true,

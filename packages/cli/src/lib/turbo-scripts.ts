@@ -188,6 +188,11 @@ const aliasRootScriptEntries = (
  * Root script names a single-package repo must not define — the aggregate
  * tasks whose alias scripts only a monorepo can carry. Empty for monorepos.
  *
+ * Restricted to the {@link Aggregate} names because only they are
+ * command-less. `deploy:skills` is also aliased in a monorepo, but it is a
+ * leaf task: the single-package root owns its `gtb task` script, so listing it
+ * would make `gtb sync` and `gtb verify` contradict each other.
+ *
  * In a monorepo the alias is inert to turbo: `check` is a *package* task, so
  * `turbo run check` fans out to the packages and never reaches the root's
  * `check` script. In a single-package repo the root IS the package, so turbo
@@ -209,9 +214,12 @@ export const forbiddenRootScripts = (
   if (discovery.isMonorepo) {
     return [];
   }
+  const aggregates = new Set<string>(Object.values(Aggregate));
   const aliases = aliasRootScriptEntries(resolveToolFlags(discovery), discovery.isSelfHosted);
 
-  return Object.keys(collect(aliases)).toSorted(localeComparer);
+  return Object.keys(collect(aliases))
+    .filter(name => aggregates.has(name))
+    .toSorted(localeComparer);
 };
 
 /** Generates all root-level scripts (required + optional aliases). */
