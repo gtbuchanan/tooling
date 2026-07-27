@@ -186,6 +186,50 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result.stdout).toContain('yamllint/octal-values');
   });
 
+  /*
+   * The two halves of the default workspace policy behave differently on
+   * purpose: `settings` entries are auto-fixed into the file, while
+   * `minimumReleaseAgeExclude` is only required to exist so that a
+   * consumer's own scopes survive `--fix`.
+   */
+  it('fixes missing settings but not the exclude list', async ({ fixture, expect }) => {
+    const workspace = [
+      'minimumReleaseAgeExclude:',
+      "  - '@gtbuchanan/*'",
+      "  - '@acme/*'",
+      '',
+    ].join('\n');
+
+    const result = await fixture.run({
+      files: { 'pnpm-workspace.yaml': workspace },
+      flags: ['--fix'],
+    });
+
+    const fixed = result.readFile('pnpm-workspace.yaml');
+
+    expect(fixed).toContain('engineStrict: true');
+    expect(fixed).toContain('strictPeerDependencies: true');
+    expect(fixed).toContain("'@acme/*'");
+    expect(fixed).toContain("'@gtbuchanan/*'");
+  });
+
+  it('reports a forbidden setting without removing it', async ({ fixture, expect }) => {
+    const workspace = [
+      'minimumReleaseAgeExclude:',
+      "  - '@gtbuchanan/*'",
+      'shamefullyHoist: true',
+      '',
+    ].join('\n');
+
+    const result = await fixture.run({
+      files: { 'pnpm-workspace.yaml': workspace },
+      flags: ['--fix'],
+    });
+
+    expect(result.stdout).toContain('pnpm/yaml-enforce-settings');
+    expect(result.readFile('pnpm-workspace.yaml')).toContain('shamefullyHoist: true');
+  });
+
   it('detects markdownlint violations in markdown files', async ({ fixture, expect }) => {
     // MD026 (no-trailing-punctuation) — markdownlint-only, not covered
     // by `@eslint/markdown`'s recommended set.
