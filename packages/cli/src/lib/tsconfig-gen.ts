@@ -3,6 +3,7 @@ import { parseTsconfig } from 'get-tsconfig';
 import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
 import { readJsonFile } from './file-writer.ts';
+import { toPosixRelative } from './paths.ts';
 import { StringArray, UnknownRecord } from './schemas.ts';
 
 /** Directories and file patterns included in tsconfig.json for type-checking. */
@@ -133,7 +134,7 @@ export interface TsconfigDescriptor {
  * is `./<file>` — resolves correctly.
  */
 const rootRelative = (fromDir: string, rootDir: string, fileName: string): string => {
-  const prefix = path.relative(fromDir, rootDir).split(path.sep).join('/');
+  const prefix = toPosixRelative(fromDir, rootDir);
   return prefix === '' ? `./${fileName}` : `${prefix}/${fileName}`;
 };
 
@@ -144,24 +145,36 @@ const rootRelative = (fromDir: string, rootDir: string, fileName: string): strin
  * `tsconfig.build.json`. The package layer contributes its owned
  * compilerOptions and `include`; `extends` stays the root's, since the
  * package layer would otherwise point `tsconfig.build.json` at itself.
+ *
+ * The union of both layers' owned keys is re-applied last: each layer's
+ * `generate` already merged the same user options over its own owned keys,
+ * so overlaying the package layer would otherwise let a user value win back
+ * a key the root layer owns (`declaration`, `sourceMap`) — silently, since
+ * `verify` compares against this same output.
  */
 const mergeDescriptors = (
   root: TsconfigDescriptor,
   pkg: TsconfigDescriptor,
-): TsconfigDescriptor => ({
-  generate: (opts) => {
-    const base = root.generate(opts);
-    const overlay = pkg.generate(opts);
+): TsconfigDescriptor => {
+  const ownedKeys = { ...root.ownedKeys, ...pkg.ownedKeys };
 
-    return {
-      ...base,
-      ...(overlay.include !== undefined && { include: overlay.include }),
-      compilerOptions: { ...base.compilerOptions, ...overlay.compilerOptions },
-    };
-  },
-  ownedKeys: { ...root.ownedKeys, ...pkg.ownedKeys },
-  path: root.path,
-});
+  return {
+    generate: (opts) => {
+      const base = root.generate(opts);
+      const overlay = pkg.generate(opts);
+
+      return {
+        ...base,
+        ...(overlay.include !== undefined && { include: overlay.include }),
+        compilerOptions: {
+          ...base.compilerOptions, ...overlay.compilerOptions, ...ownedKeys,
+        },
+      };
+    },
+    ownedKeys,
+    path: root.path,
+  };
+};
 
 /** Folds descriptors targeting the same path into one, preserving order. */
 const dedupeByPath = (

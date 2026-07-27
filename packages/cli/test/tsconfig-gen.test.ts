@@ -254,4 +254,22 @@ describe.concurrent(planTsconfigs, () => {
     expect(generated).toHaveProperty(['compilerOptions', userKey], true);
     expect(generated).toHaveProperty(['compilerOptions', 'outDir'], 'dist/source');
   });
+
+  it('overrides user values for keys owned by either collapsed layer', ({ expect }) => {
+    const rootDir = path.resolve(build.packageName());
+
+    const descriptors = planTsconfigs(rootDir, [
+      makeCapabilities({ dir: rootDir, hasTypeScript: true, isPublished: true }),
+    ]);
+
+    /*
+     * `declaration`/`sourceMap` belong to the root layer only, so the package
+     * layer's own user merge would otherwise hand them back to the user.
+     */
+    expect(descriptorAt(descriptors, path.join(rootDir, 'tsconfig.build.json'))
+      ?.generate({ declaration: false, rootDir: 'stale', sourceMap: false }))
+      .toHaveProperty('compilerOptions', {
+        declaration: true, outDir: 'dist/source', rootDir: '.', sourceMap: true,
+      });
+  });
 });
