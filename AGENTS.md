@@ -471,13 +471,20 @@ reasoning here so the question doesn't get re-litigated:
 
 The forced consequence: `packageManager` in `package.json` is
 required — turbo errors out with `Missing packageManager` during
-workspace resolution. Rather than duplicate the pnpm pin in
-`mise.toml`'s `[tools]`, we set
-`idiomatic_version_file_enable_tools = ["pnpm"]` so mise reads the
-version directly from the same `packageManager` field. One pin, two
-consumers (turbo and mise). `mise.lock` still locks pnpm's
-per-platform binaries via the aqua backend; only the version source
-is shared.
+workspace resolution. The pnpm version is therefore pinned twice: in
+`package.json`'s `packageManager` (for turbo) and in `mise.toml`'s
+`[tools]` (for mise). Renovate bumps both and groups them into one PR
+via the `pnpm` `packageRule` in `default.json`.
+
+We previously deduplicated this with
+`idiomatic_version_file_enable_tools = ["pnpm"]`, which let mise read
+the version straight from `packageManager`. It broke Renovate PRs:
+Renovate's npm manager bumps `packageManager` but has no idea that
+change implies a mise tool bump, so `mise.lock`'s pnpm entry kept the
+old version and every `MISE_LOCKED=1` install failed on the drift.
+Renovate _does_ regenerate `mise.lock` for `[tools]` entries, so
+accepting the duplication is what keeps the lockfile honest. Don't
+"simplify" this back to the idiomatic version file.
 
 The `TURBO_DANGEROUSLY_DISABLE_PACKAGE_MANAGER_CHECK` escape hatch
 exists but turbo's own schema warns it disables some pnpm-aware
