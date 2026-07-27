@@ -9,8 +9,8 @@ Turborepo-based build pipeline orchestrated by the `gtb` CLI. Each package defin
 
 ## Orchestration
 
-Root `package.json` scripts are thin aliases that route through the
-`gtb turbo` wrapper:
+In a **monorepo**, root `package.json` scripts are thin aliases that
+route through the `gtb turbo` wrapper:
 
 - `pnpm check` → `gtb turbo run check`
 - `pnpm build` → `gtb turbo run build`
@@ -19,7 +19,32 @@ Root `package.json` scripts are thin aliases that route through the
 - `pnpm test:slow` → `gtb turbo run test:slow`
 - `pnpm test:e2e` → `gtb turbo run test:e2e`
 - `pnpm coverage:merge` → `gtb turbo run coverage:merge`
-- `pnpm deploy:skills` → `gtb turbo run deploy:skills` (monorepos only)
+- `pnpm deploy:skills` → `gtb turbo run deploy:skills`
+
+### Single-package repos have no aggregate aliases
+
+When the root _is_ the lone package (no `packages` globs in
+`pnpm-workspace.yaml`), `gtb sync` generates none of the scripts above —
+invoke the aggregate directly instead:
+
+```sh
+gtb turbo run check
+gtb turbo run build
+```
+
+Turbo runs these as root tasks and, finding no command for them, just
+resolves their `dependsOn` chain down to the leaf scripts. Adding an
+alias back breaks the repo: turbo resolves the aggregate to the root
+script, the script re-invokes turbo, and turbo aborts the run with its
+[`recursive_turbo_invocations`](https://turborepo.dev/messages/recursive-turbo-invocations)
+guard. The loop is real, not a heuristic false positive, so no rewrite
+of the alias escapes it — dispatching to the leaf tasks (`gtb turbo run
+typecheck:ts lint:eslint`) trips the same guard, and a turbo-free alias
+would run _in addition to_ the aggregate's dependencies. The leaf
+scripts are unaffected: they call `gtb task <name>` and never turbo.
+
+`gtb verify` reports any root script that shadows an aggregate, so a
+repo synced before this rule landed is told which scripts to delete.
 
 `gtb turbo` is a thin pass-through to `turbo` on every supported
 platform. On Android (`process.platform === 'android'`) it resolves
