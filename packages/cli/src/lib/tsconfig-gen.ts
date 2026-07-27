@@ -125,14 +125,93 @@ export interface TsconfigDescriptor {
 }
 
 /**
+ * Builds an `extends` specifier pointing from a package directory at a
+ * root-level config, in the POSIX-relative form tsc expects. Derived from
+ * the actual directories rather than assuming the conventional
+ * `packages/<name>` depth, so a package nested one level deep — or a
+ * single-package repo, where the lone package *is* the root and the answer
+ * is `./<file>` — resolves correctly.
+ */
+const rootRelative = (fromDir: string, rootDir: string, fileName: string): string => {
+  const prefix = path.relative(fromDir, rootDir).split(path.sep).join('/');
+  return prefix === '' ? `./${fileName}` : `${prefix}/${fileName}`;
+};
+
+/**
+ * Collapses two descriptors that target the same file. This happens only in
+ * a single-package repo, where the lone package is the workspace root, so
+ * the root and per-package layers land on one `tsconfig.json` /
+ * `tsconfig.build.json`. The package layer contributes its owned
+ * compilerOptions and `include`; `extends` stays the root's, since the
+ * package layer would otherwise point `tsconfig.build.json` at itself.
+ */
+const mergeDescriptors = (
+  root: TsconfigDescriptor,
+  pkg: TsconfigDescriptor,
+): TsconfigDescriptor => ({
+  generate: (opts) => {
+    const base = root.generate(opts);
+    const overlay = pkg.generate(opts);
+
+    return {
+      ...base,
+      ...(overlay.include !== undefined && { include: overlay.include }),
+      compilerOptions: { ...base.compilerOptions, ...overlay.compilerOptions },
+    };
+  },
+  ownedKeys: { ...root.ownedKeys, ...pkg.ownedKeys },
+  path: root.path,
+});
+
+/** Folds descriptors targeting the same path into one, preserving order. */
+const dedupeByPath = (
+  descriptors: readonly TsconfigDescriptor[],
+): readonly TsconfigDescriptor[] => {
+  const byPath = new Map<string, TsconfigDescriptor>();
+  for (const descriptor of descriptors) {
+    const existing = byPath.get(descriptor.path);
+    byPath.set(
+      descriptor.path,
+      existing === undefined ? descriptor : mergeDescriptors(existing, descriptor),
+    );
+  }
+
+  return byPath.values().toArray();
+};
+
+const planPackageTsconfigs = (
+  rootDir: string,
+  pkg: PackageCapabilities,
+): readonly TsconfigDescriptor[] => {
+  if (!pkg.hasTypeScript) {
+    return [];
+  }
+
+  const typeCheck: TsconfigDescriptor = {
+    generate: opts =>
+      generateTypeCheckConfig(rootRelative(pkg.dir, rootDir, 'tsconfig.base.json'), opts),
+    ownedKeys: typeCheckOwned,
+    path: path.join(pkg.dir, 'tsconfig.json'),
+  };
+  const buildConfig: TsconfigDescriptor = {
+    generate: opts =>
+      generateBuildConfig(rootRelative(pkg.dir, rootDir, 'tsconfig.build.json'), opts),
+    ownedKeys: buildOwned,
+    path: path.join(pkg.dir, 'tsconfig.build.json'),
+  };
+
+  return pkg.isPublished ? [typeCheck, buildConfig] : [typeCheck];
+};
+
+/**
  * Builds the list of tsconfig descriptors for the entire workspace.
  * Both `sync` (write) and `verify` (validate) consume this plan.
  */
 export const planTsconfigs = (
   rootDir: string,
   packages: readonly PackageCapabilities[],
-): readonly TsconfigDescriptor[] => {
-  const descriptors: TsconfigDescriptor[] = [
+): readonly TsconfigDescriptor[] =>
+  dedupeByPath([
     {
       generate: opts => generateTypeCheckConfig('./tsconfig.base.json', opts),
       ownedKeys: typeCheckOwned,
@@ -143,27 +222,5 @@ export const planTsconfigs = (
       ownedKeys: rootBuildOwned,
       path: path.join(rootDir, 'tsconfig.build.json'),
     },
-  ];
-
-  for (const pkg of packages) {
-    if (!pkg.hasTypeScript) {
-      continue;
-    }
-
-    descriptors.push({
-      generate: opts => generateTypeCheckConfig('../../tsconfig.base.json', opts),
-      ownedKeys: typeCheckOwned,
-      path: path.join(pkg.dir, 'tsconfig.json'),
-    });
-
-    if (pkg.isPublished) {
-      descriptors.push({
-        generate: opts => generateBuildConfig('../../tsconfig.build.json', opts),
-        ownedKeys: buildOwned,
-        path: path.join(pkg.dir, 'tsconfig.build.json'),
-      });
-    }
-  }
-
-  return descriptors;
-};
+    ...packages.flatMap(pkg => planPackageTsconfigs(rootDir, pkg)),
+  ]);

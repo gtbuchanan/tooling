@@ -84,6 +84,8 @@ Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so loc
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
+**Single-package tsconfigs.** When the root _is_ the lone package (no `packages` globs in `pnpm-workspace.yaml`), the root and per-package tsconfig layers target the same files, so sync collapses them into one: both `tsconfig.json` and `tsconfig.build.json` extend `./tsconfig.base.json`, and the build config carries the root layer's `declaration`/`sourceMap` alongside the package layer's `outDir`/`rootDir`/`include`. Package `extends` paths are derived from the package's actual depth below the root, not assumed to be `packages/<name>`.
+
 **Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync mise`, `gtb verify mise turbo`. No args means all scopes. This lets a repo regenerate or check just one artifact — e.g. an hk-preset adopter runs `gtb sync mise` to write `mise.tasks.toml` without a full workspace sync. An unknown scope exits non-zero.
 
 `mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify mise` asserts the include is present. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
