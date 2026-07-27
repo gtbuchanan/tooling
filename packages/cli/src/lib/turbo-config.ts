@@ -397,6 +397,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
 };
 
 export {
+  forbiddenRootScripts,
   generatePackageScripts,
   generateRequiredRootScripts,
   generateRootScripts,

@@ -32,6 +32,11 @@ pnpm exec gtb turbo run build   # full pipeline
 pnpm exec gtb turbo run test:fast
 ```
 
+Monorepos also get `pnpm check` / `pnpm build` aliases for these. A
+single-package repo (where the root _is_ the package) gets none: a root
+script named after an aggregate makes turbo re-enter itself, so the
+`gtb turbo run` form above is the entry point there.
+
 `gtb turbo` is a thin pass-through to `turbo` on every supported
 platform. On Android, `process.platform === 'android'` causes the
 node_modules launcher to refuse to start; the wrapper resolves the

@@ -1,10 +1,20 @@
 import { describe, it } from 'vitest';
+import type { PackageCapabilities } from '#src/lib/discovery.js';
 import {
+  forbiddenRootScripts,
   generatePackageScripts,
   generateRequiredRootScripts,
   generateRootScripts,
 } from '#src/lib/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
+
+/** Two identical packages — the minimum `makeDiscovery` reads as a monorepo. */
+const monorepoOf = (
+  overrides: Partial<PackageCapabilities> = {},
+): readonly PackageCapabilities[] => [
+  makeCapabilities(overrides),
+  makeCapabilities(overrides),
+];
 
 describe.concurrent(generatePackageScripts, () => {
   it('generates typecheck:ts for TypeScript packages', ({ expect }) => {
@@ -87,15 +97,13 @@ describe.concurrent(generatePackageScripts, () => {
 
 describe.concurrent(generateRootScripts, () => {
   it('includes aliases and required scripts', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({
-        hasEslint: true,
-        hasTest: true,
-        hasTypeScript: true,
-        hasVitest: true,
-        isPublished: true,
-      }),
-    ]);
+    const discovery = makeDiscovery(monorepoOf({
+      hasEslint: true,
+      hasTest: true,
+      hasTypeScript: true,
+      hasVitest: true,
+      isPublished: true,
+    }));
 
     const result = generateRootScripts(discovery);
 
@@ -107,7 +115,7 @@ describe.concurrent(generateRootScripts, () => {
 
   it('routes aliases through pnpm run gtb in self-hosted repos', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasEslint: true, hasTypeScript: true, isPublished: true })],
+      monorepoOf({ hasEslint: true, hasTypeScript: true, isPublished: true }),
       { isSelfHosted: true },
     );
 
@@ -118,9 +126,7 @@ describe.concurrent(generateRootScripts, () => {
   });
 
   it('generates pack alias when published packages exist', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
-    ]);
+    const discovery = makeDiscovery(monorepoOf({ isPublished: true }));
 
     const result = generateRootScripts(discovery);
 
@@ -128,7 +134,7 @@ describe.concurrent(generateRootScripts, () => {
   });
 
   it('omits pack alias when no published packages', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
+    const discovery = makeDiscovery(monorepoOf());
 
     const result = generateRootScripts(discovery);
 
@@ -136,12 +142,69 @@ describe.concurrent(generateRootScripts, () => {
   });
 
   it('generates pack and build aliases for a Pkl-only package', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasPkl: true })]);
+    const discovery = makeDiscovery(monorepoOf({ hasPkl: true }));
 
     const result = generateRootScripts(discovery);
 
     expect(result).toHaveProperty('pack', 'gtb turbo run pack');
     expect(result).toHaveProperty('build', 'gtb turbo run build');
+  });
+
+  it('generates the deploy:skills alias for monorepos with skills', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf({ hasSkills: true }));
+
+    const result = generateRootScripts(discovery);
+
+    expect(result).toHaveProperty('deploy:skills', 'gtb turbo run deploy:skills');
+  });
+
+  it('omits every turbo alias in single-package repos', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({
+        hasEslint: true,
+        hasPkl: true,
+        hasSkills: true,
+        hasTest: true,
+        hasTypeScript: true,
+        hasVitest: true,
+        hasVitestE2e: true,
+        isPublished: true,
+      }),
+    ]);
+
+    const result = generateRootScripts(discovery);
+
+    expect(result).toStrictEqual({ prepare: 'gtb prepare', verify: 'gtb verify' });
+  });
+});
+
+describe.concurrent(forbiddenRootScripts, () => {
+  it('lists the aggregates a single-package repo must not shadow', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({
+        hasEslint: true,
+        hasTest: true,
+        hasTypeScript: true,
+        hasVitest: true,
+        isPublished: true,
+      }),
+    ]);
+
+    expect(forbiddenRootScripts(discovery)).toStrictEqual([
+      'build', 'build:ci', 'check', 'coverage:merge', 'pack', 'test:slow',
+    ]);
+  });
+
+  it('lists nothing for monorepos, where the aliases are legitimate', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf({
+      hasEslint: true,
+      hasTest: true,
+      hasTypeScript: true,
+      hasVitest: true,
+      isPublished: true,
+    }));
+
+    expect(forbiddenRootScripts(discovery)).toStrictEqual([]);
   });
 });
 

@@ -19,6 +19,7 @@ import {
 } from '../../lib/tsconfig-gen.ts';
 import {
   type TurboJson,
+  forbiddenRootScripts,
   generatePackageScripts,
   generateRequiredRootScripts,
   generateTurboJson,
@@ -148,11 +149,31 @@ const checkTsconfigs = (
     checkTsconfigFile(filePath, generate(readUserCompilerOptions(filePath)), ownedKeys),
   );
 
+/**
+ * Flags root scripts that shadow a turbo aggregate. Only single-package repos
+ * can hit this — see `forbiddenRootScripts`. Unlike every other check here the
+ * drift is a script's *presence*, so the fix is deletion, not `gtb sync`.
+ */
+const checkShadowedAggregates = (
+  discovery: WorkspaceDiscovery,
+  ignored: ReadonlySet<string>,
+): readonly string[] => {
+  const scripts = tryReadScripts(discovery.rootDir);
+
+  return forbiddenRootScripts(discovery)
+    .filter(name => !ignored.has(name))
+    .filter(name => scripts !== undefined && Object.hasOwn(scripts, name))
+    .map(name =>
+      `${discovery.rootDir}: script '${name}' shadows the turbo task of the ` +
+      `same name — delete it and run 'gtb turbo run ${name}' instead`);
+};
+
 const checkAllScripts = (
   discovery: WorkspaceDiscovery,
   ignored: ReadonlySet<string>,
 ): readonly string[] => [
   ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
+  ...checkShadowedAggregates(discovery, ignored),
   ...discovery.packages.flatMap(pkg => checkScripts(
     pkg.dir, generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir), ignored,
   )),
