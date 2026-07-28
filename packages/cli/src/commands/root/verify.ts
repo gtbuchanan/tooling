@@ -5,6 +5,7 @@ import * as v from 'valibot';
 import { checkCodecovSections } from '../../lib/codecov-verify.ts';
 import { type WorkspaceDiscovery, discoverWorkspace } from '../../lib/discovery.ts';
 import { readJsonFile } from '../../lib/file-writer.ts';
+import { checkGenerateConfigs } from '../../lib/generate-tasks.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
 import { checkManifests } from '../../lib/manifest-sync.ts';
 import { checkMiseTasksInclude } from '../../lib/mise-tasks.ts';
@@ -206,7 +207,10 @@ export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => 
     mise: () => (discovery.hasMise ? checkMiseTasksInclude(discovery.rootDir) : []),
     scripts: () => checkAllScripts(discovery, ignored),
     tsconfig: () => checkTsconfigs(discovery),
-    turbo: () => checkTurboTasks(discovery.rootDir, generateTurboJson(discovery), ignored),
+    turbo: () => [
+      ...checkTurboTasks(discovery.rootDir, generateTurboJson(discovery), ignored),
+      ...checkGenerateConfigs(discovery, ignored),
+    ],
   };
 
   return syncScopes.flatMap(scope => (scopes.has(scope) ? checks[scope]() : []));

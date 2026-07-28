@@ -88,6 +88,31 @@ Leaf tasks, per-package, run via `gtb task <name>`:
 
 Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so local and CI caches don't collide — Vitest uses different reporters and coverage settings under CI.
 
+### Codegen tasks (`generate:*`)
+
+Any `generate:*` script in a package's `package.json` is picked up as codegen and ordered ahead of `typecheck:ts`, `compile:ts`, and `lint:eslint`, all of which read generated sources.
+
+Where the _leaf_ tasks get declared depends on the repo shape, because only the package knows what its codegen reads and writes. That matters more than it looks: turbo restores a cached task's declared `outputs` on a hit, so a leaf with none replays its logs, skips the run, restores nothing — and the generated files stay missing while every downstream task reports success. A script name tells `gtb sync` nothing about outputs, so it doesn't guess.
+
+**Monorepo** — the root `generate` aggregate is emitted empty, and each package declares its own leaves in a package configuration (`packages/<pkg>/turbo.json`):
+
+```json
+{
+  "extends": ["//"],
+  "tasks": {
+    "generate": { "dependsOn": ["generate:prisma"] },
+    "generate:prisma": {
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["src/generated/**"]
+    }
+  }
+}
+```
+
+The aggregate stays empty rather than naming leaves the root can't define, because turbo aborts the entire run when a task in `dependsOn` resolves to no definition anywhere in the config chain (`Could not find "<pkg>#generate:prisma" in root turbo.json`). The flip side is that a package which never writes this file fails quietly — its `generate` node has nothing under it, so codegen is skipped and downstream tasks read whatever is already on disk. `gtb verify` closes that gap: it reports packages with `generate:*` scripts and no package configuration, leaves missing from `generate`'s `dependsOn`, and leaves declaring neither `outputs` nor `cache: false`.
+
+**Single-package repo** — turbo offers package configurations only for workspace packages, and the lone `turbo.json` is sync-owned, so there is no seam to hand off to. Sync declares the leaves itself with `cache: false`. Codegen then re-runs on every invocation, which is slower than a cache hit and the only safe default when the outputs are unknowable.
+
 ### Non-obvious dependencies
 
 - **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it.
@@ -116,6 +141,8 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 `mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify mise` asserts the include is present. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
 
 `gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The `mise`/`codecov` checks self-skip when the repo doesn't use those tools (no `mise.toml` / no vitest tests).
+
+Most checks compare a file against what sync would generate. The `turbo` scope carries one that doesn't: the `generate:*` package configurations described above are author-owned, so verify asserts they exist and are wired correctly instead of regenerating them (`--ignore generate:<name>` opts a script out).
 
 ## Pre-commit hooks (`gtb hk`)
 

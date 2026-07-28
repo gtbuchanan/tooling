@@ -23,6 +23,8 @@ export const Aggregate = {
 
 /** Turborepo task definition. */
 export interface TurboTask {
+  /** Opts a task out of caching entirely. Omitted means turbo's default (`true`). */
+  readonly cache?: boolean;
   readonly dependsOn?: readonly string[];
   readonly env?: readonly string[];
   readonly inputs?: readonly string[];
@@ -371,7 +373,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...rootLintTasks(flags, discovery.packageGlobs),
     ...testTasks(flags),
     ...deploySkillsTasks(flags),
-    ...aggregateTasks(flags),
+    ...aggregateTasks(flags, discovery.isMonorepo),
   ];
   /*
    * Self-hosted workspaces vendor tool-config packages (eslint-config,

@@ -7,12 +7,53 @@ import {
   rootTaskKey,
 } from './turbo-config.ts';
 
-const generateAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+/*
+ * `generate:*` scripts are author-owned codegen. Discovery finds the names,
+ * but nothing in the manifest says what a script writes, so gtb cannot
+ * declare `outputs` for one — and an outputs-less task caches logs only, so a
+ * cache hit replays them, skips the run, and restores nothing. The generated
+ * files then never appear and every downstream task happily reads whatever is
+ * on disk (or nothing).
+ *
+ * Monorepos therefore push the leaves down to the packages, using the seam
+ * turbo provides for exactly this: the root aggregate stays empty and each
+ * package declares `generate` plus its own leaves — with real inputs and
+ * outputs — in a package configuration (`packages/<pkg>/turbo.json` extending
+ * `//`). Only the package knows what its codegen emits. A package that skips
+ * the wiring silently never generates, so `gtb verify` asserts it (see
+ * `checkGenerateConfigs`).
+ *
+ * Single-package repos get no such seam — turbo supports package
+ * configurations only for workspace packages, and the lone turbo.json is
+ * sync-owned — so the leaves are declared here and opted out of caching.
+ * Uncached codegen always runs, which is slower than a cache hit but never
+ * silently absent.
+ */
+const generateLeafTasks = (
+  flags: ToolFlags,
+  isMonorepo: boolean,
+): readonly ConditionalEntry<TurboTask>[] => {
+  if (isMonorepo) {
+    return [];
+  }
+
+  return flags.generateScripts.map(script => ({
+    condition: true,
+    key: script,
+    value: { cache: false },
+  }));
+};
+
+const generateAggregate = (
+  flags: ToolFlags,
+  isMonorepo: boolean,
+): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasGenerate,
     key: Aggregate.generate,
-    value: { dependsOn: [...flags.generateScripts] },
+    value: isMonorepo ? {} : { dependsOn: [...flags.generateScripts] },
   },
+  ...generateLeafTasks(flags, isMonorepo),
 ];
 
 const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
@@ -136,12 +177,17 @@ const coverageTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[]
   },
 ];
 
-/** Collects aggregate and standalone task entries from tool flags. */
+/**
+ * Collects aggregate and standalone task entries from tool flags.
+ * `isMonorepo` is passed separately: it describes the repo's shape rather
+ * than a tool being present, and only the `generate` family reads it.
+ */
 export const aggregateTasks = (
   flags: ToolFlags,
+  isMonorepo: boolean,
 ): readonly ConditionalEntry<TurboTask>[] => [
   ...coverageTasks(flags),
-  ...generateAggregate(flags),
+  ...generateAggregate(flags, isMonorepo),
   ...typecheckAggregate(flags),
   ...compileAggregate(flags),
   ...packAggregate(flags),
