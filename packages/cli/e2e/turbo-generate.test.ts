@@ -15,6 +15,14 @@ import { describe, it } from 'vitest';
 
 const jsonIndent = 2;
 
+/*
+ * CI exports remote-cache credentials for the whole job, which these
+ * fixtures would otherwise inherit — pushing throwaway task hashes to the
+ * shared cache and making a local cache decision depend on a network round
+ * trip. Keep each fixture's caching to its own directory.
+ */
+const localCacheOnly = '--cache=local:rw';
+
 const stampScript = (file: string): string =>
   `node -e "require('fs').mkdirSync('generated',{recursive:true});` +
   `require('fs').writeFileSync('generated/${file}','stamped')"`;
@@ -48,7 +56,7 @@ describe.concurrent('generate tasks through turbo', () => {
     expect(sync).toMatchObject({ exitCode: 0 });
 
     const generated = path.join(fixture.projectDir, 'generated', stamp);
-    const first = await fixture.run('gtb', ['turbo', 'run', 'generate']);
+    const first = await fixture.run('gtb', ['turbo', 'run', 'generate', localCacheOnly]);
 
     expect(first).toMatchObject({ exitCode: 0 });
     expect(existsSync(generated)).toBe(true);
@@ -62,7 +70,7 @@ describe.concurrent('generate tasks through turbo', () => {
      */
     rmSync(generated);
 
-    const second = await fixture.run('gtb', ['turbo', 'run', 'generate']);
+    const second = await fixture.run('gtb', ['turbo', 'run', 'generate', localCacheOnly]);
 
     expect(second).toMatchObject({ exitCode: 0 });
     expect(second.stdout).toContain('cache bypass');
@@ -130,11 +138,19 @@ describe.concurrent('generate tasks through turbo', () => {
     expect(verify).toMatchObject({ exitCode: 1 });
     expect(verify.stderr).toContain('add a package configuration');
 
+    /*
+     * `inputs` is pinned to the manifest so the task hash cannot move
+     * between the two runs below. Left to turbo's default (every file in
+     * the package), whether deleting the generated file changes the hash
+     * depends on how that turbo version treats declared outputs — which is
+     * not what this test is about, and differed between the local and CI
+     * versions when it wasn't pinned.
+     */
     writeJson(pkgDir, 'turbo.json', {
       extends: ['//'],
       tasks: {
         'generate': { dependsOn: ['generate:stamp'] },
-        'generate:stamp': { outputs: ['generated/**'] },
+        'generate:stamp': { inputs: ['package.json'], outputs: ['generated/**'] },
       },
     });
 
@@ -143,7 +159,9 @@ describe.concurrent('generate tasks through turbo', () => {
     expect(verified).toMatchObject({ exitCode: 0 });
 
     const generated = path.join(pkgDir, 'generated', stamp);
-    const first = await fixture.run('gtb', ['turbo', '--cwd', workspace, 'run', 'generate']);
+    const first = await fixture.run(
+      'gtb', ['turbo', '--cwd', workspace, 'run', 'generate', localCacheOnly],
+    );
 
     expect(first).toMatchObject({ exitCode: 0 });
     expect(existsSync(generated)).toBe(true);
@@ -154,7 +172,9 @@ describe.concurrent('generate tasks through turbo', () => {
      */
     rmSync(generated);
 
-    const second = await fixture.run('gtb', ['turbo', '--cwd', workspace, 'run', 'generate']);
+    const second = await fixture.run(
+      'gtb', ['turbo', '--cwd', workspace, 'run', 'generate', localCacheOnly],
+    );
 
     expect(second).toMatchObject({ exitCode: 0 });
     expect(second.stdout).toContain('cache hit');
