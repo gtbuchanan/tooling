@@ -110,14 +110,48 @@ describe.concurrent('eslint CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('warns on unsorted keys in JSON files', async ({ fixture, expect }) => {
+  /*
+   * Key order is Prettier's to enforce (see the --fix test below), so
+   * this covers only severity: a formatting violation is reported, and
+   * it stays a warning even with onlyWarn disabled.
+   */
+  it('reports JSON formatting violations as warnings', async ({ fixture, expect }) => {
     const { exitCode, stdout } = await fixture.run({
       files: { 'unsorted.json': '{\n  "beta": 1,\n  "alpha": 2\n}\n' },
     });
 
     // Warnings don't cause a non-zero exit code
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('json/sort-keys');
+    expect(stdout).toContain('format/prettier');
+  });
+
+  it('fixes unsorted JSON without losing data', async ({ fixture, expect }) => {
+    /*
+     * Prettier (via prettier-plugin-sort-json) must be the only fixable
+     * key sorter for JSON. A second one reports fixes over ranges ESLint
+     * sees as non-overlapping, so both land in a single pass and the
+     * sorted keys interleave with Prettier's text diff — which was
+     * computed against the *unsorted* original — producing invalid JSON.
+     */
+    const unsorted = [
+      { threadId: 'first', line: 11, action: 'resolve' },
+      { threadId: 'second', line: 15, action: 'reply' },
+    ];
+    // Same records, keys in the order --fix is expected to leave them
+    const sorted = [
+      { action: 'resolve', line: 11, threadId: 'first' },
+      { action: 'reply', line: 15, threadId: 'second' },
+    ];
+
+    const result = await fixture.run({
+      files: { 'data.json': `${JSON.stringify(unsorted, undefined, 2)}\n` },
+      flags: ['--fix'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.readFile('data.json')).toBe(
+      `${JSON.stringify(sorted, undefined, 2)}\n`,
+    );
   });
 
   it('allows comments in tsconfig.json via JSONC', async ({ fixture, expect }) => {
