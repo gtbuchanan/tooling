@@ -1,6 +1,7 @@
 /* eslint-disable-next-line @typescript-eslint/triple-slash-reference --
    Cross-package tsc needs this to resolve the .d.ts */
 /// <reference path="./eslint-plugin-promise.d.ts" />
+import type { SkillFrontmatterSource } from '@gtbuchanan/eslint-plugin-agent-skills';
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import { scriptFileExtensions } from './files.ts';
@@ -27,6 +28,23 @@ export const defaultEntryPoints: readonly string[] = entryPointDirs.flatMap(
 
 /** Options for the shared ESLint configuration. */
 export interface ESLintConfigureOptions {
+  /**
+   * Agent hosts whose `SKILL.md` frontmatter extensions are accepted —
+   * a host name, a property map for a host the plugin doesn't ship, or
+   * a list of either for a repo whose skills target several at once.
+   * `'standard'` validates against the bare
+   * [Agent Skills spec](https://agentskills.io/specification), so any
+   * host extension reads as an unknown property.
+   *
+   * Listing hosts unions their fields; it cannot express "valid under
+   * every host at once", which is what `'standard'` already is. No
+   * shared constraint is relaxed either way.
+   * @defaultValue 'standard'
+   */
+  readonly agentSkillsHost?:
+    | 'standard'
+    | SkillFrontmatterSource
+    | readonly SkillFrontmatterSource[];
   /** Root directory for TypeScript project service. */
   readonly tsconfigRootDir?: string;
   /**
@@ -78,27 +96,30 @@ export type ResolvedOptions =
 /** Factory function that produces ESLint configs from resolved options. */
 export type PluginFactory = (options: ResolvedOptions) => Linter.Config[];
 
+const resolveOptions = (options: ESLintConfigureOptions): ResolvedOptions => ({
+  agentSkillsHost: options.agentSkillsHost ?? 'standard',
+  entryPoints: options.entryPoints ?? [...defaultEntryPoints],
+  ignores: options.ignores ?? [
+    '.claude/worktrees/**',
+    '**/.turbo/**',
+    '**/dist/**',
+    '**/pnpm-lock.yaml',
+    '**/skills-lock.json',
+    '**/skills/*-workspace/**',
+    '**/skills/npm-*/**',
+  ],
+  onlyWarn: options.onlyWarn ?? true,
+  pnpm: options.pnpm ?? true,
+  pnpmWorkspaceSettings: options.pnpmWorkspaceSettings ?? defaultPnpmWorkspaceSettings,
+  target: options.target ?? 'server',
+  ...(options.tsconfigRootDir !== undefined && { tsconfigRootDir: options.tsconfigRootDir }),
+});
+
 /** Creates an ESLint flat config for TypeScript projects. */
 export const configure = async (
   options: ESLintConfigureOptions = {},
 ): Promise<Linter.Config[]> => {
-  const resolved: ResolvedOptions = {
-    entryPoints: options.entryPoints ?? [...defaultEntryPoints],
-    ignores: options.ignores ?? [
-      '.claude/worktrees/**',
-      '**/.turbo/**',
-      '**/dist/**',
-      '**/pnpm-lock.yaml',
-      '**/skills-lock.json',
-      '**/skills/*-workspace/**',
-      '**/skills/npm-*/**',
-    ],
-    onlyWarn: options.onlyWarn ?? true,
-    pnpm: options.pnpm ?? true,
-    pnpmWorkspaceSettings: options.pnpmWorkspaceSettings ?? defaultPnpmWorkspaceSettings,
-    target: options.target ?? 'server',
-    ...(options.tsconfigRootDir !== undefined && { tsconfigRootDir: options.tsconfigRootDir }),
-  };
+  const resolved = resolveOptions(options);
 
   if (resolved.onlyWarn) {
     await import('eslint-plugin-only-warn');

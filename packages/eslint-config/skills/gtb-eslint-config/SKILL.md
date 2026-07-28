@@ -38,6 +38,10 @@ All optional except `tsconfigRootDir` (recommended for type-aware rules):
 - **`target`** — `'server'` (default) or `'browser'`. Server enables
   `require-unicode-regexp` with the `/v` flag. Browser enables
   `no-console` and `no-alert`; entry points are exempt from `no-console`.
+- **`agentSkillsHost`** — Agent hosts whose `SKILL.md` frontmatter
+  extensions are accepted. A host name, a property map for a host the
+  plugin doesn't ship, or a list of either. Defaults to `'standard'`
+  (the bare Agent Skills spec). See below.
 - **`entryPoints`** — Glob patterns exempt from `process.exit` and
   hashbang restrictions (and from `no-console` in browser mode).
   Defaults to `**/bin/**/*.{js,mjs,cjs,ts,mts,cts}` and `**/scripts/**/*`.
@@ -55,6 +59,48 @@ All optional except `tsconfigRootDir` (recommended for type-aware rules):
   `defaultPnpmWorkspaceSettings` (see below). Pass `false` to keep the
   catalog rules but drop the settings policy. Ignored when `pnpm` is
   `false`.
+
+## Agent Skills frontmatter hosts
+
+`SKILL.md` frontmatter is validated against the
+[Agent Skills spec](https://agentskills.io/specification), which closes
+the object to unknown properties. The spec sanctions only the nested
+`metadata` map for client-specific data, so a host that puts fields at
+the top level — as Claude Code does — needs each one declared. There is
+no reserved top-level namespace to pattern-match instead, which is why
+this is a per-host list rather than a wildcard.
+
+```typescript
+export default configure({ agentSkillsHost: 'claude-code' });
+```
+
+Skills that target several hosts list them all — every name the plugin
+ships, plus a JSON Schema property map for any host it doesn't. Fields
+are unioned, so the result accepts every field any listed source
+declares:
+
+```typescript
+export default configure({
+  agentSkillsHost: ['claude-code', { 'x-team-owner': { type: 'string' } }],
+});
+```
+
+An unrecognized host name throws rather than silently contributing no
+fields, so a typo surfaces at config load rather than as unexplained
+frontmatter errors.
+
+`'claude-code'` adds the fields from Claude Code's
+[frontmatter reference](https://code.claude.com/docs/en/skills), plus
+the YAML-list spelling it accepts for `allowed-tools`. The plugin's
+`skillFrontmatterHosts` registry is what each name resolves to.
+
+Every form adds properties only: `name` and `description` stay required
+and every shared constraint still applies, so a skill that validates
+under a host is still portable to a spec-only host apart from the
+extension fields themselves. There is no "valid under every host at
+once" setting — that is `'standard'`, the default, which is also what
+keeps a stray `user_invocable` typo an error rather than a
+silently-ignored field.
 
 ## pnpm workspace settings policy
 

@@ -20,6 +20,17 @@ import schema from './schema.json' with { type: 'json' };
 export { default as skillFrontmatterSchema }
   from './schema.json' with { type: 'json' };
 
+export {
+  defineSkillFrontmatterConfig,
+  defineSkillFrontmatterSchema,
+} from './frontmatter-schema.ts';
+export type {
+  SkillFrontmatterExtensions,
+  SkillFrontmatterSource,
+} from './frontmatter-schema.ts';
+export { skillFrontmatterHosts } from './hosts/index.ts';
+export type { SkillFrontmatterHost } from './hosts/index.ts';
+
 /**
  * JSON Schema for an Agent Skill's `evals/evals.json` file, matching
  * the canonical layout documented by Anthropic's `skill-creator`
@@ -56,6 +67,10 @@ const plugin: ESLint.Plugin = {
  * guidance that ancillary reference files stay focused and smaller
  * than `SKILL.md`; 300 sits just above the p90 line count of files
  * in popular published skills.
+ *
+ * `recommended` validates frontmatter against the bare spec, so a host
+ * extension reads as an unknown property. Repos targeting one or more
+ * hosts spread a `defineSkillFrontmatterConfig(...)` overlay after it.
  */
 export const configs: {
   readonly recommended: readonly Linter.Config[];

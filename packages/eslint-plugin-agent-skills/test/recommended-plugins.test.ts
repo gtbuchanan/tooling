@@ -1,11 +1,11 @@
 import frontmatter from '@gtbuchanan/eslint-plugin-md-frontmatter';
 import type { ESLint } from 'eslint';
 import { describe, it } from 'vitest';
-import plugin, { configs } from '#src/index.js';
+import plugin, { configs, defineSkillFrontmatterConfig } from '#src/index.js';
 import manifest from '../package.json' with { type: 'json' };
 
 /*
- * Every third-party plugin `configs.recommended` registers has to be a peer
+ * Every third-party plugin an exported config registers has to be a peer
  * dependency. ESLint rejects a namespace registered by two configs unless
  * both pass the identical plugin object, so a consumer config that registers
  * the same namespace — `@gtbuchanan/eslint-config` registers `markdown` for
@@ -21,10 +21,14 @@ import manifest from '../package.json' with { type: 'json' };
 const isWorkspacePlugin = (candidate: ESLint.Plugin): boolean =>
   candidate === plugin || candidate === frontmatter;
 
+/* The overlay registers plugins of its own, so it is covered too. */
+const exported = [
+  ...Object.values(configs).flat(),
+  ...defineSkillFrontmatterConfig('claude-code'),
+];
+
 const thirdPartyPlugins = [
-  ...new Set(configs.recommended.flatMap(
-    config => Object.values(config.plugins ?? {}),
-  )),
+  ...new Set(exported.flatMap(config => Object.values(config.plugins ?? {}))),
 ].filter(registered => !isWorkspacePlugin(registered));
 
 const thirdPartyPluginNames = [
@@ -35,7 +39,7 @@ const thirdPartyPluginNames = [
   ),
 ];
 
-describe('configs.recommended plugin resolution', () => {
+describe('exported configs plugin resolution', () => {
   /*
    * `meta.name` is how a third-party plugin is traced back to the package
    * that has to be a peer. One that omits it would otherwise drop out of the
