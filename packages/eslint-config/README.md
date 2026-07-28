@@ -70,6 +70,7 @@ export default configure({
 - `eslint-plugin-toml` — TOML linting and structural key/table ordering
 - `@eslint/markdown` — Official Markdown lint plugin (commonmark AST)
 - `@gtbuchanan/eslint-plugin-markdownlint` — Markdown structural linting via markdownlint (gap-filling rules not yet covered by `@eslint/markdown`)
+- `@gtbuchanan/eslint-plugin-agent-skills` — Agent Skills `SKILL.md` and `evals.json` validation (pass `agentSkillsHost` to accept the frontmatter extensions of one or more agent hosts)
 - `eslint-plugin-only-warn` — Downgrades errors to warnings (opt-in)
 
 ## Markdown linting
