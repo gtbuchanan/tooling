@@ -119,6 +119,35 @@ describe.concurrent('generate task verification', () => {
     expect(verifyTurbo(root)).toStrictEqual([`${configPath}: must extend '//'`]);
   });
 
+  it('reports a configuration with no extends key', ({ expect }) => {
+    const { configPath, pkgDir, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: { generate: {} },
+    });
+    writeJson(pkgDir, 'turbo.json', {
+      tasks: {
+        'generate': { dependsOn: ['generate:prisma'] },
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([`${configPath}: must extend '//'`]);
+  });
+
+  it('reports an aggregate that depends on nothing', ({ expect }) => {
+    const { configPath, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: {
+        'generate': {},
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([
+      `${configPath}: task 'generate' must depend on 'generate:prisma'`,
+    ]);
+  });
+
   it('reports a script left out of the generate aggregate', ({ expect }) => {
     const { configPath, root } = createGenerateProject({
       scripts: ['generate:paraglide', 'generate:prisma'],
@@ -131,6 +160,30 @@ describe.concurrent('generate task verification', () => {
 
     expect(verifyTurbo(root)).toStrictEqual([
       `${configPath}: task 'generate' must depend on 'generate:paraglide'`,
+    ]);
+  });
+
+  it('reports a configuration that declares a leaf but no aggregate', ({ expect }) => {
+    const { configPath, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: { 'generate:prisma': { outputs: ['generated/**'] } },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([
+      `${configPath}: task 'generate' must depend on 'generate:prisma'`,
+    ]);
+  });
+
+  it('reports a configuration with no tasks at all', ({ expect }) => {
+    const { configPath, pkgDir, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: { generate: {} },
+    });
+    writeJson(pkgDir, 'turbo.json', { extends: ['//'] });
+
+    expect(verifyTurbo(root)).toStrictEqual([
+      `${configPath}: task 'generate' must depend on 'generate:prisma'`,
+      `${configPath}: missing task 'generate:prisma'`,
     ]);
   });
 

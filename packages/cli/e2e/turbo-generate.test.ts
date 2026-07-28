@@ -34,9 +34,10 @@ const createFixture = (): ProjectFixture =>
 describe.concurrent('generate tasks through turbo', () => {
   it('runs a single-package generate script on every invocation', async ({ expect }) => {
     using fixture = createFixture();
-    const stamp = `${build.packageName()}.txt`;
+    const packageName = build.packageName();
+    const stamp = `${packageName}.txt`;
     writeJson(fixture.projectDir, 'package.json', {
-      name: build.packageName(),
+      name: packageName,
       packageManager: 'npm@11.0.0',
       scripts: { 'generate:stamp': stampScript(stamp) },
       version: build.semverVersion(),
@@ -71,8 +72,16 @@ describe.concurrent('generate tasks through turbo', () => {
   it('restores package-declared generate outputs from cache', async ({ expect }) => {
     using fixture = createFixture();
     const workspace = path.join(fixture.projectDir, 'workspace');
-    const pkgDir = path.join(workspace, 'packages', build.packageName());
-    const stamp = `${build.packageName()}.txt`;
+    const packageName = build.packageName();
+    /*
+     * Lockfile keys are workspace-relative paths, and npm writes them with
+     * forward slashes on every platform — deriving them from `path.relative`
+     * would emit backslashes on Windows and turbo would not match them to
+     * the package.
+     */
+    const pkgPath = `packages/${packageName}`;
+    const pkgDir = path.join(workspace, ...pkgPath.split('/'));
+    const stamp = `${packageName}.txt`;
     mkdirSync(pkgDir, { recursive: true });
     writeFileSync(
       path.join(workspace, 'pnpm-workspace.yaml'),
@@ -89,18 +98,17 @@ describe.concurrent('generate tasks through turbo', () => {
      * turbo builds its package graph from the lockfile. npm never ran in
      * this nested workspace, so declare the one package by hand.
      */
-    const pkgName = build.packageName();
     writeJson(workspace, 'package-lock.json', {
       lockfileVersion: 3,
       packages: {
         '': { workspaces: ['packages/*'] },
-        [`node_modules/${pkgName}`]: { link: true, resolved: path.relative(workspace, pkgDir) },
-        [path.relative(workspace, pkgDir)]: { name: pkgName, version: '0.0.0' },
+        [`node_modules/${packageName}`]: { link: true, resolved: pkgPath },
+        [pkgPath]: { name: packageName, version: '0.0.0' },
       },
       requires: true,
     });
     writeJson(pkgDir, 'package.json', {
-      name: pkgName,
+      name: packageName,
       scripts: { 'generate:stamp': stampScript(stamp) },
       version: '0.0.0',
     });
