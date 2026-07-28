@@ -8,7 +8,8 @@ Most validation is expressed in JSON Schemas; the rules cover spec
 constraints that pure schemas can't express. This package ships:
 
 - JSON Schemas (exported as `skillFrontmatterSchema` and
-  `skillEvalsSchema`).
+  `skillEvalsSchema`), plus `defineSkillFrontmatterSchema` to extend the
+  frontmatter schema with host-specific fields.
 - Rules covering [spec](https://agentskills.io/specification)
   constraints that pure schemas can't express:
   - `agent-skills/name-matches-dir` — `name` must equal the parent
@@ -27,6 +28,8 @@ constraints that pure schemas can't express. This package ships:
   for `**/skills/*/SKILL.md`, `**/skills/*/references/**/*.md`
   (with a tighter 300-line `max-lines` cap), and
   `**/skills/*/evals/evals.json`.
+- A `defineSkillFrontmatterConfig` composer that overlays the
+  frontmatter extensions of one or more agent hosts.
 
 ## Install
 
@@ -58,6 +61,76 @@ import { configs } from '@gtbuchanan/eslint-plugin-agent-skills';
 
 export default [...configs.recommended];
 ```
+
+### Host extensions
+
+`configs.recommended` validates frontmatter against the bare spec, which
+closes the object to unknown properties — so a host's own field reads as
+an error. The spec sanctions only the nested `metadata` map for
+client-specific data, so a host that puts fields at the top level (as
+[Claude Code](https://code.claude.com/docs/en/skills) does) is describing
+its own surface, and each field has to be declared. There is no reserved
+top-level namespace to pattern-match instead.
+
+`defineSkillFrontmatterConfig` composes an overlay for the hosts a repo
+targets:
+
+```typescript
+// eslint.config.ts
+import {
+  configs,
+  defineSkillFrontmatterConfig,
+} from '@gtbuchanan/eslint-plugin-agent-skills';
+
+export default [
+  ...configs.recommended,
+  ...defineSkillFrontmatterConfig('claude-code'),
+];
+```
+
+It takes any number of sources — a host name from `skillFrontmatterHosts`,
+or a property map of your own for a host this package doesn't ship:
+
+```typescript
+defineSkillFrontmatterConfig('claude-code', {
+  'x-team-owner': { type: 'string' },
+});
+```
+
+Pass them all to **one** call. The overlay re-points a single rule and
+relies on flat config's last-match-wins merge, so spreading one overlay
+per host leaves only the last host's schema in force — and spreading the
+overlay _before_ `recommended` lets the spec schema win.
+
+Sources are unioned: the result accepts every field any of them declares,
+which is what a repo whose skills run under several hosts needs. It
+cannot express "valid under _every_ host at once" — that is the spec
+schema, which is what `configs.recommended` alone already gives you. A
+field two sources both declare takes its definition from the later one,
+so your own map can override a shipped host's field.
+
+Whatever the sources, only property definitions are layered on: `name`
+and `description` stay required and every spec constraint (kebab-case
+`name`, length caps) still applies.
+
+#### Shipped hosts
+
+- **`claude-code`** — the fields in Claude Code's
+  [frontmatter reference](https://code.claude.com/docs/en/skills), plus
+  the YAML-list spelling it accepts for the spec's `allowed-tools`. See
+  [`src/hosts/claude-code.ts`](./src/hosts/claude-code.ts) for the
+  declarations this package actually enforces.
+
+Where the fields are pinned is a judgment call rather than a
+transcription: `context`, `effort`, and `shell` are held to their
+documented value sets, so a typo is caught and a new upstream value
+needs a bump here; `model` and `hooks` stay open, since their value
+spaces are not closed.
+
+Use `defineSkillFrontmatterSchema` with the same arguments if you want
+the composed schema rather than the config block.
+
+### Parser
 
 The plugin needs a parser that exposes the file source as text. If you
 also use `@gtbuchanan/eslint-plugin-markdownlint`, its parser is already
@@ -97,7 +170,8 @@ export default [
 - **Schema-driven** (via `md-frontmatter/schema` + `skillFrontmatterSchema`):
   required `name`/`description`, length limits, kebab-case `name`,
   `metadata` map of strings, optional `license`/`compatibility`/`allowed-tools`,
-  no unknown top-level fields.
+  no unknown top-level fields (see [Host extensions](#host-extensions)
+  to accept a host's own).
 - **Rule-driven** (this plugin): `name === parent directory name`,
   link/image/reference targets exist within the skill root and stay
   within the spec's depth guidance, file length cap, minimum eval
