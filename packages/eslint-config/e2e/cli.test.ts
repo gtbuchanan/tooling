@@ -110,7 +110,12 @@ describe.concurrent('eslint CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('warns on unsorted keys in JSON files', async ({ fixture, expect }) => {
+  /*
+   * Key order is Prettier's to enforce (see the --fix test below), so
+   * this covers only severity: a formatting violation is reported, and
+   * it stays a warning even with onlyWarn disabled.
+   */
+  it('reports JSON formatting violations as warnings', async ({ fixture, expect }) => {
     const { exitCode, stdout } = await fixture.run({
       files: { 'unsorted.json': '{\n  "beta": 1,\n  "alpha": 2\n}\n' },
     });
