@@ -18,3 +18,10 @@ export const taskNames = {
 
 /** Name of the root `task` subcommand hub. */
 export const taskCommandName = 'task';
+
+/**
+ * Prefix marking author-owned codegen scripts (`generate:prisma`). Unlike
+ * every name above, these have no CLI handler — gtb only discovers them and
+ * wires them into the `generate` aggregate.
+ */
+export const generateTaskPrefix = 'generate:';

@@ -39,6 +39,12 @@ export interface MakeDiscoveryOverrides extends Partial<PackageCapabilities> {
   readonly dependsOnCli?: boolean;
   /** Overrides {@link WorkspaceDiscovery.hasMise} (defaults to `false`). */
   readonly hasMise?: boolean;
+  /**
+   * Overrides {@link WorkspaceDiscovery.isMonorepo} (defaults to more than
+   * one package). Real discovery also reports a monorepo for a single
+   * package under a `packages/*` glob, which no package count can express.
+   */
+  readonly isMonorepo?: boolean;
   /** Overrides {@link WorkspaceDiscovery.isSelfHosted} (defaults to `false`). */
   readonly isSelfHosted?: boolean;
 }
@@ -50,16 +56,17 @@ export const makeDiscovery = (
   const {
     dependsOnCli: hasCliDependency = false,
     hasMise = false,
+    isMonorepo = packages.length > 1,
     isSelfHosted = false,
     ...rootOverrides
   } = overrides;
   return {
     dependsOnCli: hasCliDependency,
     hasMise,
-    isMonorepo: packages.length > 1,
+    isMonorepo,
     isSelfHosted,
     packages,
-    packageGlobs: packages.length > 1 ? ['packages/*'] : [],
+    packageGlobs: isMonorepo ? ['packages/*'] : [],
     root: makeCapabilities(rootOverrides),
     rootDir: '/fake/root',
   };
