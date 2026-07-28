@@ -30,8 +30,16 @@ const ruleOptionsSchema = [
  * once per ESLint run. `validateSchema: false` skips the meta-schema
  * lookup so user schemas can reference any `$schema` URL (or omit it)
  * without forcing us to register the corresponding meta-schema.
+ *
+ * `addUsedSchema: false` keeps compilation from registering a schema
+ * under its `$id`. Registration throws on a second schema carrying an
+ * id already seen, and ESLint hands the rule a fresh options object
+ * every time a config is resolved, so the identity cache below misses
+ * and the same id reaches Ajv on each pass. The id still sets the base
+ * URI, so a `$ref` written against it resolves.
  */
 const ajv = new Ajv({
+  addUsedSchema: false,
   allErrors: true,
   strict: false,
   validateSchema: false,
