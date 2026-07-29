@@ -1,5 +1,81 @@
 # @gtbuchanan/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- f0a9703: Declare `generate:*` tasks so turbo can actually run them
+
+  `gtb sync` named every discovered `generate:*` script in the root
+  `generate` aggregate's `dependsOn` but never emitted a task definition
+  for it. In a monorepo turbo refuses to build the graph at all in that
+  state — `Could not find "<pkg>#generate:prisma" in root turbo.json` —
+  so any consumer that added a codegen script broke every `turbo run`.
+
+  Only the package knows what its codegen reads and writes, and a task
+  with no `outputs` restores nothing on a cache hit, so sync no longer
+  guesses:
+
+  - **Monorepo** — the root aggregate is emitted empty and each package
+    declares its own leaves in a package configuration
+    (`packages/<pkg>/turbo.json` extending `//`), where it can give them
+    real `inputs`/`outputs`. `gtb verify` reports a package that has
+    `generate:*` scripts but no such configuration, a leaf missing from
+    `generate`'s `dependsOn`, or a leaf declaring neither `outputs` nor
+    `cache: false` — without the check, a missing configuration silently
+    skips generation and leaves downstream tasks reading stale files.
+  - **Single-package repo** — turbo offers package configurations only
+    for workspace packages, so sync declares the leaves itself with
+    `cache: false`.
+
+  Repos with no `generate:*` scripts generate the same `turbo.json` as
+  before.
+
+### Patch Changes
+
+- c97db0a: Publish runtime dependencies as caret ranges instead of exact pins
+
+  The `catalog:` entries backing these packages' runtime dependencies were
+  exact pins, and pnpm substitutes the catalog spec verbatim at publish
+  time — so consumers received hard pins that force a duplicate install
+  whenever they resolve a different version of the same package. Exact
+  pins remain only on root devDependencies, which are never published.
+
+- 865b030: Fix `coverage:vitest:merge` failing under vitest 4 by overriding the
+  reporter for the merge invocation (`--reporter=default`). Vitest 4
+  rejects `--merge-reports` while `blob` is an active reporter, and the
+  shared config enables `blob` unconditionally so the fast/slow runs can
+  produce the per-bucket blobs.
+- 9aac2b6: Stop generating recursive aggregate scripts in single-package repos
+
+  `gtb sync` no longer writes the `check` / `build` / `build:ci` / `pack` /
+  `test:slow` / `test:e2e` / `coverage:merge` root aliases when the root is
+  the lone package. There, turbo resolves the aggregate to the root script,
+  which re-invokes turbo, and the run aborts on turbo's
+  `recursive_turbo_invocations` guard. Dispatch aggregates directly instead
+  (`gtb turbo run check`); the leaf scripts, which call `gtb task`, are
+  unchanged.
+
+  `gtb verify` now reports a root script that shadows an aggregate so repos
+  synced before this change learn which scripts to delete.
+
+- a48285d: Fix `gtb sync`/`gtb verify` disagreeing on tsconfigs in single-package repos
+
+  When the workspace root is itself the lone package, the root and
+  per-package tsconfig layers of the sync plan target the same
+  `tsconfig.json` / `tsconfig.build.json`. The package layer won, writing an
+  `extends` of `../../tsconfig.base.json` that resolves outside the repo
+  (`TS5083`), and `verify` reported drift against whichever layer it
+  compared — so it could never pass, leaving the `Config Check` job
+  permanently red.
+
+  The plan now collapses layers that land on the same file, keeping the
+  root layer's `extends` while folding in the package layer's
+  `compilerOptions` and `include`. Package `extends` paths are also derived
+  from the package's actual depth below the root instead of assuming a
+  `packages/<name>` layout, so a package nested one level deep resolves
+  correctly too.
+
 ## 0.2.1
 
 ### Patch Changes
