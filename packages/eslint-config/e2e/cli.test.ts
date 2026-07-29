@@ -93,6 +93,31 @@ describe.concurrent('eslint CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
+  it('respects global ignores for generated changelogs', async ({ fixture, expect }) => {
+    /*
+     * Changesets writes CHANGELOG.md through its own Prettier resolution,
+     * which double-quotes embedded code regardless of what this config
+     * enforces — a diff no author can fix at the source, since the
+     * .changeset/*.md the snippet came from is linted the other way.
+     * The identical body in a normal .md keeps the run honest: it proves
+     * the content really does violate format/prettier, so the changelog
+     * assertion can't pass vacuously.
+     */
+    const body = [
+      '# Changelog', '',
+      '```js', 'configure({ agentSkillsHost: "claude-code" });', '```', '',
+    ].join('\n');
+
+    const { stdout } = await fixture.run({
+      files: { 'notes.md': body, 'packages/pkg/CHANGELOG.md': body },
+      flags: ['--no-warn-ignored'],
+    });
+
+    expect(stdout).toContain('format/prettier');
+    expect(stdout).toContain('notes.md');
+    expect(stdout).not.toContain('CHANGELOG.md');
+  });
+
   it('detects duplicate keys in JSON files', async ({ fixture, expect }) => {
     const { exitCode, stdout } = await fixture.run({
       files: { 'bad.json': '{\n  "key": 1,\n  "key": 2\n}\n' },
