@@ -48,8 +48,11 @@ export interface ESLintConfigureOptions {
   /** Root directory for TypeScript project service. */
   readonly tsconfigRootDir?: string;
   /**
-   * Global ignore patterns.
-   * @defaultValue Claude Code worktrees and dist output directories
+   * Global ignore patterns. Replaces the default list wholesale rather
+   * than extending it.
+   * @defaultValue Paths another tool generates or owns the format of —
+   * Claude Code worktrees, build output, lockfiles, generated skills, and
+   * changelogs
    */
   readonly ignores?: string[];
   /**
@@ -102,6 +105,14 @@ const resolveOptions = (options: ESLintConfigureOptions): ResolvedOptions => ({
   ignores: options.ignores ?? [
     '.claude/worktrees/**',
     '**/.turbo/**',
+    /*
+     * Changesets generates CHANGELOG.md and formats it through its own
+     * Prettier resolution, which has no access to the options this config
+     * passes format/prettier. Embedded code comes back double-quoted and
+     * unfixable at the source — the .changeset/*.md it was written in is
+     * linted the other way — so the generated file is not ours to lint.
+     */
+    '**/CHANGELOG.md',
     '**/dist/**',
     '**/pnpm-lock.yaml',
     '**/skills-lock.json',

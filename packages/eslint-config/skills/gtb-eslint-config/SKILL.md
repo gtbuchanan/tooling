@@ -45,9 +45,13 @@ All optional except `tsconfigRootDir` (recommended for type-aware rules):
 - **`entryPoints`** — Glob patterns exempt from `process.exit` and
   hashbang restrictions (and from `no-console` in browser mode).
   Defaults to `**/bin/**/*.{js,mjs,cjs,ts,mts,cts}` and `**/scripts/**/*`.
-- **`ignores`** — Global ignore patterns. Defaults to
-  `.claude/worktrees/**`, `**/.turbo/**`, `**/dist/**`,
-  `**/pnpm-lock.yaml`, `**/skills-lock.json`.
+- **`ignores`** — Global ignore patterns. Defaults to the paths another
+  tool generates or owns the format of: `.claude/worktrees/**`,
+  `**/.turbo/**`, `**/CHANGELOG.md`, `**/dist/**`, `**/pnpm-lock.yaml`,
+  `**/skills-lock.json`, `**/skills/*-workspace/**`, `**/skills/npm-*/**`.
+  Changesets formats the changelogs it generates with its own Prettier
+  resolution, so linting them here reports diffs that are unfixable at
+  the source. Passing this option replaces the list wholesale.
 - **`onlyWarn`** — Downgrades all errors to warnings via
   `eslint-plugin-only-warn`. Defaults to `true`. Irreversible within
   a process — uses a side-effect import that monkey-patches the ESLint
