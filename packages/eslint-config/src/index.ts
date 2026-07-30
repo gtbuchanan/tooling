@@ -4,6 +4,7 @@
 import type { SkillFrontmatterSource } from '@gtbuchanan/eslint-plugin-agent-skills';
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
+import type { FlatGitignoreOptions } from 'eslint-config-flat-gitignore';
 import { scriptFileExtensions } from './files.ts';
 import { plugins } from './plugins/index.ts';
 import { defaultPnpmWorkspaceSettings } from './pnpm-workspace.ts';
@@ -16,6 +17,8 @@ export {
   tsOnlyExtensions,
   tsOnlyFiles,
 } from './files.ts';
+export type { FlatGitignoreOptions } from 'eslint-config-flat-gitignore';
+export { defaultGitignoreOptions } from './plugins/gitignore.ts';
 export { defaultPnpmWorkspaceSettings } from './pnpm-workspace.ts';
 export type { PnpmWorkspaceSettings } from './pnpm-workspace.ts';
 
@@ -25,6 +28,41 @@ const entryPointDirs = ['**/bin', '**/scripts'] as const;
 export const defaultEntryPoints: readonly string[] = entryPointDirs.flatMap(
   dir => scriptFileExtensions.map(ext => `${dir}/**/*.${ext}`),
 );
+
+/**
+ * Default global ignore patterns — tracked files another tool generates or
+ * owns the format of. Untracked paths (build output, caches, generated
+ * skills) are not listed here; they come from `.gitignore` via the
+ * {@link ESLintConfigureOptions.gitignore} option.
+ *
+ * Spread this to extend it, since the
+ * {@link ESLintConfigureOptions.ignores} option replaces the default
+ * wholesale.
+ */
+export const defaultIgnores: readonly string[] = [
+  /*
+   * Lockfiles are tracked, machine-owned, and often large enough to
+   * dominate a lint run. Matched by convention rather than by manager so
+   * the list doesn't need an entry per ecosystem: `<tool>-lock.<ext>`
+   * (package-lock.json, pnpm-lock.yaml), a bare `.lock` extension
+   * (Cargo.lock, bun.lock, deno.lock, mise.lock, uv.lock), and .NET's
+   * `<name>.lock.json`. npm-shrinkwrap.json is the one common lockfile no
+   * convention covers.
+   */
+  '**/*-lock.json',
+  '**/*-lock.yaml',
+  '**/*.lock',
+  '**/*.lock.json',
+  /*
+   * Changesets generates CHANGELOG.md and formats it through its own
+   * Prettier resolution, which has no access to the options this config
+   * passes format/prettier. Embedded code comes back double-quoted and
+   * unfixable at the source — the .changeset/*.md it was written in is
+   * linted the other way — so the generated file is not ours to lint.
+   */
+  '**/CHANGELOG.md',
+  '**/npm-shrinkwrap.json',
+];
 
 /** Options for the shared ESLint configuration. */
 export interface ESLintConfigureOptions {
@@ -48,11 +86,22 @@ export interface ESLintConfigureOptions {
   /** Root directory for TypeScript project service. */
   readonly tsconfigRootDir?: string;
   /**
-   * Global ignore patterns. Replaces the default list wholesale rather
-   * than extending it.
-   * @defaultValue Paths another tool generates or owns the format of —
-   * Claude Code worktrees, build output, lockfiles, generated skills, and
-   * changelogs
+   * Derive ignore patterns from `.gitignore`, so untracked paths — build
+   * output, caches, generated files — are never linted. Pass an options
+   * object to override {@link defaultGitignoreOptions}, or `false` to
+   * disable.
+   *
+   * Disabling it leaves only {@link ESLintConfigureOptions.ignores},
+   * which covers tracked files rather than generated ones — so the repo
+   * has to enumerate its own build output.
+   * @defaultValue true
+   */
+  readonly gitignore?: boolean | FlatGitignoreOptions;
+  /**
+   * Global ignore patterns, applied on top of the `.gitignore`-derived
+   * ones. Replaces the default wholesale rather than merging into it —
+   * spread {@link defaultIgnores} to extend it.
+   * @defaultValue {@link defaultIgnores}
    */
   readonly ignores?: string[];
   /**
@@ -102,23 +151,8 @@ export type PluginFactory = (options: ResolvedOptions) => Linter.Config[];
 const resolveOptions = (options: ESLintConfigureOptions): ResolvedOptions => ({
   agentSkillsHost: options.agentSkillsHost ?? 'standard',
   entryPoints: options.entryPoints ?? [...defaultEntryPoints],
-  ignores: options.ignores ?? [
-    '.claude/worktrees/**',
-    '**/.turbo/**',
-    /*
-     * Changesets generates CHANGELOG.md and formats it through its own
-     * Prettier resolution, which has no access to the options this config
-     * passes format/prettier. Embedded code comes back double-quoted and
-     * unfixable at the source — the .changeset/*.md it was written in is
-     * linted the other way — so the generated file is not ours to lint.
-     */
-    '**/CHANGELOG.md',
-    '**/dist/**',
-    '**/pnpm-lock.yaml',
-    '**/skills-lock.json',
-    '**/skills/*-workspace/**',
-    '**/skills/npm-*/**',
-  ],
+  gitignore: options.gitignore ?? true,
+  ignores: options.ignores ?? [...defaultIgnores],
   onlyWarn: options.onlyWarn ?? true,
   pnpm: options.pnpm ?? true,
   pnpmWorkspaceSettings: options.pnpmWorkspaceSettings ?? defaultPnpmWorkspaceSettings,

@@ -57,7 +57,7 @@ deploy:skills` for dogfooding.
 - **`gtb-eslint-config`** (`@gtbuchanan/eslint-config`) — `configure()`
   API and options, pre-commit `createRequire` pattern, bundled plugin
   set, suppression conventions, two-plugin Markdown lint split,
-  per-package vs. workspace-root config split
+  gitignore-derived ignores, per-package vs. workspace-root config split
 
 Packages without skills yet (vitest-config, eslint-plugin-markdownlint,
 eslint-plugin-yamllint, tsconfig, test-utils) keep their conventions in

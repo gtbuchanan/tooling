@@ -1,6 +1,6 @@
 ---
 name: gtb-eslint-config
-description: ESLint configuration guidance for projects using @gtbuchanan/eslint-config. Covers the configure() API and options, pre-commit isolated-environment setup via createRequire, the bundled plugin set, suppression conventions, the two-plugin Markdown lint split, and the per-package vs. workspace-root config split. Trigger keywords - @gtbuchanan/eslint-config, eslint.config.ts, configure, ESLintConfigureOptions, eslint-disable, eslint-disable-next-line, markdownlint-disable, --max-warnings, dist/.eslintcache, lint:eslint, ESLint flat config, ESLint suppression.
+description: ESLint configuration guidance for projects using @gtbuchanan/eslint-config. Covers the configure() API and options, pre-commit isolated-environment setup via createRequire, the bundled plugin set, suppression conventions, the two-plugin Markdown lint split, gitignore-derived ignores, and the per-package vs. workspace-root config split. Trigger keywords - @gtbuchanan/eslint-config, eslint.config.ts, configure, ESLintConfigureOptions, eslint-disable, eslint-disable-next-line, gitignore, defaultIgnores, eslint-config-flat-gitignore, markdownlint-disable, --max-warnings, dist/.eslintcache, lint:eslint, ESLint flat config, ESLint suppression.
 ---
 
 # @gtbuchanan/eslint-config
@@ -45,13 +45,17 @@ All optional except `tsconfigRootDir` (recommended for type-aware rules):
 - **`entryPoints`** — Glob patterns exempt from `process.exit` and
   hashbang restrictions (and from `no-console` in browser mode).
   Defaults to `**/bin/**/*.{js,mjs,cjs,ts,mts,cts}` and `**/scripts/**/*`.
-- **`ignores`** — Global ignore patterns. Defaults to the paths another
-  tool generates or owns the format of: `.claude/worktrees/**`,
-  `**/.turbo/**`, `**/CHANGELOG.md`, `**/dist/**`, `**/pnpm-lock.yaml`,
-  `**/skills-lock.json`, `**/skills/*-workspace/**`, `**/skills/npm-*/**`.
-  Changesets formats the changelogs it generates with its own Prettier
-  resolution, so linting them here reports diffs that are unfixable at
-  the source. Passing this option replaces the list wholesale.
+- **`gitignore`** — Derives ignore patterns from `.gitignore` via
+  `eslint-config-flat-gitignore`. Defaults to `true`. See below.
+- **`ignores`** — Global ignore patterns applied on top of the
+  `.gitignore`-derived ones, covering the **tracked** files another tool
+  owns the format of. Defaults to `defaultIgnores`: lockfiles
+  (`**/*-lock.json`, `**/*-lock.yaml`, `**/*.lock`, `**/*.lock.json`,
+  `**/npm-shrinkwrap.json`) and `**/CHANGELOG.md`. Changesets formats the
+  changelogs it generates with its own Prettier resolution, so linting
+  them here reports diffs that are unfixable at the source. Passing this
+  option replaces the list wholesale — spread `defaultIgnores` to extend
+  it.
 - **`onlyWarn`** — Downgrades all errors to warnings via
   `eslint-plugin-only-warn`. Defaults to `true`. Irreversible within
   a process — uses a side-effect import that monkey-patches the ESLint
@@ -63,6 +67,53 @@ All optional except `tsconfigRootDir` (recommended for type-aware rules):
   `defaultPnpmWorkspaceSettings` (see below). Pass `false` to keep the
   catalog rules but drop the settings policy. Ignored when `pnpm` is
   `false`.
+
+## Gitignore-derived ignores
+
+`configure()` reads `.gitignore` through
+[`eslint-config-flat-gitignore`](https://github.com/antfu/eslint-config-flat-gitignore)
+and contributes the converted patterns as a global-ignores entry named
+`gitignore`. This is why `ignores` lists only tracked files: build output,
+caches, and generated files are already untracked, so `.gitignore` is the
+single source of truth for them.
+
+Two defaults differ from upstream, and a caller-supplied options object is
+merged over them (unlike `ignores`, partial overrides keep the rest):
+
+- **`recursive: true`** — also picks up per-package `.gitignore` files, so
+  a workspace-root lint run honors the ones nested in each package.
+  Discovery is a directory walk; pass
+  `{ recursive: { skipDirs: [...] } }` to prune it in a large repo.
+- **`strict: false`** — upstream throws when an ignore file is missing.
+  A shared config is loaded by repos it knows nothing about, so a missing
+  `.gitignore` contributes no patterns rather than failing the lint run.
+
+```typescript
+export default configure({ gitignore: false }); // opt out entirely
+export default configure({
+  gitignore: { files: ['.gitignore', '.eslintignore'] },
+});
+```
+
+Opting out leaves only `ignores`, which no longer covers build output —
+a repo that does so has to enumerate its own generated paths.
+
+### Why per-package lint sees fewer patterns
+
+Patterns are resolved relative to the directory ESLint runs in, and a
+`.gitignore` entry containing a mid-string `/` is anchored to the
+directory of the file that declared it. So when a per-package config
+walks up to the workspace-root `.gitignore`:
+
+- Depth-agnostic entries survive — `dist/` becomes `**/dist/`, which
+  still matches inside the package.
+- Root-anchored entries are **dropped** — `.claude/worktrees/` names a
+  path outside the package, and no ESLint ignore pattern can reach a
+  parent directory.
+
+Nothing is lost, because the root config lints those root paths. It does
+mean the `gitignore` entry legitimately holds different patterns
+depending on which config loaded it.
 
 ## Agent Skills frontmatter hosts
 
@@ -253,6 +304,9 @@ depth lives in that plugin's own skill (where one exists).
 - **`@gtbuchanan/eslint-plugin-agent-skills`** — Agent Skills
   frontmatter schema + spec rules; plugs into `md-frontmatter`
 - **`@vitest/eslint-plugin`** — test-specific rules
+- **`eslint-config-flat-gitignore`** — turns `.gitignore` into global
+  ignores (gated by the `gitignore` option). A config, not a plugin — it
+  contributes no rules.
 - **`eslint-plugin-only-warn`** — downgrades errors to warnings (gated
   by the `onlyWarn` option)
 

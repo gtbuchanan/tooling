@@ -46,6 +46,12 @@ interface RunOptions {
   files: Record<string, string>;
   flags?: readonly string[];
   /**
+   * Files written to the run directory but never passed to ESLint as
+   * targets — inputs that shape a run without being linted themselves,
+   * such as a `.gitignore`.
+   */
+  supportFiles?: Record<string, string>;
+  /**
    * Overrides the default `tsconfig.json`. Needed for tests that lint
    * non-TypeScript extensions — the project service rejects any file no
    * tsconfig includes, which fails the run before rules ever execute.
@@ -87,6 +93,7 @@ export const createFixture = () => {
     env,
     files,
     flags = [],
+    supportFiles = {},
     tsconfig: tsconfigOverride,
   }: RunOptions) => {
     const runDir = mkdtempSync(path.join(fixture.projectDir, 'run-'));
@@ -95,7 +102,8 @@ export const createFixture = () => {
     writeFileSync(path.join(runDir, 'tsconfig.root.json'), tsconfigRoot);
 
     const fileNames = Object.keys(files);
-    for (const [name, content] of Object.entries(files)) {
+    const written = { ...supportFiles, ...files };
+    for (const [name, content] of Object.entries(written)) {
       const filePath = path.join(runDir, name);
       mkdirSync(path.join(filePath, '..'), { recursive: true });
       writeFileSync(filePath, content);

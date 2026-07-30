@@ -84,13 +84,29 @@ describe.concurrent('eslint CLI integration', () => {
     expect(js.stdout).toContain('@typescript-eslint/no-require-imports');
   });
 
-  it('respects global ignores for dist/', async ({ fixture, expect }) => {
-    const longLine = `export const x = '${'a'.repeat(101)}';\n`;
-    const { exitCode } = await fixture.run({
-      files: { 'dist/bad.mjs': longLine },
+  /*
+   * Build output is ignored because it is gitignored, not because this
+   * config enumerates `dist/`. The second run — identical but for the
+   * missing .gitignore — is what keeps the first honest: it proves the
+   * file really does violate a rule, so exit 0 means "skipped", not
+   * "nothing to report".
+   */
+  it('respects .gitignore for build output', async ({ fixture, expect }) => {
+    const files = { 'dist/bad.ts': `export const x = '${'a'.repeat(101)}';\n` };
+
+    const gitignored = await fixture.run({
+      files,
+      flags: ['--max-warnings=0', '--no-warn-ignored'],
+      supportFiles: { '.gitignore': 'dist/\n' },
+    });
+    const tracked = await fixture.run({
+      files,
+      flags: ['--max-warnings=0'],
     });
 
-    expect(exitCode).toBe(0);
+    expect(gitignored).toMatchObject({ exitCode: 0, stdout: '' });
+    expect(tracked).toMatchObject({ exitCode: 1 });
+    expect(tracked.stdout).toContain('@stylistic/max-len');
   });
 
   it('respects global ignores for generated changelogs', async ({ fixture, expect }) => {

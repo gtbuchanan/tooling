@@ -34,6 +34,7 @@
     "@prettier/plugin-xml": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "@vitest/eslint-plugin": "catalog:",
+    "eslint-config-flat-gitignore": "catalog:",
     "eslint-plugin-format": "catalog:",
     "eslint-plugin-import-x": "catalog:",
     "eslint-plugin-jsdoc": "catalog:",
