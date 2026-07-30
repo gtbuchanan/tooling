@@ -19,6 +19,11 @@ component_management:
       name: test-utils
       paths:
         - packages/test-utils/src/**
+    - component_id: libsql-termux-shim
+      name: libsql-termux-shim
+      paths:
+        - packages/libsql-termux-shim/scripts/**
+        - packages/libsql-termux-shim/src/**
     - component_id: eslint-plugin-yamllint
       name: eslint-plugin-yamllint
       paths:
@@ -78,6 +83,10 @@ flags:
     carryforward: true
     paths:
       - packages/eslint-plugin-yamllint/
+  libsql-termux-shim:
+    carryforward: true
+    paths:
+      - packages/libsql-termux-shim/
   test-utils:
     carryforward: true
     paths:
