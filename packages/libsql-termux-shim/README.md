@@ -44,9 +44,23 @@ every later install:
 ```js
 const readPackage = (pkg) => {
   if (pkg.name !== 'libsql') return pkg;
+
   const { os, ...ungated } = pkg;
   return ungated;
 };
+
+/* Lockfile keys are `<name>@<version>`, and the name may itself be scoped. */
+const nameOf = (id) => id.slice(0, id.lastIndexOf('@'));
+
+const afterAllResolved = (lockFile) => {
+  for (const [id, pkg] of Object.entries(lockFile.packages ?? {})) {
+    if (nameOf(id) === 'libsql') delete pkg.os;
+  }
+
+  return lockFile;
+};
+
+module.exports = { hooks: { afterAllResolved, readPackage } };
 ```
 
 ## Scope

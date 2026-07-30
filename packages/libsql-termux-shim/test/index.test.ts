@@ -116,6 +116,18 @@ describe.concurrent('raw mode', () => {
     expect(toggleRaw).not.toThrow();
   });
 
+  it('returns to object rows when raw mode is switched back off', ({ expect }) => {
+    const db = openDb();
+    insert(db, 4, 'four');
+    const stmt = prepare(db, 'SELECT num, txt FROM t');
+    shim.statementRaw.call(stmt, true);
+
+    shim.statementRaw.call(stmt, false);
+
+    expect(drain(shim.statementRowsSync.call(stmt, [])))
+      .toStrictEqual([{ num: 4, txt: 'four' }]);
+  });
+
   it('yields array rows once raw mode is on', ({ expect }) => {
     const db = openDb();
     insert(db, 9, 'nine');
