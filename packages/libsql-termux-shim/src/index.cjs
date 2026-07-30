@@ -217,16 +217,17 @@ function databaseAuthorizer(rules) {
 }
 
 /**
- * Loads SQLite extensions.
+ * Rejects extension loading.
  *
- * @this {DatabaseHandle}
- * @param {...string} args Extension paths.
- * @returns {void}
+ * libsql permits this per call, but `node:sqlite` decides it at construction:
+ * without `allowExtension` on the `DatabaseSync`, `enableLoadExtension` throws.
+ * Opting every database in to support a call libsql's own dependents don't make
+ * would trade real capability for hypothetical fidelity, so this reports the gap
+ * directly rather than surfacing node:sqlite's construction-time complaint.
+ *
+ * @returns {never}
  */
-function databaseLoadExtension(...args) {
-  this.sqlite.enableLoadExtension(true);
-  for (const arg of args) this.sqlite.loadExtension(arg);
-}
+const databaseLoadExtension = () => unsupported('loadExtension()');
 
 /**
  * Rejects replica synchronization.
@@ -287,7 +288,7 @@ function statementIsReader() {
  * Executes the statement and returns its first row.
  *
  * @this {StatementHandle}
- * @param {unknown} params Bind parameters.
+ * @param {unknown} [params] Bind parameters.
  * @returns {unknown} First row, or undefined when there are none.
  */
 function statementGet(params) {
@@ -298,7 +299,7 @@ function statementGet(params) {
  * Executes the statement without returning rows.
  *
  * @this {StatementHandle}
- * @param {unknown} params Bind parameters.
+ * @param {unknown} [params] Bind parameters.
  * @returns {{changes: number | bigint, lastInsertRowid: number | bigint}} Write summary.
  */
 function statementRun(params) {
@@ -312,7 +313,7 @@ function statementRun(params) {
  * Executes the statement and returns a handle for iterating its rows.
  *
  * @this {StatementHandle}
- * @param {unknown} params Bind parameters.
+ * @param {unknown} [params] Bind parameters.
  * @returns {RowsHandle} Handle consumed by {@link rowsNext}.
  */
 function statementRowsSync(params) {

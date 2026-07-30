@@ -55,6 +55,11 @@ Local databases only. Embedded replicas (`syncUrl`, `sync()`, `syncUntil()`) nee
 libsql's replication protocol, which has no `node:sqlite` equivalent, so those
 entry points throw rather than silently misbehave.
 
+Extension loading throws for a different reason: libsql permits it per call, but
+`node:sqlite` decides it when the connection is constructed. Opting every database
+in to `allowExtension` so an unused call could work would trade real capability
+for hypothetical fidelity, so the shim reports the gap instead.
+
 ## How it works
 
 libsql's JS wrapper calls each native function as `fn.call(handle, ...)`, where

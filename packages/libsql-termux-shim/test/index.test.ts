@@ -1,3 +1,9 @@
+/* eslint-disable-next-line n/no-unsupported-features/node-builtins --
+   Stale plugin data, not a real gap: eslint-plugin-n records node:sqlite as
+   experimental from 22.5.0 with no stabilization entry, so no engines range
+   clears it, yet Node emits no ExperimentalWarning for it on the versions this
+   package supports. Drop this once the plugin records stabilization. */
+import { constants as sqliteConstants } from 'node:sqlite';
 import { describe, it } from 'vitest';
 import shim from '#src/index.cjs';
 
@@ -181,6 +187,26 @@ describe.concurrent('metadata', () => {
     ]);
   });
 
+  /* An expression column has no source database, table, or origin column. */
+  it('reports absent column metadata as null', ({ expect }) => {
+    const db = openDb();
+
+    const stmt = prepare(db, 'SELECT 1 AS one');
+
+    /* eslint-disable unicorn/no-null --
+       Asserting the shape libsql actually reports; see statementColumns. */
+    expect(shim.statementColumns.call(stmt)).toStrictEqual([
+      {
+        database_name: null,
+        decl_type: null,
+        name: 'one',
+        origin_name: null,
+        table_name: null,
+      },
+    ]);
+    /* eslint-enable unicorn/no-null -- Restore for the rest of the suite. */
+  });
+
   it('reports whether a statement returns data', ({ expect }) => {
     const db = openDb();
 
@@ -199,6 +225,52 @@ describe.concurrent('metadata', () => {
   });
 });
 
+describe.concurrent('connection lifecycle', () => {
+  it('treats an empty path as an in-memory database', ({ expect }) => {
+    const db = shim.databaseOpen('');
+
+    shim.databaseExecSync.call(db, 'CREATE TABLE t(num INTEGER)');
+
+    expect(shim.statementIsReader.call(prepare(db, 'SELECT num FROM t'))).toBe(true);
+  });
+
+  it('closes the connection', ({ expect }) => {
+    const db = openDb();
+
+    shim.databaseClose.call(db);
+
+    expect(() => prepare(db, 'SELECT 1')).toThrow(/database is not open/v);
+  });
+
+  it('applies database-level safe integers to later statements', ({ expect }) => {
+    const db = openDb();
+    insert(db, 8, 'eight');
+
+    shim.databaseDefaultSafeIntegers.call(db, true);
+
+    expect(shim.statementGet.call(prepare(db, 'SELECT num FROM t'), []))
+      .toStrictEqual({ num: 8n });
+  });
+
+  it('installs an authorizer that can deny access', ({ expect }) => {
+    const db = openDb();
+
+    shim.databaseAuthorizer.call(db, () => sqliteConstants.SQLITE_DENY);
+
+    expect(() => shim.statementGet.call(prepare(db, 'SELECT num FROM t'), []))
+      .toThrow(/not authorized/v);
+  });
+
+  it('accepts a statement invoked without bind parameters', ({ expect }) => {
+    const db = openDb();
+    insert(db, 6, 'six');
+
+    const stmt = prepare(db, 'SELECT num FROM t');
+
+    expect(shim.statementGet.call(stmt)).toStrictEqual({ num: 6 });
+  });
+});
+
 describe.concurrent('unsupported operations', () => {
   it('rejects embedded replicas', ({ expect }) => {
     expect(() => shim.databaseOpenWithSync()).toThrow(/native libsql binding/v);
@@ -208,5 +280,33 @@ describe.concurrent('unsupported operations', () => {
     const db = openDb();
 
     expect(() => shim.databaseSyncSync.call(db)).toThrow(/native libsql binding/v);
+  });
+
+  it('rejects syncUntil', ({ expect }) => {
+    const db = openDb();
+
+    expect(() => shim.databaseSyncUntilSync.call(db)).toThrow(/native libsql binding/v);
+  });
+
+  /*
+   * node:sqlite gates extension loading at construction, so the shim cannot
+   * honor libsql's per-call form. Reporting that beats surfacing node:sqlite's
+   * construction-time error from an unrelated-looking call.
+   */
+  it('rejects extension loading', ({ expect }) => {
+    const db = openDb();
+
+    expect(() => shim.databaseLoadExtension.call(db))
+      .toThrow(/native libsql binding/v);
+  });
+
+  it('reports no replication index', ({ expect }) => {
+    const db = openDb();
+
+    /* eslint-disable-next-line @typescript-eslint/no-confusing-void-expression --
+       The shim returns nothing here by design; asserting that is the point. */
+    const index = shim.databaseMaxWriteReplicationIndex.call(db);
+
+    expect(index).toBeUndefined();
   });
 });
