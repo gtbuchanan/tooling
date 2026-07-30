@@ -37,6 +37,7 @@ packages/
   eslint-plugin-md-frontmatter/ — @gtbuchanan/eslint-plugin-md-frontmatter (Markdown frontmatter validation via JSON Schema)
   eslint-plugin-yamllint/       — @gtbuchanan/eslint-plugin-yamllint (yamllint gap rules via ESLint)
   hk-config/                    — @gtbuchanan/hk-config (shared hk Pkl preset; private to npm, published as a GitHub-release Pkl package). Defaults.pkl + sync-generated PklProject
+  libsql-termux-shim/           — @gtbuchanan/libsql-termux-shim (libsql native-binding shim on node:sqlite for Termux/Android, os: ["android"])
   pnpm-termux-shim/             — @gtbuchanan/pnpm-termux-shim (pnpm bin shim for Termux/Android, os: ["android"])
   tsconfig/                     — @gtbuchanan/tsconfig (shared base tsconfig.json)
   vitest-config/                — @gtbuchanan/vitest-config (configurePackage, configureGlobal, + e2e variants)

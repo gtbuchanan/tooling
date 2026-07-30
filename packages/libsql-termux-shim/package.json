@@ -1,0 +1,47 @@
+{
+  "name": "@gtbuchanan/libsql-termux-shim",
+  "version": "0.0.0",
+  "description": "libsql native-binding stand-in for Termux/Android, implemented on node:sqlite, so libsql-dependent tools (e.g. promptfoo) run where libsql ships no prebuilt binding",
+  "homepage": "https://github.com/gtbuchanan/tooling/tree/main/packages/libsql-termux-shim",
+  "bugs": "https://github.com/gtbuchanan/tooling/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gtbuchanan/tooling.git",
+    "directory": "packages/libsql-termux-shim"
+  },
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "main": "./src/index.cjs",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "compile:ts": "node --experimental-strip-types scripts/build.ts",
+    "coverage:codecov:upload": "pnpm run gtb task coverage:codecov:upload",
+    "coverage:vitest:merge": "pnpm run gtb task coverage:vitest:merge",
+    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "lint:eslint": "pnpm run gtb task lint:eslint",
+    "pack:npm": "pnpm run gtb task pack:npm",
+    "test:vitest:fast": "pnpm run gtb task test:vitest:fast",
+    "test:vitest:slow": "pnpm run gtb task test:vitest:slow",
+    "typecheck:ts": "pnpm run gtb task typecheck:ts"
+  },
+  "devDependencies": {
+    "@gtbuchanan/eslint-config": "workspace:*",
+    "@gtbuchanan/tsconfig": "workspace:*",
+    "@gtbuchanan/vitest-config": "workspace:*"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "directory": "dist/source",
+    "linkDirectory": false,
+    "os": [
+      "android"
+    ]
+  }
+}
