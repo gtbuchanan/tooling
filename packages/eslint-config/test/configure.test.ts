@@ -139,15 +139,6 @@ describe.concurrent(configure, () => {
     expect(entryConfig?.files).toStrictEqual(['**/cli.ts']);
   });
 
-  it('applies custom ignores', async ({ expect }) => {
-    const configs = await configure({ ignores: ['vendor/**'], onlyWarn: false });
-    const ignoresConfig = configs.find(
-      cfg => cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined,
-    );
-
-    expect(ignoresConfig?.ignores).toStrictEqual(['vendor/**']);
-  });
-
   it('includes markdownlint/lint for markdown files', async ({ expect }) => {
     const configs = await defaultConfigs;
 

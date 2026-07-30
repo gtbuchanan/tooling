@@ -3,6 +3,7 @@ import agentSkills from './agent-skills.ts';
 import core from './core.ts';
 import eslintComments from './eslint-comments.ts';
 import format from './format.ts';
+import gitignore from './gitignore.ts';
 import importX from './import-x.ts';
 import jsdoc from './jsdoc.ts';
 import json from './json.ts';
@@ -22,7 +23,7 @@ import yamllint from './yamllint.ts';
 
 /** Ordered plugin factories. Later entries override earlier ones for the same file. */
 export const plugins: readonly PluginFactory[] = [
-  typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint, toml, pnpm,
-  node, format, markdownlint, markdown, agentSkills, stylistic, eslintComments,
-  importX, core, vitest,
+  gitignore, typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint,
+  toml, pnpm, node, format, markdownlint, markdown, agentSkills, stylistic,
+  eslintComments, importX, core, vitest,
 ];
