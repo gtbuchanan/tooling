@@ -18,6 +18,9 @@ const importSubpath = (): string => `#${faker.lorem.slug()}/*`;
 export const binMap = (): Record<string, string> =>
   arbitraryRecord(packageName, relativePath);
 
+/** Arbitrary full-length git commit SHA. */
+export const commitSha = (): string => faker.git.commitSha();
+
 /** Arbitrary `dependencies` / `devDependencies` map (package name → semver range). */
 export const dependencyMap = (): Record<string, string> =>
   arbitraryRecord(scopedPackageName, semverRange);

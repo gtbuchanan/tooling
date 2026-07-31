@@ -7,19 +7,27 @@ interface RunCall {
 }
 
 describe.concurrent(executePublish, () => {
-  it('awaits npm publish before starting the non-npm channels', async ({ expect }) => {
+  it('runs npm publish, then the npm releases, then the non-npm channels', async ({ expect }) => {
     const order: string[] = [];
     const runCalls: RunCall[] = [];
     let hasNpmFinished = false;
 
     await executePublish({
       publishNonNpm: async () => {
-        // npm publish must have fully settled before this starts.
-        expect(hasNpmFinished).toBe(true);
+        // The npm channel (publish + releases) must have settled before this.
+        expect(order).toContain('releases:end');
 
         order.push('non-npm:start');
         await Promise.resolve();
         order.push('non-npm:end');
+      },
+      releaseNpm: async () => {
+        // npm publish must have fully settled before its releases are cut.
+        expect(hasNpmFinished).toBe(true);
+
+        order.push('releases:start');
+        await Promise.resolve();
+        order.push('releases:end');
       },
       run: async (command, options) => {
         order.push('npm:start');
@@ -34,7 +42,7 @@ describe.concurrent(executePublish, () => {
       { args: ['exec', 'changeset', 'publish'], command: 'pnpm' },
     ]);
     expect(order).toStrictEqual([
-      'npm:start', 'npm:end', 'non-npm:start', 'non-npm:end',
+      'npm:start', 'npm:end', 'releases:start', 'releases:end', 'non-npm:start', 'non-npm:end',
     ]);
   });
 });

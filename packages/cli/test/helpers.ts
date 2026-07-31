@@ -104,6 +104,37 @@ export const pklProjectSource = (
   ].join('\n');
 };
 
+/** A scaffolded temp monorepo containing one published npm package. */
+export interface NpmWorkspace {
+  /** Scoped package name (`@scope/pkg`). */
+  readonly name: string;
+  /** Absolute path of the published package directory. */
+  readonly pkgDir: string;
+  /** Workspace root directory. */
+  readonly root: string;
+  /** Package version. */
+  readonly version: string;
+}
+
+/** Scaffolds a temp monorepo with a single published npm package. */
+export const createNpmWorkspace = (): NpmWorkspace => {
+  const root = createTempDir();
+  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
+  writeJson(root, 'package.json', { name: build.packageName(), private: true });
+
+  const name = build.scopedPackageName();
+  const version = build.semverVersion();
+  const pkgDir = path.join(root, 'packages', build.packageName());
+  mkdirSync(pkgDir, { recursive: true });
+  writeJson(pkgDir, 'package.json', {
+    name,
+    publishConfig: { directory: build.publishDirectory() },
+    version,
+  });
+
+  return { name, pkgDir, root, version };
+};
+
 /** Options for {@link createPklWorkspace}. */
 export interface PklWorkspaceOptions {
   /**
