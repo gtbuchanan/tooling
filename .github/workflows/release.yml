@@ -24,10 +24,9 @@ jobs:
   lint-baseline:
     name: Lint
     needs: ci
-    uses: ./.github/workflows/lint-regression.yml
+    uses: ./.github/workflows/lint-baseline.yml
     with:
       gtb-from-source: true
-      seed: true
 
 name: Release
 
