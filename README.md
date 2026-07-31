@@ -31,7 +31,8 @@ on:
     branches: [main]
 permissions:
   contents: read
-  pull-requests: write # Dependencies posts a PR comment
+  # Dependencies posts a PR comment; Lint dismisses override labels
+  pull-requests: write
 jobs:
   ci:
     name: CI
@@ -43,6 +44,9 @@ jobs:
   dependencies:
     name: Dependencies
     uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+  lint-regression:
+    name: Lint
+    uses: gtbuchanan/tooling/.github/workflows/lint-regression.yml@main
   pre-commit:
     name: Pre-Commit
     uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@main
@@ -69,6 +73,10 @@ jobs:
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
     secrets: inherit
+  lint-baseline:
+    name: Lint
+    needs: ci
+    uses: gtbuchanan/tooling/.github/workflows/lint-baseline.yml@main
 ```
 
 The reusable workflows each job calls:
@@ -79,6 +87,8 @@ The reusable workflows each job calls:
 | `cd.yml`                | changesets version + publish (OIDC)      |
 | `changeset-check.yml`   | Verify changeset exists                  |
 | `dependency-review.yml` | Scan PR dep changes for vulns + licenses |
+| `lint-baseline.yml`     | Seed the cross-PR lint baseline cache    |
+| `lint-regression.yml`   | Fail PRs only on new lint violations     |
 | `pre-commit.yml`        | Run hk hooks on changed files            |
 
 Permissions narrow down the call chain but never elevate, so each
@@ -170,6 +180,47 @@ jobs:
       config-file: .github/dependency-review-config.yml
       fail-on-severity: low
 ```
+
+### Lint regression gate
+
+`lint-regression.yml` fails a PR only on lint violations that are
+_new_ relative to its merge base — pre-existing findings never block.
+Lint tasks are reporters that write SARIF logs (`dist/sarif/*.sarif`);
+`gtb sarif compare` diffs them against the merge base's logs (linting
+the merge base in a throwaway git worktree on a cache miss) and fails
+only on findings classified as new. The findings are reported in the
+run's job summary.
+
+The routine response is to fix the new findings or suppress them
+in-source with a reason (suppressed findings are exempt from the
+gate). For bulk introductions — e.g. a dependency bump shipping a new
+rule, where per-instance suppression would be noise — a maintainer
+applies the override label (`accepted-lint-regression` by default) and
+re-runs the failed job to accept the findings for that merge. The
+label is dismissed automatically on every new push, and it only counts
+when its applier holds the `override-role` repository role or higher
+(default `maintain`) — GitHub has no per-label permission rules of its
+own.
+
+`lint-baseline.yml` seeds a cross-PR baseline cache from each
+default-branch commit (the `Lint` job in the release pipeline above).
+It's an optimization, not a requirement — on a cache miss the gate
+lints the merge base itself.
+
+Customize via `with:` on the `Lint` job:
+
+```yaml
+jobs:
+  lint-regression:
+    name: Lint
+    uses: gtbuchanan/tooling/.github/workflows/lint-regression.yml@main
+    with:
+      override-label: accepted-lint-regression
+      override-role: maintain
+```
+
+The PR pipeline must grant `pull-requests: write` (shown in the setup
+above) so the gate can dismiss stale override labels.
 
 ### Build pipeline conventions
 
