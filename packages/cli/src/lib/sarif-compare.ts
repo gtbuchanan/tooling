@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as v from 'valibot';
 import { readJsonFile } from './file-writer.ts';
+import { internalRuleId } from './internal-rule-id.ts';
 import { type Logger, createLogger } from './logger.ts';
 import { type RunOptions, capture, run } from './process.ts';
 import { sarifPaths } from './sarif-paths.ts';
@@ -93,7 +94,7 @@ const toNewFinding = (result: SarifResult): NewFinding => {
     level: result.level ?? 'error',
     line,
     message: result.message.text,
-    ruleId: result.ruleId ?? 'internal',
+    ruleId: result.ruleId ?? internalRuleId,
     uri: uri ?? '<unknown>',
   };
 };
@@ -258,6 +259,15 @@ export const produceBaseline = async (
   const baseDir = deps.makeTempDir();
   try {
     await deps.run('git', { args: ['worktree', 'add', '--detach', baseDir, sha] });
+    /*
+     * The bootstrap assumes the lint graph needs only the node
+     * toolchain: pnpm install plus whatever the ambient PATH provides.
+     * The temp worktree lives outside the repo, so per-directory tool
+     * managers (mise) never activate there — a base commit pinning
+     * different tool versions resolves the head environment's binaries
+     * instead. Fine while every SARIF reporter is node-based; revisit
+     * with a bootstrap seam when a non-node reporter joins the graph.
+     */
     await deps.run('pnpm', {
       args: ['install', '--frozen-lockfile', '--prefer-offline'],
       cwd: baseDir,

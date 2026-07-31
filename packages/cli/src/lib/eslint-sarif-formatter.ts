@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import sarifFormat from '@microsoft/eslint-formatter-sarif';
+import { internalRuleId } from './internal-rule-id.ts';
 import { sarifPaths } from './sarif-paths.ts';
 
 /** SARIF log path written by the formatter, relative to the lint cwd. */
@@ -24,12 +25,18 @@ export interface FormatterResult {
 /** ESLint's numeric severity for an error (1 is a warning). */
 const errorSeverity = 2;
 
-/** Builds compact per-violation console output (one line per message). */
+/**
+ * Builds compact per-violation console output (one line per message).
+ * Hand-rolled rather than delegated: ESLint v9 exposes no importable
+ * formatter (`stylish` is CLI-internal; `compact`/`unix` were removed
+ * from core), and the line shape deliberately matches the compare's
+ * new-findings report so lint output and the CI gate read identically.
+ */
 export const formatConsole = (results: readonly FormatterResult[]): string => {
   const lines = results.flatMap(result =>
     result.messages.map((message) => {
       const severity = message.severity === errorSeverity ? 'error' : 'warning';
-      const rule = message.ruleId ?? 'internal';
+      const rule = message.ruleId ?? internalRuleId;
       const position = `${String(message.line)}:${String(message.column)}`;
       return `${result.filePath}:${position}  ${severity}  ${message.message}  ${rule}`;
     }),
