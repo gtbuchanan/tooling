@@ -1,10 +1,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { discoverWorkspace } from './discovery.ts';
-import type { Logger } from './logger.ts';
-import { pklReleaseTag } from './manifest-sync.ts';
+import { type GithubReleaseDeps, publishReleases, releaseTag } from './github-release.ts';
 import { readPackageName, readPackageVersion } from './pkl-project.ts';
-import type { RunOptions } from './process.ts';
 
 /** Output directory for the packaged Pkl artifacts (mirrors pack:npm). */
 export const pklPackDestination = path.join('dist', 'packages', 'pkl');
@@ -43,65 +41,8 @@ export const planPklRelease = (
     assets: [base, `${base}.sha256`, `${base}.zip`, `${base}.zip.sha256`].map(file =>
       path.join(assetDir, file),
     ),
-    tag: pklReleaseTag(name, version, isMonorepo),
+    tag: releaseTag(name, version, isMonorepo),
   };
-};
-
-/**
- * Extracts a version's section from CHANGELOG.md content — the `## <version>`
- * heading's body up to the next `## ` (or EOF) — so the GitHub release notes
- * match what changesets writes for npm packages. Returns undefined when the
- * section is absent or empty.
- */
-export const extractChangelogNotes = (
-  changelog: string,
-  version: string,
-): string | undefined => {
-  const lines = changelog.split('\n');
-  const start = lines.findIndex(line => line.trim() === `## ${version}`);
-  if (start === -1) {
-    return undefined;
-  }
-  const after = lines.slice(start + 1);
-  const end = after.findIndex(line => line.startsWith('## '));
-  const section = (end === -1 ? after : after.slice(0, end)).join('\n').trim();
-
-  return section === '' ? undefined : section;
-};
-
-/** Reads the CHANGELOG.md section for the version, if any. */
-const releaseNotes = (pkgDir: string, version: string | undefined): string | undefined => {
-  if (version === undefined) {
-    return undefined;
-  }
-  try {
-    return extractChangelogNotes(readFileSync(path.join(pkgDir, 'CHANGELOG.md'), 'utf8'), version);
-  } catch {
-    return undefined;
-  }
-};
-
-/**
- * Side-effecting I/O the publisher depends on. Injected so the orchestration
- * (discover packages, skip-if-exists, create) is unit-testable without
- * spawning gh; the citty wrapper wires the real implementations.
- */
-export interface PklReleaseDeps {
-  readonly capture: (command: string, args: readonly string[]) => Promise<string>;
-  readonly cwd: string;
-  readonly logger: Logger;
-  readonly run: (command: string, options?: RunOptions) => Promise<void>;
-}
-
-/** True when a release already exists for the tag (`gh release view` exits 0). */
-const releaseExists = async (deps: PklReleaseDeps, tag: string): Promise<boolean> => {
-  try {
-    await deps.capture('gh', ['release', 'view', tag]);
-
-    return true;
-  } catch {
-    return false;
-  }
 };
 
 /**
@@ -110,7 +51,7 @@ const releaseExists = async (deps: PklReleaseDeps, tag: string): Promise<boolean
  * an unchanged version is a no-op. Designed to run in CD after `pack` has
  * produced the assets.
  */
-export const executePublishPkl = async (deps: PklReleaseDeps): Promise<void> => {
+export const executePublishPkl = async (deps: GithubReleaseDeps): Promise<void> => {
   const discovery = discoverWorkspace({ cwd: deps.cwd });
   const packages = discovery.packages.filter(pkg => pkg.hasPklPackage);
   if (packages.length === 0) {
@@ -119,24 +60,20 @@ export const executePublishPkl = async (deps: PklReleaseDeps): Promise<void> => 
     return;
   }
 
-  for (const pkg of packages) {
+  const pending = packages.map((pkg) => {
     const source = readFileSync(path.join(pkg.dir, 'PklProject'), 'utf8');
     const name = readPackageName(source);
     const version = readPackageVersion(source);
     if (name === undefined || version === undefined) {
       throw new Error(`${pkg.dir}: PklProject is missing package.name or package.version`);
     }
-    const { assets, tag } = planPklRelease(pkg.dir, name, version, discovery.isMonorepo);
-    if (await releaseExists(deps, tag)) {
-      deps.logger.info(`release ${tag} already exists — skipping`);
-      continue;
-    }
-    // Mirror changesets' release shape: title = tag, body = the changelog
-    // section (falling back to the tag when there's no entry).
-    const notes = releaseNotes(pkg.dir, version) ?? tag;
-    await deps.run('gh', {
-      args: ['release', 'create', tag, '--title', tag, '--notes', notes, ...assets],
-    });
-    deps.logger.info(`created release ${tag}`);
-  }
+
+    return {
+      assets: planPklRelease(pkg.dir, name, version, discovery.isMonorepo).assets,
+      dir: pkg.dir,
+      name,
+      version,
+    };
+  });
+  await publishReleases(deps, pending, discovery.isMonorepo);
 };

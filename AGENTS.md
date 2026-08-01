@@ -168,7 +168,7 @@ coverage, setupFiles, and mock reset.
     (root-only) `PklProject` — detection, `typecheck:pkl`, and the `*.pkl`
     cache inputs are all top-level, not recursive. Keep sources at the root
     rather than under a `src/` subdirectory.
-- **Release tag mirrors changesets** (`pklReleaseTag`). The
+- **Release tag mirrors changesets** (`releaseTag`). The
   `packageZipUrl` tag segment and the `gtb publish` release tag follow
   changesets' own convention by repo shape: plain `v<version>` for a
   single-package (root) repo, unscoped `<name>@<version>` for a monorepo
@@ -321,12 +321,18 @@ through `package.json` scripts backed by `gtb` leaf commands.
     execs it without a shell, so a `&&` chain would be passed to changesets
     as bogus args.
   - **`gtb publish`** runs `changeset publish` (npm, honoring the ambient
-    OIDC + `NPM_CONFIG_PROVENANCE` env) and then dispatches every non-npm
-    channel (the Pkl zip to a `hk-config@<ver>` GitHub release), using the
-    assets the `pack` step already built. Each channel is idempotent and
-    no-ops when the workspace ships no such package, so CD runs `gtb publish`
-    unconditionally; a future `.NET` channel adds just another
-    `executePublish*` with no workflow change.
+    OIDC + `NPM_CONFIG_PROVENANCE` env), then creates a GitHub release per
+    published npm package, and then dispatches every non-npm channel (the
+    Pkl zip to a `hk-config@<ver>` GitHub release), using the assets the
+    `pack` step already built. The API-side releases are what land the
+    release tags on GitHub — `changeset publish` only creates tags in the
+    local clone, and changesets/action (which would push them) never runs
+    the publish phase here. Creating releases instead of pushing tags keeps
+    a manual `gtb publish` reproducible locally (only `gh` auth needed, with
+    the `workflow` scope) and sidesteps ref-count push rules. Each channel
+    is idempotent and no-ops when the workspace ships no such package, so CD
+    runs `gtb publish` unconditionally; a future `.NET` channel adds just
+    another `executePublish*` with no workflow change.
   - The `gtb-from-source` input (default `false`) flips the gtb invocation:
     consumers run their installed bin (`pnpm exec gtb`); the only repo that
     vendors `@gtbuchanan/cli` as a workspace package (tooling itself) sets it

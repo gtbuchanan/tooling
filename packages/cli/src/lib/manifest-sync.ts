@@ -31,18 +31,6 @@ export interface ManifestContext {
 }
 
 /**
- * Release tag for a Pkl package, mirroring changesets' convention: plain
- * `v<version>` for a single-package (root) repo, `<name>@<version>` for a
- * monorepo member (where the name disambiguates). The asset basename stays
- * `<name>@<version>` either way — pkl derives it from `PklProject`.
- */
-export const pklReleaseTag = (
-  name: string,
-  version: string,
-  isMonorepo: boolean,
-): string => (isMonorepo ? `${name}@${version}` : `v${version}`);
-
-/**
  * Renders the native manifest for one package "kind". `render` may read the
  * existing file and patch it (e.g. a `.csproj`), but the Pkl writer fully
  * generates a do-not-edit `PklProject`.

@@ -26,9 +26,12 @@ jobs:
       # skips install on a pack cache hit.
       - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
-      # `gtb publish` runs `changeset publish` (npm) then every non-npm channel.
-      # OIDC trusted publishing + provenance flow through the ambient env set
-      # here (the `release` environment + `id-token: write` grant them).
+      # `gtb publish` runs `changeset publish` (npm), creates the GitHub
+      # releases that land each published package's release tag (changesets
+      # only tags the local clone), then every non-npm channel. OIDC trusted
+      # publishing + provenance flow through the ambient env set here (the
+      # `release` environment + `id-token: write` grant them); GH_TOKEN covers
+      # the release creation.
       - env:
           GH_TOKEN: ${{ github.token }}
           NPM_CONFIG_PROVENANCE: 'true'
