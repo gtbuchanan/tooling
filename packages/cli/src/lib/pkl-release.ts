@@ -1,14 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { discoverWorkspace } from './discovery.ts';
-import {
-  type GithubReleaseDeps,
-  createGithubRelease,
-  releaseExists,
-  releaseNotes,
-  releaseTag,
-  resolveHeadSha,
-} from './github-release.ts';
+import { type GithubReleaseDeps, publishReleases, releaseTag } from './github-release.ts';
 import { readPackageName, readPackageVersion } from './pkl-project.ts';
 
 /** Output directory for the packaged Pkl artifacts (mirrors pack:npm). */
@@ -67,25 +60,20 @@ export const executePublishPkl = async (deps: GithubReleaseDeps): Promise<void> 
     return;
   }
 
-  const target = await resolveHeadSha(deps);
-  for (const pkg of packages) {
+  const pending = packages.map((pkg) => {
     const source = readFileSync(path.join(pkg.dir, 'PklProject'), 'utf8');
     const name = readPackageName(source);
     const version = readPackageVersion(source);
     if (name === undefined || version === undefined) {
       throw new Error(`${pkg.dir}: PklProject is missing package.name or package.version`);
     }
-    const { assets, tag } = planPklRelease(pkg.dir, name, version, discovery.isMonorepo);
-    if (await releaseExists(deps, tag)) {
-      deps.logger.info(`release ${tag} already exists — skipping`);
-      continue;
-    }
-    await createGithubRelease(deps, {
-      assets,
-      notes: releaseNotes(pkg.dir, version) ?? tag,
-      tag,
-      target,
-    });
-    deps.logger.info(`created release ${tag}`);
-  }
+
+    return {
+      assets: planPklRelease(pkg.dir, name, version, discovery.isMonorepo).assets,
+      dir: pkg.dir,
+      name,
+      version,
+    };
+  });
+  await publishReleases(deps, pending, discovery.isMonorepo);
 };

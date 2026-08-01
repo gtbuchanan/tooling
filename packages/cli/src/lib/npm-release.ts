@@ -1,12 +1,5 @@
 import { discoverWorkspace } from './discovery.ts';
-import {
-  type GithubReleaseDeps,
-  createGithubRelease,
-  releaseExists,
-  releaseNotes,
-  releaseTag,
-  resolveHeadSha,
-} from './github-release.ts';
+import { type GithubReleaseDeps, publishReleases } from './github-release.ts';
 import { readParsedManifest } from './workspace.ts';
 
 /**
@@ -28,22 +21,13 @@ export const executePublishNpmReleases = async (deps: GithubReleaseDeps): Promis
     return;
   }
 
-  const target = await resolveHeadSha(deps);
-  for (const pkg of packages) {
+  const pending = packages.map((pkg) => {
     const { name, version } = readParsedManifest(pkg.dir);
     if (name === undefined || version === undefined) {
       throw new Error(`${pkg.dir}: package.json is missing name or version`);
     }
-    const tag = releaseTag(name, version, discovery.isMonorepo);
-    if (await releaseExists(deps, tag)) {
-      deps.logger.info(`release ${tag} already exists — skipping`);
-      continue;
-    }
-    await createGithubRelease(deps, {
-      notes: releaseNotes(pkg.dir, version) ?? tag,
-      tag,
-      target,
-    });
-    deps.logger.info(`created release ${tag}`);
-  }
+
+    return { dir: pkg.dir, name, version };
+  });
+  await publishReleases(deps, pending, discovery.isMonorepo);
 };

@@ -117,3 +117,43 @@ export const createGithubRelease = (
       ...(plan.assets ?? []),
     ],
   });
+
+/**
+ * A package pending release: its resolved identity (validated by the channel,
+ * which knows its own manifest format) plus any uploadable assets.
+ */
+export interface PendingRelease {
+  readonly assets?: readonly string[];
+  readonly dir: string;
+  readonly name: string;
+  readonly version: string;
+}
+
+/**
+ * Creates a GitHub release for each pending package, idempotently: a tag that
+ * already has a release is skipped, so re-running on an unchanged version is
+ * a no-op (and a run that died between channels backfills on the next). The
+ * shared loop for every release channel — tag convention, changelog notes,
+ * skip-if-exists, HEAD targeting — so channels can't drift apart.
+ */
+export const publishReleases = async (
+  deps: GithubReleaseDeps,
+  packages: readonly PendingRelease[],
+  isMonorepo: boolean,
+): Promise<void> => {
+  const target = await resolveHeadSha(deps);
+  for (const { assets, dir, name, version } of packages) {
+    const tag = releaseTag(name, version, isMonorepo);
+    if (await releaseExists(deps, tag)) {
+      deps.logger.info(`release ${tag} already exists — skipping`);
+      continue;
+    }
+    await createGithubRelease(deps, {
+      ...(assets !== undefined && { assets }),
+      notes: releaseNotes(dir, version) ?? tag,
+      tag,
+      target,
+    });
+    deps.logger.info(`created release ${tag}`);
+  }
+};

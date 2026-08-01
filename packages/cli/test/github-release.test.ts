@@ -1,13 +1,19 @@
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { extractChangelogNotes, releaseTag } from '#src/lib/github-release.js';
 
 describe.concurrent(releaseTag, () => {
   it('uses <name>@<version> for a monorepo member', ({ expect }) => {
-    expect(releaseTag('@scope/pkg', '1.2.3', true)).toBe('@scope/pkg@1.2.3');
+    const name = build.scopedPackageName();
+    const version = build.semverVersion();
+
+    expect(releaseTag(name, version, true)).toBe(`${name}@${version}`);
   });
 
   it('uses a plain v<version> for a single-package repo', ({ expect }) => {
-    expect(releaseTag('@scope/pkg', '1.2.3', false)).toBe('v1.2.3');
+    const version = build.semverVersion();
+
+    expect(releaseTag(build.scopedPackageName(), version, false)).toBe(`v${version}`);
   });
 });
 

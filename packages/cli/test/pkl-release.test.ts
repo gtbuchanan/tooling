@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import type { GithubReleaseDeps } from '#src/lib/github-release.js';
@@ -29,7 +30,7 @@ const stubDeps = (
   options: { exists: boolean; logger?: GithubReleaseDeps['logger'] },
 ): Stub => {
   const runCalls: RunCall[] = [];
-  const sha = build.commitSha();
+  const sha = faker.git.commitSha();
 
   return {
     deps: {
