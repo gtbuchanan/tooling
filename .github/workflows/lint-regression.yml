@@ -19,36 +19,47 @@ jobs:
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      # A label only vouches for the commits it was applied to, so it's
+      # stale on the first attempt of a synchronize run (a new push) or
+      # a reopened run (labels survive closure, and pushes to a closed
+      # PR emit no synchronize events, so a reopened head may have
+      # moved under the label). Re-runs replay the original payload but
+      # bump the attempt counter, so a label applied after the push
+      # stays fresh — re-running the job is exactly how it takes effect
+      # (see Enforce). Computed once so the dismissal below and the
+      # Enforce branch can't drift apart.
+      - env:
+          STALE: >-
+            ${{ contains(fromJSON('["synchronize", "reopened"]'), github.event.action) &&
+            github.run_attempt == '1' }}
+        id: label
+        name: Classify override label freshness
+        run: echo "stale=$STALE" >> "$GITHUB_OUTPUT"
 
-      # A label only vouches for the commits it was applied to. Drop it
-      # on the first attempt of every new push — and on reopen, since
-      # labels survive closure and pushes to a closed PR emit no
-      # synchronize events, so a reopened head may have moved under a
-      # stale label — but never on re-runs, which replay the original
-      # payload and would otherwise strip a label applied after the
-      # push (re-running the job is exactly how a fresh label takes
-      # effect; see Enforce). Fork PRs run with a read-only token that
-      # can't edit labels; Enforce discounts the label on these same
-      # events, so skipping the dismissal there costs nothing.
+      # Fork PRs run with a read-only token that can't edit labels;
+      # Enforce discounts a stale label anyway, so skipping the
+      # dismissal there costs nothing.
       - env:
           GH_TOKEN: ${{ github.token }}
           LABEL: ${{ inputs.override-label }}
           PR: ${{ github.event.pull_request.number }}
         if: >-
-          contains(fromJSON('["synchronize", "reopened"]'), github.event.action) &&
-          github.run_attempt == '1' &&
+          steps.label.outputs.stale == 'true' &&
           contains(github.event.pull_request.labels.*.name, inputs.override-label) &&
           !github.event.pull_request.head.repo.fork
         name: Dismiss stale regression acceptance
         run: gh pr edit "$PR" --remove-label "$LABEL"
 
-      # Produce this commit's SARIF logs. Turbo dedupes against the CI
-      # workflow's lint run via the shared remote cache when configured.
-      - name: Lint HEAD
-        run: >-
-          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
-          turbo run lint
+      # Produce this commit's SARIF logs. `turbo-run` wires up the turbo
+      # remote cache, so the lint dedupes against the CI workflow's lint
+      # run of the same commit.
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+        with:
+          task: lint
+
+      # `pnpm-tasks` restores node_modules for `gtb sarif compare`, since
+      # turbo-run skips install on a full lint cache hit.
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       # The checkout must be the merge ref (a two-parent commit):
       # re-checking-out the PR head would make HEAD^1 the head's own
@@ -115,8 +126,8 @@ jobs:
       # read live (not from the event payload) so the accept flow is:
       # apply the label, then re-run this job — a re-run replays the
       # original payload, which predates the label. The label doesn't
-      # count on a first-attempt synchronize or reopened run, where the
-      # dismissal step just dropped it (or would have, for forks).
+      # count when the freshness step classified it stale — the
+      # dismissal just dropped it (or would have, for forks).
       # GitHub has no per-label permission rules — anyone with triage
       # can apply any label — so the label is honored only when its most
       # recent applier holds `override-role` or higher; anything
@@ -125,18 +136,16 @@ jobs:
       # label, but that needs write access and deliberate timing from
       # someone already looking at the PR.
       - env:
-          EVENT_ACTION: ${{ github.event.action }}
           GH_TOKEN: ${{ github.token }}
           LABEL: ${{ inputs.override-label }}
+          LABEL_STALE: ${{ steps.label.outputs.stale }}
           OVERRIDE_ROLE: ${{ inputs.override-role }}
           PR: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         if: steps.compare.outcome == 'failure'
         name: Enforce
         run: |
-          if { [ "$GITHUB_RUN_ATTEMPT" -gt 1 ] ||
-            { [ "$EVENT_ACTION" != 'synchronize' ] &&
-              [ "$EVENT_ACTION" != 'reopened' ]; }; } &&
+          if [ "$LABEL_STALE" != 'true' ] &&
             gh pr view "$PR" --json labels --jq '.labels[].name' |
               grep -Fxq "$LABEL"; then
             applier=$(gh api "repos/$REPO/issues/$PR/events" --paginate \

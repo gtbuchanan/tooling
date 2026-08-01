@@ -13,14 +13,16 @@ jobs:
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      # Produce this commit's SARIF logs. `turbo-run` wires up the turbo
+      # remote cache, so the lint dedupes against the CI workflow's lint
+      # run of the same commit.
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+        with:
+          task: lint
 
-      # Cache-hits against the CI workflow's lint run of this commit
-      # when the turbo remote cache is configured.
-      - name: Lint HEAD
-        run: >-
-          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
-          turbo run lint
+      # `pnpm-tasks` restores node_modules for `gtb sarif baseline`, since
+      # turbo-run skips install on a full lint cache hit.
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       - name: Snapshot baselines
         run: >-
