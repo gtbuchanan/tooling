@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { vi } from 'vitest';
-import type { Logger } from '#src/lib/logger.js';
 import type { SarifCompareDeps } from '#src/lib/sarif-compare.js';
 import { localeComparer } from '#src/lib/sort.js';
 import type { WorkspaceContext } from '#src/lib/workspace.js';
+import { captureLogger } from './helpers.ts';
 
 /** Overrides for {@link sarifResult}. */
 export interface SarifResultOverrides {
@@ -58,8 +58,10 @@ export interface WriteTextCall {
 export interface StubDeps {
   readonly copyCalls: readonly CopyCall[];
   readonly deps: SarifCompareDeps;
-  readonly errors: readonly string[];
-  readonly infos: readonly string[];
+  /** Buffered stderr text (from the captured logger). */
+  readonly err: () => string;
+  /** Buffered stdout text (from the captured logger). */
+  readonly out: () => string;
   readonly removedPaths: readonly string[];
   readonly runCalls: readonly RunCall[];
   readonly writeTextCalls: readonly WriteTextCall[];
@@ -91,15 +93,10 @@ export const stubDeps = (
   options?: StubOptions,
 ): StubDeps => {
   const copyCalls: CopyCall[] = [];
-  const errors: string[] = [];
-  const infos: string[] = [];
   const removedPaths: string[] = [];
   const runCalls: RunCall[] = [];
   const writeTextCalls: WriteTextCall[] = [];
-  const logger: Logger = {
-    error: (...args) => void errors.push(args.join(' ')),
-    info: (...args) => void infos.push(args.join(' ')),
-  };
+  const { err, logger, out } = captureLogger();
   return {
     copyCalls,
     deps: {
@@ -144,8 +141,8 @@ export const stubDeps = (
         writeTextCalls.push({ content, filePath: normalize(filePath) });
       },
     },
-    errors,
-    infos,
+    err,
+    out,
     removedPaths,
     runCalls,
     writeTextCalls,

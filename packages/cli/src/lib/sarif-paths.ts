@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 /**
  * SARIF artifact layout under each lint cwd. Reporters (any tool) drop
  * `<tool>.sarif` files into `dist/sarif/`; the compare pairs each with
@@ -9,12 +7,21 @@ import path from 'node:path';
  * were produced from, letting `--base` skip production when current —
  * locally across repeat runs, and in CI via a cache keyed on that SHA.
  *
+ * POSIX-form segments: usable verbatim as turbo.json globs, and
+ * `node:fs` accepts forward slashes on every platform.
+ *
  * Kept dependency-free: the ESLint formatter imports this from inside
  * the ESLint process.
  */
+const dir = 'dist/sarif';
+
+/** SARIF artifact paths relative to the lint cwd. */
 export const sarifPaths = {
-  base: path.join('dist', 'sarif', 'base'),
-  dir: path.join('dist', 'sarif'),
-  matched: path.join('dist', 'sarif', 'matched'),
-  stamp: path.join('dist', 'sarif', 'base.ref'),
+  base: `${dir}/base`,
+  dir,
+  matched: `${dir}/matched`,
+  stamp: `${dir}/base.ref`,
 } as const;
+
+/** SARIF log path a tool's reporter writes, relative to the lint cwd. */
+export const sarifLogPath = (tool: string): string => `${dir}/${tool}.sarif`;

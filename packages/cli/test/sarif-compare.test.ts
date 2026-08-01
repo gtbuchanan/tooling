@@ -1,12 +1,12 @@
 import { describe, it } from 'vitest';
+import { executeSarifCompare } from '#src/lib/sarif-compare.js';
 import {
   type NewFinding,
-  executeSarifCompare,
   extractAllFindings,
   extractNewFindings,
   formatNewFindings,
   parseSarifLog,
-} from '#src/lib/sarif-compare.js';
+} from '#src/lib/sarif-log.js';
 import type { WorkspaceContext } from '#src/lib/workspace.js';
 import { sarifLog, sarifResult, stubDeps } from './sarif-compare.stub.ts';
 
@@ -115,7 +115,7 @@ describe.concurrent(executeSarifCompare, () => {
   });
 
   it('resolves and reports when no results are new', async ({ expect }) => {
-    const { deps, infos } = stubDeps(
+    const { deps, out } = stubDeps(
       workspace,
       currentFiles,
       sarifLog([sarifResult('unchanged'), sarifResult('updated')]),
@@ -123,7 +123,7 @@ describe.concurrent(executeSarifCompare, () => {
 
     await executeSarifCompare({}, deps);
 
-    expect(infos).toContain('No new findings');
+    expect(out()).toContain('No new findings');
   });
 
   it('rejects when any result is new', async ({ expect }) => {
@@ -143,7 +143,7 @@ describe.concurrent(executeSarifCompare, () => {
   it('treats a missing baseline as empty: all findings are new', async ({
     expect,
   }) => {
-    const { deps, errors, runCalls } = stubDeps(
+    const { deps, err, runCalls } = stubDeps(
       workspace,
       ['/repo/dist/sarif/eslint.sarif'],
       sarifLog([sarifResult('unchanged')]),
@@ -151,11 +151,11 @@ describe.concurrent(executeSarifCompare, () => {
 
     await expect(executeSarifCompare({}, deps)).rejects.toThrow(/new finding/v);
     expect(runCalls).toHaveLength(0);
-    expect(errors.some(line => line.includes('all findings are new'))).toBe(true);
+    expect(err()).toContain('all findings are new');
   });
 
   it('passes with a missing baseline when the log is clean', async ({ expect }) => {
-    const { deps, infos } = stubDeps(
+    const { deps, out } = stubDeps(
       workspace,
       ['/repo/dist/sarif/eslint.sarif'],
       sarifLog([sarifResult('unchanged', { suppressions: [{ kind: 'inSource' }] })]),
@@ -163,6 +163,6 @@ describe.concurrent(executeSarifCompare, () => {
 
     await executeSarifCompare({}, deps);
 
-    expect(infos).toContain('No new findings');
+    expect(out()).toContain('No new findings');
   });
 });

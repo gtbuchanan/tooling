@@ -1,5 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
@@ -8,7 +7,8 @@ import eslintSarifFormatter, {
   formatConsole,
   sarifOutputPath,
 } from '#src/lib/eslint-sarif-formatter.js';
-import { parseSarifLog } from '#src/lib/sarif-compare.js';
+import { parseSarifLog } from '#src/lib/sarif-log.js';
+import { createTempDir } from './helpers.ts';
 
 describe.concurrent(formatConsole, () => {
   it('returns empty output for a clean run', ({ expect }) => {
@@ -63,7 +63,7 @@ describe.concurrent('eslintSarifFormatter', () => {
   it('writes a SARIF log under the context cwd and returns console output', ({
     expect,
   }) => {
-    const cwd = mkdtempSync(path.join(tmpdir(), 'sarif-formatter-test-'));
+    const cwd = createTempDir();
     try {
       const filePath = faker.system.filePath();
       const results: FormatterResult[] = [{

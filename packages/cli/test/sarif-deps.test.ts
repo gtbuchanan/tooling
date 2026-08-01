@@ -1,8 +1,8 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
 import { defaultSarifDeps } from '#src/lib/sarif-compare.js';
+import { createTempDir } from './helpers.ts';
 
 interface SandboxFixture {
   readonly dir: string;
@@ -10,7 +10,7 @@ interface SandboxFixture {
 }
 
 const createSandbox = (): SandboxFixture => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'sarif-deps-test-'));
+  const dir = createTempDir();
   return {
     dir,
     [Symbol.dispose]() {

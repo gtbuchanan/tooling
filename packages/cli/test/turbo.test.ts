@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, it, vi } from 'vitest';
-import { type TurboInvocation, planTurboInvocation } from '#src/commands/root/turbo.js';
+import { type TurboInvocation, planTurboInvocation } from '#src/lib/turbo-invocation.js';
 
 interface PrefixFixture {
   readonly prefix: string;

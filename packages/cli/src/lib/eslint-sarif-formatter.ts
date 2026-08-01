@@ -1,11 +1,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import sarifFormat from '@microsoft/eslint-formatter-sarif';
+import { formatFindingLine } from './finding-line.ts';
 import { internalRuleId } from './internal-rule-id.ts';
-import { sarifPaths } from './sarif-paths.ts';
+import { sarifLogPath } from './sarif-paths.ts';
 
 /** SARIF log path written by the formatter, relative to the lint cwd. */
-export const sarifOutputPath = path.join(sarifPaths.dir, 'eslint.sarif');
+export const sarifOutputPath = sarifLogPath('eslint');
 
 /** Structural subset of an ESLint lint message the console output needs. */
 export interface FormatterMessage {
@@ -29,17 +30,20 @@ const errorSeverity = 2;
  * Builds compact per-violation console output (one line per message).
  * Hand-rolled rather than delegated: ESLint v9 exposes no importable
  * formatter (`stylish` is CLI-internal; `compact`/`unix` were removed
- * from core), and the line shape deliberately matches the compare's
- * new-findings report so lint output and the CI gate read identically.
+ * from core). The shared {@link formatFindingLine} keeps the line
+ * shape identical to the compare's new-findings report so lint output
+ * and the CI gate read identically.
  */
 export const formatConsole = (results: readonly FormatterResult[]): string => {
   const lines = results.flatMap(result =>
-    result.messages.map((message) => {
-      const severity = message.severity === errorSeverity ? 'error' : 'warning';
-      const rule = message.ruleId ?? internalRuleId;
-      const position = `${String(message.line)}:${String(message.column)}`;
-      return `${result.filePath}:${position}  ${severity}  ${message.message}  ${rule}`;
-    }),
+    result.messages.map(message => formatFindingLine({
+      column: message.column,
+      level: message.severity === errorSeverity ? 'error' : 'warning',
+      line: message.line,
+      message: message.message,
+      ruleId: message.ruleId ?? internalRuleId,
+      uri: result.filePath,
+    })),
   );
   if (lines.length === 0) {
     return '';

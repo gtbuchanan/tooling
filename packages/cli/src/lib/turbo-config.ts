@@ -1,5 +1,6 @@
 import { taskNames } from '../commands/task/names.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import { sarifLogPath } from './sarif-paths.ts';
 import { skillsConfigFilename } from './skills-config.ts';
 import { localeComparer } from './sort.ts';
 import { typeCheckInclude } from './tsconfig-gen.ts';
@@ -244,7 +245,7 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
       value: {
         dependsOn: deps,
         inputs: ['$TURBO_ROOT$/eslint.config.*', ...inputs, 'eslint.config.*'],
-        outputs: ['dist/.eslintcache', 'dist/sarif/eslint.sarif'],
+        outputs: ['dist/.eslintcache', sarifLogPath('eslint')],
       },
     },
   ];
@@ -279,7 +280,7 @@ const rootLintTasks = (
         '$TURBO_DEFAULT$',
         ...packageGlobs.map(glob => `!${toPackageIgnore(glob)}`),
       ],
-      outputs: ['dist/.eslintcache', 'dist/sarif/eslint.sarif'],
+      outputs: ['dist/.eslintcache', sarifLogPath('eslint')],
     },
   },
 ];

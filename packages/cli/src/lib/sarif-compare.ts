@@ -7,140 +7,16 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as v from 'valibot';
 import { readJsonFile } from './file-writer.ts';
-import { internalRuleId } from './internal-rule-id.ts';
 import { type Logger, createLogger } from './logger.ts';
 import { type RunOptions, capture, run } from './process.ts';
+import {
+  type NewFinding, extractAllFindings, extractNewFindings, formatNewFindings,
+  parseSarifLog,
+} from './sarif-log.ts';
 import { sarifPaths } from './sarif-paths.ts';
 import { localeComparer } from './sort.ts';
+import { planTurboInvocation } from './turbo-invocation.ts';
 import { type WorkspaceContext, resolveWorkspace } from './workspace.ts';
-
-export { sarifPaths } from './sarif-paths.ts';
-
-const SarifRegionSchema = v.object({
-  startColumn: v.optional(v.number()),
-  startLine: v.optional(v.number()),
-});
-
-const SarifArtifactLocationSchema = v.object({
-  uri: v.optional(v.string()),
-});
-
-const SarifPhysicalLocationSchema = v.object({
-  artifactLocation: v.optional(SarifArtifactLocationSchema),
-  region: v.optional(SarifRegionSchema),
-});
-
-const SarifLocationSchema = v.object({
-  physicalLocation: v.optional(SarifPhysicalLocationSchema),
-});
-
-const SarifSuppressionsSchema = v.array(v.unknown());
-
-const SarifResultSchema = v.object({
-  baselineState: v.optional(v.string()),
-  level: v.optional(v.string()),
-  locations: v.optional(v.array(SarifLocationSchema)),
-  message: v.object({ text: v.string() }),
-  ruleId: v.optional(v.string()),
-  suppressions: v.optional(SarifSuppressionsSchema),
-});
-
-const SarifRunSchema = v.object({
-  results: v.optional(v.array(SarifResultSchema)),
-});
-
-const SarifLogSchema = v.object({
-  runs: v.array(SarifRunSchema),
-});
-
-/** Parsed subset of a SARIF log the compare consumes. */
-export type SarifLog = v.InferOutput<typeof SarifLogSchema>;
-
-type SarifResult = v.InferOutput<typeof SarifResultSchema>;
-
-/** Validates untrusted JSON as a {@link SarifLog}. */
-export const parseSarifLog = (data: unknown): SarifLog =>
-  v.parse(SarifLogSchema, data);
-
-/** A finding present in HEAD but not matched to the baseline. */
-export interface NewFinding {
-  readonly column: number | undefined;
-  readonly level: string;
-  readonly line: number | undefined;
-  readonly message: string;
-  readonly ruleId: string;
-  readonly uri: string;
-}
-
-interface LocationParts {
-  readonly column: number | undefined;
-  readonly line: number | undefined;
-  readonly uri: string | undefined;
-}
-
-const toLocationParts = (result: SarifResult): LocationParts => {
-  const location = result.locations?.[0]?.physicalLocation;
-  return {
-    column: location?.region?.startColumn,
-    line: location?.region?.startLine,
-    uri: location?.artifactLocation?.uri,
-  };
-};
-
-const toNewFinding = (result: SarifResult): NewFinding => {
-  const { column, line, uri } = toLocationParts(result);
-  return {
-    column,
-    level: result.level ?? 'error',
-    line,
-    message: result.message.text,
-    ruleId: result.ruleId ?? internalRuleId,
-    uri: uri ?? '<unknown>',
-  };
-};
-
-/**
- * Suppressed findings (e.g. reasoned `eslint-disable` comments) are
- * exempt from the gate: an in-source suppression is already the
- * accepted mechanism for carrying a finding, reviewed with the code.
- * They stay in the SARIF logs for visibility; they just never block.
- */
-const isUnsuppressed = (result: SarifResult): boolean =>
-  (result.suppressions ?? []).length === 0;
-
-/** Extracts unsuppressed results the baseliner classified as `new`. */
-export const extractNewFindings = (log: SarifLog): readonly NewFinding[] =>
-  log.runs.flatMap(run_ =>
-    (run_.results ?? [])
-      .filter(isUnsuppressed)
-      .filter(result => result.baselineState === 'new')
-      .map(toNewFinding),
-  );
-
-/**
- * Extracts every unsuppressed result — the classification of a log
- * whose baseline is empty (all findings are new by definition).
- */
-export const extractAllFindings = (log: SarifLog): readonly NewFinding[] =>
-  log.runs.flatMap(run_ =>
-    (run_.results ?? []).filter(isUnsuppressed).map(toNewFinding),
-  );
-
-const formatPosition = (finding: NewFinding): string => {
-  if (finding.line === undefined) return '';
-  const column = finding.column === undefined ? '' : `:${String(finding.column)}`;
-  return `:${String(finding.line)}${column}`;
-};
-
-const formatFinding = (finding: NewFinding): string => {
-  const { level, message, ruleId, uri } = finding;
-  return `${uri}${formatPosition(finding)}  ${level}  ${message}  ${ruleId}`;
-};
-
-/** Renders new findings for console output, one line per finding. */
-export const formatNewFindings = (
-  findings: readonly NewFinding[],
-): string => findings.map(formatFinding).join('\n');
 
 /**
  * Side-effecting I/O the compare depends on. Injected so the
@@ -216,29 +92,30 @@ export const defaultSarifDeps: SarifCompareDeps = {
   },
 };
 
-/** Absolute path of the baseline stamp file for the head workspace. */
-const baselineStampPath = (deps: SarifCompareDeps): string =>
-  path.join(deps.workspace().rootDir, sarifPaths.stamp);
+/**
+ * Unique lint cwds of a workspace. The root is itself a lint cwd and,
+ * in a single-package repo, coincides with the sole package dir.
+ */
+const lintDirs = (workspace: WorkspaceContext): readonly string[] =>
+  [...new Set([workspace.rootDir, ...workspace.packageDirs])];
+
+/** Absolute path of the baseline stamp file for a workspace root. */
+const baselineStampPath = (rootDir: string): string =>
+  path.join(rootDir, sarifPaths.stamp);
 
 /**
  * Whether the on-disk baselines were produced from the given merge-base
  * SHA (per the stamp file), making production skippable.
  */
-export const hasCurrentBaseline = (sha: string, deps: SarifCompareDeps): boolean => {
-  const stamp = baselineStampPath(deps);
+const hasCurrentBaseline = (
+  sha: string,
+  rootDir: string,
+  deps: SarifCompareDeps,
+): boolean => {
+  const stamp = baselineStampPath(rootDir);
   return deps.exists(stamp) && deps.readText(stamp).trim() === sha;
 };
 
-/**
- * Produces per-package baseline SARIF logs by linting the given
- * merge-base SHA in a throwaway git worktree and copying each
- * `dist/sarif/*.sarif` into the corresponding head package under
- * `dist/sarif/base/`, then stamps the SHA. A failing base lint is
- * tolerated: reporters write their SARIF logs before exiting, and a
- * baseline carrying findings is exactly what the ratchet diffs against.
- * Base commits that predate SARIF output simply produce no baseline,
- * and the compare skips those packages.
- */
 /**
  * Ensures the commit's objects exist locally, fetching just that commit
  * on shallow clones (GitHub serves reachable SHAs directly).
@@ -251,8 +128,19 @@ const ensureCommit = async (sha: string, deps: SarifCompareDeps): Promise<void> 
   }
 };
 
+/**
+ * Produces per-package baseline SARIF logs by linting the given
+ * merge-base SHA in a throwaway git worktree and copying each
+ * `dist/sarif/*.sarif` into the corresponding head package under
+ * `dist/sarif/base/`, then stamps the SHA. A failing base lint is
+ * tolerated: reporters write their SARIF logs before exiting, and a
+ * baseline carrying findings is exactly what the ratchet diffs against.
+ * Base commits that predate SARIF output simply produce no baseline,
+ * and the compare skips those packages.
+ */
 export const produceBaseline = async (
   sha: string,
+  head: WorkspaceContext,
   deps: SarifCompareDeps,
 ): Promise<void> => {
   await ensureCommit(sha, deps);
@@ -272,36 +160,48 @@ export const produceBaseline = async (
       args: ['install', '--frozen-lockfile', '--prefer-offline'],
       cwd: baseDir,
     });
+    /*
+     * The planner keeps the Android (Termux) escape hatch working here
+     * too: its PATH plan (`bin: 'turbo'`) is delegated to the
+     * worktree's own pnpm so the base's pinned turbo runs, while on
+     * Android the resolved Termux binary is spawned directly — the
+     * node_modules launcher rejects `android` upfront.
+     */
+    const lintArgs = ['run', 'lint', '--output-logs=errors-only'];
+    const plan = planTurboInvocation({
+      platform: process.platform,
+      rawArgs: lintArgs,
+    });
+    if (plan.kind === 'error') throw new Error(plan.message);
     try {
-      await deps.run('pnpm', {
-        args: ['exec', 'turbo', 'run', 'lint', '--output-logs=errors-only'],
-        cwd: baseDir,
-      });
+      await (plan.bin === 'turbo'
+        ? deps.run('pnpm', { args: ['exec', 'turbo', ...lintArgs], cwd: baseDir })
+        : deps.run(plan.bin, { args: plan.args, cwd: baseDir }));
     } catch {
       // Pre-ratchet gtb fails lint on warnings after writing the SARIF log.
       deps.logger.error(`Base lint at ${sha} failed; using whatever SARIF it wrote`);
     }
-    copyBaselineSarifs(baseDir, deps);
-    deps.writeText(baselineStampPath(deps), `${sha}\n`);
+    copyBaselineSarifs(deps.workspace(baseDir), head, deps);
+    deps.writeText(baselineStampPath(head.rootDir), `${sha}\n`);
   } finally {
     await deps.run('git', { args: ['worktree', 'remove', '--force', baseDir] });
   }
 };
 
-const copyBaselineSarifs = (baseDir: string, deps: SarifCompareDeps): void => {
-  const base = deps.workspace(baseDir);
-  const head = deps.workspace();
+const copyBaselineSarifs = (
+  base: WorkspaceContext,
+  head: WorkspaceContext,
+  deps: SarifCompareDeps,
+): void => {
   /*
    * Clear baselines from any earlier production first: a package whose
    * new merge base wrote no SARIF must not keep a stale baseline from a
    * previous merge base.
    */
-  const headDirs = new Set([head.rootDir, ...head.packageDirs]);
-  for (const dir of headDirs) {
+  for (const dir of lintDirs(head)) {
     deps.remove(path.join(dir, sarifPaths.base));
   }
-  const baseDirs = new Set([base.rootDir, ...base.packageDirs]);
-  for (const dir of baseDirs) {
+  for (const dir of lintDirs(base)) {
     const relative = path.relative(base.rootDir, dir);
     const names = deps.list(path.join(dir, sarifPaths.dir));
     for (const name of names) {
@@ -357,9 +257,9 @@ export const executeSarifBaseline = async (
   deps: SarifCompareDeps = defaultSarifDeps,
 ): Promise<void> => {
   const sha = await deps.capture('git', ['rev-parse', 'HEAD']);
-  const { rootDir } = deps.workspace();
-  copyBaselineSarifs(rootDir, deps);
-  deps.writeText(baselineStampPath(deps), `${sha}\n`);
+  const head = deps.workspace();
+  copyBaselineSarifs(head, head, deps);
+  deps.writeText(baselineStampPath(head.rootDir), `${sha}\n`);
   deps.logger.info(`Seeded SARIF baselines for ${sha}`);
 };
 
@@ -409,24 +309,26 @@ export const executeSarifCompare = async (
   options: SarifCompareOptions = {},
   deps: SarifCompareDeps = defaultSarifDeps,
 ): Promise<void> => {
+  const head = deps.workspace();
   const sha = await resolveBaselineSha(options, deps);
   if (sha !== undefined) {
-    if (hasCurrentBaseline(sha, deps)) {
+    if (hasCurrentBaseline(sha, head.rootDir, deps)) {
       deps.logger.info(`Baselines for merge base ${sha} already present; reusing`);
     } else {
-      await produceBaseline(sha, deps);
+      await produceBaseline(sha, head, deps);
     }
   }
-  const { packageDirs, rootDir } = deps.workspace();
-  const lintDirs = [...new Set([rootDir, ...packageDirs])];
-  const findings: NewFinding[] = [];
-
-  for (const dir of lintDirs) {
-    const names = deps.list(path.join(dir, sarifPaths.dir));
-    for (const name of names) {
-      findings.push(...await matchFileForward(dir, name, deps));
-    }
-  }
+  /*
+   * Each pairing writes to its own `matched/<name>`, so the multitool
+   * spawns are independent — run them concurrently. Gathering in pair
+   * order keeps the report deterministic.
+   */
+  const pairs = lintDirs(head).flatMap(dir =>
+    deps.list(path.join(dir, sarifPaths.dir)).map(name => ({ dir, name })));
+  const matchedFindings = await Promise.all(
+    pairs.map(pair => matchFileForward(pair.dir, pair.name, deps)),
+  );
+  const findings = matchedFindings.flat();
 
   if (findings.length > 0) {
     deps.logger.error(formatNewFindings(findings));

@@ -30,7 +30,7 @@ describe.concurrent(produceBaseline, () => {
       headWorkspace, baseFiles, sarifLog([]), { baseWorkspace },
     );
 
-    await produceBaseline('abc1234', deps);
+    await produceBaseline('abc1234', headWorkspace, deps);
 
     expect(runCalls.map(call => `${call.command} ${call.args[0] ?? ''}`)).toStrictEqual([
       'git worktree',
@@ -59,14 +59,14 @@ describe.concurrent(produceBaseline, () => {
   });
 
   it('tolerates a failing base lint and copies what it wrote', async ({ expect }) => {
-    const { copyCalls, deps, errors } = stubDeps(
+    const { copyCalls, deps, err } = stubDeps(
       headWorkspace, baseFiles, sarifLog([]),
       { baseWorkspace, failing: ['pnpm exec'] },
     );
 
-    await produceBaseline('abc1234', deps);
+    await produceBaseline('abc1234', headWorkspace, deps);
 
-    expect(errors.some(line => line.includes('Base lint'))).toBe(true);
+    expect(err()).toContain('Base lint');
     expect(copyCalls).toHaveLength(2);
   });
 
@@ -75,7 +75,7 @@ describe.concurrent(produceBaseline, () => {
       headWorkspace, [], sarifLog([]), { baseWorkspace },
     );
 
-    await produceBaseline('abc1234', deps);
+    await produceBaseline('abc1234', headWorkspace, deps);
 
     expect(copyCalls).toHaveLength(0);
   });
@@ -86,7 +86,7 @@ describe.concurrent(produceBaseline, () => {
       { baseWorkspace, failing: ['pnpm install'] },
     );
 
-    await expect(produceBaseline('abc1234', deps)).rejects.toThrow(
+    await expect(produceBaseline('abc1234', headWorkspace, deps)).rejects.toThrow(
       /pnpm install failed/v,
     );
     expect(runCalls.at(-1)?.args).toStrictEqual([
@@ -157,14 +157,14 @@ describe.concurrent('executeSarifCompare --base', () => {
   it('reuses on-disk baselines when the stamp matches the merge base', async ({
     expect,
   }) => {
-    const { deps, infos, runCalls } = stubDeps(
+    const { deps, out, runCalls } = stubDeps(
       workspace, stampedFiles, sarifLog([]),
       { readTextContent: 'abc1234\n' },
     );
 
     await executeSarifCompare({ baseRef: 'origin/main' }, deps);
 
-    expect(infos.some(line => line.includes('already present'))).toBe(true);
+    expect(out()).toContain('already present');
     expect(runCalls.map(call => call.command)).toStrictEqual(['sarif-multitool']);
   });
 

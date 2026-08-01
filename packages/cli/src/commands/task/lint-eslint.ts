@@ -22,7 +22,7 @@ const formatterPath = fileURLToPath(
  */
 export const lintEslint = defineCommand({
   meta: {
-    description: 'Run ESLint with caching, reporting to dist/eslint.sarif',
+    description: 'Run ESLint with caching, reporting to dist/sarif/eslint.sarif',
     name: 'lint:eslint',
   },
   run: async ({ rawArgs }) => {
