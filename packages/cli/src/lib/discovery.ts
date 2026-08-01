@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { generateTaskPrefix } from '../commands/task/names.ts';
 import type { Manifest } from './manifest.ts';
 import { hasPackageBlock } from './pkl-project.ts';
 import { localeComparer } from './sort.ts';
@@ -122,7 +123,7 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
 
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
-    .filter(name => name.startsWith('generate:'))
+    .filter(name => name.startsWith(generateTaskPrefix))
     .toSorted(localeComparer);
 
 const buildCapabilities = (

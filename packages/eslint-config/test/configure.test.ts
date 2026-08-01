@@ -1,6 +1,10 @@
 import { Linter } from 'eslint';
 import { describe, it } from 'vitest';
-import { configure, defaultEntryPoints } from '#src/index.js';
+import {
+  configure,
+  defaultEntryPoints,
+  defaultPnpmWorkspaceSettings,
+} from '#src/index.js';
 
 /**
  * All script file extensions that plugin configs should target.
@@ -23,6 +27,9 @@ const tsOnlyExtensions = ['cts', 'mts', 'ts', 'tsx'];
  */
 const defaultConfigs = configure({ onlyWarn: false });
 
+const findEnforceSettings = (configs: Linter.Config[]) =>
+  configs.find(cfg => cfg.rules?.['pnpm/yaml-enforce-settings'] !== undefined);
+
 describe.concurrent(configure, () => {
   it('includes json configs', async ({ expect }) => {
     const configs = await defaultConfigs;
@@ -42,6 +49,59 @@ describe.concurrent(configure, () => {
     const withoutPnpm = await configure({ onlyWarn: false, pnpm: false });
 
     expect(withPnpm.length).toBeGreaterThan(withoutPnpm.length);
+  });
+
+  it('enforces the default workspace settings policy', async ({ expect }) => {
+    const configs = await defaultConfigs;
+
+    const settingsConfig = findEnforceSettings(configs);
+
+    expect(settingsConfig?.files).toStrictEqual(['pnpm-workspace.yaml']);
+    expect(settingsConfig?.rules?.['pnpm/yaml-enforce-settings']).toStrictEqual(
+      ['error', defaultPnpmWorkspaceSettings],
+    );
+  });
+
+  it('keeps the catalog rules alongside the settings policy', async ({ expect }) => {
+    const configs = await defaultConfigs;
+
+    const settingsConfig = findEnforceSettings(configs);
+
+    expect(settingsConfig?.rules).toHaveProperty(
+      'pnpm/yaml-no-unused-catalog-item',
+    );
+  });
+
+  it('applies a custom workspace settings policy', async ({ expect }) => {
+    const policy = { settings: { engineStrict: true } };
+
+    const configs = await configure({
+      onlyWarn: false,
+      pnpmWorkspaceSettings: policy,
+    });
+
+    expect(findEnforceSettings(configs)?.rules?.['pnpm/yaml-enforce-settings'])
+      .toStrictEqual(['error', policy]);
+  });
+
+  it('drops the settings rule when pnpmWorkspaceSettings is false', async ({ expect }) => {
+    const configs = await configure({
+      onlyWarn: false,
+      pnpmWorkspaceSettings: false,
+    });
+
+    expect(findEnforceSettings(configs)).toBeUndefined();
+    expect(configs.some(cfg => cfg.name?.includes('pnpm'))).toBe(true);
+  });
+
+  /* An empty policy makes the rule throw when it is created. */
+  it('drops the settings rule when the policy is empty', async ({ expect }) => {
+    const configs = await configure({
+      onlyWarn: false,
+      pnpmWorkspaceSettings: {},
+    });
+
+    expect(findEnforceSettings(configs)).toBeUndefined();
   });
 
   it('passes tsconfigRootDir to parser options', async ({ expect }) => {
@@ -77,15 +137,6 @@ describe.concurrent(configure, () => {
     );
 
     expect(entryConfig?.files).toStrictEqual(['**/cli.ts']);
-  });
-
-  it('applies custom ignores', async ({ expect }) => {
-    const configs = await configure({ ignores: ['vendor/**'], onlyWarn: false });
-    const ignoresConfig = configs.find(
-      cfg => cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined,
-    );
-
-    expect(ignoresConfig?.ignores).toStrictEqual(['vendor/**']);
   });
 
   it('includes markdownlint/lint for markdown files', async ({ expect }) => {

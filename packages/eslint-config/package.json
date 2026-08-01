@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/eslint-config",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Shared ESLint configuration",
   "type": "module",
   "imports": {
@@ -34,6 +34,7 @@
     "@prettier/plugin-xml": "catalog:",
     "@stylistic/eslint-plugin": "catalog:",
     "@vitest/eslint-plugin": "catalog:",
+    "eslint-config-flat-gitignore": "catalog:",
     "eslint-plugin-format": "catalog:",
     "eslint-plugin-import-x": "catalog:",
     "eslint-plugin-jsdoc": "catalog:",

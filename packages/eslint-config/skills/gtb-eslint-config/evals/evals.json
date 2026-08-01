@@ -86,6 +86,28 @@
       "files": [],
       "id": 8,
       "prompt": "What's the deal with @eslint/markdown vs @gtbuchanan/eslint-plugin-markdownlint — do I need both?"
+    },
+    {
+      "expectations": [
+        "States that .gitignore is already honored by default via the gitignore option (eslint-config-flat-gitignore), so build output does not need to be added to ignores",
+        "Does NOT recommend adding the generated/untracked path to the ignores option as the primary answer",
+        "Notes that the ignores option replaces its default wholesale, so defaultIgnores must be spread to extend it"
+      ],
+      "expected_output": "Activates skill. Explains that `configure()` already derives ignores from `.gitignore` by default, so a gitignored build directory needs no `ignores` entry. Mentions that `ignores` covers tracked files (lockfiles, CHANGELOG.md) and replaces its default wholesale, so `defaultIgnores` should be spread when extending.",
+      "files": [],
+      "id": 9,
+      "prompt": "My build output directory is in .gitignore but I want ESLint to skip it too. Do I need to add it to the ignores option?"
+    },
+    {
+      "expectations": [
+        "Explains that root-anchored .gitignore entries are dropped when the ignore file lives above the directory ESLint runs in, because no ESLint ignore pattern can reach a parent directory",
+        "Explains that depth-agnostic entries (e.g. dist/ becoming **/dist/) do survive into the per-package config",
+        "Notes this is expected rather than a bug — the workspace-root config lints those root paths"
+      ],
+      "expected_output": "Activates skill. Explains that a `.gitignore` entry containing a mid-string `/` is anchored to the declaring file's directory, so a root-anchored pattern like `.claude/worktrees/` is dropped in a per-package run (no ESLint pattern can reach a parent), while depth-agnostic entries like `dist/` survive as `**/dist/`. Notes the root config covers the root paths, so nothing is lost.",
+      "files": [],
+      "id": 10,
+      "prompt": "In our monorepo the gitignore config entry has fewer patterns when I lint one package than when I lint from the root. Is that a bug?"
     }
   ],
   "skill_name": "gtb-eslint-config"

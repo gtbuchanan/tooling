@@ -3,27 +3,38 @@ import { generateTurboJson } from '#src/lib/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
 
 describe.concurrent(generateTurboJson, () => {
-  it('includes generate aggregate when any package has generate scripts', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({
-        generateScripts: ['generate:prisma'],
-      }),
-    ]);
+  it('leaves the monorepo generate aggregate empty for packages to fill', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ generateScripts: ['generate:prisma'] })],
+      { isMonorepo: true },
+    );
 
     const result = generateTurboJson(discovery);
 
-    expect(result.tasks['generate']?.dependsOn).toStrictEqual(['generate:prisma']);
+    expect(result.tasks).toHaveProperty('generate');
+    expect(result.tasks['generate']).toStrictEqual({});
   });
 
-  it('deduplicates generate scripts across packages', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({
-        generateScripts: ['generate:prisma'],
-      }),
-      makeCapabilities({
-        generateScripts: ['generate:paraglide', 'generate:prisma'],
-      }),
-    ]);
+  it('omits generate leaf tasks from a monorepo root', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [
+        makeCapabilities({ generateScripts: ['generate:prisma'] }),
+        makeCapabilities({ generateScripts: ['generate:paraglide'] }),
+      ],
+      { isMonorepo: true },
+    );
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).not.toHaveProperty('generate:prisma');
+    expect(result.tasks).not.toHaveProperty('generate:paraglide');
+  });
+
+  it('wires generate leaves into the aggregate for a single-package repo', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ generateScripts: ['generate:paraglide', 'generate:prisma'] })],
+      { isMonorepo: false },
+    );
 
     const result = generateTurboJson(discovery);
 
@@ -31,6 +42,17 @@ describe.concurrent(generateTurboJson, () => {
       'generate:paraglide',
       'generate:prisma',
     ]);
+  });
+
+  it('defines single-package generate leaves as uncached', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ generateScripts: ['generate:prisma'] })],
+      { isMonorepo: false },
+    );
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['generate:prisma']).toStrictEqual({ cache: false });
   });
 
   it('omits generate aggregate when no packages have generate scripts', ({ expect }) => {
@@ -374,21 +396,5 @@ describe.concurrent(generateTurboJson, () => {
     expect(inputs).toStrictEqual(expect.arrayContaining([
       'vitest.config.*', '!vitest.config.e2e.*',
     ]));
-  });
-
-  it('emits globalDependencies for mise files when the workspace has mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()], { hasMise: true });
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.globalDependencies).toStrictEqual(['mise.lock', 'mise.toml']);
-  });
-
-  it('omits globalDependencies when the workspace has no mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
-
-    const result = generateTurboJson(discovery);
-
-    expect(result).not.toHaveProperty('globalDependencies');
   });
 });

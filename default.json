@@ -60,6 +60,13 @@
       ]
     },
     {
+      "description": "Group pnpm updates (the mise tool and package.json's packageManager field pin the same release)",
+      "groupName": "pnpm",
+      "matchSourceUrls": [
+        "https://github.com/pnpm/pnpm"
+      ]
+    },
+    {
       "description": "Group playwright-cli monorepo",
       "groupName": "playwright-cli monorepo",
       "matchSourceUrls": [

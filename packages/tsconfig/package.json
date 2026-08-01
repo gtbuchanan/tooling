@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/tsconfig",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Shared TypeScript configuration",
   "type": "module",
   "exports": {
@@ -22,6 +22,9 @@
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
     "@tsconfig/strictest": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": ">=6.0.0"
   },
   "engines": {
     "node": ">=24.0.0"

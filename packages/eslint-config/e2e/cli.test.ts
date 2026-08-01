@@ -61,13 +61,77 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('unicorn/no-process-exit');
   });
 
-  it('respects global ignores for dist/', async ({ fixture, expect }) => {
-    const longLine = `export const x = '${'a'.repeat(101)}';\n`;
-    const { exitCode } = await fixture.run({
-      files: { 'dist/bad.mjs': longLine },
+  it('allows require() in .cjs but not .js', async ({ fixture, expect }) => {
+    // The .cjs extension forces CommonJS, so require() is the only option
+    const code = "const path = require('node:path');\n\nmodule.exports = path;\n";
+
+    const cjs = await fixture.run({
+      files: { 'legacy.cjs': code },
+      tsconfig: fixture.jsTsconfig,
+    });
+    const js = await fixture.run({
+      files: { 'legacy.js': code },
+      tsconfig: fixture.jsTsconfig,
     });
 
-    expect(exitCode).toBe(0);
+    /*
+     * Empty stdout pins the .cjs run to fully clean — no parse error
+     * silently suppressing every rule, which would make a bare "does not
+     * report" assertion pass vacuously.
+     */
+    expect(cjs).toMatchObject({ exitCode: 0, stdout: '' });
+    expect(js).toMatchObject({ exitCode: 1 });
+    expect(js.stdout).toContain('@typescript-eslint/no-require-imports');
+  });
+
+  /*
+   * Build output is ignored because it is gitignored, not because this
+   * config enumerates `dist/`. The second run — identical but for the
+   * missing .gitignore — is what keeps the first honest: it proves the
+   * file really does violate a rule, so exit 0 means "skipped", not
+   * "nothing to report".
+   */
+  it('respects .gitignore for build output', async ({ fixture, expect }) => {
+    const files = { 'dist/bad.ts': `export const x = '${'a'.repeat(101)}';\n` };
+
+    const gitignored = await fixture.run({
+      files,
+      flags: ['--max-warnings=0', '--no-warn-ignored'],
+      supportFiles: { '.gitignore': 'dist/\n' },
+    });
+    const tracked = await fixture.run({
+      files,
+      flags: ['--max-warnings=0'],
+    });
+
+    expect(gitignored).toMatchObject({ exitCode: 0, stdout: '' });
+    expect(tracked).toMatchObject({ exitCode: 1 });
+    expect(tracked.stdout).toContain('@stylistic/max-len');
+  });
+
+  it('respects global ignores for generated changelogs', async ({ fixture, expect }) => {
+    /*
+     * Changesets writes CHANGELOG.md through its own Prettier resolution,
+     * which double-quotes embedded code regardless of what this config
+     * enforces — a diff no author can fix at the source, since the
+     * .changeset/*.md the snippet came from is linted the other way.
+     * The identical body in a normal .md keeps the run honest: it proves
+     * the content really does violate format/prettier, so the changelog
+     * assertion can't pass vacuously.
+     */
+    const body = [
+      '# Changelog', '',
+      '```js', 'configure({ agentSkillsHost: "claude-code" });', '```', '',
+    ].join('\n');
+
+    const { stdout } = await fixture.run({
+      files: { 'notes.md': body, 'packages/pkg/CHANGELOG.md': body },
+      flags: ['--no-warn-ignored'],
+    });
+
+    expect(stdout).toContain('format/prettier');
+    expect(stdout).toContain('notes.md');
+    expect(stdout).not.toContain('CHANGELOG.md');
   });
 
   it('detects duplicate keys in JSON files', async ({ fixture, expect }) => {
@@ -87,14 +151,48 @@ describe.concurrent('eslint CLI integration', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('warns on unsorted keys in JSON files', async ({ fixture, expect }) => {
+  /*
+   * Key order is Prettier's to enforce (see the --fix test below), so
+   * this covers only severity: a formatting violation is reported, and
+   * it stays a warning even with onlyWarn disabled.
+   */
+  it('reports JSON formatting violations as warnings', async ({ fixture, expect }) => {
     const { exitCode, stdout } = await fixture.run({
       files: { 'unsorted.json': '{\n  "beta": 1,\n  "alpha": 2\n}\n' },
     });
 
     // Warnings don't cause a non-zero exit code
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('json/sort-keys');
+    expect(stdout).toContain('format/prettier');
+  });
+
+  it('fixes unsorted JSON without losing data', async ({ fixture, expect }) => {
+    /*
+     * Prettier (via prettier-plugin-sort-json) must be the only fixable
+     * key sorter for JSON. A second one reports fixes over ranges ESLint
+     * sees as non-overlapping, so both land in a single pass and the
+     * sorted keys interleave with Prettier's text diff — which was
+     * computed against the *unsorted* original — producing invalid JSON.
+     */
+    const unsorted = [
+      { threadId: 'first', line: 11, action: 'resolve' },
+      { threadId: 'second', line: 15, action: 'reply' },
+    ];
+    // Same records, keys in the order --fix is expected to leave them
+    const sorted = [
+      { action: 'resolve', line: 11, threadId: 'first' },
+      { action: 'reply', line: 15, threadId: 'second' },
+    ];
+
+    const result = await fixture.run({
+      files: { 'data.json': `${JSON.stringify(unsorted, undefined, 2)}\n` },
+      flags: ['--fix'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.readFile('data.json')).toBe(
+      `${JSON.stringify(sorted, undefined, 2)}\n`,
+    );
   });
 
   it('allows comments in tsconfig.json via JSONC', async ({ fixture, expect }) => {
@@ -161,6 +259,50 @@ describe.concurrent('eslint CLI integration', () => {
 
     expect(result.stdout).toContain('yamllint/truthy');
     expect(result.stdout).toContain('yamllint/octal-values');
+  });
+
+  /*
+   * The two halves of the default workspace policy behave differently on
+   * purpose: `settings` entries are auto-fixed into the file, while
+   * `minimumReleaseAgeExclude` is only required to exist so that a
+   * consumer's own scopes survive `--fix`.
+   */
+  it('fixes missing settings but not the exclude list', async ({ fixture, expect }) => {
+    const workspace = [
+      'minimumReleaseAgeExclude:',
+      "  - '@gtbuchanan/*'",
+      "  - '@acme/*'",
+      '',
+    ].join('\n');
+
+    const result = await fixture.run({
+      files: { 'pnpm-workspace.yaml': workspace },
+      flags: ['--fix'],
+    });
+
+    const fixed = result.readFile('pnpm-workspace.yaml');
+
+    expect(fixed).toContain('engineStrict: true');
+    expect(fixed).toContain('strictPeerDependencies: true');
+    expect(fixed).toContain("'@acme/*'");
+    expect(fixed).toContain("'@gtbuchanan/*'");
+  });
+
+  it('reports a forbidden setting without removing it', async ({ fixture, expect }) => {
+    const workspace = [
+      'minimumReleaseAgeExclude:',
+      "  - '@gtbuchanan/*'",
+      'shamefullyHoist: true',
+      '',
+    ].join('\n');
+
+    const result = await fixture.run({
+      files: { 'pnpm-workspace.yaml': workspace },
+      flags: ['--fix'],
+    });
+
+    expect(result.stdout).toContain('pnpm/yaml-enforce-settings');
+    expect(result.readFile('pnpm-workspace.yaml')).toContain('shamefullyHoist: true');
   });
 
   it('detects markdownlint violations in markdown files', async ({ fixture, expect }) => {

@@ -1,17 +1,26 @@
 /* eslint-disable-next-line @typescript-eslint/triple-slash-reference --
    Cross-package tsc needs this to resolve the .d.ts */
 /// <reference path="./eslint-plugin-promise.d.ts" />
+import type { SkillFrontmatterSource } from '@gtbuchanan/eslint-plugin-agent-skills';
 import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
+import type { FlatGitignoreOptions } from 'eslint-config-flat-gitignore';
 import { scriptFileExtensions } from './files.ts';
 import { plugins } from './plugins/index.ts';
+import { defaultPnpmWorkspaceSettings } from './pnpm-workspace.ts';
+import type { PnpmWorkspaceSettings } from './pnpm-workspace.ts';
 
 export {
+  cjsFiles,
   scriptFileExtensions,
   scriptFiles,
   tsOnlyExtensions,
   tsOnlyFiles,
 } from './files.ts';
+export type { FlatGitignoreOptions } from 'eslint-config-flat-gitignore';
+export { defaultGitignoreOptions } from './plugins/gitignore.ts';
+export { defaultPnpmWorkspaceSettings } from './pnpm-workspace.ts';
+export type { PnpmWorkspaceSettings } from './pnpm-workspace.ts';
 
 const entryPointDirs = ['**/bin', '**/scripts'] as const;
 
@@ -20,13 +29,79 @@ export const defaultEntryPoints: readonly string[] = entryPointDirs.flatMap(
   dir => scriptFileExtensions.map(ext => `${dir}/**/*.${ext}`),
 );
 
+/**
+ * Default global ignore patterns — tracked files another tool generates or
+ * owns the format of. Untracked paths (build output, caches, generated
+ * skills) are not listed here; they come from `.gitignore` via the
+ * {@link ESLintConfigureOptions.gitignore} option.
+ *
+ * Spread this to extend it, since the
+ * {@link ESLintConfigureOptions.ignores} option replaces the default
+ * wholesale.
+ */
+export const defaultIgnores: readonly string[] = [
+  /*
+   * Lockfiles are tracked, machine-owned, and often large enough to
+   * dominate a lint run. Matched by convention rather than by manager so
+   * the list doesn't need an entry per ecosystem: `<tool>-lock.<ext>`
+   * (package-lock.json, pnpm-lock.yaml), a bare `.lock` extension
+   * (Cargo.lock, bun.lock, deno.lock, mise.lock, uv.lock), and .NET's
+   * `<name>.lock.json`. npm-shrinkwrap.json is the one common lockfile no
+   * convention covers.
+   */
+  '**/*-lock.json',
+  '**/*-lock.yaml',
+  '**/*.lock',
+  '**/*.lock.json',
+  /*
+   * Changesets generates CHANGELOG.md and formats it through its own
+   * Prettier resolution, which has no access to the options this config
+   * passes format/prettier. Embedded code comes back double-quoted and
+   * unfixable at the source — the .changeset/*.md it was written in is
+   * linted the other way — so the generated file is not ours to lint.
+   */
+  '**/CHANGELOG.md',
+  '**/npm-shrinkwrap.json',
+];
+
 /** Options for the shared ESLint configuration. */
 export interface ESLintConfigureOptions {
+  /**
+   * Agent hosts whose `SKILL.md` frontmatter extensions are accepted —
+   * a host name, a property map for a host the plugin doesn't ship, or
+   * a list of either for a repo whose skills target several at once.
+   * `'standard'` validates against the bare
+   * [Agent Skills spec](https://agentskills.io/specification), so any
+   * host extension reads as an unknown property.
+   *
+   * Listing hosts unions their fields; it cannot express "valid under
+   * every host at once", which is what `'standard'` already is. No
+   * shared constraint is relaxed either way.
+   * @defaultValue 'standard'
+   */
+  readonly agentSkillsHost?:
+    | 'standard'
+    | SkillFrontmatterSource
+    | readonly SkillFrontmatterSource[];
   /** Root directory for TypeScript project service. */
   readonly tsconfigRootDir?: string;
   /**
-   * Global ignore patterns.
-   * @defaultValue Claude Code worktrees and dist output directories
+   * Derive ignore patterns from `.gitignore`, so untracked paths — build
+   * output, caches, generated files — are never linted. Pass an options
+   * object to override {@link defaultGitignoreOptions}, or `false` to
+   * disable.
+   *
+   * Disabling it leaves only {@link ESLintConfigureOptions.ignores},
+   * which covers tracked files rather than generated ones — so the repo
+   * has to enumerate its own build output.
+   * @defaultValue true
+   */
+  readonly gitignore?: boolean | FlatGitignoreOptions;
+  /**
+   * Global ignore patterns, applied on top of the `.gitignore`-derived
+   * ones. Replaces the default wholesale rather than merging into it —
+   * spread {@link defaultIgnores} to extend it.
+   * @defaultValue {@link defaultIgnores}
    */
   readonly ignores?: string[];
   /**
@@ -48,6 +123,15 @@ export interface ESLintConfigureOptions {
    */
   readonly pnpm?: boolean;
   /**
+   * Policy enforced on the settings keys of `pnpm-workspace.yaml`.
+   * Replaces the default wholesale rather than merging into it — spread
+   * {@link defaultPnpmWorkspaceSettings} to extend it. Pass `false` to
+   * keep the catalog rules but drop the settings policy. Ignored when
+   * `pnpm` is `false`.
+   * @defaultValue {@link defaultPnpmWorkspaceSettings}
+   */
+  readonly pnpmWorkspaceSettings?: PnpmWorkspaceSettings | false;
+  /**
    * Target environment. Server targets enable require-unicode-regexp with
    * `/v` flag. Browser targets enable `no-console` and `no-alert`; entry
    * points are exempt from `no-console`.
@@ -64,26 +148,23 @@ export type ResolvedOptions =
 /** Factory function that produces ESLint configs from resolved options. */
 export type PluginFactory = (options: ResolvedOptions) => Linter.Config[];
 
+const resolveOptions = (options: ESLintConfigureOptions): ResolvedOptions => ({
+  agentSkillsHost: options.agentSkillsHost ?? 'standard',
+  entryPoints: options.entryPoints ?? [...defaultEntryPoints],
+  gitignore: options.gitignore ?? true,
+  ignores: options.ignores ?? [...defaultIgnores],
+  onlyWarn: options.onlyWarn ?? true,
+  pnpm: options.pnpm ?? true,
+  pnpmWorkspaceSettings: options.pnpmWorkspaceSettings ?? defaultPnpmWorkspaceSettings,
+  target: options.target ?? 'server',
+  ...(options.tsconfigRootDir !== undefined && { tsconfigRootDir: options.tsconfigRootDir }),
+});
+
 /** Creates an ESLint flat config for TypeScript projects. */
 export const configure = async (
   options: ESLintConfigureOptions = {},
 ): Promise<Linter.Config[]> => {
-  const resolved: ResolvedOptions = {
-    entryPoints: options.entryPoints ?? [...defaultEntryPoints],
-    ignores: options.ignores ?? [
-      '.claude/worktrees/**',
-      '**/.turbo/**',
-      '**/dist/**',
-      '**/pnpm-lock.yaml',
-      '**/skills-lock.json',
-      '**/skills/*-workspace/**',
-      '**/skills/npm-*/**',
-    ],
-    onlyWarn: options.onlyWarn ?? true,
-    pnpm: options.pnpm ?? true,
-    target: options.target ?? 'server',
-    ...(options.tsconfigRootDir !== undefined && { tsconfigRootDir: options.tsconfigRootDir }),
-  };
+  const resolved = resolveOptions(options);
 
   if (resolved.onlyWarn) {
     await import('eslint-plugin-only-warn');

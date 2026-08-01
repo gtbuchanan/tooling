@@ -27,6 +27,31 @@ const testSchema = {
   type: 'object',
 } as const;
 
+const schemaId = 'https://example.test/schemas/frontmatter.json';
+
+/** A fresh copy of {@link testSchema} carrying a declared `$id`. */
+const identifiedSchema = () => ({
+  ...structuredClone(testSchema),
+  $id: schemaId,
+});
+
+/**
+ * A schema whose `$ref` is absolute against its own `$id`, rather than
+ * the bare `#/...` fragment form. Resolving it needs the `$id` to still
+ * be establishing the base URI at compile time.
+ */
+const selfReferencingSchema = () => ({
+  $id: 'https://example.test/schemas/self-ref.json',
+  $schema: 'https://json-schema.org/draft-07/schema',
+  additionalProperties: false,
+  definitions: { skillName: { minLength: 1, type: 'string' } },
+  properties: {
+    name: { $ref: 'https://example.test/schemas/self-ref.json#/definitions/skillName' },
+  },
+  required: ['name'],
+  type: 'object',
+});
+
 describe.concurrent('md-frontmatter/schema', () => {
   it('passes for frontmatter that satisfies the schema', ({ expect }) => {
     expect(() => {
@@ -165,6 +190,56 @@ describe.concurrent('md-frontmatter/schema', () => {
         ],
         valid: [],
       });
+    }).not.toThrow();
+  });
+
+  /*
+   * ESLint hands the rule a fresh options object on every run, so the
+   * identity-keyed compile cache always misses and each run reaches Ajv
+   * with an equivalent-but-distinct schema. Ajv registers a schema under
+   * its `$id` process-wide and rejects a second registration of the same
+   * id, so a schema that declares one has to stay compilable.
+   */
+  /*
+   * A `$ref` written against the schema's own `$id` resolves only while
+   * that id is setting the base URI, which is the constraint any guard
+   * against duplicate registration has to respect.
+   */
+  it('resolves a $ref written against the schema $id', ({ expect }) => {
+    expect(() => {
+      ruleTester.run('md-frontmatter/schema', schema, {
+        invalid: [
+          {
+            code: '---\nname: ""\n---\n',
+            errors: [{ message: /`frontmatter\.name`.*fewer than 1 characters/v }],
+            options: [{ schema: selfReferencingSchema() }],
+          },
+        ],
+        valid: [
+          {
+            code: '---\nname: example\n---\n',
+            options: [{ schema: selfReferencingSchema() }],
+          },
+        ],
+      });
+    }).not.toThrow();
+  });
+
+  it('re-compiles a schema that declares an $id', ({ expect }) => {
+    const runs = [identifiedSchema(), identifiedSchema()];
+
+    expect(() => {
+      for (const identified of runs) {
+        ruleTester.run('md-frontmatter/schema', schema, {
+          invalid: [],
+          valid: [
+            {
+              code: '---\nname: example\ndescription: A description.\n---\n',
+              options: [{ schema: identified }],
+            },
+          ],
+        });
+      }
     }).not.toThrow();
   });
 });

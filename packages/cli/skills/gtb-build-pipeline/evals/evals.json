@@ -85,6 +85,18 @@
       "files": [],
       "id": 8,
       "prompt": "Why is turbo reporting `Cached: 0 cached, N total` after I edited one source file in one workspace package?"
+    },
+    {
+      "expectations": [
+        "Explains that the root `generate` aggregate is emitted empty in a monorepo, so the leaf task must be declared by the package itself",
+        "Shows a package configuration at `packages/<pkg>/turbo.json` with `extends: [\"//\"]`, a `generate` task depending on the script, and the script's own task entry",
+        "States that the leaf must declare `outputs` (or `cache: false`), because a cached task without outputs restores nothing on a hit and leaves the generated files missing",
+        "Mentions that `gtb verify` reports the package until the configuration exists and is wired"
+      ],
+      "expected_output": "Activates skill. Explains that gtb discovers `generate:*` scripts but cannot know their outputs, so in a monorepo the root aggregate is left empty and each package declares its leaves in `packages/<pkg>/turbo.json` extending `//`: `generate` depends on `generate:prisma`, and `generate:prisma` declares inputs plus outputs. Notes the cache hazard that motivates the outputs requirement and that `gtb verify` fails until the wiring is present.",
+      "files": [],
+      "id": 9,
+      "prompt": "I added a `generate:prisma` script to one of my packages but `gtb verify` is now failing and turbo never seems to run it. What am I missing?"
     }
   ],
   "skill_name": "gtb-build-pipeline"

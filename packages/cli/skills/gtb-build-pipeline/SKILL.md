@@ -9,8 +9,8 @@ Turborepo-based build pipeline orchestrated by the `gtb` CLI. Each package defin
 
 ## Orchestration
 
-Root `package.json` scripts are thin aliases that route through the
-`gtb turbo` wrapper:
+In a **monorepo**, root `package.json` scripts are thin aliases that
+route through the `gtb turbo` wrapper:
 
 - `pnpm check` → `gtb turbo run check`
 - `pnpm build` → `gtb turbo run build`
@@ -19,7 +19,32 @@ Root `package.json` scripts are thin aliases that route through the
 - `pnpm test:slow` → `gtb turbo run test:slow`
 - `pnpm test:e2e` → `gtb turbo run test:e2e`
 - `pnpm coverage:merge` → `gtb turbo run coverage:merge`
-- `pnpm deploy:skills` → `gtb turbo run deploy:skills` (monorepos only)
+- `pnpm deploy:skills` → `gtb turbo run deploy:skills`
+
+### Single-package repos have no aggregate aliases
+
+When the root _is_ the lone package (no `packages` globs in
+`pnpm-workspace.yaml`), `gtb sync` generates none of the scripts above —
+invoke the aggregate directly instead:
+
+```sh
+gtb turbo run check
+gtb turbo run build
+```
+
+Turbo runs these as root tasks and, finding no command for them, just
+resolves their `dependsOn` chain down to the leaf scripts. Adding an
+alias back breaks the repo: turbo resolves the aggregate to the root
+script, the script re-invokes turbo, and turbo aborts the run with its
+[`recursive_turbo_invocations`](https://turborepo.dev/messages/recursive-turbo-invocations)
+guard. The loop is real, not a heuristic false positive, so no rewrite
+of the alias escapes it — dispatching to the leaf tasks (`gtb turbo run
+typecheck:ts lint:eslint`) trips the same guard, and a turbo-free alias
+would run _in addition to_ the aggregate's dependencies. The leaf
+scripts are unaffected: they call `gtb task <name>` and never turbo.
+
+`gtb verify` reports any root script that shadows an aggregate, so a
+repo synced before this rule landed is told which scripts to delete.
 
 `gtb turbo` is a thin pass-through to `turbo` on every supported
 platform. On Android (`process.platform === 'android'`) it resolves
@@ -63,6 +88,31 @@ Leaf tasks, per-package, run via `gtb task <name>`:
 
 Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so local and CI caches don't collide — Vitest uses different reporters and coverage settings under CI.
 
+### Codegen tasks (`generate:*`)
+
+Any `generate:*` script in a package's `package.json` is picked up as codegen and ordered ahead of `typecheck:ts`, `compile:ts`, and `lint:eslint`, all of which read generated sources.
+
+Where the _leaf_ tasks get declared depends on the repo shape, because only the package knows what its codegen reads and writes. That matters more than it looks: turbo restores a cached task's declared `outputs` on a hit, so a leaf with none replays its logs, skips the run, restores nothing — and the generated files stay missing while every downstream task reports success. A script name tells `gtb sync` nothing about outputs, so it doesn't guess.
+
+**Monorepo** — the root `generate` aggregate is emitted empty, and each package declares its own leaves in a package configuration (`packages/<pkg>/turbo.json`):
+
+```json
+{
+  "extends": ["//"],
+  "tasks": {
+    "generate": { "dependsOn": ["generate:prisma"] },
+    "generate:prisma": {
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["src/generated/**"]
+    }
+  }
+}
+```
+
+The aggregate stays empty rather than naming leaves the root can't define, because turbo aborts the entire run when a task in `dependsOn` resolves to no definition anywhere in the config chain (`Could not find "<pkg>#generate:prisma" in root turbo.json`). The flip side is that a package which never writes this file fails quietly — its `generate` node has nothing under it, so codegen is skipped and downstream tasks read whatever is already on disk. `gtb verify` closes that gap: it reports packages with `generate:*` scripts and no package configuration, leaves missing from `generate`'s `dependsOn`, and leaves declaring neither `outputs` nor `cache: false`.
+
+**Single-package repo** — turbo offers package configurations only for workspace packages, and the lone `turbo.json` is sync-owned, so there is no seam to hand off to. Sync declares the leaves itself with `cache: false`. Codegen then re-runs on every invocation, which is slower than a cache hit and the only safe default when the outputs are unknowable.
+
 ### Non-obvious dependencies
 
 - **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it.
@@ -84,11 +134,15 @@ Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so loc
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
+**Single-package tsconfigs.** When the root _is_ the lone package (no `packages` globs in `pnpm-workspace.yaml`), the root and per-package tsconfig layers target the same files, so sync collapses them into one: both `tsconfig.json` and `tsconfig.build.json` extend `./tsconfig.base.json`, and the build config carries the root layer's `declaration`/`sourceMap` alongside the package layer's `outDir`/`rootDir`/`include`. Package `extends` paths are derived from the package's actual depth below the root, not assumed to be `packages/<name>`.
+
 **Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync mise`, `gtb verify mise turbo`. No args means all scopes. This lets a repo regenerate or check just one artifact — e.g. an hk-preset adopter runs `gtb sync mise` to write `mise.tasks.toml` without a full workspace sync. An unknown scope exits non-zero.
 
 `mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify mise` asserts the include is present. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
 
 `gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The `mise`/`codecov` checks self-skip when the repo doesn't use those tools (no `mise.toml` / no vitest tests).
+
+Most checks compare a file against what sync would generate. The `turbo` scope carries one that doesn't: the `generate:*` package configurations described above are author-owned, so verify asserts they exist and are wired correctly instead of regenerating them (`--ignore generate:<name>` opts a script out).
 
 ## Pre-commit hooks (`gtb hk`)
 

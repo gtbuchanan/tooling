@@ -13,6 +13,7 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 | [@gtbuchanan/eslint-plugin-md-frontmatter](packages/eslint-plugin-md-frontmatter) | ESLint plugin validating Markdown frontmatter via JSON Schema |
 | [@gtbuchanan/eslint-plugin-yamllint](packages/eslint-plugin-yamllint)             | ESLint plugin for yamllint gap rules                          |
 | [@gtbuchanan/hk-config](packages/hk-config)                                       | Shared hk pre-commit preset (Pkl, GitHub-release published)   |
+| [@gtbuchanan/libsql-termux-shim](packages/libsql-termux-shim)                     | libsql binding shim for Termux/Android (`os: ["android"]`)    |
 | [@gtbuchanan/pnpm-termux-shim](packages/pnpm-termux-shim)                         | pnpm bin shim for Termux/Android (`os: ["android"]`)          |
 | [@gtbuchanan/tsconfig](packages/tsconfig)                                         | Shared TypeScript base configuration                          |
 | [@gtbuchanan/vitest-config](packages/vitest-config)                               | Shared Vitest configuration                                   |

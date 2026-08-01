@@ -1,5 +1,110 @@
 # @gtbuchanan/eslint-config
 
+## 0.3.0
+
+### Minor Changes
+
+- eadd54f: Add an `agentSkillsHost` option for `SKILL.md` frontmatter extensions
+
+  `SKILL.md` frontmatter is validated against the Agent Skills spec, which
+  rejects the fields agent hosts document on top of the standard.
+  `agentSkillsHost` names the hosts to accept — a host name, a JSON Schema
+  property map for a host the plugin doesn't ship, or a list of either for
+  skills targeting several at once:
+
+  ```js
+  configure({ agentSkillsHost: ["claude-code", myExtensions] });
+  ```
+
+  Listed hosts union their fields. The default, `'standard'`, keeps
+  validating against the bare spec — which is also the "valid under every
+  host" setting — so existing configs are unaffected.
+
+- 4e1ef43: Allow `require()` in `.cjs` files
+
+  The `.cjs` extension forces CommonJS, so `require()` is the only way to
+  import — `import` is a syntax error there. Every consumer with a `.cjs`
+  file (a script stub, `.pnpmfile.cjs`, etc.) had to turn
+  `@typescript-eslint/no-require-imports` off itself.
+
+  Also exports the `cjsFiles` glob so consumers can scope their own `.cjs`
+  overrides to the same pattern.
+
+- d79ceea: Ignore generated `CHANGELOG.md` files by default
+
+  Changesets writes `CHANGELOG.md` through its own Prettier resolution,
+  which cannot see the options this config hands `format/prettier`. A
+  changeset whose body contains a fenced code block comes back reformatted
+  — stock Prettier double-quotes string literals where this config's
+  `singleQuote` does not — and the diff is unfixable at the source, since
+  the `.changeset/*.md` the snippet was authored in is linted the other
+  way. Every version PR failed lint on a file no one can correct.
+
+  The generated changelog joins build output, lockfiles, and generated
+  skills in the default `ignores`: paths another tool generates and owns
+  the format of. Authored `.changeset/*.md` are unaffected and stay
+  linted.
+
+  Repos passing their own `ignores` replace the default list wholesale, so
+  add `**/CHANGELOG.md` to keep this behavior.
+
+- 462dc45: Enforce a pnpm workspace settings policy
+
+  `eslint-plugin-pnpm`'s `yaml-enforce-settings` is the only rule it ships
+  that lints the settings keys of `pnpm-workspace.yaml` — the block that
+  absorbed most of `.npmrc` in pnpm 10. No config enables it, because it
+  carries no default policy and throws unless given one. The remaining
+  rules cover only catalogs and package globs, so nothing kept install
+  behavior consistent across repos.
+
+  `configure()` now supplies a policy by default, exported as
+  `defaultPnpmWorkspaceSettings`: `engineStrict`, `hoist`,
+  `minimumReleaseAge`, and `strictPeerDependencies` are matched by value
+  and auto-fixed into place; `minimumReleaseAgeExclude` is required to
+  exist without pinning its contents; and `dangerouslyAllowAllBuilds`,
+  `publicHoistPattern`, `shamefullyHoist`, and `trustLockfile` are
+  forbidden outright.
+
+  The split between the three knobs is deliberate. `settings` compares
+  whole values and its fixer replaces the entire key/value pair, so
+  pinning a list a consumer extends would make `--fix` delete their added
+  scopes — hence the exclude list is required rather than value-matched.
+  `settings` also cannot express "anything but this value", so a setting
+  that is unsafe in one direction has to be banned by key instead.
+
+  Repos whose `pnpm-workspace.yaml` omits these settings will see new
+  warnings that `--fix` resolves. Pass a replacement policy to
+  `pnpmWorkspaceSettings` to change it, or `false` to keep the catalog
+  rules without the settings policy.
+
+### Patch Changes
+
+- c97db0a: Publish runtime dependencies as caret ranges instead of exact pins
+
+  The `catalog:` entries backing these packages' runtime dependencies were
+  exact pins, and pnpm substitutes the catalog spec verbatim at publish
+  time — so consumers received hard pins that force a duplicate install
+  whenever they resolve a different version of the same package. Exact
+  pins remain only on root devDependencies, which are never published.
+
+- b70d1fb: Stop `--fix` corrupting JSON files with unsorted keys
+
+  `json/sort-keys` and `format/prettier` were both fixable on the same
+  files. ESLint saw their fix ranges as non-overlapping and applied both
+  in one pass, interleaving the reordered keys with a Prettier text diff
+  computed against the unsorted original — the file came out as invalid
+  JSON that no later pass could recover. Prettier already sorts these
+  files recursively via `prettier-plugin-sort-json`, so `json/sort-keys`
+  is now off and Prettier owns JSON key order outright.
+
+- Updated dependencies [eadd54f]
+- Updated dependencies [1cf285a]
+- Updated dependencies [eadd54f]
+  - @gtbuchanan/eslint-plugin-agent-skills@0.2.0
+  - @gtbuchanan/eslint-plugin-md-frontmatter@0.1.2
+  - @gtbuchanan/eslint-plugin-markdownlint@0.1.1
+  - @gtbuchanan/eslint-plugin-yamllint@0.1.1
+
 ## 0.2.1
 
 ### Patch Changes

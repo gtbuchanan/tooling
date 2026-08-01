@@ -3,12 +3,12 @@
   "compilerOptions": {
     "allowJs": true,
     "lib": [
-      "ES2024"
+      "ES2025"
     ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "resolveJsonModule": true,
-    "target": "ES2024",
+    "target": "ES2025",
     "types": [
       "node"
     ]
