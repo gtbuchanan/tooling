@@ -1,37 +1,17 @@
-import { fileURLToPath } from 'node:url';
 import { defineCommand } from 'citty';
-import { run } from '../../lib/process.ts';
+import { executeLintEslint } from '../../lib/lint-eslint.ts';
 
 /**
- * The SARIF-writing formatter, resolved through the package's own export
- * map so the same specifier works from TS source (self-host) and the
- * compiled publish layout.
- */
-const formatterPath = fileURLToPath(
-  import.meta.resolve('@gtbuchanan/cli/eslint-sarif-formatter'),
-);
-
-/**
- * Runs ESLint as a reporter, not a gate: warnings never fail the task
- * (the repo convention downgrades every rule to a warning), while fatal
- * errors — parse or config breakage — still do. Enforcement lives in
- * the changed-files pre-commit step locally and in
- * `gtb sarif compare` (new-findings-only) in CI, so a baseline
- * SARIF log exists for every commit, including ones carrying accepted
- * violations.
+ * Runs ESLint via its programmatic API (see `lib/lint-eslint.ts` for
+ * the reporter-not-gate semantics): one lint feeds both the SARIF log
+ * consumed by `gtb sarif compare` and the stylish console report.
+ * Enforcement lives in the changed-files pre-commit step locally and in
+ * the compare (new-findings-only) in CI.
  */
 export const lintEslint = defineCommand({
   meta: {
     description: 'Run ESLint with caching, reporting to dist/sarif/eslint.sarif',
     name: 'lint:eslint',
   },
-  run: async ({ rawArgs }) => {
-    await run('eslint', {
-      args: [
-        '--cache', '--cache-location', 'dist/.eslintcache',
-        '--format', formatterPath,
-        ...rawArgs,
-      ],
-    });
-  },
+  run: ({ rawArgs }) => executeLintEslint(rawArgs),
 });

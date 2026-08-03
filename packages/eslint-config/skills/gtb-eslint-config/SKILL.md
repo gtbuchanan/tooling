@@ -320,9 +320,12 @@ under pnpm strict hoisting.
 
 - **Warnings-only in IDE, errors in CI.** `onlyWarn: true` (the default)
   surfaces every lint violation as a warning so TypeScript diagnostics
-  stand out in editors. CI runs `eslint --max-warnings=0` to enforce
-  zero violations. The `gtb task lint:eslint` command sets this flag
-  along with `--cache --cache-location dist/.eslintcache`.
+  stand out in editors. Enforcement lives elsewhere: the hk pre-commit
+  step runs `eslint --max-warnings=0` on staged files, and CI's SARIF
+  ratchet fails only findings new relative to the merge base. The
+  `gtb task lint:eslint` command itself is a reporter — it runs ESLint
+  through its programmatic API with caching (`dist/.eslintcache`),
+  writes `dist/sarif/eslint.sarif`, and never fails on warnings.
 - **Inline suppressions require a `--` reason suffix.** Enforced by
   `@eslint-community/eslint-plugin-eslint-comments`. Use the multiline
   format for readability:
@@ -372,9 +375,9 @@ markdownlint/lint -->` would suppress every markdownlint rule at once.
 Monorepos using `@gtbuchanan/cli` follow a two-tier ESLint setup:
 
 - **Per-package `eslint.config.ts`** — calls `configure()` and lints
-  source under that package. The generated `lint:eslint` task runs with
-  `--cache --cache-location dist/.eslintcache --max-warnings=0`. Cache
-  files live under each package's `dist/`.
+  source under that package. The generated `lint:eslint` task runs
+  ESLint through its programmatic API with caching; cache files live
+  under each package's `dist/`.
 - **Root `eslint.config.ts`** — when present, `gtb sync` also generates
   a `//#lint:eslint` turbo task and a root `lint:eslint` script. The
   root script lints workspace-root files (`package.json`,

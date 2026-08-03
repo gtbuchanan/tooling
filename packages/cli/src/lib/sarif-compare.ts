@@ -5,13 +5,14 @@ import {
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { styleText } from 'node:util';
 import * as v from 'valibot';
 import { readJsonFile } from './file-writer.ts';
+import { type StyleText, formatFindingReport } from './finding-report.ts';
 import { type Logger, createLogger } from './logger.ts';
 import { type RunOptions, capture, run } from './process.ts';
 import {
-  type NewFinding, extractAllFindings, extractNewFindings, formatNewFindings,
-  parseSarifLog,
+  type NewFinding, extractAllFindings, extractNewFindings, parseSarifLog,
 } from './sarif-log.ts';
 import { sarifPaths } from './sarif-paths.ts';
 import { localeComparer } from './sort.ts';
@@ -37,6 +38,8 @@ export interface SarifCompareDeps {
   readonly remove: (filePath: string) => void;
   readonly resolveMultitool: () => string;
   readonly run: (command: string, options?: RunOptions) => Promise<void>;
+  /** Styles the new-findings report (identity in tests). */
+  readonly style: StyleText;
   readonly workspace: (cwd?: string) => WorkspaceContext;
   readonly writeText: (filePath: string, content: string) => void;
 }
@@ -85,6 +88,8 @@ export const defaultSarifDeps: SarifCompareDeps = {
   },
   resolveMultitool: resolveMultitoolBinary,
   run,
+  // The report goes to stderr; let styleText gate color on that stream.
+  style: (format, text) => styleText(format, text, { stream: process.stderr }),
   workspace: cwd => resolveWorkspace(cwd === undefined ? undefined : { cwd }),
   writeText: (filePath, content) => {
     mkdirSync(path.dirname(filePath), { recursive: true });
@@ -331,7 +336,7 @@ export const executeSarifCompare = async (
   const findings = matchedFindings.flat();
 
   if (findings.length > 0) {
-    deps.logger.error(formatNewFindings(findings));
+    deps.logger.error(formatFindingReport(findings, deps.style));
     throw new Error(
       `${String(findings.length)} new finding(s) not present in the baseline`,
     );

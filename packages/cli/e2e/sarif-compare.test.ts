@@ -17,7 +17,7 @@ interface SarifViolation {
   readonly snippet: string;
 }
 
-/** Builds a SARIF log in the shape the bundled ESLint formatter emits. */
+/** Builds a SARIF log in the shape the `lint:eslint` reporter emits. */
 const sarifLog = (fileUri: string, violations: readonly SarifViolation[]): string =>
   `${JSON.stringify({
     $schema: 'https://json.schemastore.org/sarif-2.1.0-rtm.5',

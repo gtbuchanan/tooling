@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { vi } from 'vitest';
+import { plainText } from '#src/lib/finding-report.js';
 import type { SarifCompareDeps } from '#src/lib/sarif-compare.js';
 import { localeComparer } from '#src/lib/sort.js';
 import type { WorkspaceContext } from '#src/lib/workspace.js';
@@ -135,6 +136,7 @@ export const stubDeps = (
           ? Promise.reject(new Error(`${key} failed`))
           : Promise.resolve();
       },
+      style: plainText,
       workspace: cwd =>
         (cwd === undefined ? workspace : options?.baseWorkspace ?? workspace),
       writeText: (filePath, content) => {

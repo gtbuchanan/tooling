@@ -1,10 +1,8 @@
 import { describe, it } from 'vitest';
 import { executeSarifCompare } from '#src/lib/sarif-compare.js';
 import {
-  type NewFinding,
   extractAllFindings,
   extractNewFindings,
-  formatNewFindings,
   parseSarifLog,
 } from '#src/lib/sarif-log.js';
 import type { WorkspaceContext } from '#src/lib/workspace.js';
@@ -61,36 +59,6 @@ describe.concurrent(extractAllFindings, () => {
   });
 });
 
-describe.concurrent(formatNewFindings, () => {
-  it('renders uri, position, level, message, and rule per line', ({ expect }) => {
-    const finding: NewFinding = {
-      column: 3,
-      level: 'error',
-      line: 7,
-      message: 'Unexpected console statement.',
-      ruleId: 'no-console',
-      uri: 'file:///repo/src/app.js',
-    };
-
-    expect(formatNewFindings([finding])).toBe(
-      'file:///repo/src/app.js:7:3  error  Unexpected console statement.  no-console',
-    );
-  });
-
-  it('omits the position when the result has no region', ({ expect }) => {
-    const finding: NewFinding = {
-      column: undefined,
-      level: 'warning',
-      line: undefined,
-      message: 'boom',
-      ruleId: 'internal',
-      uri: '<unknown>',
-    };
-
-    expect(formatNewFindings([finding])).toBe('<unknown>  warning  boom  internal');
-  });
-});
-
 describe.concurrent(executeSarifCompare, () => {
   const workspace: WorkspaceContext = {
     packageDirs: ['/repo/packages/a'],
@@ -126,10 +94,18 @@ describe.concurrent(executeSarifCompare, () => {
     expect(out()).toContain('No new findings');
   });
 
-  it('rejects when any result is new', async ({ expect }) => {
-    const { deps } = stubDeps(workspace, currentFiles, sarifLog([sarifResult('new')]));
+  it('rejects when any result is new and reports it in the stylish layout', async ({
+    expect,
+  }) => {
+    const { deps, err } = stubDeps(
+      workspace,
+      currentFiles,
+      sarifLog([sarifResult('new', { ruleId: 'no-console' })]),
+    );
 
     await expect(executeSarifCompare({}, deps)).rejects.toThrow(/new finding/v);
+    expect(err()).toContain('  no-console');
+    expect(err()).toContain('✖ 2 problems (2 errors, 0 warnings)');
   });
 
   it('skips dirs with no current SARIF logs', async ({ expect }) => {

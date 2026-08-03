@@ -7,8 +7,7 @@
     "#src/*": "./src/*"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./eslint-sarif-formatter": "./src/lib/eslint-sarif-formatter.ts"
+    ".": "./src/index.ts"
   },
   "bin": {
     "gtb": "./dist/source/bin/gtb.js"
@@ -45,14 +44,19 @@
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
     "@types/cross-spawn": "catalog:",
-    "@types/hosted-git-info": "catalog:"
+    "@types/hosted-git-info": "catalog:",
+    "eslint": "catalog:"
   },
   "peerDependencies": {
+    "eslint": "^10.0.0",
     "skills": "^1.5.1",
     "skills-npm": "^1.1.1",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "skills-npm": {
       "optional": true
     }
@@ -66,8 +70,7 @@
     },
     "directory": "dist/source",
     "exports": {
-      ".": "./src/index.js",
-      "./eslint-sarif-formatter": "./src/lib/eslint-sarif-formatter.js"
+      ".": "./src/index.js"
     },
     "imports": {
       "#src/*.ts": "./src/*.js"

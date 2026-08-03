@@ -97,11 +97,15 @@ while pre-existing (accepted) ones never block. Consumer-facing usage
 (override label flow, workflow wiring) lives in `README.md`; the
 invariants agents need:
 
-- **Reporters, not gates.** `lint:eslint` writes
-  `dist/sarif/eslint.sarif` (a turbo task output) via a formatter
-  bundled in `@gtbuchanan/cli`. Warnings never fail it — fatal errors
-  (parse/config breakage) still do. Any reporter that drops a
-  `<tool>.sarif` into `dist/sarif/` is gated with no extra wiring.
+- **Reporters, not gates.** `lint:eslint` runs ESLint through its
+  programmatic API (`@gtbuchanan/cli` declares `eslint` as an optional
+  peer), so one lint feeds both `dist/sarif/eslint.sarif` (a turbo
+  task output) and the stylish console report — the CLI's
+  single-`--format` limit is why the API replaced it. Warnings never
+  fail it — errors (parse/config breakage under the warnings-only
+  convention) still do, and only after the SARIF log is written. Any
+  reporter that drops a `<tool>.sarif` into `dist/sarif/` is gated
+  with no extra wiring.
 - **`gtb sarif compare` is the gate.** Pairs every
   `dist/sarif/*.sarif` in each lint cwd with
   `dist/sarif/base/<name>.sarif` via

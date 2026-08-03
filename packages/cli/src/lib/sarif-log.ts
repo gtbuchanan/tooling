@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { formatFindingLine } from './finding-line.ts';
+import type { Finding } from './finding-report.ts';
 import { internalRuleId } from './internal-rule-id.ts';
 
 const SarifRegionSchema = v.object({
@@ -49,14 +49,7 @@ export const parseSarifLog = (data: unknown): SarifLog =>
   v.parse(SarifLogSchema, data);
 
 /** A finding present in HEAD but not matched to the baseline. */
-export interface NewFinding {
-  readonly column: number | undefined;
-  readonly level: string;
-  readonly line: number | undefined;
-  readonly message: string;
-  readonly ruleId: string;
-  readonly uri: string;
-}
+export type NewFinding = Finding;
 
 interface LocationParts {
   readonly column: number | undefined;
@@ -116,8 +109,3 @@ export const extractNewFindings = (log: SarifLog): readonly NewFinding[] =>
  */
 export const extractAllFindings = (log: SarifLog): readonly NewFinding[] =>
   extractFindings(log, () => true);
-
-/** Renders new findings for console output, one line per finding. */
-export const formatNewFindings = (
-  findings: readonly NewFinding[],
-): string => findings.map(formatFindingLine).join('\n');

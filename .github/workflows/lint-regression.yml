@@ -111,7 +111,10 @@ jobs:
             echo '### New lint violations relative to the merge base'
             echo
             echo '```text'
-            cat lint-regression.txt
+            # FORCE_COLOR makes the report carry ANSI codes for the log
+            # view; the summary's code fence renders them literally, so
+            # strip them here.
+            sed 's/\x1b\[[0-9;]*m//g' lint-regression.txt
             echo '```'
             echo
             echo 'Fix the new findings or suppress them in-source with' \

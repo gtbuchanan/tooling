@@ -9,9 +9,6 @@
  *
  * POSIX-form segments: usable verbatim as turbo.json globs, and
  * `node:fs` accepts forward slashes on every platform.
- *
- * Kept dependency-free: the ESLint formatter imports this from inside
- * the ESLint process.
  */
 const dir = 'dist/sarif';
 
