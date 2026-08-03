@@ -52,9 +52,9 @@ consumer repos. Authored in this repo; deployed locally via `gtb task
 deploy:skills` for dogfooding.
 
 - **`gtb-build-pipeline`** (`@gtbuchanan/cli`) — Turborepo task graph,
-  `gtb sync` / `gtb verify` / `gtb turbo` (with the Android/Termux
-  escape hatch), consumer script customization, test-bucket strategy,
-  aggregate semantics
+  `gtb sync` / `gtb verify` / `gtb turbo` (PATH normalization, plus
+  Android/Termux setup), consumer script customization, test-bucket
+  strategy, aggregate semantics
 - **`gtb-eslint-config`** (`@gtbuchanan/eslint-config`) — `configure()`
   API and options, pre-commit `createRequire` pattern, bundled plugin
   set, suppression conventions, two-plugin Markdown lint split,
@@ -456,13 +456,15 @@ reasoning here so the question doesn't get re-litigated:
 - Mise's only registered backend for turbo is `npm:turbo` (no aqua /
   ubi / cargo fallback). Confirmed via `mise registry turbo`.
 - Vercel ships turbo exclusively through npm. The latest release has
-  no binary assets on GitHub Releases;
+  no binary assets on GitHub Releases.
   [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616)
-  (request for Android binaries) was closed as "not planned".
+  (request for Android binaries) was closed as "not planned", then
+  reversed by
   [vercel/turborepo#12735](https://github.com/vercel/turborepo/pull/12735)
-  is the live PR re-litigating that decision — if it (or anything
-  like it) lands, upstream distribution shifts and this whole
-  trade-off changes.
+  in turbo 2.10.8 — but that shipped Android as an `os` widening of the
+  existing npm `@turbo/linux-arm64` package, not as standalone release
+  assets, so the distribution channel is unchanged and so is this
+  trade-off.
 - mise's npm backend writes only `version` + `backend` to `mise.lock`
   — no per-platform integrity. `pnpm-lock.yaml` records per-platform
   integrity for `turbo` plus every `@turbo/<platform>-<arch>` optional

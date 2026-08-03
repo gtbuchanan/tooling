@@ -12,10 +12,11 @@ ENOENT.
 
 Termux ships an `LD_PRELOAD` (`libtermux-exec-ld-preload.so`) that
 rewrites these shebangs in libc's `execve` to point at Termux's actual
-paths. That fix is Bionic-only: it never loads into glibc-built binaries
-like the upstream Linux turbo distribution. So when turbo (or any other
-glibc binary) spawns `pnpm`, the rewriting doesn't happen and the kernel
-sees the literal shebang path. ENOENT.
+paths. `LD_PRELOAD` is a dynamic-loader feature, so it never reaches a
+binary the loader isn't involved in — including the upstream Linux
+turbo, which ships statically linked (no `PT_INTERP`). So when turbo (or
+any other such binary) spawns `pnpm`, the rewriting doesn't happen and
+the kernel sees the literal shebang path. ENOENT.
 
 The fix is a `pnpm` shim whose own shebang is an absolute path
 (`#!/data/data/com.termux/files/usr/bin/bash`). The kernel resolves it
@@ -34,15 +35,19 @@ the dev workspace doesn't trip pnpm's "unsupported platform" warning
 during dogfooding. The published tarball still ships with
 `"os": ["android"]` at the top level.
 
-See [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616)
-for the upstream context: native Android support for turbo was declined,
-so consumers run the linux-arm64 binary on Termux and work around the
-spawn behavior with shims like this one.
+Upstream context:
+[vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616)
+asked for Android support and was declined in 2023;
+[vercel/turborepo#12735](https://github.com/vercel/turborepo/pull/12735)
+reversed that in turbo 2.10.8 by publishing the `linux-arm64` binary
+under `os: ["android", "linux"]`. That makes the npm launcher start on
+Termux — it does not change how the binary spawns children, which is
+what this shim addresses.
 
 ## Usage
 
 Add to `optionalDependencies` of any package whose graph spawns `pnpm`
-via a glibc binary on Termux:
+from a binary the Termux `LD_PRELOAD` can't reach:
 
 ```jsonc
 {
@@ -56,6 +61,15 @@ That's it. On Android the shim symlinks to `node_modules/.bin/pnpm` and
 shadows the broken system `pnpm` for any subprocess that resolves via
 the project's bin directory. Everywhere else, the dependency is filtered
 out and nothing is installed.
+
+One caveat for the process doing the resolving: it must reach the shim
+through an **absolute** PATH entry. pnpm prepends a relative
+`./node_modules/.bin`, and a consumer that resolves a binary from one
+directory but spawns it from another then gets ENOENT — turbo does
+exactly this, resolving the package manager at the repo root and
+spawning each task in its package directory. `gtb turbo` from
+[`@gtbuchanan/cli`](https://github.com/gtbuchanan/tooling/tree/main/packages/cli)
+absolutizes PATH before invoking turbo for this reason.
 
 The wrapper honors `$PREFIX` (Termux's standard prefix env var), so
 non-default Termux install layouts still work; if `$PREFIX` is unset
