@@ -109,6 +109,9 @@ url = "https://nodejs.org/dist/v24.18.1/node-v24.18.1-win-x64.zip"
 version = "43.265.1"
 backend = "npm:renovate"
 
+[tools."npm:renovate".options]
+trust_policy_excludes = '["@yarnpkg/libzip"]'
+
 [[tools.pkl]]
 version = "0.32.1"
 backend = "aqua:apple/pkl"

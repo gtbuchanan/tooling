@@ -43,7 +43,11 @@ run_windows = "pnpm install --frozen-lockfile"
 actionlint = "1.7.12"
 hk = "1.53.0"
 node = "24.18.1"
-"npm:renovate" = "43.265.1"
+# Exempt transitive `@yarnpkg/libzip` from aube's no-downgrade policy — its
+# latest is a benign manual publish missing the provenance its CI releases had.
+"npm:renovate" = { trust_policy_excludes = [
+  "@yarnpkg/libzip",
+], version = "43.265.1" }
 pkl = "0.32.1"
 # Deliberately duplicates `packageManager` in package.json (turbo requires
 # that field). Renovate groups both bumps into one PR — see the "pnpm"
