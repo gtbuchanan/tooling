@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/eslint-config",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Shared ESLint configuration",
   "type": "module",
   "imports": {

@@ -1,5 +1,25 @@
 # @gtbuchanan/eslint-config
 
+## 0.4.0
+
+### Minor Changes
+
+- 44daadb: Derive lint ignores from `.gitignore`
+
+  `configure()` now reads `.gitignore` through `eslint-config-flat-gitignore` and contributes the converted patterns as a global-ignores entry, so untracked paths — build output, caches, generated files — are never linted without being enumerated. Nested `.gitignore` files are discovered too, and a repo without one contributes no patterns instead of throwing.
+
+  The new `gitignore` option takes `false` to opt out, or a `FlatGitignoreOptions` object merged over `defaultGitignoreOptions`.
+
+  Because `.gitignore` now covers generated paths, the default `ignores` list was narrowed to the **tracked** files another tool owns the format of: lockfiles — matched by naming convention rather than per package manager — and `CHANGELOG.md`. That list is exported as `defaultIgnores` so it can be spread when overriding, since `ignores` replaces its default wholesale.
+
+  Repos that pass `gitignore: false` and relied on the previous defaults to skip build output now have to list those paths themselves.
+
+### Patch Changes
+
+- 6d9965d: Disable markdownlint MD060 (`table-column-style`), which conflicts with Prettier
+
+  Prettier (via `eslint-plugin-format`) already owns Markdown table formatting and aligns pipe columns. markdownlint's `table-column-style` (MD060) ships its own autofixer that rewrites tables to compact pipes, so the two fixers oscillate — ESLint applies one, the other reverts it, and once the fix-pass limit is reached the run bails with a half-formatted table and unresolvable warnings (fatal under `--max-warnings=0`). MD060 now joins the other `prettierConflicts` rules disabled in the markdownlint config, leaving table formatting to Prettier.
+
 ## 0.3.0
 
 ### Minor Changes

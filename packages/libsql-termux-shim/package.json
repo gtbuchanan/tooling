@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/libsql-termux-shim",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "libsql native-binding stand-in for Termux/Android, implemented on node:sqlite, so libsql-dependent tools (e.g. promptfoo) run where libsql ships no prebuilt binding",
   "homepage": "https://github.com/gtbuchanan/tooling/tree/main/packages/libsql-termux-shim",
   "bugs": "https://github.com/gtbuchanan/tooling/issues",
