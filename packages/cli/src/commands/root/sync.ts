@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import { generateCodecovSections } from '../../lib/codecov-config.ts';
@@ -108,13 +108,19 @@ const writeTurboJson = (logger: Logger, discovery: WorkspaceDiscovery): void => 
 
 /*
  * Scaffold the base tsconfig the generated configs extend. It's the consumer's
- * one hand-authored tsconfig (their choice of shared variant), so create it
- * only when absent — never clobber an edited variant on a re-sync.
+ * one hand-authored tsconfig (their choice of shared variant), so leave an
+ * existing file untouched — never clobber an edited variant on a re-sync. A
+ * non-file at the path (e.g. a directory) can't back an `extends`, so fail
+ * loudly rather than silently skip and leave the generated configs broken.
  */
 const writeTsconfigBase = (logger: Logger, rootDir: string): void => {
   const filePath = path.join(rootDir, tsconfigBaseFileName);
-  if (existsSync(filePath)) {
+  const stats = statSync(filePath, { throwIfNoEntry: false });
+  if (stats?.isFile()) {
     return;
+  }
+  if (stats !== undefined) {
+    throw new Error(`${filePath} exists but is not a file — remove it so gtb sync can scaffold it`);
   }
   writeSortedAndLog(logger, filePath, generateTsconfigBase());
 };

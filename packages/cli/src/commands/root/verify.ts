@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import * as v from 'valibot';
@@ -146,12 +146,18 @@ const checkTsconfigFile = (
 
 /*
  * The base tsconfig is hand-authored (the consumer's variant choice), so only
- * its presence is verified — its contents are theirs to own. Absence silently
- * breaks every generated config's `extends`, which is the gap this catches.
+ * that a file exists is verified — its contents are theirs to own. A missing or
+ * non-file path silently breaks every generated config's `extends`, which is
+ * the gap this catches.
  */
 const checkTsconfigBase = (rootDir: string): readonly string[] => {
   const filePath = path.join(rootDir, tsconfigBaseFileName);
-  return existsSync(filePath) ? [] : [`${filePath}: missing (run gtb sync)`];
+  const stats = statSync(filePath, { throwIfNoEntry: false });
+  if (stats === undefined) {
+    return [`${filePath}: missing (run gtb sync)`];
+  }
+
+  return stats.isFile() ? [] : [`${filePath}: must be a file (run gtb sync)`];
 };
 
 const checkTsconfigs = (

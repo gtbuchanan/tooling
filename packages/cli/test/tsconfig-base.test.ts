@@ -59,4 +59,15 @@ describe.concurrent('tsconfig.base.json scaffolding', () => {
     expect(runVerify({ cwd: root, scopes: new Set(['tsconfig']) }))
       .toContainEqual(expect.stringContaining('tsconfig.base.json'));
   });
+
+  it('fails sync and reports verify drift when the base path is not a file', ({ expect }) => {
+    const root = createProjectWithoutBase();
+    mkdirSync(path.join(root, 'tsconfig.base.json'));
+
+    expect(() => {
+      syncTsconfigs(root);
+    }).toThrow(/not a file/v);
+    expect(runVerify({ cwd: root, scopes: new Set(['tsconfig']) }))
+      .toContainEqual(expect.stringContaining('tsconfig.base.json'));
+  });
 });
