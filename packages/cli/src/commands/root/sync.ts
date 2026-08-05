@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import { generateCodecovSections } from '../../lib/codecov-config.ts';
@@ -14,7 +14,12 @@ import { generateMiseTasks, miseTasksFileName } from '../../lib/mise-tasks.ts';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '../../lib/sync-scopes.ts';
-import { planTsconfigs, readUserCompilerOptions } from '../../lib/tsconfig-gen.ts';
+import {
+  generateTsconfigBase,
+  planTsconfigs,
+  readUserCompilerOptions,
+  tsconfigBaseFileName,
+} from '../../lib/tsconfig-gen.ts';
 import {
   generatePackageScripts,
   generateRootScripts,
@@ -101,7 +106,21 @@ const writeTurboJson = (logger: Logger, discovery: WorkspaceDiscovery): void => 
   );
 };
 
+/*
+ * Scaffold the base tsconfig the generated configs extend. It's the consumer's
+ * one hand-authored tsconfig (their choice of shared variant), so create it
+ * only when absent — never clobber an edited variant on a re-sync.
+ */
+const writeTsconfigBase = (logger: Logger, rootDir: string): void => {
+  const filePath = path.join(rootDir, tsconfigBaseFileName);
+  if (existsSync(filePath)) {
+    return;
+  }
+  writeSortedAndLog(logger, filePath, generateTsconfigBase());
+};
+
 const writeTsconfigFiles = (logger: Logger, discovery: WorkspaceDiscovery): void => {
+  writeTsconfigBase(logger, discovery.rootDir);
   for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
     const userOpts = readUserCompilerOptions(descriptor.path);
     writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));

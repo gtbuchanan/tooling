@@ -4,7 +4,12 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import type { GeneratedTsconfig, TsconfigDescriptor } from '#src/lib/tsconfig-gen.js';
 import {
-  buildInclude, planTsconfigs, resolveBuildIncludes, typeCheckInclude,
+  buildInclude,
+  defaultTsconfigVariant,
+  generateTsconfigBase,
+  planTsconfigs,
+  resolveBuildIncludes,
+  typeCheckInclude,
 } from '#src/lib/tsconfig-gen.js';
 import { createTempDir } from './helpers.ts';
 import { makeCapabilities } from './turbo-config.helpers.ts';
@@ -124,6 +129,26 @@ describe.concurrent(resolveBuildIncludes, () => {
     writeConfig(dir, 'tsconfig.build.json', '{ this is not json');
 
     expect(resolveBuildIncludes(dir)).toStrictEqual([...buildInclude]);
+  });
+});
+
+describe.concurrent(generateTsconfigBase, () => {
+  it('extends the node variant by default', ({ expect }) => {
+    expect(generateTsconfigBase()).toStrictEqual({
+      extends: ['@gtbuchanan/tsconfig/node.json'],
+    });
+  });
+
+  it('extends the given variant', ({ expect }) => {
+    const variant = build.packageName();
+
+    expect(generateTsconfigBase(variant)).toStrictEqual({
+      extends: [`@gtbuchanan/tsconfig/${variant}.json`],
+    });
+  });
+
+  it('defaults to the node variant', ({ expect }) => {
+    expect(defaultTsconfigVariant).toBe('node');
   });
 });
 

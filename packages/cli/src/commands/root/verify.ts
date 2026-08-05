@@ -17,6 +17,7 @@ import {
   type GeneratedTsconfig,
   planTsconfigs,
   readUserCompilerOptions,
+  tsconfigBaseFileName,
 } from '../../lib/tsconfig-gen.ts';
 import {
   type TurboJson,
@@ -143,12 +144,24 @@ const checkTsconfigFile = (
     ? checkTsconfigStructure(filePath, expected, ownedKeys)
     : [`${filePath}: missing (run gtb sync)`];
 
+/*
+ * The base tsconfig is hand-authored (the consumer's variant choice), so only
+ * its presence is verified — its contents are theirs to own. Absence silently
+ * breaks every generated config's `extends`, which is the gap this catches.
+ */
+const checkTsconfigBase = (rootDir: string): readonly string[] => {
+  const filePath = path.join(rootDir, tsconfigBaseFileName);
+  return existsSync(filePath) ? [] : [`${filePath}: missing (run gtb sync)`];
+};
+
 const checkTsconfigs = (
   { rootDir, packages }: WorkspaceDiscovery,
-): readonly string[] =>
-  planTsconfigs(rootDir, packages).flatMap(({ path: filePath, generate, ownedKeys }) =>
+): readonly string[] => [
+  ...checkTsconfigBase(rootDir),
+  ...planTsconfigs(rootDir, packages).flatMap(({ path: filePath, generate, ownedKeys }) =>
     checkTsconfigFile(filePath, generate(readUserCompilerOptions(filePath)), ownedKeys),
-  );
+  ),
+];
 
 /**
  * Flags root scripts that shadow a turbo aggregate. Only single-package repos

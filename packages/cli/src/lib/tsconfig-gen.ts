@@ -6,6 +6,27 @@ import { readJsonFile } from './file-writer.ts';
 import { toPosixRelative } from './paths.ts';
 import { StringArray, UnknownRecord } from './schemas.ts';
 
+/**
+ * File name of the single hand-authored tsconfig every generated config
+ * extends. The consumer owns its contents (the choice of shared variant), so
+ * `sync` only scaffolds it when absent and never overwrites it.
+ */
+export const tsconfigBaseFileName = 'tsconfig.base.json';
+
+/** `@gtbuchanan/tsconfig` variant the scaffolded base extends by default. */
+export const defaultTsconfigVariant = 'node';
+
+/**
+ * Builds the content for a scaffolded {@link tsconfigBaseFileName}. This is the
+ * one tsconfig the consumer hand-maintains — `variant` seeds the initial
+ * `@gtbuchanan/tsconfig` choice, which they can freely change afterward since
+ * `sync` won't overwrite the file.
+ */
+export const generateTsconfigBase = (
+  variant: string = defaultTsconfigVariant,
+): { readonly extends: readonly string[] } =>
+  ({ extends: [`@gtbuchanan/tsconfig/${variant}.json`] });
+
 /** Directories and file patterns included in tsconfig.json for type-checking. */
 export const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*', '.*'] as const;
 
