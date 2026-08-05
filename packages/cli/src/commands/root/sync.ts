@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import { generateCodecovSections } from '../../lib/codecov-config.ts';
@@ -14,7 +14,12 @@ import { generateMiseTasks, miseTasksFileName } from '../../lib/mise-tasks.ts';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '../../lib/sync-scopes.ts';
-import { planTsconfigs, readUserCompilerOptions } from '../../lib/tsconfig-gen.ts';
+import {
+  generateTsconfigBase,
+  planTsconfigs,
+  readUserCompilerOptions,
+  tsconfigBaseFileName,
+} from '../../lib/tsconfig-gen.ts';
 import {
   generatePackageScripts,
   generateRootScripts,
@@ -101,7 +106,27 @@ const writeTurboJson = (logger: Logger, discovery: WorkspaceDiscovery): void => 
   );
 };
 
+/*
+ * Scaffold the base tsconfig the generated configs extend. It's the consumer's
+ * one hand-authored tsconfig (their choice of shared variant), so leave an
+ * existing file untouched — never clobber an edited variant on a re-sync. A
+ * non-file at the path (e.g. a directory) can't back an `extends`, so fail
+ * loudly rather than silently skip and leave the generated configs broken.
+ */
+const writeTsconfigBase = (logger: Logger, rootDir: string): void => {
+  const filePath = path.join(rootDir, tsconfigBaseFileName);
+  const stats = statSync(filePath, { throwIfNoEntry: false });
+  if (stats?.isFile()) {
+    return;
+  }
+  if (stats !== undefined) {
+    throw new Error(`${filePath} exists but is not a file — remove it so gtb sync can scaffold it`);
+  }
+  writeSortedAndLog(logger, filePath, generateTsconfigBase());
+};
+
 const writeTsconfigFiles = (logger: Logger, discovery: WorkspaceDiscovery): void => {
+  writeTsconfigBase(logger, discovery.rootDir);
   for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
     const userOpts = readUserCompilerOptions(descriptor.path);
     writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));

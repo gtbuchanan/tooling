@@ -127,12 +127,14 @@ The aggregate stays empty rather than naming leaves the root can't define, becau
 `gtb sync` reconciles generated state:
 
 - `turbo.json` tasks + aggregates (scope: `turbo`)
-- per-package `tsconfig.json` / `tsconfig.build.json` (scope: `tsconfig`)
+- per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json` (scope: `tsconfig`)
 - per-package + root `package.json` scripts (scope: `scripts`)
 - `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml` (scope: `mise`)
 - `codecov.yml` flags + components (scope: `codecov`)
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
+
+**The base tsconfig.** Every generated config extends `./tsconfig.base.json`, the one tsconfig the consumer hand-authors to pick a shared `@gtbuchanan/tsconfig` variant. Sync scaffolds it (extending `@gtbuchanan/tsconfig/node.json`) only when absent and never overwrites it, so an edited variant survives re-sync. `gtb verify` checks its presence — not its contents — since a missing base silently breaks every generated config's `extends`.
 
 **Single-package tsconfigs.** When the root _is_ the lone package (no `packages` globs in `pnpm-workspace.yaml`), the root and per-package tsconfig layers target the same files, so sync collapses them into one: both `tsconfig.json` and `tsconfig.build.json` extend `./tsconfig.base.json`, and the build config carries the root layer's `declaration`/`sourceMap` alongside the package layer's `outDir`/`rootDir`/`include`. Package `extends` paths are derived from the package's actual depth below the root, not assumed to be `packages/<name>`.
 
