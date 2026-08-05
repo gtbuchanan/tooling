@@ -59,6 +59,14 @@ export interface PackageCapabilities {
   readonly hasVitestE2e: boolean;
   /** Published package (not private, has publishConfig.directory). */
   readonly isPublished: boolean;
+  /**
+   * Manifest `name` (scoped, as declared), falling back to the directory
+   * basename when the manifest declares none. Prefer this over the basename
+   * for anything that gets committed: a package's directory name is a
+   * property of the checkout (worktrees and clones rename it), while its
+   * manifest name is stable across every checkout.
+   */
+  readonly name: string;
 }
 
 /** Full workspace discovery result. */
@@ -158,6 +166,7 @@ const buildCapabilities = (
     hasVitestE2e: hasFilePrefix(files, 'vitest.config.e2e'),
     hasVitestTests: hasVitest && hasTest,
     isPublished,
+    name: manifest.name ?? path.basename(dir),
   };
 };
 

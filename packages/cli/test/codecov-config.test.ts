@@ -4,53 +4,100 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { generateCodecovSections } from '#src/lib/codecov-config.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
+import { localeComparer } from '#src/lib/sort.js';
 import { createTempDir, writeJson } from './helpers.ts';
 
+/**
+ * One package in the fixture. `basename` and `flag` are deliberately
+ * independent — the directory is named separately from the manifest, so an
+ * assertion can only pass by reading the one the implementation claims to use.
+ */
+interface CodecovPackage {
+  /** Directory basename, unrelated to the manifest name. */
+  readonly basename: string;
+  readonly dir: string;
+  /** Expected Codecov flag/component name: the unscoped manifest name. */
+  readonly flag: string;
+}
+
 interface CodecovMonorepo {
-  readonly alpha: { basename: string; dir: string };
-  readonly beta: { basename: string; dir: string };
-  readonly gamma: { basename: string; dir: string };
+  readonly alpha: CodecovPackage;
+  readonly beta: CodecovPackage;
+  readonly gamma: CodecovPackage;
   readonly root: string;
 }
+
+interface WritePackageOptions {
+  readonly extraDirs?: readonly string[];
+  readonly hasTests?: boolean;
+}
+
+const writePackage = (
+  root: string,
+  { extraDirs = [], hasTests = true }: WritePackageOptions = {},
+): CodecovPackage => {
+  const basename = build.packageName();
+  const dir = path.join(root, 'packages', basename);
+  mkdirSync(path.join(dir, 'src'), { recursive: true });
+  for (const extra of extraDirs) {
+    mkdirSync(path.join(dir, extra));
+  }
+  /* Compose the scoped name from a known unscoped part, so the expected flag
+     is an independent value rather than the implementation's own derivation. */
+  const flag = build.packageName();
+  const name = `@${build.packageName()}/${flag}`;
+  if (hasTests) {
+    mkdirSync(path.join(dir, 'test'));
+    writeJson(dir, 'package.json', {
+      devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
+      name,
+    });
+    writeFileSync(path.join(dir, 'vitest.config.ts'), '');
+  } else {
+    writeJson(dir, 'package.json', { name, private: true });
+  }
+  return { basename, dir, flag };
+};
 
 const createMonorepo = (): CodecovMonorepo => {
   const root = createTempDir();
   writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
   writeJson(root, 'package.json', { name: build.packageName(), private: true });
 
-  const alphaBasename = build.packageName();
-  const alphaDir = path.join(root, 'packages', alphaBasename);
-  mkdirSync(path.join(alphaDir, 'src'), { recursive: true });
-  mkdirSync(path.join(alphaDir, 'test'));
-  writeJson(alphaDir, 'package.json', {
-    devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
-    name: build.scopedPackageName(),
-  });
-  writeFileSync(path.join(alphaDir, 'vitest.config.ts'), '');
-
-  const betaBasename = build.packageName();
-  const betaDir = path.join(root, 'packages', betaBasename);
-  mkdirSync(path.join(betaDir, 'src'), { recursive: true });
-  mkdirSync(path.join(betaDir, 'test'));
-  mkdirSync(path.join(betaDir, 'bin'));
-  mkdirSync(path.join(betaDir, 'scripts'));
-  writeJson(betaDir, 'package.json', {
-    devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
-    name: build.scopedPackageName(),
-  });
-  writeFileSync(path.join(betaDir, 'vitest.config.ts'), '');
-
-  const gammaBasename = build.packageName();
-  const gammaDir = path.join(root, 'packages', gammaBasename);
-  mkdirSync(path.join(gammaDir, 'src'), { recursive: true });
-  writeJson(gammaDir, 'package.json', { name: build.scopedPackageName(), private: true });
-
   return {
-    alpha: { basename: alphaBasename, dir: alphaDir },
-    beta: { basename: betaBasename, dir: betaDir },
-    gamma: { basename: gammaBasename, dir: gammaDir },
+    alpha: writePackage(root),
+    beta: writePackage(root, { extraDirs: ['bin', 'scripts'] }),
+    gamma: writePackage(root, { hasTests: false }),
     root,
   };
+};
+
+/**
+ * Scaffolds two coverage packages that share a directory basename (`apps/x`
+ * and `packages/x`) and carry the given manifest names — isolating a name
+ * collision from a directory collision.
+ */
+const createCollisionRepo = (names: readonly string[]): string => {
+  const root = createTempDir();
+  writeFileSync(
+    path.join(root, 'pnpm-workspace.yaml'),
+    "packages:\n  - 'apps/*'\n  - 'packages/*'\n",
+  );
+  writeJson(root, 'package.json', { name: build.packageName(), private: true });
+
+  const sharedBasename = build.packageName();
+  for (const [index, base] of ['apps', 'packages'].entries()) {
+    const pkgDir = path.join(root, base, sharedBasename);
+    mkdirSync(path.join(pkgDir, 'src'), { recursive: true });
+    mkdirSync(path.join(pkgDir, 'test'));
+    writeJson(pkgDir, 'package.json', {
+      devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
+      name: names[index],
+    });
+    writeFileSync(path.join(pkgDir, 'vitest.config.ts'), '');
+  }
+
+  return root;
 };
 
 describe.concurrent(generateCodecovSections, () => {
@@ -69,9 +116,50 @@ describe.concurrent(generateCodecovSections, () => {
 
     const { flags } = generateCodecovSections(discovery);
 
-    expect(Object.keys(flags)).toContain(alpha.basename);
-    expect(Object.keys(flags)).toContain(beta.basename);
-    expect(Object.keys(flags)).not.toContain(gamma.basename);
+    expect(Object.keys(flags)).toContain(alpha.flag);
+    expect(Object.keys(flags)).toContain(beta.flag);
+    expect(Object.keys(flags)).not.toContain(gamma.flag);
+  });
+
+  it('names flags after the unscoped manifest name, not the directory', ({ expect }) => {
+    const { alpha, root } = createMonorepo();
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { flags } = generateCodecovSections(discovery);
+
+    expect(Object.keys(flags)).not.toContain(alpha.basename);
+  });
+
+  it('names components after the unscoped manifest name, not the directory', ({ expect }) => {
+    const { alpha, root } = createMonorepo();
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { component_management: componentManagement } = generateCodecovSections(discovery);
+    const ids = componentManagement.individual_components.map(comp => comp.component_id);
+
+    expect(ids).not.toContain(alpha.basename);
+  });
+
+  it('names a root package after its manifest, not the checkout directory', ({ expect }) => {
+    /*
+     * Regression guard for the worktree/clone bug: a single-package repo's
+     * sole package IS the checkout root, so a basename-derived name changes
+     * with the directory the repo happens to live in.
+     */
+    const root = createTempDir();
+    const flag = build.packageName();
+    mkdirSync(path.join(root, 'src'));
+    mkdirSync(path.join(root, 'test'));
+    writeJson(root, 'package.json', {
+      devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
+      name: `@${build.packageName()}/${flag}`,
+    });
+    writeFileSync(path.join(root, 'vitest.config.ts'), '');
+
+    const discovery = discoverWorkspace({ cwd: root });
+    const { flags } = generateCodecovSections(discovery);
+
+    expect(Object.keys(flags)).toStrictEqual([flag]);
   });
 
   it('flag has carryforward true and correct path', ({ expect }) => {
@@ -80,7 +168,7 @@ describe.concurrent(generateCodecovSections, () => {
 
     const { flags } = generateCodecovSections(discovery);
 
-    expect(flags[alpha.basename]).toMatchObject({
+    expect(flags[alpha.flag]).toMatchObject({
       carryforward: true,
       paths: [`packages/${alpha.basename}/`],
     });
@@ -93,9 +181,9 @@ describe.concurrent(generateCodecovSections, () => {
     const { component_management: componentManagement } = generateCodecovSections(discovery);
     const ids = componentManagement.individual_components.map(comp => comp.component_id);
 
-    expect(ids).toContain(alpha.basename);
-    expect(ids).toContain(beta.basename);
-    expect(ids).not.toContain(gamma.basename);
+    expect(ids).toContain(alpha.flag);
+    expect(ids).toContain(beta.flag);
+    expect(ids).not.toContain(gamma.flag);
   });
 
   it('component paths include only src for package without bin/scripts', ({ expect }) => {
@@ -104,7 +192,7 @@ describe.concurrent(generateCodecovSections, () => {
 
     const { component_management: componentManagement } = generateCodecovSections(discovery);
     const alphaComp = componentManagement.individual_components.find(
-      comp => comp.component_id === alpha.basename,
+      comp => comp.component_id === alpha.flag,
     );
 
     expect(alphaComp?.paths).toStrictEqual([`packages/${alpha.basename}/src/**`]);
@@ -116,7 +204,7 @@ describe.concurrent(generateCodecovSections, () => {
 
     const { component_management: componentManagement } = generateCodecovSections(discovery);
     const betaComp = componentManagement.individual_components.find(
-      comp => comp.component_id === beta.basename,
+      comp => comp.component_id === beta.flag,
     );
 
     expect(betaComp?.paths).toStrictEqual([
@@ -141,30 +229,28 @@ describe.concurrent(generateCodecovSections, () => {
     expect(componentManagement.individual_components).toHaveLength(0);
   });
 
-  it('throws on duplicate package directory basenames', ({ expect }) => {
-    const root = createTempDir();
-    writeFileSync(
-      path.join(root, 'pnpm-workspace.yaml'),
-      "packages:\n  - 'apps/*'\n  - 'packages/*'\n",
-    );
-    writeJson(root, 'package.json', { name: build.packageName(), private: true });
+  it('allows two packages to share a directory basename', ({ expect }) => {
+    const flags = [build.packageName(), build.packageName()];
+    const root = createCollisionRepo(flags.map(flag => `@${build.packageName()}/${flag}`));
 
-    const sharedBasename = build.packageName();
-    for (const base of ['apps', 'packages']) {
-      const pkgDir = path.join(root, base, sharedBasename);
-      mkdirSync(path.join(pkgDir, 'src'), { recursive: true });
-      mkdirSync(path.join(pkgDir, 'test'));
-      writeJson(pkgDir, 'package.json', {
-        devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
-        name: build.scopedPackageName(),
-      });
-      writeFileSync(path.join(pkgDir, 'vitest.config.ts'), '');
-    }
+    const discovery = discoverWorkspace({ cwd: root });
+    const sections = generateCodecovSections(discovery);
+
+    expect(Object.keys(sections.flags).toSorted(localeComparer))
+      .toStrictEqual(flags.toSorted(localeComparer));
+  });
+
+  it('throws when two packages share an unscoped name', ({ expect }) => {
+    const shared = build.packageName();
+    const root = createCollisionRepo([
+      `@${build.packageName()}/${shared}`,
+      `@${build.packageName()}/${shared}`,
+    ]);
 
     const discovery = discoverWorkspace({ cwd: root });
 
-    const pattern = /Duplicate package directory basenames/v;
-
-    expect(() => generateCodecovSections(discovery)).toThrow(pattern);
+    expect(() => generateCodecovSections(discovery)).toThrow(
+      new RegExp(`Duplicate Codecov flag names: ${shared}`, 'v'),
+    );
   });
 });

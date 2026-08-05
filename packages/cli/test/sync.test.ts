@@ -27,6 +27,8 @@ const silentLogger = createLogger(silentSink, silentSink);
 interface ConsumerPackage {
   readonly basename: string;
   readonly dir: string;
+  /** Codecov flag/component name: the unscoped manifest name. */
+  readonly flag: string;
   readonly name: string;
 }
 
@@ -39,9 +41,12 @@ interface ConsumerProject {
 const createConsumerProject = (): ConsumerProject => {
   const root = createTempDir();
   const appBasename = build.packageName();
-  const appName = build.scopedPackageName();
+  /* Directory basename and unscoped manifest name are deliberately distinct. */
+  const appFlag = build.packageName();
+  const appName = `@${build.packageName()}/${appFlag}`;
   const libBasename = build.packageName();
-  const libName = build.scopedPackageName();
+  const libFlag = build.packageName();
+  const libName = `@${build.packageName()}/${libFlag}`;
 
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
@@ -91,8 +96,8 @@ const createConsumerProject = (): ConsumerProject => {
   writeFileSync(path.join(libDir, 'eslint.config.ts'), '');
 
   return {
-    app: { basename: appBasename, dir: appDir, name: appName },
-    lib: { basename: libBasename, dir: libDir, name: libName },
+    app: { basename: appBasename, dir: appDir, flag: appFlag, name: appName },
+    lib: { basename: libBasename, dir: libDir, flag: libFlag, name: libName },
     root,
   };
 };
@@ -266,7 +271,8 @@ describe.concurrent(runSync, () => {
 
     const content = readFileSync(codecovPath, 'utf8');
 
-    expect(content).toContain(`${app.basename}:`);
+    expect(content).toContain(`${app.flag}:`);
+    expect(content).not.toContain(`${app.basename}:`);
     expect(content).toContain('carryforward');
   });
 

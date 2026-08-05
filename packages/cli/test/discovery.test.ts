@@ -12,6 +12,25 @@ const writeFile = (dir: string, name: string, content = ''): void => {
 };
 
 describe.concurrent(discoverPackage, () => {
+  it('exposes the manifest name', ({ expect }) => {
+    const dir = createTempDir();
+    const name = build.scopedPackageName();
+    writeJson(dir, 'package.json', { name });
+
+    const result = discoverPackage(dir);
+
+    expect(result).toHaveProperty('name', name);
+  });
+
+  it('falls back to the directory basename when the manifest has no name', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+
+    const result = discoverPackage(dir);
+
+    expect(result).toHaveProperty('name', path.basename(dir));
+  });
+
   it('detects test directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
