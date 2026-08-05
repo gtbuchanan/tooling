@@ -10,7 +10,7 @@ import { describe, it } from 'vitest';
  * turbo.json snapshot: turbo aborts the whole run when a task in `dependsOn`
  * resolves to no definition, and silently restores nothing when a cached
  * task declares no outputs. `gtb turbo` is used rather than turbo directly
- * so the Android/Termux escape hatch applies.
+ * so its PATH normalization applies.
  */
 
 const jsonIndent = 2;

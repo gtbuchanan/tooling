@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (PATH normalization, plus Android/Termux setup), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph, unable to spawn child process, turbo on Termux.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -46,11 +46,14 @@ scripts are unaffected: they call `gtb task <name>` and never turbo.
 `gtb verify` reports any root script that shadows an aggregate, so a
 repo synced before this rule landed is told which scripts to delete.
 
-`gtb turbo` is a thin pass-through to `turbo` on every supported
-platform. On Android (`process.platform === 'android'`) it resolves
-the global turbo binary installed via Termux's package registry
-(`$PREFIX/bin/turbo`) and execs it directly, bypassing the
-node_modules launcher (which rejects the platform upfront). See
+`gtb turbo` runs `turbo` with every PATH entry rewritten to an absolute
+path first. Turbo resolves the package manager against PATH from the
+directory it was invoked in and keeps the path that search produced,
+then runs each task with that package's directory as the cwd — so a
+match from a relative entry is re-interpreted against the child's
+directory and the spawn fails. pnpm always prepends a relative
+`./node_modules/.bin`, which matters wherever a bin named after the
+package manager lives there. See
 [Android-Termux setup](#android-termux-setup) below.
 
 `pnpm verify`, `pnpm prepare`, and `pnpm run gtb <cmd>` invoke the CLI directly.
@@ -155,29 +158,27 @@ Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The
 
 ## Android-Termux setup
 
-Two issues are caused by Termux's Node reporting `process.platform === 'android'`; a third (memory pressure) is unrelated and applies to any low-memory host. Native Android support upstream was declined in [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616), so `gtb turbo` ships the workaround instead.
+Two issues are specific to Termux — getting a turbo binary that runs, and getting it to spawn `pnpm`; a third (memory pressure) is unrelated and applies to any low-memory host.
 
-**1. Node_modules launcher rejects android.** The launcher in `node_modules/.bin/turbo` exits early when `process.platform === 'android'`, and pnpm filters `@turbo/<os>-<arch>` optional dependencies by host platform so none of the bundled platform binaries are installed either. Install the native turbo from Termux's package registry instead:
+**1. Getting a turbo that runs.** Turbo 2.10.8 ships the `linux-arm64` binary under `os: ["android", "linux"]` ([vercel/turborepo#12735](https://github.com/vercel/turborepo/pull/12735), reversing the 2023 decline in [#5616](https://github.com/vercel/turborepo/issues/5616)), so pnpm installs a platform binary on Termux and the `node_modules/.bin/turbo` launcher starts normally. Nothing special is required beyond depending on turbo `^2.10.8`.
 
-```sh
-pkg install turbo
-```
+Below that version the launcher exits early on `process.platform === 'android'` and pnpm installs no `@turbo/<os>-<arch>` binary at all; the workaround was a Termux-packaged turbo (`pkg install turbo`) invoked directly. If you meet a repo pinned to an older turbo, bump it rather than reviving the escape hatch.
 
-That puts a Bionic-built `turbo` at `$PREFIX/bin/turbo` (typically `/data/data/com.termux/files/usr/bin/turbo`). `gtb turbo` resolves it directly via `$PREFIX` (with the standard prefix as fallback) and execs it, bypassing the node_modules launcher entirely.
+**2. Turbo child-process spawn ENOENT.** Termux has no `/usr/bin/env`, so a binary that `execve`s `pnpm` hits its literal `#!/usr/bin/env node` shebang and fails. Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites those shebangs, but `LD_PRELOAD` is a dynamic-loader feature and the npm-distributed turbo is statically linked (no `PT_INTERP`), so the rewriter never reaches it.
 
-**2. Turbo child-process spawn ENOENT (historically).** The npm-distributed Linux turbo binary is glibc-built, but Termux is Bionic. Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls — but the preload is Bionic-only, so it never loads into a glibc turbo. When such a turbo spawns `pnpm`, the kernel sees `#!/usr/bin/env node` and fails because Termux has no `/usr/bin/env`.
-
-The Termux-pkg turbo is Bionic-built, so the preload loads correctly and child-process spawns resolve `pnpm` without issue. `@gtbuchanan/pnpm-termux-shim` is retained defensively in case turbo reintroduces a glibc npm distribution, or another glibc binary in the graph needs to spawn `pnpm`. The shim is an `os: ["android"]`-filtered package whose `bin: { pnpm: ... }` entry has an absolute-path shebang; pnpm symlinks it into `<rootDir>/node_modules/.bin/pnpm` ahead of the system `pnpm` in PATH. On non-Android hosts it's filtered out at install — zero footprint.
-
-Add it as an `optionalDependencies` entry on the workspace root (so the bin lands in the root's `node_modules/.bin`, not nested under a transitive dep):
+The fix is `@gtbuchanan/pnpm-termux-shim`, an `os: ["android"]`-filtered package whose `bin: { pnpm: ... }` entry has an absolute-path shebang. Add it to the **workspace root** `optionalDependencies` — under pnpm's strict layout only the root's `node_modules/.bin/` is on turbo's PATH at spawn time:
 
 ```jsonc
 {
   "optionalDependencies": {
-    "@gtbuchanan/pnpm-termux-shim": "^0.1.0",
+    "@gtbuchanan/pnpm-termux-shim": "^0.1.1",
   },
 }
 ```
+
+On non-Android hosts it's filtered out at install — zero footprint.
+
+Installing the shim is what makes `gtb turbo`'s PATH normalization load-bearing: it puts a `pnpm` inside the relative `./node_modules/.bin` entry pnpm prepends, and turbo carries that relative match into each task's package directory, where it no longer resolves. Symptom is `unable to spawn child process: No such file or directory (os error 2)` on every non-root task. Running turbo through `gtb turbo` (which every generated root script does) resolves it; invoking `turbo` directly from a `pnpm run` script reintroduces it.
 
 **3. Memory-bound concurrency for heavy aggregates.** Unrelated to `process.platform`: phones typically have 2–4GB free RAM under load. Turbo's default `--concurrency=10` is fine for `check` (typecheck + lint + fast tests fan out narrowly under the dependency graph). It is **not** fine for `build`, `test:slow`, or `test:e2e`, which fork their own vitest worker pools per task — `--concurrency=2` already crashed the OS in measurement. Run heavy aggregates with `--concurrency=1` on memory-constrained devices:
 

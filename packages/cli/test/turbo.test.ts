@@ -1,146 +1,75 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { describe, it, vi } from 'vitest';
-import { type TurboInvocation, planTurboInvocation } from '#src/commands/root/turbo.js';
+import { describe, it } from 'vitest';
+import { withAbsolutePathEntries } from '#src/commands/root/turbo.js';
 
-interface PrefixFixture {
-  readonly prefix: string;
-  readonly turboBin: string;
-  readonly [Symbol.dispose]: () => void;
-}
+const cwd = path.resolve('/repo');
+const join = (...segments: readonly string[]): string => path.join(cwd, ...segments);
+const entriesOf = (value: string | undefined): readonly string[] =>
+  (value ?? '').split(path.delimiter);
 
-const createPrefixFixture = (): PrefixFixture => {
-  const prefix = mkdtempSync(path.join(tmpdir(), 'gtb-turbo-test-'));
-  return {
-    prefix,
-    turboBin: path.join(prefix, 'bin', 'turbo'),
-    [Symbol.dispose]: () => {
-      rmSync(prefix, { force: true, recursive: true });
-    },
-  };
-};
+describe.concurrent(withAbsolutePathEntries, () => {
+  it('resolves a relative entry against the given directory', ({ expect }) => {
+    const env = withAbsolutePathEntries({ PATH: './node_modules/.bin' }, cwd);
 
-const baseOptions = {
-  rawArgs: ['run', 'build'] as const,
-};
-
-const stubResolver = (resolved?: string) => (): string | undefined => resolved;
-
-/** Narrows a {@link TurboInvocation} to the error variant or throws. */
-function assertErrorPlan(
-  plan: TurboInvocation,
-): asserts plan is Extract<TurboInvocation, { kind: 'error' }> {
-  if (plan.kind !== 'error') throw new Error(`expected error plan, got ${plan.kind}`);
-}
-
-describe.concurrent(planTurboInvocation, () => {
-  it('delegates to turbo on PATH for non-android platforms', ({ expect }) => {
-    const plan = planTurboInvocation({ ...baseOptions, platform: 'linux' });
-
-    expect(plan).toStrictEqual({
-      args: ['run', 'build'],
-      bin: 'turbo',
-      kind: 'spawn',
-    });
+    expect(env).toHaveProperty('PATH', join('node_modules', '.bin'));
   });
 
-  it('does not invoke the resolver for darwin', ({ expect }) => {
-    let wasCalled = false;
-    const plan = planTurboInvocation({
-      ...baseOptions,
-      platform: 'darwin',
-      resolveAndroidBinary: (): string | undefined => {
-        wasCalled = true;
-        return undefined;
-      },
-    });
+  it('leaves absolute entries untouched and preserves order', ({ expect }) => {
+    const usrBin = path.resolve('/usr/bin');
+    const value = ['./node_modules/.bin', usrBin].join(path.delimiter);
 
-    expect(plan.kind).toBe('spawn');
-    expect(wasCalled).toBe(false);
+    const env = withAbsolutePathEntries({ PATH: value }, cwd);
+
+    expect(entriesOf(env['PATH'])).toStrictEqual([join('node_modules', '.bin'), usrBin]);
   });
 
-  it('does not invoke the resolver for win32', ({ expect }) => {
-    let wasCalled = false;
-    const plan = planTurboInvocation({
-      ...baseOptions,
-      platform: 'win32',
-      resolveAndroidBinary: (): string | undefined => {
-        wasCalled = true;
-        return undefined;
-      },
-    });
+  it('resolves parent-relative entries', ({ expect }) => {
+    const env = withAbsolutePathEntries({ PATH: '../shared/bin' }, cwd);
 
-    expect(plan.kind).toBe('spawn');
-    expect(wasCalled).toBe(false);
+    expect(env).toHaveProperty('PATH', path.resolve(cwd, '..', 'shared', 'bin'));
   });
 
-  it('uses the resolved global turbo binary on android', ({ expect }) => {
-    const plan = planTurboInvocation({
-      ...baseOptions,
-      platform: 'android',
-      resolveAndroidBinary: stubResolver(
-        '/data/data/com.termux/files/usr/bin/turbo',
-      ),
-    });
+  /*
+   * POSIX reads an empty entry as the current directory, which carries
+   * the same cwd-sensitivity as `./x` — so it resolves too.
+   */
+  it('resolves an empty entry to the given directory', ({ expect }) => {
+    const usrBin = path.resolve('/usr/bin');
 
-    expect(plan).toStrictEqual({
-      args: ['run', 'build'],
-      bin: '/data/data/com.termux/files/usr/bin/turbo',
-      kind: 'spawn',
-    });
+    const env = withAbsolutePathEntries({ PATH: `${usrBin}${path.delimiter}` }, cwd);
+
+    expect(entriesOf(env['PATH'])).toStrictEqual([usrBin, cwd]);
   });
 
-  it('forwards raw args verbatim to the spawn plan', ({ expect }) => {
-    const plan = planTurboInvocation({
-      ...baseOptions,
-      platform: 'android',
-      rawArgs: ['run', 'build', '--filter=@scope/pkg', '--concurrency=1'],
-      resolveAndroidBinary: stubResolver('/fake/bin/turbo'),
-    });
+  it('preserves other environment variables', ({ expect }) => {
+    const env = withAbsolutePathEntries({ PATH: './bin', TURBO_TELEMETRY_DISABLED: '1' }, cwd);
 
-    expect(plan).toMatchObject({
-      args: ['run', 'build', '--filter=@scope/pkg', '--concurrency=1'],
-      kind: 'spawn',
-    });
+    expect(env).toHaveProperty('TURBO_TELEMETRY_DISABLED', '1');
   });
 
-  it('returns an error plan when the global turbo is missing on android', ({ expect }) => {
-    const plan = planTurboInvocation({
-      ...baseOptions,
-      platform: 'android',
-      resolveAndroidBinary: stubResolver(),
-    });
-    assertErrorPlan(plan);
+  it('returns the environment unchanged when no PATH is set', ({ expect }) => {
+    const env = withAbsolutePathEntries({ HOME: '/home/user' }, cwd);
 
-    expect(plan.message).toContain('pkg install turbo');
-    expect(plan.message).toContain('global turbo binary is not installed');
-  });
-});
-
-/*
- * Default-resolver tests stub $PREFIX, which is global state, so they
- * run serially (no `.concurrent`) and rely on vitest's `unstubEnvs`
- * setting to restore the env between cases.
- */
-describe('planTurboInvocation default android resolver', () => {
-  it('resolves $PREFIX/bin/turbo when the binary exists', ({ expect }) => {
-    using fixture = createPrefixFixture();
-    mkdirSync(path.dirname(fixture.turboBin), { recursive: true });
-    writeFileSync(fixture.turboBin, '');
-    vi.stubEnv('PREFIX', fixture.prefix);
-
-    const plan = planTurboInvocation({ ...baseOptions, platform: 'android' });
-
-    expect(plan).toMatchObject({ bin: fixture.turboBin, kind: 'spawn' });
+    expect(env).toStrictEqual({ HOME: '/home/user' });
   });
 
-  it('returns an error plan when $PREFIX/bin/turbo is missing', ({ expect }) => {
-    using fixture = createPrefixFixture();
-    vi.stubEnv('PREFIX', fixture.prefix);
+  /*
+   * Windows spells the variable `Path`. Writing a second `PATH` key
+   * would leave the child with two competing definitions, so the
+   * original casing is rewritten in place.
+   */
+  it('rewrites the existing key casing rather than adding a duplicate', ({ expect }) => {
+    const env = withAbsolutePathEntries({ Path: './bin' }, cwd);
 
-    const plan = planTurboInvocation({ ...baseOptions, platform: 'android' });
+    expect(Object.keys(env)).toStrictEqual(['Path']);
+    expect(env).toHaveProperty('Path', join('bin'));
+  });
 
-    expect(plan.kind).toBe('error');
+  it('does not mutate the source environment', ({ expect }) => {
+    const source = { PATH: './bin' };
+
+    withAbsolutePathEntries(source, cwd);
+
+    expect(source).toStrictEqual({ PATH: './bin' });
   });
 });

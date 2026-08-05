@@ -13,21 +13,22 @@
     },
     {
       "expectations": [
-        "Recommends running `pkg install turbo` to install the native turbo from the Termux package registry",
-        "Explains that the node_modules launcher rejects `process.platform === 'android'` upfront, and pnpm filters `@turbo/<os>-<arch>` optional deps by host platform so none of the bundled platform binaries are installed either",
-        "Notes that `gtb turbo` resolves `$PREFIX/bin/turbo` (with `/data/data/com.termux/files/usr` as the standard fallback) and execs it directly, bypassing the launcher"
+        "Says `pkg install turbo` is no longer needed — turbo 2.10.8 publishes the linux-arm64 binary under `os: [\"android\", \"linux\"]`, so pnpm installs it and the node_modules launcher runs on Termux",
+        "Tells me to depend on turbo `^2.10.8` (bump rather than keep a Termux-packaged turbo)",
+        "Notes the npm turbo still needs `@gtbuchanan/pnpm-termux-shim` on the workspace root to spawn `pnpm`"
       ],
-      "expected_output": "Activates skill. Tells me to run `pkg install turbo` to install the native turbo from the Termux package registry. Explains that the node_modules launcher rejects `process.platform === 'android'` upfront, and pnpm filters `@turbo/<os>-<arch>` optional deps by host platform so none of the bundled binaries are installed either. After install the Bionic turbo lands at `$PREFIX/bin/turbo` and `gtb turbo` resolves it directly (honoring `$PREFIX`, with `/data/data/com.termux/files/usr` as fallback) and execs it, bypassing the launcher.",
+      "expected_output": "Activates skill. Explains that `pkg install turbo` is obsolete: turbo 2.10.8 (vercel/turborepo#12735) ships the `linux-arm64` binary under `os: [\"android\", \"linux\"]`, so pnpm installs a platform binary on Termux and `node_modules/.bin/turbo` starts normally — depend on turbo `^2.10.8`. Notes that the npm-distributed turbo still can't spawn Termux's `pnpm` on its own, so `@gtbuchanan/pnpm-termux-shim` belongs in the workspace root `optionalDependencies`.",
       "files": [],
       "id": 2,
-      "prompt": "When I run `gtb turbo run build` on Termux it says `the global turbo binary is not installed`. How do I fix that?"
+      "prompt": "I set up this repo on Termux a while back with `pkg install turbo`. Do I still need that, or can I just use the turbo from node_modules now?"
     },
     {
       "expectations": [
-        "Identifies the cause: glibc turbo's `#!/usr/bin/env node` shebang fails because Termux's LD_PRELOAD shebang shim is Bionic-only and never loads into the glibc turbo, while /usr/bin/env doesn't exist in Termux",
-        "Recommends adding `@gtbuchanan/pnpm-termux-shim` as an `optionalDependencies` entry on the workspace root (not a sub-package)"
+        "Identifies the cause: Termux has no `/usr/bin/env`, and the `LD_PRELOAD` shebang rewriter never reaches the statically linked npm turbo (no dynamic loader involved), so `#!/usr/bin/env node` fails",
+        "Recommends adding `@gtbuchanan/pnpm-termux-shim` as an `optionalDependencies` entry on the workspace root (not a sub-package)",
+        "Notes that turbo must be invoked through `gtb turbo`, whose PATH normalization keeps the shim reachable once it occupies pnpm's relative `./node_modules/.bin` entry"
       ],
-      "expected_output": "Activates skill. Explains that the Linux turbo binary is glibc-built but Termux is Bionic; Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls, but the preload is Bionic-only and doesn't load into glibc turbo, so the kernel sees `#!/usr/bin/env node` and fails because `/usr/bin/env` doesn't exist. Fix: add `@gtbuchanan/pnpm-termux-shim` as an `optionalDependencies` entry on the workspace root so its absolute-path `bin/pnpm` lands in `<rootDir>/node_modules/.bin/pnpm` ahead of the system pnpm.",
+      "expected_output": "Activates skill. Explains that Termux has no `/usr/bin/env`, so pnpm's `#!/usr/bin/env node` shebang fails on `execve`; Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` normally rewrites those, but it's a dynamic-loader feature and the npm turbo is statically linked, so it never loads. Fix: add `@gtbuchanan/pnpm-termux-shim` as an `optionalDependencies` entry on the workspace root so its absolute-path `bin/pnpm` lands in `<rootDir>/node_modules/.bin/pnpm`, and invoke turbo through `gtb turbo` so PATH entries are absolute — otherwise turbo matches the shim via pnpm's relative `./node_modules/.bin` and loses it when each task spawns from its own package directory.",
       "files": [],
       "id": 3,
       "prompt": "On Termux turbo fails to spawn pnpm with ENOENT. What's going on and how do I fix it?"

@@ -24,7 +24,7 @@ This reconciles `turbo.json`, tsconfigs, `package.json` scripts, and
 or changing capabilities.
 
 Run the pipeline via the `gtb turbo` wrapper (generated root scripts
-delegate to it so Android/Termux users get a transparent escape hatch):
+delegate to it so its PATH normalization applies everywhere):
 
 ```sh
 pnpm exec gtb turbo run check   # compile → lint + test:fast (parallel)
@@ -37,30 +37,42 @@ single-package repo (where the root _is_ the package) gets none: a root
 script named after an aggregate makes turbo re-enter itself, so the
 `gtb turbo run` form above is the entry point there.
 
-`gtb turbo` is a thin pass-through to `turbo` on every supported
-platform. On Android, `process.platform === 'android'` causes the
-node_modules launcher to refuse to start; the wrapper resolves the
-native turbo from Termux's package registry and execs it directly.
-Install it once per Termux environment:
+`gtb turbo` runs `turbo` with one adjustment: every PATH entry is
+rewritten to an absolute path first. Turbo resolves the package manager
+binary against PATH from the directory it was invoked in, keeps the path
+that search produced, then runs each task with that package's directory
+as the cwd. A match from a relative entry is therefore a relative
+program path, re-interpreted against the child's directory — so turbo
+reports `unable to spawn child process` instead of falling through to a
+later absolute entry. pnpm always prepends a relative
+`./node_modules/.bin`, so any bin named after the package manager that
+lives there is affected.
 
-```sh
-pkg install turbo
+That is the layout on Termux/Android, where
+[`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim) supplies a working
+`pnpm`. Add the shim to your **workspace root** `package.json`
+`optionalDependencies` (not inside any individual package — under pnpm
+strict layout, only the root's `node_modules/.bin/` is on turbo's PATH
+at spawn time):
+
+```jsonc
+{
+  "optionalDependencies": {
+    "@gtbuchanan/pnpm-termux-shim": "^0.1.1",
+  },
+}
 ```
 
-That puts a Bionic-built `turbo` at `$PREFIX/bin/turbo` (typically
-`/data/data/com.termux/files/usr/bin/turbo`), which `gtb turbo`
-resolves and execs.
+The shim's `os: ["android"]` filter keeps it off non-Android hosts,
+where nothing named `pnpm` occupies `node_modules/.bin` and the
+normalization is a no-op.
 
-The Termux-pkg turbo is Bionic-built, so its child-process spawns
-honor Termux's `LD_PRELOAD` shebang rewriter and resolve
-`#!/usr/bin/env <name>` correctly.
-[`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim) is retained
-defensively in case turbo reintroduces a glibc npm distribution, or
-another glibc binary in the graph needs to spawn `pnpm`. Add it to
-your **workspace root** `package.json` `optionalDependencies` (not
-inside any individual package — under pnpm strict layout, only the
-root's `node_modules/.bin/` is on turbo's PATH at spawn time). The
-shim's `os: ["android"]` filter keeps it off non-Android hosts.
+Turbo runs natively on Termux as of
+[vercel/turborepo#12735](https://github.com/vercel/turborepo/pull/12735)
+(turbo 2.10.8), which ships the `linux-arm64` binary under
+`os: ["android", "linux"]`. Earlier versions require the Termux-packaged
+turbo (`pkg install turbo`) instead — the npm launcher refuses to start
+on Android and pnpm installs no platform binary.
 
 The `prepare` script must be declared so pnpm runs it on install to
 sync skills from installed packages:
@@ -92,7 +104,7 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 | --------- | ------------------------------------------------------- |
 | `verify`  | Validate generated config against workspace state       |
 | `sync`    | Reconcile `turbo.json`, tsconfigs, scripts, codecov.yml |
-| `turbo`   | Run turbo (with an Android escape hatch)                |
+| `turbo`   | Run turbo with cwd-independent PATH entries             |
 | `prepare` | Sync skills from installed packages                     |
 
 ### Task leaves (`gtb task <name>`)

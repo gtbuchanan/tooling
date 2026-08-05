@@ -47,6 +47,9 @@
     "valibot": "catalog:",
     "vitest": "catalog:"
   },
+  "optionalDependencies": {
+    "@gtbuchanan/pnpm-termux-shim": "catalog:"
+  },
   "packageManager": "pnpm@11.17.0",
   "engines": {
     "node": ">=24.0.0",
