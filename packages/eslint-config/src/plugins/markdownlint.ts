@@ -26,7 +26,10 @@ const coveredByEslintMarkdown = {
  * conflict with Prettier formatting (handled by eslint-plugin-format).
  * md047 is also disabled because Prettier and pre-commit hooks handle
  * trailing newlines. md037 is added because Prettier reformats
- * spaced emphasis (`* x*` → `*x*`).
+ * spaced emphasis (`* x*` → `*x*`). md060 is added because Prettier
+ * aligns table columns while md060's own fixer forces compact pipes —
+ * the two autofixers oscillate until ESLint exhausts its fix passes,
+ * leaving tables half-formatted.
  */
 const prettierConflicts = {
   'blanks-around-fences': false, // md031
@@ -53,6 +56,7 @@ const prettierConflicts = {
   'ol-prefix': false, // md029
   'single-trailing-newline': false, // md047
   'strong-style': false, // md050
+  'table-column-style': false, // md060
   'ul-indent': false, // md007
 } as const;
 
