@@ -47,7 +47,7 @@ node = "24.18.1"
 # latest is a benign manual publish missing the provenance its CI releases had.
 "npm:renovate" = { trust_policy_excludes = [
   "@yarnpkg/libzip",
-], version = "43.265.1" }
+], version = "43.288.0" }
 pkl = "0.32.1"
 # Deliberately duplicates `packageManager` in package.json (turbo requires
 # that field). Renovate groups both bumps into one PR — see the "pnpm"
