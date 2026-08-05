@@ -160,6 +160,7 @@ describe.concurrent(configure, () => {
 
     expect(ruleConfig['line-length']).toBe(false);
     expect(ruleConfig['single-trailing-newline']).toBe(false);
+    expect(ruleConfig['table-column-style']).toBe(false);
   });
 
   it('ignores .changeset files for markdownlint', async ({ expect }) => {
