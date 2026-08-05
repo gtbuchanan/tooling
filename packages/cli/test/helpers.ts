@@ -10,8 +10,7 @@ import {
   mergeCodecovSections, mergePackageScripts, writeJsonFile,
 } from '#src/lib/file-writer.js';
 import { type Logger, createLogger } from '#src/lib/logger.js';
-import { unscopedName } from '#src/lib/manifest-sync.js';
-import { ManifestSchema } from '#src/lib/manifest.js';
+import { ManifestSchema, unscopedName } from '#src/lib/manifest.js';
 import { UnknownRecord } from '#src/lib/schemas.js';
 import {
   generateTsconfigBase, planTsconfigs, tsconfigBaseFileName,
