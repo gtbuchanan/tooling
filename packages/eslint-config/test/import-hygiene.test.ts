@@ -37,13 +37,21 @@ const ruleMessages = async (
   .filter(message => message.ruleId === ruleId);
 
 describe.concurrent('import hygiene', () => {
-  it('ships exactly one import-x config object', async ({ expect }) => {
-    const configs = await defaultConfigs;
-    const importConfigs = configs.filter(
-      config => Object.keys(config.rules ?? {}).some(id => id.startsWith('import-x/')),
-    );
+  it('leaves the resolution-based rules off', async ({ expect }) => {
+    /*
+     * These come from the recommended preset and are switched back off:
+     * TypeScript reports them itself, and leaving them on would make every
+     * lint resolve the full module graph.
+     */
+    const code = "import { a } from './nope.js';\n\nexport const b = a;\n";
+    const configs = await importOnlyConfigs();
+    const reported = new Linter()
+      .verify(code, configs, sourceFile)
+      .map(message => message.ruleId);
 
-    expect(importConfigs).toHaveLength(1);
+    expect(reported).not.toContain('import-x/no-unresolved');
+    expect(reported).not.toContain('import-x/namespace');
+    expect(reported).not.toContain('import-x/default');
   });
 
   it('reports a module imported twice in one file', async ({ expect }) => {
