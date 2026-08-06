@@ -287,7 +287,11 @@ depth lives in that plugin's own skill (where one exists).
   `@stylistic` instead.
 - **`@eslint-community/eslint-plugin-eslint-comments`** — suppression
   comment hygiene
-- **`eslint-plugin-import-x`** — import ordering
+- **`eslint-plugin-import-x`** — import ordering, plus hygiene rules
+  (`no-duplicates`, `no-self-import`, `no-mutable-exports`, …). The
+  resolution-based correctness rules (`no-unresolved`, `named`, …) stay
+  off: TypeScript already reports them and they force full module
+  resolution per lint.
 - **`@eslint/json`** — JSON file linting
 - **`eslint-plugin-pnpm`** — workspace validation (gated by the `pnpm`
   option)

@@ -61,7 +61,7 @@ export default configure({
 - `eslint-plugin-promise` — Promise best practices
 - `@stylistic/eslint-plugin` — Formatting rules (semicolons, quotes, etc.)
 - `@eslint-community/eslint-plugin-eslint-comments` — Suppression comment hygiene
-- `eslint-plugin-import-x` — Import ordering
+- `eslint-plugin-import-x` — Import ordering and hygiene
 - `@eslint/json` — JSON file linting
 - `@vitest/eslint-plugin` — Vitest test-specific rules
 - `eslint-plugin-n` — Node.js best practices
