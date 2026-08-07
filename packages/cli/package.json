@@ -27,6 +27,8 @@
     "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "dependencies": {
+    "@microsoft/eslint-formatter-sarif": "catalog:",
+    "@microsoft/sarif-multitool": "catalog:",
     "citty": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",
@@ -42,14 +44,19 @@
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
     "@types/cross-spawn": "catalog:",
-    "@types/hosted-git-info": "catalog:"
+    "@types/hosted-git-info": "catalog:",
+    "eslint": "catalog:"
   },
   "peerDependencies": {
+    "eslint": "^10.0.0",
     "skills": "^1.5.1",
     "skills-npm": "^1.1.1",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "skills-npm": {
       "optional": true
     }

@@ -1,0 +1,63 @@
+---
+env:
+  # GitHub Actions has no TTY, so force color; Actions renders the ANSI.
+  FORCE_COLOR: '1'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  seed:
+    name: Lint Baseline Seed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+
+      # Produce this commit's SARIF logs. `turbo-run` wires up the turbo
+      # remote cache, so the lint dedupes against the CI workflow's lint
+      # run of the same commit.
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+        with:
+          task: lint
+
+      # `pnpm-tasks` restores node_modules for `gtb sarif baseline`, since
+      # turbo-run skips install on a full lint cache hit.
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
+      - name: Snapshot baselines
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          sarif baseline
+
+      - uses: actions/cache/save@v6
+        with:
+          key: lint-baseline-${{ github.sha }}
+          path: |
+            **/dist/sarif/base/**
+            !**/node_modules/**
+            dist/sarif/base.ref
+
+name: Lint Baseline
+
+# Reusable: seed the cross-PR lint baseline cache from a default-branch
+# commit. Any future PR's merge base is that commit itself, so its
+# baseline is just the commit's own lint output — snapshot it via
+# `gtb sarif baseline` and save it keyed on the SHA. Caches created on
+# the default branch are readable from every PR, so the
+# `lint-regression.yml` compare restores it and skips merge-base
+# production entirely. The gate stays self-sufficient without it — a
+# cache miss just means the compare lints the merge base itself.
+on:
+  workflow_call:
+    inputs:
+      gtb-from-source:
+        default: false
+        description: >-
+          Run gtb from the workspace source (`pnpm run gtb`) instead of
+          the installed bin (`pnpm exec gtb`). Set true only by the repo
+          that vendors `@gtbuchanan/cli` as a workspace package (tooling
+          itself). Consumers leave it false.
+        type: boolean
+
+permissions:
+  contents: read

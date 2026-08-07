@@ -1,5 +1,12 @@
 ---
 allow-dependencies-licenses:
+  # jschardet LGPL-2.1-or-later: transitive dep of
+  # @microsoft/eslint-formatter-sarif, used only by its
+  # SARIF_ESLINT_EMBED feature (which the gtb lint pipeline never
+  # enables). Unmodified and installed separately from the registry —
+  # the clean LGPL case. Name-scoped so LGPL stays gated elsewhere;
+  # retire if sarif-sdk makes its embed deps optional.
+  - pkg:npm/jschardet
   # lightningcss MPL-2.0 (dev-only build tool): excluded by name rather
   # than allow-listing MPL globally, so future MPL deps still get gated.
   # All platform binaries enumerated (no wildcard support).
