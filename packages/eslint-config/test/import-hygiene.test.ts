@@ -37,21 +37,42 @@ const ruleMessages = async (
   .filter(message => message.ruleId === ruleId);
 
 describe.concurrent('import hygiene', () => {
-  it('leaves the resolution-based rules off', async ({ expect }) => {
+  it('leaves every rule the preset enables but this config disables off', async ({ expect }) => {
     /*
-     * These come from the recommended preset and are switched back off:
-     * TypeScript reports them itself, and leaving them on would make every
-     * lint resolve the full module graph.
+     * Asserted against the resolved severities rather than lint output: a
+     * source snippet only exercises the rules it happens to trigger, so
+     * `not.toContain` would pass for the others no matter how they are set.
      */
-    const code = "import { a } from './nope.js';\n\nexport const b = a;\n";
     const configs = await importOnlyConfigs();
-    const reported = new Linter()
-      .verify(code, configs, sourceFile)
-      .map(message => message.ruleId);
+    const effective = configs.reduce<Record<string, unknown>>(
+      (merged, config) => ({ ...merged, ...config.rules }),
+      {},
+    );
 
-    expect(reported).not.toContain('import-x/no-unresolved');
-    expect(reported).not.toContain('import-x/namespace');
-    expect(reported).not.toContain('import-x/default');
+    expect(effective).toMatchObject({
+      // Redundant with TypeScript, and each forces full module resolution
+      'import-x/default': 'off',
+      'import-x/export': 'off',
+      'import-x/named': 'off',
+      'import-x/namespace': 'off',
+      'import-x/no-unresolved': 'off',
+      // Flag the `import plugin from 'x'` then `plugin.configs` idiom
+      'import-x/no-named-as-default': 'off',
+      'import-x/no-named-as-default-member': 'off',
+    });
+  });
+
+  it('does not report an unresolvable import', async ({ expect }) => {
+    /*
+     * The behavioural half of the rule above: this source genuinely triggers
+     * `no-unresolved` when enabled, so the assertion can fail.
+     */
+    const messages = await ruleMessages(
+      "import { a } from './nope.js';\n\nexport const b = a;\n",
+      'import-x/no-unresolved',
+    );
+
+    expect(messages).toStrictEqual([]);
   });
 
   it('reports a module imported twice in one file', async ({ expect }) => {
