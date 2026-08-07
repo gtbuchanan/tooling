@@ -290,6 +290,9 @@ importers:
       '@types/hosted-git-info':
         specifier: 'catalog:'
         version: 3.0.5
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/eslint-config:
@@ -394,6 +397,9 @@ importers:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/eslint-plugin-agent-skills:
@@ -423,6 +429,9 @@ importers:
       '@types/mdast':
         specifier: 'catalog:'
         version: 4.0.4
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/eslint-plugin-markdownlint:
@@ -437,6 +446,9 @@ importers:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/eslint-plugin-md-frontmatter:
@@ -454,6 +466,9 @@ importers:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/eslint-plugin-yamllint:
@@ -468,6 +483,9 @@ importers:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/hk-config:
@@ -490,6 +508,9 @@ importers:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:../vitest-config
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/pnpm-termux-shim:
@@ -520,6 +541,9 @@ importers:
       '@types/cross-spawn':
         specifier: 'catalog:'
         version: 6.0.6
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/tsconfig:
     dependencies:
@@ -539,6 +563,12 @@ importers:
       '@tsconfig/strictest':
         specifier: 'catalog:'
         version: 2.0.8
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.5)(@vitest/coverage-v8@4.1.10)(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
     publishDirectory: dist/source
 
   packages/vitest-config:
@@ -559,6 +589,9 @@ importers:
       '@gtbuchanan/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@6.0.3)
     publishDirectory: dist/source
 
 packages:

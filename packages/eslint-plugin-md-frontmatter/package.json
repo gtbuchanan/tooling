@@ -26,7 +26,8 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
-    "@gtbuchanan/vitest-config": "workspace:*"
+    "@gtbuchanan/vitest-config": "workspace:*",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "eslint": "^10.0.0"

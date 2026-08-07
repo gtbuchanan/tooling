@@ -29,7 +29,8 @@
     "@eslint/json": "catalog:",
     "@eslint/markdown": "catalog:",
     "@gtbuchanan/vitest-config": "workspace:*",
-    "@types/mdast": "catalog:"
+    "@types/mdast": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@eslint/json": "^2.0.0",

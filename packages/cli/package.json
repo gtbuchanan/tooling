@@ -42,7 +42,8 @@
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
     "@types/cross-spawn": "catalog:",
-    "@types/hosted-git-info": "catalog:"
+    "@types/hosted-git-info": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "skills": "^1.5.1",

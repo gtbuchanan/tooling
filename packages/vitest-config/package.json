@@ -31,7 +31,8 @@
   },
   "devDependencies": {
     "@faker-js/faker": "catalog:",
-    "@gtbuchanan/test-utils": "workspace:*"
+    "@gtbuchanan/test-utils": "workspace:*",
+    "valibot": "catalog:"
   },
   "peerDependencies": {
     "vitest": "^4.0.0"
