@@ -1,7 +1,9 @@
 import { defineCommand } from 'citty';
 import { run } from '../../lib/process.ts';
 
-/** Runs `tsc --noEmit` for type-checking with optional pass-through args. */
+/**
+ * Runs `tsc --noEmit` for type-checking with optional pass-through args.
+ */
 export const typecheckTs = defineCommand({
   meta: {
     description: 'Type-check TypeScript via `tsc --noEmit`',

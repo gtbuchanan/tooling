@@ -56,7 +56,9 @@ const reportUnwanted = (
   });
 };
 
-/** Requires or forbids `...` document end markers. */
+/**
+ * Requires or forbids `...` document end markers.
+ */
 export const documentEnd: Rule.RuleModule = {
   meta: {
     fixable: 'code',

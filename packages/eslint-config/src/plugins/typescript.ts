@@ -5,7 +5,9 @@ import type { PluginFactory, ResolvedOptions } from '../index.ts';
 
 // --- TypeScript rule overrides (on top of strictTypeChecked + stylisticTypeChecked) ---
 
-/** Rule overrides that apply to all script files (JS + TS). */
+/**
+ * Rule overrides that apply to all script files (JS + TS).
+ */
 const scriptRuleOverrides: Linter.Config = {
   files: [...scriptFiles],
   rules: {
@@ -43,7 +45,9 @@ const scriptRuleOverrides: Linter.Config = {
   },
 };
 
-/** Rule overrides that require TypeScript syntax (export type, : ReturnType, import type). */
+/**
+ * Rule overrides that require TypeScript syntax (export type, : ReturnType, import type).
+ */
 const tsOnlyRuleOverrides: Linter.Config = {
   files: [...tsOnlyFiles],
   rules: {
@@ -61,7 +65,9 @@ const tsOnlyRuleOverrides: Linter.Config = {
   },
 };
 
-/** Rule overrides for files the .cjs extension forces into CommonJS. */
+/**
+ * Rule overrides for files the .cjs extension forces into CommonJS.
+ */
 const cjsRuleOverrides: Linter.Config = {
   files: [...cjsFiles],
   rules: {
@@ -70,7 +76,9 @@ const cjsRuleOverrides: Linter.Config = {
   },
 };
 
-/** Resolves TypeScript parser options from the shared config options. */
+/**
+ * Resolves TypeScript parser options from the shared config options.
+ */
 export const resolveParserOptions = (
   options: ResolvedOptions,
 ): Linter.ParserOptions => ({

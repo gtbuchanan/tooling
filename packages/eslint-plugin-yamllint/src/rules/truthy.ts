@@ -35,7 +35,9 @@ const schema = [
   },
 ];
 
-/** Flags unquoted YAML 1.1 boolean-like values that may be silently coerced. */
+/**
+ * Flags unquoted YAML 1.1 boolean-like values that may be silently coerced.
+ */
 export const truthy: Rule.RuleModule = {
   meta: {
     fixable: 'code',

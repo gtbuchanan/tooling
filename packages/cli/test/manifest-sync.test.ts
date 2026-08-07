@@ -6,7 +6,9 @@ import { discoverWorkspace } from '#src/lib/discovery.js';
 import { checkManifests, generateManifests } from '#src/lib/manifest-sync.js';
 import { createPklWorkspace, createTempDir, pklProjectSource, writeJson } from './helpers.ts';
 
-/** Scaffolds a single-package repo (root = package) with a publishable Pkl package. */
+/**
+ * Scaffolds a single-package repo (root = package) with a publishable Pkl package.
+ */
 const writePublishablePkg = (
   root: string,
   manifest: Record<string, unknown>,

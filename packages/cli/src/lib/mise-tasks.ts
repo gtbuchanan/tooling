@@ -5,7 +5,9 @@ import * as v from 'valibot';
 import type { WorkspaceDiscovery } from './discovery.ts';
 import { StringArray } from './schemas.ts';
 
-/** Filename of the generated, fully-owned mise tasks include. */
+/**
+ * Filename of the generated, fully-owned mise tasks include.
+ */
 export const miseTasksFileName = 'mise.tasks.toml';
 
 /*

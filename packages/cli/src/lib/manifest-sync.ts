@@ -16,17 +16,27 @@ import { readManifest, readParsedManifest } from './workspace.ts';
  * drift, and `gtb verify` asserts it.
  */
 export interface ManifestFile {
-  /** Rendered file content (compared verbatim by verify). */
+  /**
+   * Rendered file content (compared verbatim by verify).
+   */
   readonly content: string;
-  /** Absolute path of the manifest file. */
+  /**
+   * Absolute path of the manifest file.
+   */
   readonly filePath: string;
 }
 
-/** Cross-package context shared by every writer. */
+/**
+ * Cross-package context shared by every writer.
+ */
 export interface ManifestContext {
-  /** Workspace is a monorepo (vs a single root package). */
+  /**
+   * Workspace is a monorepo (vs a single root package).
+   */
   readonly isMonorepo: boolean;
-  /** Repo URL minus scheme, e.g. `github.com/gtbuchanan/tooling`. */
+  /**
+   * Repo URL minus scheme, e.g. `github.com/gtbuchanan/tooling`.
+   */
   readonly repoPath: string;
 }
 
@@ -36,11 +46,17 @@ export interface ManifestContext {
  * generates a do-not-edit `PklProject`.
  */
 export interface ManifestWriter {
-  /** True when this writer applies to the package. */
+  /**
+   * True when this writer applies to the package.
+   */
   readonly detect: (pkg: PackageCapabilities) => boolean;
-  /** Discriminator for the kind (e.g. `pkl`). */
+  /**
+   * Discriminator for the kind (e.g. `pkl`).
+   */
   readonly kind: string;
-  /** Produces the manifest file for the package. */
+  /**
+   * Produces the manifest file for the package.
+   */
   readonly render: (pkg: PackageCapabilities, ctx: ManifestContext) => ManifestFile;
 }
 
@@ -76,7 +92,9 @@ const pklWriter: ManifestWriter = {
   },
 };
 
-/** Registered manifest writers (one per package kind). */
+/**
+ * Registered manifest writers (one per package kind).
+ */
 const manifestWriters: readonly ManifestWriter[] = [pklWriter];
 
 /**
@@ -97,7 +115,9 @@ const resolveRepoPath = (rootDir: string): string => {
   return `${info.domain}/${info.user}/${info.project}`;
 };
 
-/** Generates every native manifest the workspace's packages require. */
+/**
+ * Generates every native manifest the workspace's packages require.
+ */
 export const generateManifests = (
   discovery: WorkspaceDiscovery,
 ): readonly ManifestFile[] => {

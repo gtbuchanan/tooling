@@ -3,7 +3,9 @@ import type { PluginFactory } from '../index.ts';
 
 // --- YAML ---
 
-/** YAML linting configs with key sorting and stricter value rules. */
+/**
+ * YAML linting configs with key sorting and stricter value rules.
+ */
 const plugin: PluginFactory = () => [
   ...ymlConfigs['flat/recommended'],
   ...ymlConfigs['flat/prettier'],

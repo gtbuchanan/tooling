@@ -17,5 +17,7 @@ export const skillFrontmatterHosts = {
   'claude-code': claudeCodeFrontmatterExtensions,
 } as const satisfies Readonly<Record<string, SkillFrontmatterExtensions>>;
 
-/** Name of an agent host this package ships extensions for. */
+/**
+ * Name of an agent host this package ships extensions for.
+ */
 export type SkillFrontmatterHost = keyof typeof skillFrontmatterHosts;

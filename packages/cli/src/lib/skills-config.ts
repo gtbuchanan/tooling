@@ -4,7 +4,9 @@ import { pathToFileURL } from 'node:url';
 import * as v from 'valibot';
 import { StringArray } from './schemas.ts';
 
-/** Filename of the workspace-root skills-npm configuration. */
+/**
+ * Filename of the workspace-root skills-npm configuration.
+ */
 export const skillsConfigFilename = 'skills-npm.config.ts';
 
 const SkillsConfigDefaultSchema = v.object({

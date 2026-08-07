@@ -24,7 +24,9 @@ interface Stub {
   readonly sha: string;
 }
 
-/** Builds injected deps; `exists` decides whether `gh release view` succeeds. */
+/**
+ * Builds injected deps; `exists` decides whether `gh release view` succeeds.
+ */
 const stubDeps = (
   cwd: string,
   options: { exists: boolean; logger?: GithubReleaseDeps['logger'] },

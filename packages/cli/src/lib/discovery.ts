@@ -11,17 +11,29 @@ import {
   resolveWorkspace,
 } from './workspace.ts';
 
-/** Capabilities detected for a single package. */
+/**
+ * Capabilities detected for a single package.
+ */
 export interface PackageCapabilities {
-  /** Resolved `include` directories from tsconfig.build.json (published packages only). */
+  /**
+   * Resolved `include` directories from tsconfig.build.json (published packages only).
+   */
   readonly buildIncludes: readonly string[];
-  /** Package directory path. */
+  /**
+   * Package directory path.
+   */
   readonly dir: string;
-  /** Has a `bin/` directory. */
+  /**
+   * Has a `bin/` directory.
+   */
   readonly hasBin: boolean;
-  /** Has an `e2e/` directory. */
+  /**
+   * Has an `e2e/` directory.
+   */
   readonly hasE2e: boolean;
-  /** Has one or more `generate:*` scripts in package.json. */
+  /**
+   * Has one or more `generate:*` scripts in package.json.
+   */
   readonly hasGenerate: boolean;
   /**
    * Has hand-authored Pkl package source — a `*.pkl` file other than the hk
@@ -39,25 +51,45 @@ export interface PackageCapabilities {
    * Drives `PklProject` version-stamping, `pack:pkl`, and `gtb publish`.
    */
   readonly hasPklPackage: boolean;
-  /** Names of `generate:*` scripts found in package.json. */
+  /**
+   * Names of `generate:*` scripts found in package.json.
+   */
   readonly generateScripts: readonly string[];
-  /** Has ESLint config or `@gtbuchanan/eslint-config` dependency. */
+  /**
+   * Has ESLint config or `@gtbuchanan/eslint-config` dependency.
+   */
   readonly hasEslint: boolean;
-  /** Has a `scripts/` directory. */
+  /**
+   * Has a `scripts/` directory.
+   */
   readonly hasScripts: boolean;
-  /** Has a `skills/` directory containing authored Agent Skills. */
+  /**
+   * Has a `skills/` directory containing authored Agent Skills.
+   */
   readonly hasSkills: boolean;
-  /** Has a `test/` directory. */
+  /**
+   * Has a `test/` directory.
+   */
   readonly hasTest: boolean;
-  /** Has `@gtbuchanan/tsconfig` dependency or `tsconfig.json`. */
+  /**
+   * Has `@gtbuchanan/tsconfig` dependency or `tsconfig.json`.
+   */
   readonly hasTypeScript: boolean;
-  /** Has `@gtbuchanan/vitest-config` dependency or `vitest.config.*`. */
+  /**
+   * Has `@gtbuchanan/vitest-config` dependency or `vitest.config.*`.
+   */
   readonly hasVitest: boolean;
-  /** Has Vitest config AND a `test/` directory. */
+  /**
+   * Has Vitest config AND a `test/` directory.
+   */
   readonly hasVitestTests: boolean;
-  /** Has `vitest.config.e2e.*` file. */
+  /**
+   * Has `vitest.config.e2e.*` file.
+   */
   readonly hasVitestE2e: boolean;
-  /** Published package (not private, has publishConfig.directory). */
+  /**
+   * Published package (not private, has publishConfig.directory).
+   */
   readonly isPublished: boolean;
   /**
    * Manifest `name` (scoped, as declared), falling back to the directory
@@ -69,30 +101,50 @@ export interface PackageCapabilities {
   readonly name: string;
 }
 
-/** Full workspace discovery result. */
+/**
+ * Full workspace discovery result.
+ */
 export interface WorkspaceDiscovery {
-  /** Root manifest declares an `@gtbuchanan/cli` dependency (any version). */
+  /**
+   * Root manifest declares an `@gtbuchanan/cli` dependency (any version).
+   */
   readonly dependsOnCli: boolean;
-  /** Workspace root has a `mise.toml` pinning dev tool versions. */
+  /**
+   * Workspace root has a `mise.toml` pinning dev tool versions.
+   */
   readonly hasMise: boolean;
-  /** Whether a pnpm-workspace.yaml was found. */
+  /**
+   * Whether a pnpm-workspace.yaml was found.
+   */
   readonly isMonorepo: boolean;
-  /** `@gtbuchanan/cli` is a workspace:* dependency (bootstrapping). */
+  /**
+   * `@gtbuchanan/cli` is a workspace:* dependency (bootstrapping).
+   */
   readonly isSelfHosted: boolean;
-  /** Capabilities per workspace package. */
+  /**
+   * Capabilities per workspace package.
+   */
   readonly packages: readonly PackageCapabilities[];
-  /** Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode. */
+  /**
+   * Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode.
+   */
   readonly packageGlobs: readonly string[];
-  /** Root-level capabilities. */
+  /**
+   * Root-level capabilities.
+   */
   readonly root: PackageCapabilities;
-  /** Workspace root directory. */
+  /**
+   * Workspace root directory.
+   */
   readonly rootDir: string;
 }
 
 const hasDir = (base: string, name: string): boolean =>
   existsSync(path.join(base, name));
 
-/** Lists files in a directory (returns empty array if dir doesn't exist). */
+/**
+ * Lists files in a directory (returns empty array if dir doesn't exist).
+ */
 const listFiles = (dir: string): readonly string[] => {
   try {
     return readdirSync(dir);
@@ -104,7 +156,9 @@ const listFiles = (dir: string): readonly string[] => {
 const hasFilePrefix = (files: readonly string[], prefix: string): boolean =>
   files.some(file => file.startsWith(`${prefix}.`));
 
-/** Reads a package's `PklProject` source, or `''` when absent. */
+/**
+ * Reads a package's `PklProject` source, or `''` when absent.
+ */
 const readPklProject = (dir: string): string => {
   try {
     return readFileSync(path.join(dir, 'PklProject'), 'utf8');
@@ -170,11 +224,15 @@ const buildCapabilities = (
   };
 };
 
-/** Discovers capabilities for a single package directory. */
+/**
+ * Discovers capabilities for a single package directory.
+ */
 export const discoverPackage = (dir: string): PackageCapabilities =>
   buildCapabilities(dir, parseManifest(dir));
 
-/** Discovers capabilities for an entire workspace. */
+/**
+ * Discovers capabilities for an entire workspace.
+ */
 export const discoverWorkspace = (
   options?: ResolveWorkspaceOptions,
 ): WorkspaceDiscovery => {

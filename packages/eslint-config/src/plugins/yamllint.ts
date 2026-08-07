@@ -1,7 +1,9 @@
 import yamllint from '@gtbuchanan/eslint-plugin-yamllint';
 import type { PluginFactory } from '../index.ts';
 
-/** yamllint-equivalent YAML rules via `@gtbuchanan/eslint-plugin-yamllint`. */
+/**
+ * yamllint-equivalent YAML rules via `@gtbuchanan/eslint-plugin-yamllint`.
+ */
 const plugin: PluginFactory = () => [
   {
     files: ['**/*.yaml', '**/*.yml'],

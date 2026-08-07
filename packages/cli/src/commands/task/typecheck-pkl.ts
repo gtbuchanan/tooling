@@ -3,7 +3,9 @@ import { defineCommand } from 'citty';
 import { capture } from '../../lib/process.ts';
 import { localeComparer } from '../../lib/sort.ts';
 
-/** Lists hand-authored Pkl modules in a directory (sorted, excludes PklProject). */
+/**
+ * Lists hand-authored Pkl modules in a directory (sorted, excludes PklProject).
+ */
 export const pklModules = (dir: string): readonly string[] =>
   readdirSync(dir)
     .filter(file => file.endsWith('.pkl'))

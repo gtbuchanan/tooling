@@ -1,4 +1,6 @@
-/** CLI names for task subcommands. Keyed by import alias. */
+/**
+ * CLI names for task subcommands. Keyed by import alias.
+ */
 export const taskNames = {
   compileSkills: 'compile:skills',
   compileTs: 'compile:ts',
@@ -16,7 +18,9 @@ export const taskNames = {
   typecheckTs: 'typecheck:ts',
 } as const;
 
-/** Name of the root `task` subcommand hub. */
+/**
+ * Name of the root `task` subcommand hub.
+ */
 export const taskCommandName = 'task';
 
 /**

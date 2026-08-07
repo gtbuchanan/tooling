@@ -38,7 +38,9 @@ export const claudeCodeFrontmatterExtensions: SkillFrontmatterExtensions = {
   'disable-model-invocation': { type: 'boolean' },
   'disallowed-tools': stringOrList,
   'effort': { enum: ['low', 'medium', 'high', 'xhigh', 'max'] },
-  /* Shape is owned by the hooks reference; validated as a mapping only. */
+  /*
+  Shape is owned by the hooks reference; validated as a mapping only.
+  */
   'hooks': { type: 'object' },
   'model': { minLength: 1, type: 'string' },
   'paths': stringOrList,

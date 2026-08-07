@@ -33,7 +33,9 @@ const TurboJsonSchema = v.looseObject({
   tasks: v.optional(UnknownRecord),
 });
 
-/** Parses `--ignore <name>` flags from raw CLI args. */
+/**
+ * Parses `--ignore <name>` flags from raw CLI args.
+ */
 export const parseIgnoreArgs = (args: readonly string[]): ReadonlySet<string> => {
   const ignored = new Set<string>();
   for (let idx = 0; idx < args.length; idx++) {
@@ -199,11 +201,15 @@ const checkAllScripts = (
   )),
 ];
 
-/** Options for {@link runVerify}. */
+/**
+ * Options for {@link runVerify}.
+ */
 export interface RunVerifyOptions {
   readonly cwd?: string;
   readonly ignored?: ReadonlySet<string>;
-  /** Artifacts to check. Defaults to all {@link syncScopes}. */
+  /**
+   * Artifacts to check. Defaults to all {@link syncScopes}.
+   */
   readonly scopes?: ReadonlySet<SyncScope>;
 }
 
@@ -235,10 +241,14 @@ export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => 
   return syncScopes.flatMap(scope => (scopes.has(scope) ? checks[scope]() : []));
 };
 
-/** Parsed citty args for {@link verify}. */
+/**
+ * Parsed citty args for {@link verify}.
+ */
 export interface VerifyCommandArgs {
   readonly cwd?: string | undefined;
-  /** Positional scope tokens (citty `args._`). Empty means all scopes. */
+  /**
+   * Positional scope tokens (citty `args._`). Empty means all scopes.
+   */
   readonly scopes?: readonly string[] | undefined;
 }
 
@@ -281,7 +291,9 @@ export const verifyCommand = (
   return 1;
 };
 
-/** Citty command wrapper for {@link verifyCommand}. */
+/**
+ * Citty command wrapper for {@link verifyCommand}.
+ */
 export const verify = defineCommand({
   args: {
     cwd: {

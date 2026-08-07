@@ -1,7 +1,9 @@
 import * as v from 'valibot';
 import { StringArray, StringRecord } from './schemas.ts';
 
-/** Valibot schema for the `publishConfig` field of package.json. */
+/**
+ * Valibot schema for the `publishConfig` field of package.json.
+ */
 export const PublishConfigSchema = v.object({
   bin: v.optional(StringRecord),
   cpu: v.optional(StringArray),
@@ -14,14 +16,18 @@ export const PublishConfigSchema = v.object({
   scripts: v.optional(StringRecord),
 });
 
-/** Valibot schema for the `repository` field of package.json. */
+/**
+ * Valibot schema for the `repository` field of package.json.
+ */
 export const RepositorySchema = v.object({
   directory: v.optional(v.string()),
   type: v.string(),
   url: v.string(),
 });
 
-/** Valibot schema for root package.json fields copied to published packages. */
+/**
+ * Valibot schema for root package.json fields copied to published packages.
+ */
 export const RootManifestSchema = v.object({
   bugs: v.optional(v.string()),
   homepage: v.optional(v.string()),
@@ -29,10 +35,14 @@ export const RootManifestSchema = v.object({
   repository: v.optional(RepositorySchema),
 });
 
-/** Inferred type from {@link RootManifestSchema}. */
+/**
+ * Inferred type from {@link RootManifestSchema}.
+ */
 export type RootManifest = v.InferOutput<typeof RootManifestSchema>;
 
-/** Valibot schema for per-package package.json. Uses `looseObject` to preserve extra fields. */
+/**
+ * Valibot schema for per-package package.json. Uses `looseObject` to preserve extra fields.
+ */
 export const ManifestSchema = v.looseObject({
   dependencies: v.optional(StringRecord),
   devDependencies: v.optional(StringRecord),
@@ -44,10 +54,14 @@ export const ManifestSchema = v.looseObject({
   version: v.optional(v.string()),
 });
 
-/** Inferred type from {@link ManifestSchema}. */
+/**
+ * Inferred type from {@link ManifestSchema}.
+ */
 export type Manifest = v.InferOutput<typeof ManifestSchema>;
 
-/** Strips an npm scope: `@gtbuchanan/hk-config` → `hk-config`. */
+/**
+ * Strips an npm scope: `@gtbuchanan/hk-config` → `hk-config`.
+ */
 export const unscopedName = (name: string): string =>
   name.includes('/') ? name.slice(name.lastIndexOf('/') + 1) : name;
 

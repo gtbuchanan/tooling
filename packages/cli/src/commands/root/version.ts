@@ -3,7 +3,9 @@ import { type RunOptions, run } from '../../lib/process.ts';
 import { rootNames } from './names.ts';
 import { type RunSyncOptions, runSync } from './sync.ts';
 
-/** Injected side effects for {@link executeVersion}. */
+/**
+ * Injected side effects for {@link executeVersion}.
+ */
 export interface VersionDeps {
   readonly run: (command: string, options?: RunOptions) => Promise<void>;
   readonly sync: (options: RunSyncOptions) => void;

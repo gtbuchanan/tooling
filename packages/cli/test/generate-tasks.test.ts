@@ -5,7 +5,9 @@ import { describe, it } from 'vitest';
 import { runVerify } from '#src/commands/root/verify.js';
 import { createTempDir, initProject, writeJson } from './helpers.ts';
 
-/** Task definitions for a package configuration, as authored. */
+/**
+ * Task definitions for a package configuration, as authored.
+ */
 type PackageTasks = Record<string, unknown>;
 
 interface GenerateProject {
@@ -15,13 +17,21 @@ interface GenerateProject {
 }
 
 interface GenerateProjectOptions {
-  /** `generate:*` scripts the package declares. */
+  /**
+   * `generate:*` scripts the package declares.
+   */
   readonly scripts: readonly string[];
-  /** Package configuration tasks, or `undefined` to write no config at all. */
+  /**
+   * Package configuration tasks, or `undefined` to write no config at all.
+   */
   readonly tasks?: PackageTasks | undefined;
-  /** `extends` value for the package configuration. Defaults to `['//']`. */
+  /**
+   * `extends` value for the package configuration. Defaults to `['//']`.
+   */
   readonly extendsValue?: readonly string[] | undefined;
-  /** Single-package repo (no pnpm-workspace.yaml). Defaults to `false`. */
+  /**
+   * Single-package repo (no pnpm-workspace.yaml). Defaults to `false`.
+   */
   readonly singlePackage?: boolean;
 }
 

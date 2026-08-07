@@ -2,25 +2,41 @@ import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
 import { unscopedName } from './manifest.ts';
 import { toPosixRelative } from './paths.ts';
 
-/** Codecov per-package flag configuration. */
+/**
+ * Codecov per-package flag configuration.
+ */
 export interface CodecovFlag {
-  /** Carry forward coverage from previous commits when a flag is not uploaded. */
+  /**
+   * Carry forward coverage from previous commits when a flag is not uploaded.
+   */
   readonly carryforward: boolean;
-  /** Paths scoped to this flag. */
+  /**
+   * Paths scoped to this flag.
+   */
   readonly paths: readonly string[];
 }
 
-/** Codecov component definition. */
+/**
+ * Codecov component definition.
+ */
 export interface CodecovComponent {
-  /** Stable identifier for the component. */
+  /**
+   * Stable identifier for the component.
+   */
   readonly component_id: string;
-  /** Display name for the component. */
+  /**
+   * Display name for the component.
+   */
   readonly name: string;
-  /** Source file glob patterns for this component. */
+  /**
+   * Source file glob patterns for this component.
+   */
   readonly paths: readonly string[];
 }
 
-/** Top-level codecov settings managed by tooling. */
+/**
+ * Top-level codecov settings managed by tooling.
+ */
 export interface CodecovSettings {
   /**
    * Forced false. Coverage here is informational, not a merge gate: the
@@ -37,19 +53,29 @@ export interface CodecovSettings {
   readonly require_ci_to_pass: false;
 }
 
-/** Derived and managed sections of codecov.yml that gtb sync owns. */
+/**
+ * Derived and managed sections of codecov.yml that gtb sync owns.
+ */
 export interface CodecovSections {
-  /** Top-level codecov settings (authoritative). */
+  /**
+   * Top-level codecov settings (authoritative).
+   */
   readonly codecov: CodecovSettings;
-  /** Per-package upload flags. */
+  /**
+   * Per-package upload flags.
+   */
   readonly flags: Readonly<Record<string, CodecovFlag>>;
-  /** Component management block (only individual_components is generated). */
+  /**
+   * Component management block (only individual_components is generated).
+   */
   readonly component_management: {
     readonly individual_components: readonly CodecovComponent[];
   };
 }
 
-/** Tooling-owned top-level codecov settings, written authoritatively by sync. */
+/**
+ * Tooling-owned top-level codecov settings, written authoritatively by sync.
+ */
 export const codecovSettings: CodecovSettings = { require_ci_to_pass: false };
 
 const buildComponentPaths = (

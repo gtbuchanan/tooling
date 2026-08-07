@@ -21,7 +21,9 @@ const schema = [
   },
 ];
 
-/** Flags implicit (0777) and explicit (0o777) YAML 1.1 octal literals. */
+/**
+ * Flags implicit (0777) and explicit (0o777) YAML 1.1 octal literals.
+ */
 export const octalValues: Rule.RuleModule = {
   meta: {
     schema,

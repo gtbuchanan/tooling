@@ -13,10 +13,14 @@ import { createTempDir, writeJson } from './helpers.ts';
  * assertion can only pass by reading the one the implementation claims to use.
  */
 interface CodecovPackage {
-  /** Directory basename, unrelated to the manifest name. */
+  /**
+   * Directory basename, unrelated to the manifest name.
+   */
   readonly basename: string;
   readonly dir: string;
-  /** Expected Codecov flag/component name: the unscoped manifest name. */
+  /**
+   * Expected Codecov flag/component name: the unscoped manifest name.
+   */
   readonly flag: string;
 }
 

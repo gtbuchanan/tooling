@@ -5,10 +5,14 @@
  */
 export const syncScopes = ['codecov', 'manifest', 'mise', 'scripts', 'tsconfig', 'turbo'] as const;
 
-/** One {@link syncScopes} entry. */
+/**
+ * One {@link syncScopes} entry.
+ */
 export type SyncScope = (typeof syncScopes)[number];
 
-/** Result of {@link parseSyncScopes}: the selected scopes, or parse errors. */
+/**
+ * Result of {@link parseSyncScopes}: the selected scopes, or parse errors.
+ */
 export type ParsedSyncScopes =
   | { readonly errors: readonly string[] }
   | { readonly scopes: ReadonlySet<SyncScope> };

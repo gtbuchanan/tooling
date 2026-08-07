@@ -24,7 +24,9 @@ export type { PnpmWorkspaceSettings } from './pnpm-workspace.ts';
 
 const entryPointDirs = ['**/bin', '**/scripts'] as const;
 
-/** Default file patterns for entry points (bin and scripts directories). */
+/**
+ * Default file patterns for entry points (bin and scripts directories).
+ */
 export const defaultEntryPoints: readonly string[] = entryPointDirs.flatMap(
   dir => scriptFileExtensions.map(ext => `${dir}/**/*.${ext}`),
 );
@@ -64,7 +66,9 @@ export const defaultIgnores: readonly string[] = [
   '**/npm-shrinkwrap.json',
 ];
 
-/** Options for the shared ESLint configuration. */
+/**
+ * Options for the shared ESLint configuration.
+ */
 export interface ESLintConfigureOptions {
   /**
    * Agent hosts whose `SKILL.md` frontmatter extensions are accepted —
@@ -83,7 +87,9 @@ export interface ESLintConfigureOptions {
     | 'standard'
     | SkillFrontmatterSource
     | readonly SkillFrontmatterSource[];
-  /** Root directory for TypeScript project service. */
+  /**
+   * Root directory for TypeScript project service.
+   */
   readonly tsconfigRootDir?: string;
   /**
    * Derive ignore patterns from `.gitignore`, so untracked paths — build
@@ -140,12 +146,16 @@ export interface ESLintConfigureOptions {
   readonly target?: 'browser' | 'server';
 }
 
-/** Options with all defaults resolved. Passed to plugin factories. */
+/**
+ * Options with all defaults resolved. Passed to plugin factories.
+ */
 export type ResolvedOptions =
   Required<Omit<ESLintConfigureOptions, 'tsconfigRootDir'>>
   & Pick<ESLintConfigureOptions, 'tsconfigRootDir'>;
 
-/** Factory function that produces ESLint configs from resolved options. */
+/**
+ * Factory function that produces ESLint configs from resolved options.
+ */
 export type PluginFactory = (options: ResolvedOptions) => Linter.Config[];
 
 const resolveOptions = (options: ESLintConfigureOptions): ResolvedOptions => ({
@@ -160,7 +170,9 @@ const resolveOptions = (options: ESLintConfigureOptions): ResolvedOptions => ({
   ...(options.tsconfigRootDir !== undefined && { tsconfigRootDir: options.tsconfigRootDir }),
 });
 
-/** Creates an ESLint flat config for TypeScript projects. */
+/**
+ * Creates an ESLint flat config for TypeScript projects.
+ */
 export const configure = async (
   options: ESLintConfigureOptions = {},
 ): Promise<Linter.Config[]> => {

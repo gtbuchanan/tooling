@@ -1,7 +1,9 @@
 import { defineCommand } from 'citty';
 import { run } from '../../lib/process.ts';
 
-/** Runs `tsc -p tsconfig.build.json` to emit compiled output. */
+/**
+ * Runs `tsc -p tsconfig.build.json` to emit compiled output.
+ */
 export const compileTs = defineCommand({
   meta: {
     description: 'Compile TypeScript via tsc using tsconfig.build.json',

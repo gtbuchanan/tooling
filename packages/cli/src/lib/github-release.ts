@@ -48,7 +48,9 @@ export const extractChangelogNotes = (
   return section === '' ? undefined : section;
 };
 
-/** Reads the CHANGELOG.md section for the version, if any. */
+/**
+ * Reads the CHANGELOG.md section for the version, if any.
+ */
 export const releaseNotes = (
   pkgDir: string,
   version: string | undefined,
@@ -63,8 +65,10 @@ export const releaseNotes = (
   }
 };
 
-/** True when a release already exists for the tag (`gh release view` exits 0). */
-export const releaseExists = async (
+/**
+ * True when a release already exists for the tag (`gh release view` exits 0).
+ */
+export const hasRelease = async (
   deps: GithubReleaseDeps,
   tag: string,
 ): Promise<boolean> => {
@@ -90,7 +94,9 @@ export const resolveHeadSha = async (deps: GithubReleaseDeps): Promise<string> =
   return sha.trim();
 };
 
-/** A planned GitHub release: one tag, its notes, and any uploadable assets. */
+/**
+ * A planned GitHub release: one tag, its notes, and any uploadable assets.
+ */
 export interface GithubReleasePlan {
   readonly assets?: readonly string[];
   readonly notes: string;
@@ -144,7 +150,7 @@ export const publishReleases = async (
   const target = await resolveHeadSha(deps);
   for (const { assets, dir, name, version } of packages) {
     const tag = releaseTag(name, version, isMonorepo);
-    if (await releaseExists(deps, tag)) {
+    if (await hasRelease(deps, tag)) {
       deps.logger.info(`release ${tag} already exists — skipping`);
       continue;
     }

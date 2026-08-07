@@ -142,12 +142,16 @@ const writeAllScripts = (
   writeRootScripts(logger, discovery, shouldForce);
 };
 
-/** Options for {@link runSync}. */
+/**
+ * Options for {@link runSync}.
+ */
 export interface RunSyncOptions {
   readonly cwd?: string;
   readonly force?: boolean;
   readonly logger?: Logger;
-  /** Artifacts to generate. Defaults to all {@link SYNC_SCOPES}. */
+  /**
+   * Artifacts to generate. Defaults to all {@link SYNC_SCOPES}.
+   */
   readonly scopes?: ReadonlySet<SyncScope>;
 }
 
@@ -183,11 +187,15 @@ export const runSync = (options: RunSyncOptions = {}): void => {
   }
 };
 
-/** Parsed citty args for {@link sync}. */
+/**
+ * Parsed citty args for {@link sync}.
+ */
 export interface SyncCommandArgs {
   readonly cwd?: string | undefined;
   readonly force?: boolean | undefined;
-  /** Positional scope tokens (citty `args._`). Empty means all scopes. */
+  /**
+   * Positional scope tokens (citty `args._`). Empty means all scopes.
+   */
   readonly scopes?: readonly string[] | undefined;
 }
 
@@ -217,7 +225,9 @@ export const syncCommand = (args: SyncCommandArgs, logger: Logger): number => {
   return 0;
 };
 
-/** Citty command wrapper for {@link syncCommand}. */
+/**
+ * Citty command wrapper for {@link syncCommand}.
+ */
 export const sync = defineCommand({
   args: {
     cwd: {

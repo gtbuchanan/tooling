@@ -82,7 +82,9 @@ const resolveCommitSha = (): string | undefined => {
   return sha === undefined || sha === '' ? undefined : sha;
 };
 
-/** Uploads coverage to Codecov. No-ops outside CI. */
+/**
+ * Uploads coverage to Codecov. No-ops outside CI.
+ */
 export const coverageCodecovUpload = defineCommand({
   meta: {
     description: 'Upload merged coverage to Codecov (no-op outside CI)',

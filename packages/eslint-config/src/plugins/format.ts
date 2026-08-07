@@ -35,7 +35,9 @@ const jsonPluginOverrides = {
   multilineArraysWrapThreshold: 0,
 } as const;
 
-/** Shared Prettier options aligned with the team style guide. */
+/**
+ * Shared Prettier options aligned with the team style guide.
+ */
 const prettierDefaults = {
   endOfLine: 'auto',
   singleQuote: true,
@@ -52,7 +54,9 @@ const prettierRule = (
   }],
 });
 
-/** Prettier formatting for JSON, Markdown, and YAML via eslint-plugin-format. */
+/**
+ * Prettier formatting for JSON, Markdown, and YAML via eslint-plugin-format.
+ */
 const plugin: PluginFactory = () => [
   {
     files: ['**/*.json'],

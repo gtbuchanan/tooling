@@ -4,7 +4,9 @@ import { discoverWorkspace } from './discovery.ts';
 import { type GithubReleaseDeps, publishReleases, releaseTag } from './github-release.ts';
 import { readPackageName, readPackageVersion } from './pkl-project.ts';
 
-/** Output directory for the packaged Pkl artifacts (mirrors pack:npm). */
+/**
+ * Output directory for the packaged Pkl artifacts (mirrors pack:npm).
+ */
 export const pklPackDestination = path.join('dist', 'packages', 'pkl');
 
 /**

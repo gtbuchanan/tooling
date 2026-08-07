@@ -161,7 +161,9 @@ describe.concurrent('gitignore', () => {
     expect(findGitignore(configs)?.ignores).toStrictEqual(['**/root-only/']);
   });
 
-  /* The upstream default throws instead, which no consumer opted into. */
+  /*
+  The upstream default throws instead, which no consumer opted into.
+  */
   it('tolerates a repo with no .gitignore', async ({ expect }) => {
     const cwd = createGitignoreFixture({});
 

@@ -1,6 +1,10 @@
-/** @param {import('@pnpm/lockfile.types').LockfileObject} lockFile */
+/**
+ * @param {import('@pnpm/lockfile.types').LockfileObject} lockFile
+ */
 const afterAllResolved = (lockFile) => {
-  /** @type {import('@pnpm/lockfile.types').PackageSnapshot[]} */
+  /**
+   * @type {import('@pnpm/lockfile.types').PackageSnapshot[]}
+   */
   const pkgs = Object.values(lockFile.packages ?? {});
   for (const pkg of pkgs) {
     /* HACK: Remove tarball URLs from the lockfile

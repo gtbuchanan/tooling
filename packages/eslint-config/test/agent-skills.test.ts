@@ -4,7 +4,9 @@ import { configure } from '#src/index.js';
 
 const skillFile = 'skills/my-skill/SKILL.md';
 
-/** Wraps extra frontmatter lines in an otherwise spec-valid `SKILL.md`. */
+/**
+ * Wraps extra frontmatter lines in an otherwise spec-valid `SKILL.md`.
+ */
 const skill = (...extra: readonly string[]): string => [
   '---',
   'name: my-skill',

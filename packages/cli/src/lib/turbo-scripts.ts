@@ -77,14 +77,18 @@ const packageScriptEntries = (
   ];
 };
 
-/** Generates the gtb shim script for self-hosted packages. */
+/**
+ * Generates the gtb shim script for self-hosted packages.
+ */
 const gtbShim = (pkgDir: string, rootDir: string): string => {
   const rel = toPosixRelative(pkgDir, rootDir);
 
   return `node --experimental-strip-types ${rel}/packages/cli/bin/gtb.ts`;
 };
 
-/** Generates per-package scripts from capabilities. */
+/**
+ * Generates per-package scripts from capabilities.
+ */
 export const generatePackageScripts = (
   caps: PackageCapabilities,
   isSelfHosted: boolean,
@@ -123,7 +127,9 @@ const rootLeafScriptEntries = (
   ];
 };
 
-/** Required root scripts — validated by `gtb verify`. */
+/**
+ * Required root scripts — validated by `gtb verify`.
+ */
 const requiredRootScripts = (
   discovery: WorkspaceDiscovery,
   flags: ToolFlags,
@@ -222,7 +228,9 @@ export const forbiddenRootScripts = (
     .toSorted(localeComparer);
 };
 
-/** Generates all root-level scripts (required + optional aliases). */
+/**
+ * Generates all root-level scripts (required + optional aliases).
+ */
 export const generateRootScripts = (
   discovery: WorkspaceDiscovery,
 ): Record<string, string> => {
@@ -233,7 +241,9 @@ export const generateRootScripts = (
   };
 };
 
-/** Generates only required root scripts for drift validation. */
+/**
+ * Generates only required root scripts for drift validation.
+ */
 export const generateRequiredRootScripts = (
   discovery: WorkspaceDiscovery,
 ): Record<string, string> => ({ ...requiredRootScripts(discovery, resolveToolFlags(discovery)) });

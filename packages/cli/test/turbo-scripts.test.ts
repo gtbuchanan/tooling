@@ -8,7 +8,9 @@ import {
 } from '#src/lib/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
 
-/** Two identical packages — the minimum `makeDiscovery` reads as a monorepo. */
+/**
+ * Two identical packages — the minimum `makeDiscovery` reads as a monorepo.
+ */
 const monorepoOf = (
   overrides: Partial<PackageCapabilities> = {},
 ): readonly PackageCapabilities[] => [

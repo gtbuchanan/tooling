@@ -3,7 +3,9 @@ import type { PluginFactory } from '../index.ts';
 
 // --- Promise ---
 
-/** Promise plugin recommended config with additional rules. */
+/**
+ * Promise plugin recommended config with additional rules.
+ */
 const plugin: PluginFactory = () => [
   promisePlugin.configs['flat/recommended'],
   {

@@ -59,7 +59,9 @@ const writeSourceManifest = (
   writeFileSync(path.join(target, '.npmignore'), npmignoreContent);
 };
 
-/** Returns the first candidate path that exists, or `undefined`. */
+/**
+ * Returns the first candidate path that exists, or `undefined`.
+ */
 const firstExisting = (...candidates: string[]): string | undefined =>
   candidates.find(file => existsSync(file));
 

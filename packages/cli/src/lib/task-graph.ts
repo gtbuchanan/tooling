@@ -9,25 +9,37 @@ const SchedulerTaskSchema = v.object({
   outputs: v.optional(StringArray),
 });
 
-/** Valibot schema for parsing turbo.json into scheduler input. */
+/**
+ * Valibot schema for parsing turbo.json into scheduler input.
+ */
 export const SchedulerInputSchema = v.object({
   tasks: v.record(v.string(), SchedulerTaskSchema),
 });
 
-/** Minimal task shape consumed by the scheduler (compatible with parsed JSON). */
+/**
+ * Minimal task shape consumed by the scheduler (compatible with parsed JSON).
+ */
 export type SchedulerTask = v.InferOutput<typeof SchedulerTaskSchema>;
 
-/** Minimal turbo.json shape consumed by the scheduler. */
+/**
+ * Minimal turbo.json shape consumed by the scheduler.
+ */
 export type SchedulerInput = v.InferOutput<typeof SchedulerInputSchema>;
 
-/** A topologically sorted list of task levels to execute sequentially. */
+/**
+ * A topologically sorted list of task levels to execute sequentially.
+ */
 export type TaskSchedule = readonly (readonly string[])[];
 
-/** Strips the `^` prefix from topological dependency references. */
+/**
+ * Strips the `^` prefix from topological dependency references.
+ */
 const stripTopo = (dep: string): string =>
   dep.startsWith('^') ? dep.slice(1) : dep;
 
-/** Context for recursive dependency graph traversal. */
+/**
+ * Context for recursive dependency graph traversal.
+ */
 interface TraversalContext {
   readonly filter?: ReadonlySet<string> | undefined;
   readonly result: Set<string>;
@@ -61,7 +73,9 @@ const collectReachable = (
   }
 };
 
-/** Collects all task names transitively reachable from a root. */
+/**
+ * Collects all task names transitively reachable from a root.
+ */
 const allReachable = (
   taskName: string,
   tasks: SchedulerInput['tasks'],
@@ -71,7 +85,9 @@ const allReachable = (
   return result;
 };
 
-/** Collects only the names in `filter` that are reachable from a root. */
+/**
+ * Collects only the names in `filter` that are reachable from a root.
+ */
 const filteredReachable = (
   taskName: string,
   tasks: SchedulerInput['tasks'],
@@ -118,7 +134,9 @@ export const resolveSchedule = (
     leafNames.map(name => [name, filteredReachable(name, tasks, leafSet)]),
   );
 
-  /* Kahn's algorithm for topological level ordering. */
+  /*
+  Kahn's algorithm for topological level ordering.
+  */
   const remaining = new Map(
     [...deps].map(([name, depSet]) => [name, new Set(depSet)]),
   );

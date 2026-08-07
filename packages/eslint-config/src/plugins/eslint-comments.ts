@@ -3,7 +3,9 @@ import type { PluginFactory } from '../index.ts';
 
 // --- eslint-comments ---
 
-/** ESLint comments plugin config requiring description suffixes. */
+/**
+ * ESLint comments plugin config requiring description suffixes.
+ */
 const plugin: PluginFactory = () => [
   eslintCommentsConfigs.recommended,
   {

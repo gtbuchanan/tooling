@@ -4,16 +4,24 @@ import type { Document } from 'yaml';
 const frontmatterPattern =
   /^(?<opener>---\r?\n)(?<content>[\s\S]*?)\r?\n---(?:\r?\n|$)/v;
 
-/** Position info for a parsed YAML frontmatter block. */
+/**
+ * Position info for a parsed YAML frontmatter block.
+ */
 export interface ParsedFrontmatter {
   readonly document: Document.Parsed;
-  /** Offset in the source where the frontmatter content begins (after opening `---`). */
+  /**
+   * Offset in the source where the frontmatter content begins (after opening `---`).
+   */
   readonly contentOffset: number;
-  /** Offset in the source where the closing `---` line ends. */
+  /**
+   * Offset in the source where the closing `---` line ends.
+   */
   readonly endOffset: number;
 }
 
-/** Result of parsing a Markdown file with optional YAML frontmatter. */
+/**
+ * Result of parsing a Markdown file with optional YAML frontmatter.
+ */
 export interface ParsedMarkdown {
   readonly lineCounter: LineCounter;
   readonly frontmatter: ParsedFrontmatter | undefined;

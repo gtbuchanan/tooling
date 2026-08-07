@@ -6,12 +6,16 @@ import type { PluginFactory } from '../index.ts';
 
 const testDirs = ['**/test', '**/e2e'] as const;
 
-/** File patterns for test files. */
+/**
+ * File patterns for test files.
+ */
 const testFiles = testDirs.flatMap(
   dir => scriptFileExtensions.map(ext => `${dir}/**/*.${ext}`),
 );
 
-/** Vitest plugin configs with rule overrides for test files. */
+/**
+ * Vitest plugin configs with rule overrides for test files.
+ */
 const plugin: PluginFactory = () => [
   { ...vitestPlugin.configs.all, files: testFiles },
   {

@@ -4,12 +4,18 @@ import type { PluginFactory } from '../index.ts';
 
 // --- Unicorn ---
 
-/** Unicorn recommended preset with rule overrides (scoped to script files). */
+/**
+ * Unicorn recommended preset with rule overrides (scoped to script files).
+ */
 const plugin: PluginFactory = () => [
   { ...unicornPlugin.configs.recommended, files: [...scriptFiles] },
   {
     files: [...scriptFiles],
     rules: {
+      /* Justification: `try` marks an action that reports success rather than
+         a predicate — the established Try* idiom (e.g. .NET's TryParse). The
+         rule's default prefixes admit no equivalent */
+      'unicorn/consistent-boolean-name': ['warn', { prefixes: { try: true } }],
       // TODO: Re-enable and configure allowlist in a separate PR
       'unicorn/name-replacements': 'off',
       // Justification: Cannot distinguish intentional from accidental arity matches

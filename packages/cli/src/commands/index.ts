@@ -10,7 +10,9 @@ import { version } from './root/version.ts';
 import { task } from './task/index.ts';
 import { taskCommandName } from './task/names.ts';
 
-/** Root `gtb` command. Dispatches user commands at the root and leaf tools under `task`. */
+/**
+ * Root `gtb` command. Dispatches user commands at the root and leaf tools under `task`.
+ */
 export const main = defineCommand({
   meta: {
     description: 'Shared build CLI for @gtbuchanan/tooling',

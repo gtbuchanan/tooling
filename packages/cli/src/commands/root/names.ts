@@ -1,4 +1,6 @@
-/** CLI names for root-level commands. */
+/**
+ * CLI names for root-level commands.
+ */
 export const rootNames = {
   hk: 'hk',
   prepare: 'prepare',

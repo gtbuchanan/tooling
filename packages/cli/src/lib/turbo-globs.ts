@@ -1,4 +1,6 @@
-/** Script file extensions for turbo input globs. Sorted alphabetically. */
+/**
+ * Script file extensions for turbo input globs. Sorted alphabetically.
+ */
 const scriptExts = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx'] as const;
 
 const isGlob = (pattern: string): boolean => /[*?\{]/v.test(pattern);

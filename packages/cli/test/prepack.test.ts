@@ -13,7 +13,9 @@ interface ScaffoldPackageOverrides {
   rootManifest?: Record<string, unknown>;
 }
 
-/** Scaffolds a workspace with one publishable package, returning its dirs. */
+/**
+ * Scaffolds a workspace with one publishable package, returning its dirs.
+ */
 const scaffoldPackage = (
   root: string,
   overrides: ScaffoldPackageOverrides = {},
@@ -34,7 +36,9 @@ const scaffoldPackage = (
   return { pkgDir, publishDir };
 };
 
-/** Writes formatted JSON (matches prepack output for assertion). */
+/**
+ * Writes formatted JSON (matches prepack output for assertion).
+ */
 const writeFormattedJson = (dir: string, name: string, data: unknown): void => {
   writeFileSync(
     path.join(dir, name),
