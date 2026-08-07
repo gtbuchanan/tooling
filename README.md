@@ -109,6 +109,16 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 ```
 
+Flags and components are named after each package's unscoped
+`package.json` name (`@acme/utils` → `utils`), falling back to the
+directory basename only when a package declares no name. A directory
+basename is a property of the checkout — worktrees and clones rename
+it — but these names are committed to `codecov.yml`, so deriving them
+from the directory makes CI's checkout disagree with what was
+committed. Packages whose names collide once the scope is stripped
+(`@a/utils` and `@b/utils`) are rejected by `gtb sync`, since Codecov
+keys flags by name.
+
 To customize coverage targets, add a `codecov.yml` to your repo root.
 
 **Drift risk:** The Codecov job uses `continue-on-error` so upload

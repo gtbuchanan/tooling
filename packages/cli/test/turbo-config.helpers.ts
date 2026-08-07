@@ -22,6 +22,7 @@ export const makeCapabilities = (
     hasVitestE2e: false,
     hasVitestTests: false,
     isPublished: false,
+    name: 'pkg',
     ...overrides,
   };
   return {

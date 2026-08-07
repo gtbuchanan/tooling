@@ -47,6 +47,10 @@ export const ManifestSchema = v.looseObject({
 /** Inferred type from {@link ManifestSchema}. */
 export type Manifest = v.InferOutput<typeof ManifestSchema>;
 
+/** Strips an npm scope: `@gtbuchanan/hk-config` → `hk-config`. */
+export const unscopedName = (name: string): string =>
+  name.includes('/') ? name.slice(name.lastIndexOf('/') + 1) : name;
+
 /**
  * Copies `bugs`, `homepage`, and `repository` from the root manifest,
  * scoping `homepage` and `repository.directory` to the given path. These

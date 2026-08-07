@@ -3,6 +3,8 @@ import path from 'node:path';
 import { defineCommand } from 'citty';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
+import { codecovName } from '../../lib/codecov-config.ts';
+import { discoverPackage } from '../../lib/discovery.ts';
 import { run } from '../../lib/process.ts';
 
 const HeadSchema = v.object({
@@ -99,6 +101,12 @@ export const coverageCodecovUpload = defineCommand({
     }
 
     const sha = resolveCommitSha();
+    /*
+     * Must match the flag `gtb sync` writes into codecov.yml for this
+     * package, so both go through codecovName — otherwise the upload
+     * lands under a flag the config never declared.
+     */
+    const flag = codecovName(discoverPackage(process.cwd()));
 
     await run('codecov', {
       args: [
@@ -107,7 +115,7 @@ export const coverageCodecovUpload = defineCommand({
         '--network-root-folder', resolveNetworkRoot(),
         ...(sha === undefined ? [] : ['-C', sha]),
         '-f', file,
-        '-F', path.basename(process.cwd()),
+        '-F', flag,
         ...rawArgs,
       ],
     });

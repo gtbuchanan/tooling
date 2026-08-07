@@ -1,5 +1,5 @@
-import path from 'node:path';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
+import { unscopedName } from './manifest.ts';
 import { toPosixRelative } from './paths.ts';
 
 /** Codecov per-package flag configuration. */
@@ -67,12 +67,31 @@ const buildComponentPaths = (
   return paths;
 };
 
-const checkForDuplicateBasenames = (names: readonly string[]): void => {
+/**
+ * Codecov flag / component name for a package: its unscoped manifest name.
+ *
+ * Deliberately *not* the directory basename. The basename is a property of
+ * the checkout — a worktree or clone renames it — but these names are
+ * committed to `codecov.yml`, so a basename-derived name drifts the moment
+ * the repo is checked out somewhere else. That bites hardest in a
+ * single-package repo, whose sole package is the checkout root itself.
+ * A manifest name is the same in every checkout. The scope is stripped
+ * because Codecov flag names don't accept `@` or `/`.
+ */
+export const codecovName = (pkg: PackageCapabilities): string => unscopedName(pkg.name);
+
+/**
+ * Unscoped names are unique per package in practice but not by construction —
+ * `@a/utils` and `@b/utils` collide once the scope is stripped. Codecov keys
+ * flags by name, so the collision would silently merge two packages' coverage.
+ */
+const checkForDuplicateNames = (names: readonly string[]): void => {
   const duplicates = names.filter((name, idx) => names.indexOf(name) !== idx);
   if (duplicates.length > 0) {
     throw new Error(
-      `Duplicate package directory basenames: ${[...new Set(duplicates)].join(', ')}. ` +
-      'Rename conflicting package directories — Codecov uses the basename as the flag name.',
+      `Duplicate Codecov flag names: ${[...new Set(duplicates)].join(', ')}. ` +
+      'Rename the conflicting packages — Codecov flags use the unscoped package name, ' +
+      'so packages that differ only by scope collide.',
     );
   }
 };
@@ -84,7 +103,7 @@ const buildCoverageEntries = (
   const flags: Record<string, CodecovFlag> = {};
   const components: CodecovComponent[] = [];
   for (const pkg of packages) {
-    const name = path.basename(pkg.dir);
+    const name = codecovName(pkg);
     const relDir = toPosixRelative(rootDir, pkg.dir);
     flags[name] = { carryforward: true, paths: [`${relDir}/`] };
     components.push({ component_id: name, name, paths: buildComponentPaths(pkg, relDir) });
@@ -97,13 +116,12 @@ const buildCoverageEntries = (
  * top-level `codecov` settings, plus the derived `flags` and
  * `component_management.individual_components` from workspace discovery.
  * Only packages with Vitest tests (`hasVitestTests`) are included.
- * Throws if any two coverage packages share the same directory basename,
- * as Codecov uses the basename as the flag name.
+ * Throws if any two coverage packages resolve to the same
+ * {@link codecovName}.
  */
 export const generateCodecovSections = (discovery: WorkspaceDiscovery): CodecovSections => {
   const coveragePackages = discovery.packages.filter(pkg => pkg.hasVitestTests);
-  const names = coveragePackages.map(pkg => path.basename(pkg.dir));
-  checkForDuplicateBasenames(names);
+  checkForDuplicateNames(coveragePackages.map(codecovName));
   const { flags, components } = buildCoverageEntries(coveragePackages, discovery.rootDir);
   return {
     codecov: codecovSettings,

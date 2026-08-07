@@ -15,14 +15,20 @@ import {
 } from './helpers.ts';
 
 interface ConsumerProject {
-  readonly app: { basename: string; dir: string; name: string };
+  /** `flag` is the Codecov flag/component name: the unscoped manifest name. */
+  readonly app: { basename: string; dir: string; flag: string; name: string };
   readonly root: string;
 }
 
 const createConsumerProject = (): ConsumerProject => {
   const root = createTempDir();
-  const appBasename = build.packageName();
-  const appName = build.scopedPackageName();
+  /* Directory, manifest scope, and unscoped name are derived from one seed
+     with distinct suffixes, so they can never coincide. Independent builder
+     calls could collide and let an assertion pass against the basename. */
+  const appSeed = build.packageName();
+  const appBasename = `${appSeed}-dir`;
+  const appFlag = `${appSeed}-flag`;
+  const appName = `@${appSeed}-scope/${appFlag}`;
 
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
@@ -55,7 +61,10 @@ const createConsumerProject = (): ConsumerProject => {
   writeFileSync(path.join(appDir, 'eslint.config.ts'), '');
   writeFileSync(path.join(appDir, 'vitest.config.ts'), '');
 
-  return { app: { basename: appBasename, dir: appDir, name: appName }, root };
+  return {
+    app: { basename: appBasename, dir: appDir, flag: appFlag, name: appName },
+    root,
+  };
 };
 
 describe.concurrent('verify drift detection', () => {
@@ -189,7 +198,7 @@ describe.concurrent(runVerify, () => {
 
     const drift = runVerify({ cwd: root });
 
-    expect(drift.some(msg => msg.includes(`missing flag '${app.basename}'`))).toBe(true);
+    expect(drift.some(msg => msg.includes(`missing flag '${app.flag}'`))).toBe(true);
   });
 
   it('ignored set suppresses missing codecov flag drift', ({ expect }) => {
@@ -201,7 +210,7 @@ describe.concurrent(runVerify, () => {
       'flags: {}\ncomponent_management:\n  individual_components: []\n',
     );
 
-    const drift = runVerify({ cwd: root, ignored: new Set([app.basename]) });
+    const drift = runVerify({ cwd: root, ignored: new Set([app.flag]) });
 
     expect(drift).toHaveLength(0);
   });
@@ -215,7 +224,7 @@ describe.concurrent(runVerify, () => {
       'flags: {}\ncomponent_management:\n  individual_components: []\n',
     );
 
-    const drift = runVerify({ cwd: root, ignored: new Set([app.basename]) });
+    const drift = runVerify({ cwd: root, ignored: new Set([app.flag]) });
 
     expect(drift).toStrictEqual([
       'codecov.yml: codecov.require_ci_to_pass must be false (run gtb sync)',
