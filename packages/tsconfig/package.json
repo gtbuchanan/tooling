@@ -21,7 +21,9 @@
     "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/test-utils": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
-    "@tsconfig/strictest": "catalog:"
+    "@tsconfig/strictest": "catalog:",
+    "valibot": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "typescript": ">=6.0.0"

@@ -32,7 +32,8 @@
   "devDependencies": {
     "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/tsconfig": "workspace:*",
-    "@gtbuchanan/vitest-config": "workspace:*"
+    "@gtbuchanan/vitest-config": "workspace:*",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0"
