@@ -57,10 +57,10 @@ const overridesConfig: Linter.Config = {
     // Justification: `import {} from 'x'` is a leftover that still runs side effects
     'import-x/no-empty-named-blocks': 'warn',
     /*
-     * Justification: An import a package does not declare resolves only by
-     * accident of layout — Node walks up to a parent `node_modules` — so it
-     * breaks when the package moves, and leaves any version range the
-     * dependency declares unenforced for that package
+     * Justification: Importing a package the manifest does not declare
+     * resolves only through layout — Node walks up to a parent
+     * `node_modules` — so it breaks when the package moves, and leaves any
+     * version range the dependency declares unenforced for that package
      */
     'import-x/no-extraneous-dependencies': 'warn',
     // Justification: A mutable export is a shared global by another name
