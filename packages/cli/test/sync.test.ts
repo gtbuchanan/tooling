@@ -40,13 +40,17 @@ interface ConsumerProject {
 
 const createConsumerProject = (): ConsumerProject => {
   const root = createTempDir();
-  const appBasename = build.packageName();
-  /* Directory basename and unscoped manifest name are deliberately distinct. */
-  const appFlag = build.packageName();
-  const appName = `@${build.packageName()}/${appFlag}`;
-  const libBasename = build.packageName();
-  const libFlag = build.packageName();
-  const libName = `@${build.packageName()}/${libFlag}`;
+  /* Every directory basename and unscoped manifest name is suffixed from one
+     seed, so all six are distinct by construction. Independent builder calls
+     could collide — either letting an assertion pass against the basename, or
+     making the two packages share a flag and fail as a duplicate. */
+  const seed = build.packageName();
+  const appBasename = `${seed}-app-dir`;
+  const appFlag = `${seed}-app-flag`;
+  const appName = `@${seed}-scope/${appFlag}`;
+  const libBasename = `${seed}-lib-dir`;
+  const libFlag = `${seed}-lib-flag`;
+  const libName = `@${seed}-scope/${libFlag}`;
 
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),

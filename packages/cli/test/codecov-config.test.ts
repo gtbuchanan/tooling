@@ -32,20 +32,29 @@ interface WritePackageOptions {
   readonly hasTests?: boolean;
 }
 
+/*
+ * `seed` and `label` together make every name in the fixture distinct by
+ * construction: the label separates the packages, the suffixes separate each
+ * package's directory from its flag. Independent builder calls could collide —
+ * making a negative basename assertion vacuous, or making two packages share a
+ * flag and fail as a duplicate. The scoped name is composed from a known
+ * unscoped part, so the expected flag is an independent value rather than the
+ * implementation's own derivation.
+ */
 const writePackage = (
   root: string,
+  seed: string,
+  label: string,
   { extraDirs = [], hasTests = true }: WritePackageOptions = {},
 ): CodecovPackage => {
-  const basename = build.packageName();
+  const basename = `${seed}-${label}-dir`;
+  const flag = `${seed}-${label}-flag`;
+  const name = `@${seed}-scope/${flag}`;
   const dir = path.join(root, 'packages', basename);
   mkdirSync(path.join(dir, 'src'), { recursive: true });
   for (const extra of extraDirs) {
     mkdirSync(path.join(dir, extra));
   }
-  /* Compose the scoped name from a known unscoped part, so the expected flag
-     is an independent value rather than the implementation's own derivation. */
-  const flag = build.packageName();
-  const name = `@${build.packageName()}/${flag}`;
   if (hasTests) {
     mkdirSync(path.join(dir, 'test'));
     writeJson(dir, 'package.json', {
@@ -61,13 +70,14 @@ const writePackage = (
 
 const createMonorepo = (): CodecovMonorepo => {
   const root = createTempDir();
+  const seed = build.packageName();
   writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
   writeJson(root, 'package.json', { name: build.packageName(), private: true });
 
   return {
-    alpha: writePackage(root),
-    beta: writePackage(root, { extraDirs: ['bin', 'scripts'] }),
-    gamma: writePackage(root, { hasTests: false }),
+    alpha: writePackage(root, seed, 'alpha'),
+    beta: writePackage(root, seed, 'beta', { extraDirs: ['bin', 'scripts'] }),
+    gamma: writePackage(root, seed, 'gamma', { hasTests: false }),
     root,
   };
 };
@@ -230,8 +240,11 @@ describe.concurrent(generateCodecovSections, () => {
   });
 
   it('allows two packages to share a directory basename', ({ expect }) => {
-    const flags = [build.packageName(), build.packageName()];
-    const root = createCollisionRepo(flags.map(flag => `@${build.packageName()}/${flag}`));
+    /* Suffixed from one seed so the two flags cannot collide — that would
+       turn this into the collision case and make it throw. */
+    const seed = build.packageName();
+    const flags = [`${seed}-one`, `${seed}-two`];
+    const root = createCollisionRepo(flags.map(flag => `@${seed}-scope/${flag}`));
 
     const discovery = discoverWorkspace({ cwd: root });
     const sections = generateCodecovSections(discovery);
@@ -243,14 +256,15 @@ describe.concurrent(generateCodecovSections, () => {
   it('throws when two packages share an unscoped name', ({ expect }) => {
     const shared = build.packageName();
     const root = createCollisionRepo([
-      `@${build.packageName()}/${shared}`,
-      `@${build.packageName()}/${shared}`,
+      `@${shared}-left/${shared}`,
+      `@${shared}-right/${shared}`,
     ]);
 
     const discovery = discoverWorkspace({ cwd: root });
 
-    expect(() => generateCodecovSections(discovery)).toThrow(
-      new RegExp(`Duplicate Codecov flag names: ${shared}`, 'v'),
-    );
+    /* A plain string asserts by substring, avoiding a regex built from
+       generated input. */
+    expect(() => generateCodecovSections(discovery))
+      .toThrow(`Duplicate Codecov flag names: ${shared}`);
   });
 });

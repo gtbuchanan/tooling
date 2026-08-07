@@ -22,11 +22,13 @@ interface ConsumerProject {
 
 const createConsumerProject = (): ConsumerProject => {
   const root = createTempDir();
-  const appBasename = build.packageName();
-  /* Directory, manifest scope, and unscoped name are all distinct, so an
-     assertion can only pass by reading the one the code claims to use. */
-  const appFlag = build.packageName();
-  const appName = `@${build.packageName()}/${appFlag}`;
+  /* Directory, manifest scope, and unscoped name are derived from one seed
+     with distinct suffixes, so they can never coincide. Independent builder
+     calls could collide and let an assertion pass against the basename. */
+  const appSeed = build.packageName();
+  const appBasename = `${appSeed}-dir`;
+  const appFlag = `${appSeed}-flag`;
+  const appName = `@${appSeed}-scope/${appFlag}`;
 
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
