@@ -27,6 +27,8 @@ const silentLogger = createLogger(silentSink, silentSink);
 interface ConsumerPackage {
   readonly basename: string;
   readonly dir: string;
+  /** Codecov flag/component name: the unscoped manifest name. */
+  readonly flag: string;
   readonly name: string;
 }
 
@@ -38,10 +40,17 @@ interface ConsumerProject {
 
 const createConsumerProject = (): ConsumerProject => {
   const root = createTempDir();
-  const appBasename = build.packageName();
-  const appName = build.scopedPackageName();
-  const libBasename = build.packageName();
-  const libName = build.scopedPackageName();
+  /* Every directory basename and unscoped manifest name is suffixed from one
+     seed, so all six are distinct by construction. Independent builder calls
+     could collide — either letting an assertion pass against the basename, or
+     making the two packages share a flag and fail as a duplicate. */
+  const seed = build.packageName();
+  const appBasename = `${seed}-app-dir`;
+  const appFlag = `${seed}-app-flag`;
+  const appName = `@${seed}-scope/${appFlag}`;
+  const libBasename = `${seed}-lib-dir`;
+  const libFlag = `${seed}-lib-flag`;
+  const libName = `@${seed}-scope/${libFlag}`;
 
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
@@ -91,8 +100,8 @@ const createConsumerProject = (): ConsumerProject => {
   writeFileSync(path.join(libDir, 'eslint.config.ts'), '');
 
   return {
-    app: { basename: appBasename, dir: appDir, name: appName },
-    lib: { basename: libBasename, dir: libDir, name: libName },
+    app: { basename: appBasename, dir: appDir, flag: appFlag, name: appName },
+    lib: { basename: libBasename, dir: libDir, flag: libFlag, name: libName },
     root,
   };
 };
@@ -266,7 +275,8 @@ describe.concurrent(runSync, () => {
 
     const content = readFileSync(codecovPath, 'utf8');
 
-    expect(content).toContain(`${app.basename}:`);
+    expect(content).toContain(`${app.flag}:`);
+    expect(content).not.toContain(`${app.basename}:`);
     expect(content).toContain('carryforward');
   });
 

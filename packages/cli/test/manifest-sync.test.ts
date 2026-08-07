@@ -3,7 +3,7 @@ import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverWorkspace } from '#src/lib/discovery.js';
-import { checkManifests, generateManifests, unscopedName } from '#src/lib/manifest-sync.js';
+import { checkManifests, generateManifests } from '#src/lib/manifest-sync.js';
 import { createPklWorkspace, createTempDir, pklProjectSource, writeJson } from './helpers.ts';
 
 /** Scaffolds a single-package repo (root = package) with a publishable Pkl package. */
@@ -19,16 +19,6 @@ const writePublishablePkg = (
     `amends "pkl:Project"\n\npackage {\n  name = "${name}"\n}\n`,
   );
 };
-
-describe.concurrent(unscopedName, () => {
-  it('strips an npm scope', ({ expect }) => {
-    expect(unscopedName('@gtbuchanan/hk-config')).toBe('hk-config');
-  });
-
-  it('passes an unscoped name through unchanged', ({ expect }) => {
-    expect(unscopedName('hk-config')).toBe('hk-config');
-  });
-});
 
 describe.concurrent(generateManifests, () => {
   it('patches the package block, preserving the author-owned name', ({ expect }) => {

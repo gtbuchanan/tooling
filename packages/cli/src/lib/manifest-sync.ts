@@ -44,10 +44,6 @@ export interface ManifestWriter {
   readonly render: (pkg: PackageCapabilities, ctx: ManifestContext) => ManifestFile;
 }
 
-/** Strips an npm scope: `@gtbuchanan/hk-config` → `hk-config`. */
-export const unscopedName = (name: string): string =>
-  name.includes('/') ? name.slice(name.lastIndexOf('/') + 1) : name;
-
 /**
  * Pkl writer — patches an author-owned `PklProject` rather than generating it,
  * since the file legitimately holds author content (`dependencies`,

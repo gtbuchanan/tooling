@@ -5,7 +5,18 @@ import {
   buildOutput,
   buildRepoFields,
   resolveLicense,
+  unscopedName,
 } from '#src/lib/manifest.js';
+
+describe.concurrent(unscopedName, () => {
+  it('strips an npm scope', ({ expect }) => {
+    expect(unscopedName('@gtbuchanan/hk-config')).toBe('hk-config');
+  });
+
+  it('passes an unscoped name through unchanged', ({ expect }) => {
+    expect(unscopedName('hk-config')).toBe('hk-config');
+  });
+});
 
 describe.concurrent(buildOutput, () => {
   it('strips devDependencies and scripts', ({ expect }) => {

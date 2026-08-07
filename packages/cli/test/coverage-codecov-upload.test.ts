@@ -1,7 +1,8 @@
-import path from 'node:path';
 import { faker } from '@faker-js/faker';
+import * as build from '@gtbuchanan/test-utils/builders';
 import { runCommand } from 'citty';
 import { describe, it, vi } from 'vitest';
+import type { PackageCapabilities } from '#src/lib/discovery.js';
 
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
@@ -28,7 +29,45 @@ vi.mock(import('#src/lib/process.js'), async (importOriginal) => {
   return { ...actual, run: vi.fn<typeof actual.run>() };
 });
 
+/** A discovered package with no capabilities beyond the given manifest name. */
+const capabilities = (name: string): PackageCapabilities => ({
+  buildIncludes: [],
+  dir: faker.system.directoryPath(),
+  generateScripts: [],
+  hasBin: false,
+  hasE2e: false,
+  hasEslint: false,
+  hasGenerate: false,
+  hasPkl: false,
+  hasPklPackage: false,
+  hasScripts: false,
+  hasSkills: false,
+  hasTest: false,
+  hasTypeScript: false,
+  hasVitest: false,
+  hasVitestE2e: false,
+  hasVitestTests: false,
+  isPublished: false,
+  name,
+});
+
+/*
+ * The default implementation lives in the factory (not a lifecycle hook) so
+ * it survives `mockReset` — tests that don't care about the flag still get a
+ * discoverable package.
+ */
+vi.mock(import('#src/lib/discovery.js'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    discoverPackage: vi.fn<typeof actual.discoverPackage>(
+      () => capabilities(build.packageName()),
+    ),
+  };
+});
+
 const { existsSync, readFileSync } = await import('node:fs');
+const { discoverPackage } = await import('#src/lib/discovery.js');
 const { run } = await import('#src/lib/process.js');
 const { coverageCodecovUpload } = await import(
   '#src/commands/task/coverage-codecov-upload.js',
@@ -37,6 +76,7 @@ const { coverageCodecovUpload } = await import(
 const mockExistsSync = vi.mocked(existsSync);
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockRun = vi.mocked(run);
+const mockDiscoverPackage = vi.mocked(discoverPackage);
 
 const getRunArgs = (): readonly string[] => {
   const lastCall = mockRun.mock.calls.at(-1);
@@ -91,15 +131,26 @@ describe('coverage:codecov:upload', () => {
     expect(getRunArgs()).toContain('dist/coverage/vitest/fast/lcov.info');
   });
 
-  it('passes directory basename as flag', async ({ expect }) => {
+  it('passes the unscoped package name as flag', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
     mockExistsSync.mockReturnValue(true);
-    const expected = path.basename(process.cwd());
+    const name = build.packageName();
+    mockDiscoverPackage.mockReturnValue(capabilities(`@${build.packageName()}/${name}`));
 
     await invoke([]);
 
     expect(getRunArgs()).toContain('-F');
-    expect(getRunArgs()).toContain(expected);
+    expect(getRunArgs()).toContain(name);
+  });
+
+  it('discovers the package from the working directory', async ({ expect }) => {
+    vi.stubEnv('CI', 'true');
+    mockExistsSync.mockReturnValue(true);
+    mockDiscoverPackage.mockReturnValue(capabilities(build.packageName()));
+
+    await invoke([]);
+
+    expect(mockDiscoverPackage).toHaveBeenCalledWith(process.cwd());
   });
 
   it('passes network root from GITHUB_WORKSPACE', async ({ expect }) => {
