@@ -8,14 +8,20 @@ import {
 
 const opts = { isMonorepo: true, repoPath: 'github.com/o/r', version: '1.0.0' } as const;
 
-/** Wraps a package-block body in a minimal author-owned PklProject. */
+/**
+ * Wraps a package-block body in a minimal author-owned PklProject.
+ */
 const block = (body: string): string => `amends "pkl:Project"\n\npackage {\n${body}\n}\n`;
 
-/** A name+version block with `line` appended, plus a sibling block after it. */
+/**
+ * A name+version block with `line` appended, plus a sibling block after it.
+ */
 const blockWith = (line: string): string =>
   `${block(`  name = "x"\n  version = "0.0.0"\n${line}`)}\ndependencies {}\n`;
 
-/** Patches {@link blockWith} with the shared {@link opts}. */
+/**
+ * Patches {@link blockWith} with the shared {@link opts}.
+ */
 const patchAround = (line: string): string => patchPackageBlock(blockWith(line), opts);
 
 describe.concurrent(hasPackageBlock, () => {

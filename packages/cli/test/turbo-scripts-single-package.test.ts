@@ -43,7 +43,9 @@ const syncScripts = (root: string): void => {
   });
 };
 
-/** Adds one script, leaving the rest of the manifest (and so discovery) intact. */
+/**
+ * Adds one script, leaving the rest of the manifest (and so discovery) intact.
+ */
 const addScript = (root: string, name: string, value: string): void => {
   const filePath = path.join(root, 'package.json');
   const manifest = readJsonFile(filePath);

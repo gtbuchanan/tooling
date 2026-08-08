@@ -97,7 +97,9 @@ const reportUndeclaredAliases = (
   }
 };
 
-/** Detects unused anchors, duplicate anchors, and undeclared aliases. */
+/**
+ * Detects unused anchors, duplicate anchors, and undeclared aliases.
+ */
 export const anchors: Rule.RuleModule = {
   meta: {
     schema,

@@ -28,7 +28,9 @@ const prepare = (db: Database, sql: string) =>
 const insert = (db: Database, num: number, txt: string) =>
   shim.statementRun.call(prepare(db, 'INSERT INTO t VALUES(?,?)'), [num, txt]);
 
-/** Drains a rows handle the way libsql's iterate() does: 100-slot batches. */
+/**
+ * Drains a rows handle the way libsql's iterate() does: 100-slot batches.
+ */
 const drain = (rows: Rows): unknown[] => {
   const out: unknown[] = [];
   for (;;) {
@@ -199,7 +201,9 @@ describe.concurrent('metadata', () => {
     ]);
   });
 
-  /* An expression column has no source database, table, or origin column. */
+  /*
+  An expression column has no source database, table, or origin column.
+  */
   it('reports absent column metadata as null', ({ expect }) => {
     const db = openDb();
 

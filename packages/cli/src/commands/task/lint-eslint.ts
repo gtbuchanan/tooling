@@ -1,7 +1,9 @@
 import { defineCommand } from 'citty';
 import { run } from '../../lib/process.ts';
 
-/** Runs ESLint with caching and zero-warning threshold. */
+/**
+ * Runs ESLint with caching and zero-warning threshold.
+ */
 export const lintEslint = defineCommand({
   meta: {
     description: 'Run ESLint with caching and --max-warnings=0',

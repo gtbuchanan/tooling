@@ -4,7 +4,9 @@ import type { PluginFactory } from '../index.ts';
 
 // --- Stylistic ---
 
-/** Stylistic formatting rules for script files. */
+/**
+ * Stylistic formatting rules for script files.
+ */
 const plugin: PluginFactory = () => [
   {
     ...stylistic.configs.customize({ braceStyle: '1tbs', semi: true, severity: 'warn' }),

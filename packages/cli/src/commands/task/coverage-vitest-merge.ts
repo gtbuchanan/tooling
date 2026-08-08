@@ -1,7 +1,9 @@
 import { defineCommand } from 'citty';
 import { run } from '../../lib/process.ts';
 
-/** Merges fast + slow coverage blobs into a unified report. */
+/**
+ * Merges fast + slow coverage blobs into a unified report.
+ */
 export const coverageVitestMerge = defineCommand({
   meta: {
     description: 'Merge fast + slow coverage blobs into a unified report',

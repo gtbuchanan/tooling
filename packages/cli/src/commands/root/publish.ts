@@ -5,7 +5,9 @@ import { executePublishPkl } from '../../lib/pkl-release.ts';
 import { type RunOptions, capture, run } from '../../lib/process.ts';
 import { rootNames } from './names.ts';
 
-/** Injected side effects for {@link executePublish}. */
+/**
+ * Injected side effects for {@link executePublish}.
+ */
 export interface PublishDeps {
   readonly publishNonNpm: () => Promise<void>;
   readonly releaseNpm: () => Promise<void>;

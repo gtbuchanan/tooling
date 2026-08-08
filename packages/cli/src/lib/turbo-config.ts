@@ -6,7 +6,9 @@ import { typeCheckInclude } from './tsconfig-gen.ts';
 import { aggregateTasks } from './turbo-aggregates.ts';
 import { toTurboGlobs } from './turbo-globs.ts';
 
-/** Turbo-only aggregate task names (no CLI handler). */
+/**
+ * Turbo-only aggregate task names (no CLI handler).
+ */
 export const Aggregate = {
   build: 'build',
   buildCi: 'build:ci',
@@ -21,9 +23,13 @@ export const Aggregate = {
   typecheck: 'typecheck',
 } as const;
 
-/** Turborepo task definition. */
+/**
+ * Turborepo task definition.
+ */
 export interface TurboTask {
-  /** Opts a task out of caching entirely. Omitted means turbo's default (`true`). */
+  /**
+   * Opts a task out of caching entirely. Omitted means turbo's default (`true`).
+   */
   readonly cache?: boolean;
   readonly dependsOn?: readonly string[];
   readonly env?: readonly string[];
@@ -31,22 +37,30 @@ export interface TurboTask {
   readonly outputs?: readonly string[];
 }
 
-/** Generated turbo.json structure. */
+/**
+ * Generated turbo.json structure.
+ */
 export interface TurboJson {
   readonly $schema: string;
-  /** Files hashed into every task. Emitted only when discovery detects them. */
+  /**
+   * Files hashed into every task. Emitted only when discovery detects them.
+   */
   readonly globalDependencies?: readonly string[];
   readonly tasks: Readonly<Record<string, TurboTask>>;
 }
 
-/** Conditional entry for building records from flags. */
+/**
+ * Conditional entry for building records from flags.
+ */
 export interface ConditionalEntry<Value> {
   readonly condition: boolean;
   readonly key: string;
   readonly value: Value;
 }
 
-/** Filters conditional entries and builds a record. */
+/**
+ * Filters conditional entries and builds a record.
+ */
 export const collect = <Value>(
   entries: readonly ConditionalEntry<Value>[],
 ): Record<string, Value> =>
@@ -54,9 +68,13 @@ export const collect = <Value>(
     entries.filter(entry => entry.condition).map(entry => [entry.key, entry.value]),
   );
 
-/** Flags summarizing which tool categories are active across all packages. */
+/**
+ * Flags summarizing which tool categories are active across all packages.
+ */
 export interface ToolFlags {
-  /** Union of tsconfig.build.json `include` directories across published packages. */
+  /**
+   * Union of tsconfig.build.json `include` directories across published packages.
+   */
   readonly compileIncludes: readonly string[];
   readonly hasCheck: boolean;
   readonly hasE2e: boolean;
@@ -69,9 +87,13 @@ export interface ToolFlags {
    * package or a Pkl package. The union a future kind (.NET, etc.) extends.
    */
   readonly hasPackable: boolean;
-  /** Some package has Pkl source (drives `typecheck:pkl`). */
+  /**
+   * Some package has Pkl source (drives `typecheck:pkl`).
+   */
   readonly hasPkl: boolean;
-  /** Some package is a publishable Pkl package (drives `pack:pkl`, publish). */
+  /**
+   * Some package is a publishable Pkl package (drives `pack:pkl`, publish).
+   */
   readonly hasPklPackage: boolean;
   readonly hasPublished: boolean;
   /**
@@ -122,7 +144,9 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   };
 };
 
-/** Creates a topological (cross-package) task dependency. */
+/**
+ * Creates a topological (cross-package) task dependency.
+ */
 const topo = (task: string): string => `^${task}`;
 
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
@@ -257,7 +281,9 @@ const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
  */
 export const toPackageIgnore = (glob: string): string => `${glob}/**`;
 
-/** Turbo task key for tasks dispatched at the workspace root. */
+/**
+ * Turbo task key for tasks dispatched at the workspace root.
+ */
 export const rootTaskKey = (name: string): string => `//#${name}`;
 
 const rootLintTasks = (
@@ -360,7 +386,9 @@ const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTas
   },
 ];
 
-/** Generates turbo.json from workspace discovery. */
+/**
+ * Generates turbo.json from workspace discovery.
+ */
 export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   const flags = resolveToolFlags(discovery);
   const entries = [

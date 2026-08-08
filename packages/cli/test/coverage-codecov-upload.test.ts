@@ -29,7 +29,9 @@ vi.mock(import('#src/lib/process.js'), async (importOriginal) => {
   return { ...actual, run: vi.fn<typeof actual.run>() };
 });
 
-/** A discovered package with no capabilities beyond the given manifest name. */
+/**
+ * A discovered package with no capabilities beyond the given manifest name.
+ */
 const capabilities = (name: string): PackageCapabilities => ({
   buildIncludes: [],
   dir: faker.system.directoryPath(),

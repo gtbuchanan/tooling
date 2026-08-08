@@ -13,7 +13,9 @@ import { StringArray, UnknownRecord } from './schemas.ts';
  */
 export const tsconfigBaseFileName = 'tsconfig.base.json';
 
-/** `@gtbuchanan/tsconfig` variant the scaffolded base extends by default. */
+/**
+ * `@gtbuchanan/tsconfig` variant the scaffolded base extends by default.
+ */
 export const defaultTsconfigVariant = 'node';
 
 /**
@@ -27,10 +29,14 @@ export const generateTsconfigBase = (
 ): { readonly extends: readonly string[] } =>
   ({ extends: [`@gtbuchanan/tsconfig/${variant}.json`] });
 
-/** Directories and file patterns included in tsconfig.json for type-checking. */
+/**
+ * Directories and file patterns included in tsconfig.json for type-checking.
+ */
 export const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*', '.*'] as const;
 
-/** Directories included in tsconfig.build.json for compilation. */
+/**
+ * Directories included in tsconfig.build.json for compilation.
+ */
 export const buildInclude = ['bin', 'src'] as const;
 
 /**
@@ -54,7 +60,9 @@ export const resolveBuildIncludes = (dir: string): readonly string[] => {
   }
 };
 
-/** Shape of a generated tsconfig file. */
+/**
+ * Shape of a generated tsconfig file.
+ */
 export interface GeneratedTsconfig {
   readonly compilerOptions: Readonly<Record<string, unknown>>;
   readonly extends: string;
@@ -90,24 +98,32 @@ export const readUserCompilerOptions = (
   }
 };
 
-/** CompilerOptions owned by the type-check generator. */
+/**
+ * CompilerOptions owned by the type-check generator.
+ */
 export const typeCheckOwned: Readonly<Record<string, unknown>> = {
   noEmit: true,
 };
 
-/** CompilerOptions owned by the per-package build generator. */
+/**
+ * CompilerOptions owned by the per-package build generator.
+ */
 export const buildOwned: Readonly<Record<string, unknown>> = {
   outDir: 'dist/source',
   rootDir: '.',
 };
 
-/** CompilerOptions owned by the root build base generator. */
+/**
+ * CompilerOptions owned by the root build base generator.
+ */
 export const rootBuildOwned: Readonly<Record<string, unknown>> = {
   declaration: true,
   sourceMap: true,
 };
 
-/** Generates a type-check tsconfig.json. */
+/**
+ * Generates a type-check tsconfig.json.
+ */
 const generateTypeCheckConfig = (
   extendsPath: string,
   userCompilerOptions?: Record<string, unknown>,
@@ -117,7 +133,9 @@ const generateTypeCheckConfig = (
   include: [...typeCheckInclude],
 });
 
-/** Generates a build tsconfig.build.json. */
+/**
+ * Generates a build tsconfig.build.json.
+ */
 const generateBuildConfig = (
   extendsPath: string,
   userCompilerOptions?: Record<string, unknown>,
@@ -127,7 +145,9 @@ const generateBuildConfig = (
   include: [...buildInclude],
 });
 
-/** Generates the root tsconfig.build.json (shared base, no include). */
+/**
+ * Generates the root tsconfig.build.json (shared base, no include).
+ */
 const generateRootBuildConfig = (
   extendsPath: string,
   userCompilerOptions?: Record<string, unknown>,
@@ -136,13 +156,21 @@ const generateRootBuildConfig = (
   extends: extendsPath,
 });
 
-/** Descriptor for a single tsconfig file to generate/validate. */
+/**
+ * Descriptor for a single tsconfig file to generate/validate.
+ */
 export interface TsconfigDescriptor {
-  /** Generate the expected tsconfig content. */
+  /**
+   * Generate the expected tsconfig content.
+   */
   readonly generate: (userOpts?: Record<string, unknown>) => GeneratedTsconfig;
-  /** CompilerOptions keys owned by the generator (for drift validation). */
+  /**
+   * CompilerOptions keys owned by the generator (for drift validation).
+   */
   readonly ownedKeys: Readonly<Record<string, unknown>>;
-  /** Absolute path to the tsconfig file. */
+  /**
+   * Absolute path to the tsconfig file.
+   */
   readonly path: string;
 }
 
@@ -197,7 +225,9 @@ const mergeDescriptors = (
   };
 };
 
-/** Folds descriptors targeting the same path into one, preserving order. */
+/**
+ * Folds descriptors targeting the same path into one, preserving order.
+ */
 const dedupeByPath = (
   descriptors: readonly TsconfigDescriptor[],
 ): readonly TsconfigDescriptor[] => {

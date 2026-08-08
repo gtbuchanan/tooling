@@ -4,7 +4,9 @@ import type { PluginFactory } from '../index.ts';
 
 // --- Core ESLint rules not covered by presets ---
 
-/** Core ESLint rules not covered by presets. */
+/**
+ * Core ESLint rules not covered by presets.
+ */
 const coreRuleConfig: Linter.Config = {
   files: [...scriptFiles],
   rules: {

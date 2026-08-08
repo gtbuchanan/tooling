@@ -1,7 +1,9 @@
 import { defineCommand } from 'citty';
 import { run } from '../../lib/process.ts';
 
-/** Runs slow source tests via Vitest (only tests tagged `slow`). */
+/**
+ * Runs slow source tests via Vitest (only tests tagged `slow`).
+ */
 export const testVitestSlow = defineCommand({
   meta: {
     description: 'Run slow source tests via Vitest (only `slow` tag)',

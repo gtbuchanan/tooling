@@ -41,12 +41,16 @@ const resolveAndroidTurboBinary = (): string | undefined => {
   return existsSync(candidate) ? candidate : undefined;
 };
 
-/** Discriminated plan for how to invoke turbo from the current host. */
+/**
+ * Discriminated plan for how to invoke turbo from the current host.
+ */
 export type TurboInvocation =
   | { readonly kind: 'error'; readonly message: string }
   | { readonly kind: 'spawn'; readonly args: readonly string[]; readonly bin: string };
 
-/** Inputs to {@link planTurboInvocation}. */
+/**
+ * Inputs to {@link planTurboInvocation}.
+ */
 export interface PlanTurboInvocationOptions {
   readonly platform: string;
   readonly rawArgs: readonly string[];
@@ -81,7 +85,9 @@ export const planTurboInvocation = (
   return { args: [...options.rawArgs], bin: resolved, kind: 'spawn' };
 };
 
-/** `gtb turbo` — runs turbo, with an Android (Termux) escape hatch. */
+/**
+ * `gtb turbo` — runs turbo, with an Android (Termux) escape hatch.
+ */
 export const turbo = defineCommand({
   meta: {
     description: 'Run turbo (with an Android escape hatch)',

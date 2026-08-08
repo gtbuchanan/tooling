@@ -21,7 +21,9 @@ import manifest from '../package.json' with { type: 'json' };
 const isWorkspacePlugin = (candidate: ESLint.Plugin): boolean =>
   candidate === plugin || candidate === frontmatter;
 
-/* The overlay registers plugins of its own, so it is covered too. */
+/*
+The overlay registers plugins of its own, so it is covered too.
+*/
 const exported = [
   ...Object.values(configs).flat(),
   ...defineSkillFrontmatterConfig('claude-code'),

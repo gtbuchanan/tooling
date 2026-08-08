@@ -2,7 +2,9 @@ import type { AST, Rule } from 'eslint';
 import type { Configuration, LintError } from 'markdownlint';
 import { lint as lintSync } from 'markdownlint/sync';
 
-/** Converts a markdownlint `LintError` to an ESLint location object. */
+/**
+ * Converts a markdownlint `LintError` to an ESLint location object.
+ */
 const getLocation = (error: LintError): AST.SourceLocation | { column: number; line: number } => {
   const line = error.lineNumber;
   if (error.errorRange) {
@@ -15,7 +17,9 @@ const getLocation = (error: LintError): AST.SourceLocation | { column: number; l
   return { column: 0, line };
 };
 
-/** Formats the diagnostic message from a markdownlint error. */
+/**
+ * Formats the diagnostic message from a markdownlint error.
+ */
 const formatMessage = (error: LintError): string => {
   const names = error.ruleNames.join('/');
   const detail = error.errorDetail ? `: ${error.errorDetail}` : '';
@@ -78,7 +82,9 @@ const createFix = (
   };
 };
 
-/** ESLint rule that runs markdownlint on the file content. */
+/**
+ * ESLint rule that runs markdownlint on the file content.
+ */
 export const lint: Rule.RuleModule = {
   meta: {
     fixable: 'code',

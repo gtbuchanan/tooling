@@ -29,7 +29,9 @@ const testSchema = {
 
 const schemaId = 'https://example.test/schemas/frontmatter.json';
 
-/** A fresh copy of {@link testSchema} carrying a declared `$id`. */
+/**
+ * A fresh copy of {@link testSchema} carrying a declared `$id`.
+ */
 const identifiedSchema = () => ({
   ...structuredClone(testSchema),
   $id: schemaId,

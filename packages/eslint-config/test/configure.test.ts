@@ -94,7 +94,9 @@ describe.concurrent(configure, () => {
     expect(configs.some(cfg => cfg.name?.includes('pnpm'))).toBe(true);
   });
 
-  /* An empty policy makes the rule throw when it is created. */
+  /*
+  An empty policy makes the rule throw when it is created.
+  */
   it('drops the settings rule when the policy is empty', async ({ expect }) => {
     const configs = await configure({
       onlyWarn: false,

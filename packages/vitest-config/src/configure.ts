@@ -11,7 +11,9 @@ import {
 } from 'vitest/config';
 import { scriptFileExtensions } from './files.ts';
 
-/** Shared options for all Vitest configuration layers. */
+/**
+ * Shared options for all Vitest configuration layers.
+ */
 export interface VitestConfigureOptions {
   /**
    * Include `console-fail-test` setup file.
@@ -36,9 +38,13 @@ export interface VitestConfigureOptions {
  */
 export type VitestSlowTagOptions = Partial<Omit<TestTagDefinition, 'name'>>;
 
-/** Options for global Vitest configuration ({@link configureGlobal}). */
+/**
+ * Options for global Vitest configuration ({@link configureGlobal}).
+ */
 export interface VitestConfigureGlobalOptions extends VitestConfigureOptions {
-  /** Glob patterns for auto-discovering project directories. */
+  /**
+   * Glob patterns for auto-discovering project directories.
+   */
   readonly projects?: readonly string[];
   /**
    * Configuration for the `slow` test tag. Tests tagged `slow` get an
@@ -53,7 +59,9 @@ export interface VitestConfigureGlobalOptions extends VitestConfigureOptions {
   readonly tags?: readonly TestTagDefinition[];
 }
 
-/** Default test exclude patterns, extending Vitest's built-in excludes. */
+/**
+ * Default test exclude patterns, extending Vitest's built-in excludes.
+ */
 export const excludeDefault = [
   ...defaultExclude,
   '.claude/worktrees/**',
@@ -64,14 +72,18 @@ const packageName = '@gtbuchanan/vitest-config';
 
 const coverageExtensions = `*.{${scriptFileExtensions.join(',')}}`;
 
-/** Default directories included in coverage reports. */
+/**
+ * Default directories included in coverage reports.
+ */
 export const defaultCoverageDirs = [
   'bin',
   'scripts',
   'src',
 ] as const;
 
-/** Default coverage include globs derived from {@link defaultCoverageDirs}. */
+/**
+ * Default coverage include globs derived from {@link defaultCoverageDirs}.
+ */
 export const coverageInclude = defaultCoverageDirs.map(
   dir => `${dir}/**/${coverageExtensions}`,
 );
@@ -99,7 +111,9 @@ export const resolveCoverageInclude = (
   ];
 };
 
-/** Resolves the list of Vitest setup files based on feature flags. */
+/**
+ * Resolves the list of Vitest setup files based on feature flags.
+ */
 export const resolveSetupFiles = (options: VitestConfigureOptions): string[] => {
   const { consoleFailTest: shouldFailOnConsole = true, hasAssertions = true } =
     options;

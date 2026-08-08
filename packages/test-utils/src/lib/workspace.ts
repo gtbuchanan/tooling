@@ -5,14 +5,18 @@ import * as v from 'valibot';
 
 const StringRecord = v.record(v.string(), v.string());
 
-/** Minimal package.json schema used for fixture workspace resolution. */
+/**
+ * Minimal package.json schema used for fixture workspace resolution.
+ */
 export const PackageJson = v.object({
   dependencies: v.optional(StringRecord),
   name: v.optional(v.string()),
   version: v.string(),
 });
 
-/** Inferred type from {@link PackageJson}. */
+/**
+ * Inferred type from {@link PackageJson}.
+ */
 export type PackageJson = v.InferOutput<typeof PackageJson>;
 
 /*
@@ -34,7 +38,9 @@ const cache: {
   root?: string;
 } = {};
 
-/** Returns the workspace root directory, memoized per worker. */
+/**
+ * Returns the workspace root directory, memoized per worker.
+ */
 export const getWorkspaceRoot = (): string =>
   cache.root ??= findWorkspaceRoot();
 
@@ -52,7 +58,9 @@ const buildWorkspaceIndex = (): ReadonlyMap<string, PackageJson> => {
   return index;
 };
 
-/** Returns the workspace package index keyed by package name, memoized per worker. */
+/**
+ * Returns the workspace package index keyed by package name, memoized per worker.
+ */
 export const getWorkspaceIndex = (): ReadonlyMap<string, PackageJson> =>
   cache.index ??= buildWorkspaceIndex();
 

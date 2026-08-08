@@ -26,7 +26,9 @@ export const parseForESLint = (code: string): Linter.ESLintParseResult => {
   };
 };
 
-/** Parser metadata. */
+/**
+ * Parser metadata.
+ */
 export const meta = {
   name: '@gtbuchanan/eslint-plugin-md-frontmatter/test-parser',
 };

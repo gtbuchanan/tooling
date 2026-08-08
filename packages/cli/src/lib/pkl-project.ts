@@ -12,12 +12,16 @@
  * and everything else.
  */
 
-/** The sync-owned fields, written into the `package {}` block by sync. */
+/**
+ * The sync-owned fields, written into the `package {}` block by sync.
+ */
 const ownedKeys = ['version', 'baseUri', 'packageZipUrl'] as const;
 type OwnedKey = (typeof ownedKeys)[number];
 type OwnedValues = Record<OwnedKey, string>;
 
-/** Span of a `package {}` block: the opening `{` and its matching `}`. */
+/**
+ * Span of a `package {}` block: the opening `{` and its matching `}`.
+ */
 interface BlockSpan {
   readonly close: number;
   readonly open: number;
@@ -28,14 +32,18 @@ const blockCommentOpen = '/*';
 const blockCommentClose = '*/';
 const blockString = '"""';
 
-/** Index just past `token` (incl. it), or end-of-source when it isn't found. */
+/**
+ * Index just past `token` (incl. it), or end-of-source when it isn't found.
+ */
 const advancePast = (source: string, token: string, from: number): number => {
   const end = source.indexOf(token, from);
 
   return end === -1 ? source.length : end + token.length;
 };
 
-/** Index just past a `"…"` string starting at `open`, honoring `\` escapes. */
+/**
+ * Index just past a `"…"` string starting at `open`, honoring `\` escapes.
+ */
 const skipString = (source: string, open: number): number => {
   let index = open + 1;
   while (index < source.length && source[index] !== '"') {
@@ -67,7 +75,9 @@ const skipNonCode = (source: string, index: number): number => {
   return source.startsWith('"', index) ? skipString(source, index) : index;
 };
 
-/** Scans from the opening brace to its matching close. */
+/**
+ * Scans from the opening brace to its matching close.
+ */
 const matchBrace = (source: string, open: number): number | undefined => {
   let depth = 0;
   let index = open;
@@ -89,7 +99,9 @@ const matchBrace = (source: string, open: number): number | undefined => {
   return undefined;
 };
 
-/** Locates the top-level `package { … }` block, if any. */
+/**
+ * Locates the top-level `package { … }` block, if any.
+ */
 const findPackageBlock = (source: string): BlockSpan | undefined => {
   const match = /(?:^|\n)[ \t]*package[ \t]*\{/v.exec(source);
   if (match === null) return undefined;
@@ -99,11 +111,15 @@ const findPackageBlock = (source: string): BlockSpan | undefined => {
   return close === undefined ? undefined : { close, open };
 };
 
-/** True when the `PklProject` declares a `package {}` block (⇒ publishable). */
+/**
+ * True when the `PklProject` declares a `package {}` block (⇒ publishable).
+ */
 export const hasPackageBlock = (source: string): boolean =>
   findPackageBlock(source) !== undefined;
 
-/** Reads a string-literal field from the `package {}` block, if present. */
+/**
+ * Reads a string-literal field from the `package {}` block, if present.
+ */
 const readField = (source: string, key: string): string | undefined => {
   const block = findPackageBlock(source);
   if (block === undefined) return undefined;
@@ -114,25 +130,39 @@ const readField = (source: string, key: string): string | undefined => {
   return regExp.exec(body)?.groups?.['value'];
 };
 
-/** The package's identity `name` literal — the source of truth for releases. */
+/**
+ * The package's identity `name` literal — the source of truth for releases.
+ */
 export const readPackageName = (source: string): string | undefined =>
   readField(source, 'name');
 
-/** The package's `version` literal. */
+/**
+ * The package's `version` literal.
+ */
 export const readPackageVersion = (source: string): string | undefined =>
   readField(source, 'version');
 
-/** Inputs for {@link patchPackageBlock}. */
+/**
+ * Inputs for {@link patchPackageBlock}.
+ */
 export interface PatchPackageOptions {
-  /** Workspace is a monorepo (⇒ `<name>@<version>` release tag vs `v<version>`). */
+  /**
+   * Workspace is a monorepo (⇒ `<name>@<version>` release tag vs `v<version>`).
+   */
   readonly isMonorepo: boolean;
-  /** Scheme-less repo path, e.g. `github.com/gtbuchanan/tooling`. */
+  /**
+   * Scheme-less repo path, e.g. `github.com/gtbuchanan/tooling`.
+   */
   readonly repoPath: string;
-  /** Version to stamp (from the changeset-managed `package.json`). */
+  /**
+   * Version to stamp (from the changeset-managed `package.json`).
+   */
   readonly version: string;
 }
 
-/* Pkl interpolation fragments — kept raw so the `\(…)` reaches the file. */
+/*
+Pkl interpolation fragments — kept raw so the `\(…)` reaches the file.
+*/
 const interpName = String.raw`\(name)`;
 const interpBasename = String.raw`\(name)@\(version)`;
 
@@ -152,10 +182,14 @@ const ownedValues = ({ isMonorepo, repoPath, version }: PatchPackageOptions): Ow
   };
 };
 
-/** Leading whitespace of a line. */
+/**
+ * Leading whitespace of a line.
+ */
 const indentOf = (line: string): string => line.slice(0, line.length - line.trimStart().length);
 
-/** The owned key a line assigns (`version`/`baseUri`/`packageZipUrl`), if any. */
+/**
+ * The owned key a line assigns (`version`/`baseUri`/`packageZipUrl`), if any.
+ */
 const ownedKeyOf = (line: string): OwnedKey | undefined =>
   ownedKeys.find((key) => {
     const regExp = new RegExp(String.raw`^[ \t]*${key}[ \t]*=`, 'v');

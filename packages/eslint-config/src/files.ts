@@ -6,7 +6,9 @@ export const scriptFileExtensions = [
   'cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx',
 ] as const;
 
-/** Glob patterns matching all script files in any directory. */
+/**
+ * Glob patterns matching all script files in any directory.
+ */
 export const scriptFiles: string[] = scriptFileExtensions.map(
   ext => `**/*.${ext}`,
 );
@@ -17,7 +19,9 @@ export const scriptFiles: string[] = scriptFileExtensions.map(
  */
 export const tsOnlyExtensions = ['cts', 'mts', 'ts', 'tsx'] as const;
 
-/** Glob patterns matching only TypeScript files. */
+/**
+ * Glob patterns matching only TypeScript files.
+ */
 export const tsOnlyFiles: string[] = tsOnlyExtensions.map(
   ext => `**/*.${ext}`,
 );

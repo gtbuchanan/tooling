@@ -16,7 +16,9 @@ import type { PluginFactory } from '../index.ts';
  */
 const jsonRules: Linter.RulesRecord = { ...json.configs.recommended.rules };
 
-/** JSON and JSONC linting configs. */
+/**
+ * JSON and JSONC linting configs.
+ */
 const plugin: PluginFactory = () => [
   {
     files: ['**/*.json'],

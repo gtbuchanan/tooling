@@ -9,7 +9,9 @@
 import { chmodSync, copyFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-/** rwxr-xr-x — owner full, group/other read+execute (no write). */
+/**
+ * rwxr-xr-x — owner full, group/other read+execute (no write).
+ */
 const executableMode = 0o755;
 
 const pkgDir = path.join(import.meta.dirname, '..');

@@ -13,7 +13,9 @@ const claudeCode = [
   ...defineSkillFrontmatterConfig('claude-code'),
 ];
 
-/** Wraps extra frontmatter lines in an otherwise spec-valid `SKILL.md`. */
+/**
+ * Wraps extra frontmatter lines in an otherwise spec-valid `SKILL.md`.
+ */
 const skill = (extra = ''): string =>
   `---\nname: my-skill\ndescription: A skill.\n${extra}---\n\n# My skill\n`;
 

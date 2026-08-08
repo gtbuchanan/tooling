@@ -7,17 +7,25 @@ import { readJsonFile } from './file-writer.ts';
 import { type Manifest, ManifestSchema } from './manifest.ts';
 import { StringArray } from './schemas.ts';
 
-/** Resolved workspace context for pack operations. */
+/**
+ * Resolved workspace context for pack operations.
+ */
 export interface WorkspaceContext {
   readonly packageDirs: readonly string[];
-  /** Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode. */
+  /**
+   * Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode.
+   */
   readonly packageGlobs: readonly string[];
   readonly rootDir: string;
 }
 
-/** Options for {@link resolveWorkspace}. */
+/**
+ * Options for {@link resolveWorkspace}.
+ */
 export interface ResolveWorkspaceOptions {
-  /** Directory to search from. Defaults to `process.cwd()`. */
+  /**
+   * Directory to search from. Defaults to `process.cwd()`.
+   */
   readonly cwd?: string;
 }
 
@@ -49,17 +57,23 @@ const WorkspaceSchema = v.object({
   packages: v.optional(v.nullable(StringArray)),
 });
 
-/** Extracts package glob patterns from pnpm-workspace.yaml. */
+/**
+ * Extracts package glob patterns from pnpm-workspace.yaml.
+ */
 const parsePackageGlobs = (workspaceFile: string): readonly string[] => {
   const content = readFileSync(workspaceFile, 'utf8');
   const { packages } = v.parse(WorkspaceSchema, parse(content));
   return packages ?? [];
 };
 
-/** Reads and parses a package.json from the given directory. */
+/**
+ * Reads and parses a package.json from the given directory.
+ */
 export const readManifest = (dir: string): unknown =>
   readJsonFile(path.join(dir, 'package.json'));
 
-/** Reads and validates a package.json as a {@link Manifest}. */
+/**
+ * Reads and validates a package.json as a {@link Manifest}.
+ */
 export const readParsedManifest = (dir: string): Manifest =>
   v.parse(ManifestSchema, readManifest(dir));

@@ -14,10 +14,14 @@ const skillFile = path.join(cwd, 'skills', 'my-skill', 'SKILL.md');
 
 const linter = new Linter({ cwd });
 
-/** Extensions for a host this package ships nothing for. */
+/**
+ * Extensions for a host this package ships nothing for.
+ */
 const teamExtensions = { 'x-team-owner': { minLength: 1, type: 'string' } };
 
-/** Wraps extra frontmatter lines in an otherwise spec-valid `SKILL.md`. */
+/**
+ * Wraps extra frontmatter lines in an otherwise spec-valid `SKILL.md`.
+ */
 const skill = (extra = ''): string =>
   `---\nname: my-skill\ndescription: A skill.\n${extra}---\n\n# My skill\n`;
 

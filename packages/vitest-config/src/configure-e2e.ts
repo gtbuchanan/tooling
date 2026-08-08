@@ -15,7 +15,9 @@ import {
 } from './configure.ts';
 import { scriptFileExtensions } from './files.ts';
 
-/** Options for combined e2e configuration ({@link configureEndToEnd}). */
+/**
+ * Options for combined e2e configuration ({@link configureEndToEnd}).
+ */
 export interface VitestEndToEndConfigureOptions extends VitestConfigureOptions {
   /**
    * Test timeout in milliseconds.
@@ -24,7 +26,9 @@ export interface VitestEndToEndConfigureOptions extends VitestConfigureOptions {
   readonly testTimeout?: number;
 }
 
-/** Options for global e2e configuration ({@link configureEndToEndGlobal}). */
+/**
+ * Options for global e2e configuration ({@link configureEndToEndGlobal}).
+ */
 export interface VitestEndToEndConfigureGlobalOptions extends VitestConfigureGlobalOptions {
   /**
    * Test timeout in milliseconds.

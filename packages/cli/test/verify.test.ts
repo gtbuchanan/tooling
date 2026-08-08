@@ -15,7 +15,9 @@ import {
 } from './helpers.ts';
 
 interface ConsumerProject {
-  /** `flag` is the Codecov flag/component name: the unscoped manifest name. */
+  /**
+   * `flag` is the Codecov flag/component name: the unscoped manifest name.
+   */
   readonly app: { basename: string; dir: string; flag: string; name: string };
   readonly root: string;
 }

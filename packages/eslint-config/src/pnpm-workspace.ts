@@ -5,11 +5,17 @@
  * rules and are not part of this policy.
  */
 export interface PnpmWorkspaceSettings {
-  /** Keys that must be absent. Reported, never auto-fixed. */
+  /**
+   * Keys that must be absent. Reported, never auto-fixed.
+   */
   readonly forbiddenFields?: string[];
-  /** Keys that must be present, with any value. Reported, never auto-fixed. */
+  /**
+   * Keys that must be present, with any value. Reported, never auto-fixed.
+   */
   readonly requiredFields?: string[];
-  /** Keys that must be present with exactly these values. Auto-fixable. */
+  /**
+   * Keys that must be present with exactly these values. Auto-fixable.
+   */
   readonly settings?: Record<string, unknown>;
 }
 

@@ -4,7 +4,9 @@ import type { PluginFactory } from '../index.ts';
 
 // --- Regexp ---
 
-/** Regexp recommended config for catching unsafe and inefficient patterns. */
+/**
+ * Regexp recommended config for catching unsafe and inefficient patterns.
+ */
 const plugin: PluginFactory = () => [
   {
     ...regexpPlugin.configs['flat/recommended'],

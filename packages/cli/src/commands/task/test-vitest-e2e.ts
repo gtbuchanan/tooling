@@ -1,7 +1,9 @@
 import { defineCommand } from 'citty';
 import { run } from '../../lib/process.ts';
 
-/** Runs end-to-end tests via Vitest with the e2e config. */
+/**
+ * Runs end-to-end tests via Vitest with the e2e config.
+ */
 export const testVitestE2e = defineCommand({
   meta: {
     description: 'Run end-to-end tests via Vitest (vitest.config.e2e.ts)',

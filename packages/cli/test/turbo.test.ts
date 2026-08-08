@@ -27,7 +27,9 @@ const baseOptions = {
 
 const stubResolver = (resolved?: string) => (): string | undefined => resolved;
 
-/** Narrows a {@link TurboInvocation} to the error variant or throws. */
+/**
+ * Narrows a {@link TurboInvocation} to the error variant or throws.
+ */
 function assertErrorPlan(
   plan: TurboInvocation,
 ): asserts plan is Extract<TurboInvocation, { kind: 'error' }> {

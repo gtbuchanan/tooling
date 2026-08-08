@@ -27,7 +27,9 @@ const silentLogger = createLogger(silentSink, silentSink);
 interface ConsumerPackage {
   readonly basename: string;
   readonly dir: string;
-  /** Codecov flag/component name: the unscoped manifest name. */
+  /**
+   * Codecov flag/component name: the unscoped manifest name.
+   */
   readonly flag: string;
   readonly name: string;
 }

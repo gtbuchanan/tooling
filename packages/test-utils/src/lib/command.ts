@@ -2,14 +2,18 @@ import type { SpawnOptions, SpawnSyncOptions } from 'node:child_process';
 import { devNull } from 'node:os';
 import crossSpawn from 'cross-spawn';
 
-/** Result of a child process execution. */
+/**
+ * Result of a child process execution.
+ */
 export interface CommandResult {
   readonly exitCode: number;
   readonly stderr: string;
   readonly stdout: string;
 }
 
-/** Git environment with isolation properties and optional identity. */
+/**
+ * Git environment with isolation properties and optional identity.
+ */
 interface GitEnv extends NodeJS.ProcessEnv {
   readonly GIT_AUTHOR_EMAIL?: string;
   readonly GIT_AUTHOR_NAME?: string;
@@ -49,7 +53,9 @@ export const exec = (command: string, args: readonly string[], options: SpawnSyn
   }
 };
 
-/** Spawns a command, captures stdout/stderr, and returns the result. */
+/**
+ * Spawns a command, captures stdout/stderr, and returns the result.
+ */
 export const runCommand = (
   command: string,
   args: readonly string[],

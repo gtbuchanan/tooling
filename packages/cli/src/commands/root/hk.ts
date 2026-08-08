@@ -9,7 +9,9 @@ import { rootNames } from './names.ts';
 export const hkMode = (env: NodeJS.ProcessEnv): 'check' | 'fix' =>
   env['CI'] ? 'check' : 'fix';
 
-/** A base ref plus the remaining args to forward to hk. */
+/**
+ * A base ref plus the remaining args to forward to hk.
+ */
 export interface BaseRef {
   readonly base: string;
   readonly rest: readonly string[];
@@ -28,32 +30,42 @@ export const resolveBaseRef = (argv: readonly string[]): BaseRef => {
     : { base: 'origin/main', rest: [...argv] };
 };
 
-/** A resolved hk invocation. */
+/**
+ * A resolved hk invocation.
+ */
 export interface HkInvocation {
   readonly args: readonly string[];
   readonly bin: 'hk';
 }
 
-/** Inputs to {@link planHkAll}. */
+/**
+ * Inputs to {@link planHkAll}.
+ */
 export interface PlanHkAllOptions {
   readonly env: NodeJS.ProcessEnv;
   readonly rawArgs: readonly string[];
 }
 
-/** Plans a full-repo hk run. */
+/**
+ * Plans a full-repo hk run.
+ */
 export const planHkAll = (options: PlanHkAllOptions): HkInvocation => ({
   args: [hkMode(options.env), '--all', ...options.rawArgs],
   bin: 'hk',
 });
 
-/** Inputs to {@link planHkBase}. */
+/**
+ * Inputs to {@link planHkBase}.
+ */
 export interface PlanHkBaseOptions {
   readonly base: string;
   readonly mode: 'check' | 'fix';
   readonly rest: readonly string[];
 }
 
-/** Plans a base-diff hk run over the range from `base` to HEAD. */
+/**
+ * Plans a base-diff hk run over the range from `base` to HEAD.
+ */
 export const planHkBase = (options: PlanHkBaseOptions): HkInvocation => ({
   args: [options.mode, `--from-ref=${options.base}`, '--to-ref=HEAD', ...options.rest],
   bin: 'hk',
@@ -72,7 +84,9 @@ export interface HkRunnerDeps {
 
 const defaultDeps: HkRunnerDeps = { capture, env: process.env, run };
 
-/** Runs hk across all files. */
+/**
+ * Runs hk across all files.
+ */
 export const executeHkAll = async (
   rawArgs: readonly string[],
   deps: HkRunnerDeps = defaultDeps,
@@ -100,7 +114,9 @@ export const resolveFetchTarget = async (
     : ['origin', base];
 };
 
-/** Runs hk over the files changed from the resolved base ref. */
+/**
+ * Runs hk over the files changed from the resolved base ref.
+ */
 export const executeHkBase = async (
   rawArgs: readonly string[],
   deps: HkRunnerDeps = defaultDeps,
@@ -132,7 +148,9 @@ const base = defineCommand({
   run: ({ rawArgs }) => executeHkBase(rawArgs),
 });
 
-/** `gtb hk` — runs hk pre-commit hooks across all or changed files. */
+/**
+ * `gtb hk` — runs hk pre-commit hooks across all or changed files.
+ */
 export const hk = defineCommand({
   meta: {
     description: 'Run hk pre-commit hooks',

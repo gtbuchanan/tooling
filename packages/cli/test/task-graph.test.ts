@@ -3,7 +3,9 @@ import {
   type SchedulerInput, type TaskSchedule, resolveSchedule,
 } from '#src/lib/task-graph.js';
 
-/** Helper to create a minimal scheduler input for testing. */
+/**
+ * Helper to create a minimal scheduler input for testing.
+ */
 const makeTurboJson = (
   tasks: SchedulerInput['tasks'],
 ): SchedulerInput => ({ tasks });

@@ -57,7 +57,9 @@ const reportUnwanted = (
   });
 };
 
-/** Requires or forbids `---` document start markers. */
+/**
+ * Requires or forbids `---` document start markers.
+ */
 export const documentStart: Rule.RuleModule = {
   meta: {
     fixable: 'code',

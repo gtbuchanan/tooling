@@ -19,11 +19,15 @@ import {
   generatePackageScripts, generateRootScripts, generateTurboJson,
 } from '#src/lib/turbo-config.js';
 
-/** Creates an isolated temp directory for test fixtures. */
+/**
+ * Creates an isolated temp directory for test fixtures.
+ */
 export const createTempDir = (): string =>
   mkdtempSync(path.join(tmpdir(), 'gtb-test-'));
 
-/** A capturing logger plus accessors for the buffered stdout/stderr text. */
+/**
+ * A capturing logger plus accessors for the buffered stdout/stderr text.
+ */
 export interface CapturedLogger {
   readonly logger: Logger;
   readonly out: () => string;
@@ -52,7 +56,9 @@ export const captureLogger = (): CapturedLogger => {
   };
 };
 
-/** Writes generated tsconfigs for a discovered workspace. */
+/**
+ * Writes generated tsconfigs for a discovered workspace.
+ */
 export const writeTsconfigs = (
   rootDir: string,
   packages: readonly PackageCapabilities[],
@@ -63,22 +69,36 @@ export const writeTsconfigs = (
   }
 };
 
-/** Writes a JSON file to a directory. */
+/**
+ * Writes a JSON file to a directory.
+ */
 export const writeJson = (dir: string, name: string, data: unknown): void => {
   writeFileSync(path.join(dir, name), JSON.stringify(data));
 };
 
-/** A scaffolded temp monorepo containing one Pkl package. */
+/**
+ * A scaffolded temp monorepo containing one Pkl package.
+ */
 export interface PklWorkspace {
-  /** Unscoped package name (`hk-config`). */
+  /**
+   * Unscoped package name (`hk-config`).
+   */
   readonly name: string;
-  /** Absolute path of the Pkl package directory. */
+  /**
+   * Absolute path of the Pkl package directory.
+   */
   readonly pkgDir: string;
-  /** Repo URL minus scheme, e.g. `github.com/owner/repo`. */
+  /**
+   * Repo URL minus scheme, e.g. `github.com/owner/repo`.
+   */
   readonly repoPath: string;
-  /** Workspace root directory. */
+  /**
+   * Workspace root directory.
+   */
   readonly root: string;
-  /** Pkl package version. */
+  /**
+   * Pkl package version.
+   */
   readonly version: string;
 }
 
@@ -106,19 +126,31 @@ export const pklProjectSource = (
   ].join('\n');
 };
 
-/** A scaffolded temp monorepo containing one published npm package. */
+/**
+ * A scaffolded temp monorepo containing one published npm package.
+ */
 export interface NpmWorkspace {
-  /** Scoped package name (`@scope/pkg`). */
+  /**
+   * Scoped package name (`@scope/pkg`).
+   */
   readonly name: string;
-  /** Absolute path of the published package directory. */
+  /**
+   * Absolute path of the published package directory.
+   */
   readonly pkgDir: string;
-  /** Workspace root directory. */
+  /**
+   * Workspace root directory.
+   */
   readonly root: string;
-  /** Package version. */
+  /**
+   * Package version.
+   */
   readonly version: string;
 }
 
-/** Scaffolds a temp monorepo with a single published npm package. */
+/**
+ * Scaffolds a temp monorepo with a single published npm package.
+ */
 export const createNpmWorkspace = (): NpmWorkspace => {
   const root = createTempDir();
   writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
@@ -137,7 +169,9 @@ export const createNpmWorkspace = (): NpmWorkspace => {
   return { name, pkgDir, root, version };
 };
 
-/** Options for {@link createPklWorkspace}. */
+/**
+ * Options for {@link createPklWorkspace}.
+ */
 export interface PklWorkspaceOptions {
   /**
    * Whether the Pkl package declares a `package {}` block (⇒ publishable).
@@ -147,7 +181,9 @@ export interface PklWorkspaceOptions {
   readonly publishable?: boolean;
 }
 
-/** Scaffolds a temp monorepo with a single Pkl package and returns its facts. */
+/**
+ * Scaffolds a temp monorepo with a single Pkl package and returns its facts.
+ */
 export const createPklWorkspace = (options: PklWorkspaceOptions = {}): PklWorkspace => {
   const root = createTempDir();
   const homepage = build.gitHubRepoUrl();
@@ -177,21 +213,27 @@ const TurboJsonSchema = v.looseObject({
   tasks: v.optional(UnknownRecord),
 });
 
-/** Reads the tasks from a project's turbo.json. */
+/**
+ * Reads the tasks from a project's turbo.json.
+ */
 export const readTurboTasks = (root: string): Record<string, unknown> => {
   const raw: unknown = JSON.parse(readFileSync(path.join(root, 'turbo.json'), 'utf8'));
   const { tasks } = v.parse(TurboJsonSchema, raw);
   return tasks ?? {};
 };
 
-/** Reads the scripts from a package's package.json. */
+/**
+ * Reads the scripts from a package's package.json.
+ */
 export const readScripts = (pkgDir: string): Record<string, string> => {
   const raw: unknown = JSON.parse(readFileSync(path.join(pkgDir, 'package.json'), 'utf8'));
   const { scripts } = v.parse(ManifestSchema, raw);
   return scripts ?? {};
 };
 
-/** Initializes a fully valid project state (turbo.json, tsconfigs, scripts, codecov.yml). */
+/**
+ * Initializes a fully valid project state (turbo.json, tsconfigs, scripts, codecov.yml).
+ */
 export const initProject = (root: string): void => {
   const discovery = discoverWorkspace({ cwd: root });
   writeJsonFile(path.join(root, 'turbo.json'), generateTurboJson(discovery));

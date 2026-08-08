@@ -15,7 +15,9 @@ import { testVitest } from './test-vitest.ts';
 import { typecheckPkl } from './typecheck-pkl.ts';
 import { typecheckTs } from './typecheck-ts.ts';
 
-/** `gtb task <name>` — invokes a single leaf build tool. */
+/**
+ * `gtb task <name>` — invokes a single leaf build tool.
+ */
 export const task = defineCommand({
   meta: {
     description: 'Run a single leaf build tool (intended for turbo tasks)',

@@ -1,13 +1,17 @@
 import crossSpawn from 'cross-spawn';
 
-/** Options for spawning a single command. */
+/**
+ * Options for spawning a single command.
+ */
 export interface RunOptions {
   readonly args?: readonly string[];
   readonly cwd?: string;
   readonly env?: NodeJS.ProcessEnv;
 }
 
-/** Spawns a command with inherited stdio and resolves on success. */
+/**
+ * Spawns a command with inherited stdio and resolves on success.
+ */
 export const run = async (
   command: string,
   options?: RunOptions,
@@ -29,7 +33,9 @@ export const run = async (
   });
 };
 
-/** Spawns a command and resolves its trimmed stdout (rejects on non-zero). */
+/**
+ * Spawns a command and resolves its trimmed stdout (rejects on non-zero).
+ */
 export const capture = async (
   command: string,
   args: readonly string[],

@@ -6,11 +6,17 @@ import * as v from 'valibot';
  * calls stay shallow enough to satisfy `unicorn/max-nested-calls`.
  */
 
-/** Reusable `string[]` schema. */
+/**
+ * Reusable `string[]` schema.
+ */
 export const StringArray = v.array(v.string());
 
-/** Reusable `Record<string, string>` schema (e.g. dependency maps). */
+/**
+ * Reusable `Record<string, string>` schema (e.g. dependency maps).
+ */
 export const StringRecord = v.record(v.string(), v.string());
 
-/** Reusable `Record<string, unknown>` schema (e.g. compilerOptions). */
+/**
+ * Reusable `Record<string, unknown>` schema (e.g. compilerOptions).
+ */
 export const UnknownRecord = v.record(v.string(), v.unknown());

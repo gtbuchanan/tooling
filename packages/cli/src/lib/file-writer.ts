@@ -8,7 +8,9 @@ import { localeComparer } from './sort.ts';
 
 const jsonIndent = 2;
 
-/** Recursively sorts object keys alphabetically. Arrays and primitives are unchanged. */
+/**
+ * Recursively sorts object keys alphabetically. Arrays and primitives are unchanged.
+ */
 export const sortKeysDeep = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map(sortKeysDeep);
@@ -24,19 +26,29 @@ export const sortKeysDeep = (value: unknown): unknown => {
   return value;
 };
 
-/** Result of merging scripts into a package.json. */
+/**
+ * Result of merging scripts into a package.json.
+ */
 export interface MergeResult {
-  /** Script names that were added or overwritten. */
+  /**
+   * Script names that were added or overwritten.
+   */
   readonly added: readonly string[];
-  /** Script names that were skipped (already exist, no force). */
+  /**
+   * Script names that were skipped (already exist, no force).
+   */
   readonly skipped: readonly string[];
 }
 
-/** Reads and parses a JSON file as a plain object. */
+/**
+ * Reads and parses a JSON file as a plain object.
+ */
 export const readJsonFile = (path: string): Record<string, unknown> =>
   v.parse(UnknownRecord, JSON.parse(readFileSync(path, 'utf8')));
 
-/** Writes a JSON object to a file with formatting and trailing newline. */
+/**
+ * Writes a JSON object to a file with formatting and trailing newline.
+ */
 export const writeJsonFile = (path: string, data: unknown): void => {
   writeFileSync(path, `${JSON.stringify(data, undefined, jsonIndent)}\n`);
 };
@@ -100,7 +112,9 @@ export const writeYamlFile = (path: string, data: unknown): void => {
   writeFileSync(path, stringifyYaml(data, { directives: true, singleQuote: true }));
 };
 
-/* Non-object values (e.g. `codecov: true`) fall back to `{}` so sync repairs them. */
+/*
+Non-object values (e.g. `codecov: true`) fall back to `{}` so sync repairs them.
+*/
 const EmptyObjectFallback = v.fallback(v.looseObject({}), {});
 
 const ExistingCodecovSchema = v.nullable(
