@@ -1,5 +1,75 @@
 # @gtbuchanan/eslint-config
 
+## 0.5.0
+
+### Minor Changes
+
+- 2c55ea0: Pair jsdoc/require-asterisk-prefix with unicorn's block comment rule
+
+  eslint-plugin-unicorn v73 adds `single-line-block-comment-style`, which
+  expands one-line block comments to multiline. It deliberately stops
+  short of the asterisk gutter, leaving JSDoc internals to
+  eslint-plugin-jsdoc — see
+  https://github.com/sindresorhus/eslint-plugin-unicorn/issues/3603.
+  Enabling `jsdoc/require-asterisk-prefix` completes the pair, so `--fix`
+  lands on standard gutter JSDoc. Plain block comments keep no gutter,
+  mirroring the doc-vs-incidental split that `///` and `//` draw in C#.
+
+  v73 also adds `consistent-boolean-name`. `try` joins the allowed
+  prefixes: it marks an action that reports whether it succeeded, the
+  established Try* idiom, which none of the default prefixes express.
+
+- 5d8c23d: Start the import-x config from its recommended preset
+
+  `eslint-plugin-import-x` was configured rule-by-rule rather than from its
+  recommended preset, so only `order` was enabled and upstream additions
+  never arrived on upgrade. It now spreads `flatConfigs.recommended` plus
+  the plugin's own `flatConfigs.typescript`, matching every other plugin
+  here, which brings in `no-duplicates`.
+
+  Seven rules are added on top — `first`, `newline-after-import`,
+  `no-absolute-path`, `no-empty-named-blocks`, `no-mutable-exports`,
+  `no-self-import`, and `no-useless-path-segments` — several autofixable.
+
+  Six preset rules are switched back off. `default`, `export`, `namespace`,
+  and `no-unresolved` duplicate what TypeScript already reports and force
+  full module resolution on every lint. `no-named-as-default` and
+  `no-named-as-default-member` flag the `import plugin from 'x'` then
+  `plugin.configs` idiom that ESLint plugins are consumed with.
+
+  Consumers with pre-existing violations will see new warnings, which
+  `--max-warnings=0` turns into a CI failure.
+
+- 1151b04: Enable `import-x/no-extraneous-dependencies`
+
+  Importing a package the manifest does not declare resolves only through
+  layout: Node walks up to a parent `node_modules` and finds it there. That
+  works until the package moves, and it leaves any version range the
+  dependency declares unenforced for the importing package.
+
+  The rule reports imports missing from the importing package's own
+  manifest. Consumers that rely on a parent manifest to satisfy imports will
+  see new warnings, which `--max-warnings=0` turns into a CI failure — hence
+  the minor bump. Declaring the dependency in the package that imports it is
+  the fix; `catalog:` keeps the version in one place for pnpm workspaces.
+
+### Patch Changes
+
+- fd45a22: Drop the now-unnecessary cast on the TSDoc flat config
+
+  eslint-plugin-jsdoc used to type its flat configs as arrays while
+  `recommended-tsdoc` was a single object at runtime, so reading it
+  required an `as unknown as Linter.Config` double cast. Upstream has
+  since corrected the types, making the cast a no-op that
+  `@typescript-eslint/no-unnecessary-type-assertion` now reports. Remove
+  the cast along with the stale comment explaining it.
+
+- Updated dependencies [2c55ea0]
+  - @gtbuchanan/eslint-plugin-agent-skills@0.2.1
+  - @gtbuchanan/eslint-plugin-markdownlint@0.1.2
+  - @gtbuchanan/eslint-plugin-md-frontmatter@0.1.3
+  - @gtbuchanan/eslint-plugin-yamllint@0.1.2
+
 ## 0.4.0
 
 ### Minor Changes

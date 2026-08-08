@@ -1,5 +1,53 @@
 # @gtbuchanan/cli
 
+## 0.5.0
+
+### Minor Changes
+
+- 58c8c7c: Derive Codecov flag and component names from the unscoped package name
+
+  `gtb sync` named `codecov.yml` flags and components after each package's
+  directory basename. A basename belongs to the checkout, not the package:
+  editing a single-package repo in a worktree named `myrepo.feat-x` wrote
+  `flags."myrepo.feat-x"`, which CI — checked out elsewhere — regenerated as
+  `myrepo`, so `gtb verify` drift-failed. Names now come from the unscoped
+  `package.json` name (`@acme/utils` → `utils`), which is identical in every
+  checkout. `coverage:codecov:upload` derives its `-F` flag the same way, so
+  uploads keep matching the generated config.
+
+  Repos whose package directories already match their unscoped names see no
+  change. Elsewhere, re-run `gtb sync` to regenerate `codecov.yml`; the
+  renamed flags start without carryforward history.
+
+  The old duplicate-directory-basename guard is replaced by one on the
+  derived names: packages that differ only by scope (`@a/utils`, `@b/utils`)
+  now fail sync, while packages sharing a directory basename are allowed.
+
+- e1b02d3: Scaffold `tsconfig.base.json` in `gtb sync` and verify its presence
+
+  `gtb sync` generates configs that extend `./tsconfig.base.json` but
+  never created it, leaving a fresh consumer silently broken. Sync now
+  scaffolds the base (extending `@gtbuchanan/tsconfig/node.json`) when
+  absent — never overwriting an edited variant — and `gtb verify` reports
+  drift when it's missing.
+
+### Patch Changes
+
+- 2c55ea0: Pair jsdoc/require-asterisk-prefix with unicorn's block comment rule
+
+  eslint-plugin-unicorn v73 adds `single-line-block-comment-style`, which
+  expands one-line block comments to multiline. It deliberately stops
+  short of the asterisk gutter, leaving JSDoc internals to
+  eslint-plugin-jsdoc — see
+  https://github.com/sindresorhus/eslint-plugin-unicorn/issues/3603.
+  Enabling `jsdoc/require-asterisk-prefix` completes the pair, so `--fix`
+  lands on standard gutter JSDoc. Plain block comments keep no gutter,
+  mirroring the doc-vs-incidental split that `///` and `//` draw in C#.
+
+  v73 also adds `consistent-boolean-name`. `try` joins the allowed
+  prefixes: it marks an action that reports whether it succeeded, the
+  established Try* idiom, which none of the default prefixes express.
+
 ## 0.4.0
 
 ### Minor Changes
