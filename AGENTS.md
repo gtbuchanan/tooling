@@ -308,6 +308,16 @@ through `package.json` scripts backed by `gtb` leaf commands.
   Uploads artifacts: `packages` (e2e tarballs) and `coverage` (final
   report). When `run-slow-tests` is enabled, fast and slow coverage are
   merged in a separate `coverage` job.
+  Every artifact path globs **both** repo shapes — the root `dist/…` of a
+  single-package repo and the `packages/*/dist/…` of a monorepo — because
+  `@actions/glob` has brace expansion disabled, so one combined pattern
+  isn't available. Listing two search paths makes upload-artifact root the
+  artifact at their least common ancestor (the workspace), which is why
+  the Codecov job restores it to `.` rather than `packages`. Keep both
+  lines when editing a path, and keep the download rooted at the
+  workspace. The `packages` upload uses `if-no-files-found: ignore` — a
+  repo whose packages are all private packs nothing, and nothing consumes
+  the tarballs downstream.
 - **`cd.yml`** — The deploy phase: `version` then `publish` (npm trusted
   publishing via OIDC, `release` environment), gated on
   `hasChangesets == 'false'`. Run by `release.yml` as its `CD` job after CI
