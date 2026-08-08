@@ -15,10 +15,16 @@ jobs:
         with:
           task: build:ci
 
+      # A repo with no publishable package (all private) legitimately packs
+      # nothing, and the tarballs aren't consumed downstream — this artifact is
+      # for inspection — so an empty match is not a failure or a warning.
       - uses: actions/upload-artifact@v7
         with:
+          if-no-files-found: ignore
           name: packages
-          path: packages/*/dist/packages/npm/*.tgz
+          path: |
+            dist/packages/npm/*.tgz
+            packages/*/dist/packages/npm/*.tgz
 
       # When slow tests are enabled, merged coverage comes from the coverage job.
       # Otherwise, fast-only coverage is the final artifact.
@@ -27,7 +33,9 @@ jobs:
         with:
           if-no-files-found: error
           name: coverage
-          path: packages/*/dist/coverage/vitest/fast/
+          path: |
+            dist/coverage/vitest/fast/
+            packages/*/dist/coverage/vitest/fast/
 
   codecov:
     continue-on-error: true
@@ -44,10 +52,15 @@ jobs:
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
+      # The coverage uploads glob both the root and the `packages/*` layout, so
+      # the artifact is rooted at the least common ancestor of the two — the
+      # workspace. Restoring it there puts each `dist/coverage/` back exactly
+      # where its `coverage:codecov:upload` task looks for it, whatever the
+      # repo's shape.
       - uses: actions/download-artifact@v8
         with:
           name: coverage
-          path: packages
+          path: .
 
       # Codecov distributes the CLI as a binary at cli.codecov.io with
       # only a "latest" URL — no versioned downloads. SHA256 validates
@@ -98,7 +111,9 @@ jobs:
         with:
           if-no-files-found: error
           name: coverage
-          path: packages/*/dist/coverage/vitest/merged/
+          path: |
+            dist/coverage/vitest/merged/
+            packages/*/dist/coverage/vitest/merged/
 
   e2e:
     if: inputs.run-e2e == true
@@ -131,7 +146,9 @@ jobs:
         with:
           if-no-files-found: error
           name: test-results-slow
-          path: packages/*/dist/test-results/
+          path: |
+            dist/test-results/
+            packages/*/dist/test-results/
 
 name: CI
 
