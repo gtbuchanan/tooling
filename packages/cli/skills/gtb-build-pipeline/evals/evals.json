@@ -102,10 +102,10 @@
       "expectations": [
         "Identifies that turbo folds a workspace dependency's sources into a consumer's hash only through a task edge, and that a source-only package has no artifact task to gate on",
         "Explains that `^compile:ts` cannot cover it because the fixtures package declares no such script",
-        "Recommends the scriptless `transit` node — `\"transit\": { \"dependsOn\": [\"^transit\"] }` — depended on from `typecheck:ts` and the vitest tasks",
+        "Recommends the scriptless `transit` node — `\"transit\": { \"dependsOn\": [\"^transit\"] }` — depended on from `typecheck:ts`, `lint:eslint`, and the vitest tasks",
         "Notes that transit declares no inputs (so turbo hashes the whole package) and runs nothing (so nothing serializes), and that no package needs a transit script"
       ],
-      "expected_output": "Activates skill. Explains that turbo only folds a dependency's sources into a consumer's task hash through a declared edge, and a source-only package (shared fixtures) has no artifact task to gate on — `^compile:ts` reaches only dependencies that actually compile. The fix is turbo's transit-node seam: a scriptless `\"transit\": { \"dependsOn\": [\"^transit\"] }` task that `typecheck:ts`, `test:vitest:fast`, and `test:vitest:slow` depend on. It declares no `inputs`, so turbo hashes the whole package, and runs nothing, so nothing serializes. `gtb sync` emits it automatically; no package needs a `transit` script.",
+      "expected_output": "Activates skill. Explains that turbo only folds a dependency's sources into a consumer's task hash through a declared edge, and a source-only package (shared fixtures) has no artifact task to gate on — `^compile:ts` reaches only dependencies that actually compile. The fix is turbo's transit-node seam: a scriptless `\"transit\": { \"dependsOn\": [\"^transit\"] }` task that `typecheck:ts`, `lint:eslint`, `test:vitest:fast`, and `test:vitest:slow` depend on. It declares no `inputs`, so turbo hashes the whole package, and runs nothing, so nothing serializes. `gtb sync` emits it automatically; no package needs a `transit` script.",
       "files": [],
       "id": 10,
       "prompt": "I edited a fixture in my shared test-fixtures workspace package, but the package that imports it still reports a turbo cache hit for `typecheck:ts` and skips. Why?"

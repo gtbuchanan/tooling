@@ -2,17 +2,23 @@
 '@gtbuchanan/cli': minor
 ---
 
-Propagate workspace dependency source changes into `typecheck:ts` and
-`test:vitest:*` caches
+Propagate workspace dependency source changes into `typecheck:ts`,
+`lint:eslint`, and `test:vitest:*` caches
 
 `typecheck:ts` declared no topological edge, so a change to a workspace
 dependency's source left its consumers' type-check cache valid and CI
 replayed a stale pass. `gtb sync` now emits a scriptless `transit` node
 (`dependsOn: ["^transit"]`) and depends on it from `typecheck:ts`,
-`test:vitest:fast`, and `test:vitest:slow`. It runs nothing, so nothing
-serializes; it just carries every transitive workspace dependency's file
-hashes into the consumer's task hash — including dependencies with no
-`compile:ts` script, which `^compile:ts` could never reach.
+`lint:eslint`, `test:vitest:fast`, and `test:vitest:slow`. It runs
+nothing, so nothing serializes; it just carries every transitive
+workspace dependency's file hashes into the consumer's task hash —
+including dependencies with no `compile:ts` script, which `^compile:ts`
+could never reach.
+
+`transit` declares no `inputs`, so it hashes every tracked file in a
+dependency. Edits that a consumer's own `inputs` would have ignored (a
+dependency's `README.md`, for instance) now invalidate that consumer's
+cache — the trade for never replaying a stale pass.
 
 The test tasks' topological edge also moves from the `compile:ts` leaf to
 the `compile` aggregate, so a dependency whose output comes from another

@@ -23,8 +23,16 @@ describe.concurrent('generateTurboJson (transit)', () => {
     expect(result.tasks).toHaveProperty('transit');
   });
 
-  it('excludes the transit node when nothing depends on it', ({ expect }) => {
+  it('includes the transit node when ESLint exists alone', ({ expect }) => {
     const discovery = makeDiscovery([makeCapabilities({ hasEslint: true })]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).toHaveProperty('transit');
+  });
+
+  it('excludes the transit node when nothing depends on it', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities({ hasPkl: true })]);
 
     const result = generateTurboJson(discovery);
 
@@ -39,6 +47,29 @@ describe.concurrent('generateTurboJson (transit)', () => {
     const result = generateTurboJson(discovery);
 
     expect(result.tasks['typecheck:ts']?.dependsOn).toContain('transit');
+  });
+
+  /*
+   * lint:eslint would otherwise inherit the propagation through its
+   * same-package typecheck:ts dep — an edge consumers are told they may drop,
+   * and one that isn't generated at all without TypeScript.
+   */
+  it('lint:eslint depends on transit with no typecheck:ts to inherit from', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities({ hasEslint: true })]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['lint:eslint']?.dependsOn).toStrictEqual(['transit']);
+  });
+
+  it('lint:eslint keeps both edges when TypeScript exists', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasEslint: true, hasTypeScript: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['lint:eslint']?.dependsOn).toStrictEqual(['typecheck:ts', 'transit']);
   });
 
   it('test:vitest tasks depend on transit', ({ expect }) => {

@@ -115,7 +115,8 @@
     },
     "lint:eslint": {
       "dependsOn": [
-        "typecheck:ts"
+        "typecheck:ts",
+        "transit"
       ],
       "inputs": [
         "$TURBO_ROOT$/eslint.config.*",

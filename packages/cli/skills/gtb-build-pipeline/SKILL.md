@@ -61,11 +61,11 @@ Aggregate tasks exist only as `dependsOn` targets — no corresponding script:
 
 ```text
 generate:* → generate → typecheck:ts, compile:ts, lint:eslint
-^transit → transit → typecheck:ts, test:vitest:fast, test:vitest:slow
+^transit → transit → typecheck:ts, lint:eslint, test:vitest:fast, test:vitest:slow
 typecheck:ts → typecheck → check
 typecheck:ts → lint:eslint → lint → check
 ^compile + transit → test:vitest:fast → check
-test:vitest:fast → test:vitest:slow → test:slow → build
+^compile + transit → test:vitest:slow → test:slow → build
 compile:ts → pack:npm → pack → test:vitest:e2e → test:e2e → build
 lint:eslint → deploy:skills → build
 check + compile + pack → build:ci → build
@@ -116,8 +116,8 @@ The aggregate stays empty rather than naming leaves the root can't define, becau
 
 ### Non-obvious dependencies
 
-- **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it.
-- **`typecheck:ts` and the vitest tasks depend on `transit`** — see [The `transit` node](#the-transit-node) below.
+- **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it. Cross-package invalidation doesn't ride on this edge — `lint:eslint` declares its own `transit` dep — so dropping it costs only the output ordering.
+- **`typecheck:ts`, `lint:eslint`, and the vitest tasks depend on `transit`** — see [The `transit` node](#the-transit-node) below.
 - **Test tasks gate on `^compile`, not `^compile:ts`** — the aggregate covers every compile flavour a dependency publishes from (`compile:skills` today), where the leaf names one toolchain. It still resolves to a no-op for a dependency that compiles nothing.
 - **Test tasks don't depend on `typecheck:ts`** — parallelism wins.
 - **`deploy:skills` depends on `lint:eslint` same-package (no `^`)** — catches broken frontmatter and markdown in `SKILL.md` before deploy. Skills are authored independently per package; there's no topological chain.
@@ -138,14 +138,15 @@ Turbo folds a workspace dependency's sources into a consumer's task hash only th
   "tasks": {
     "transit": { "dependsOn": ["^transit"] },
     "typecheck:ts": { "dependsOn": ["transit"] },
+    "lint:eslint": { "dependsOn": ["typecheck:ts", "transit"] },
     "test:vitest:fast": { "dependsOn": ["^compile", "transit"] }
   }
 }
 ```
 
-It declares no `inputs`, so turbo hashes the whole package, and it runs nothing, so nothing serializes — depending on it just pulls every transitive workspace dependency's file hashes into the consumer's hash. `gtb sync` emits it whenever the workspace has TypeScript or Vitest, and no package needs a `transit` script.
+It declares no `inputs`, so turbo hashes the whole package, and it runs nothing, so nothing serializes — depending on it just pulls every transitive workspace dependency's file hashes into the consumer's hash. `gtb sync` emits it whenever the workspace has TypeScript, ESLint, or Vitest, and no package needs a `transit` script.
 
-`lint:eslint` inherits the propagation through its same-package `typecheck:ts` dep and declares no `transit` edge of its own.
+`lint:eslint` declares the edge itself rather than inheriting it through its same-package `typecheck:ts` dep. That dep is optional — consumers may drop it for parallelism — and isn't generated at all for a workspace without TypeScript, so inheriting would make lint's cross-package invalidation silently conditional.
 
 ## `gtb sync` and `gtb verify`
 

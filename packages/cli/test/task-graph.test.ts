@@ -43,7 +43,7 @@ describe.concurrent(resolveSchedule, () => {
     expect(result).toStrictEqual([['typecheck:ts']]);
   });
 
-  it('skips aggregate (transit) tasks', ({ expect }) => {
+  it('skips aggregate tasks', ({ expect }) => {
     const turbo = makeTurboJson({
       'check': { dependsOn: ['typecheck'] },
       'typecheck': { dependsOn: ['typecheck:ts'] },

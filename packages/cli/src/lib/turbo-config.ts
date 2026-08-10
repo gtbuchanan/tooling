@@ -255,10 +255,17 @@ const pklTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   },
 ];
 
+/*
+ * The `transit` edge is declared rather than inherited through `typecheck:ts`:
+ * that edge is optional (consumers may drop it for parallelism) and isn't
+ * generated at all for a workspace without TypeScript, so relying on it would
+ * make lint's cross-package invalidation silently conditional.
+ */
 const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
     ...(flags.hasGenerate ? [Aggregate.generate] : []),
     ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
+    Aggregate.transit,
   ];
   const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**', 'skills/**'];
 
