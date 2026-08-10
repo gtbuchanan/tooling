@@ -71,6 +71,8 @@ lint:eslint → deploy:skills → build
 check + compile + pack → build:ci → build
 ```
 
+This is the maximal graph. Every node and edge above is capability-conditional — `gtb sync` emits only what the workspace's tools call for, so a workspace that publishes nothing gets no `^compile` edge on its test tasks (and no `compile:ts`, `pack:npm`, or `pack` at all), and one without ESLint gets no `lint:eslint`.
+
 Leaf tasks, per-package, run via `gtb task <name>`:
 
 - `typecheck:ts` — TypeScript type checking
