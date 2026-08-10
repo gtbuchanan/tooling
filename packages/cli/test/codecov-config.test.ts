@@ -88,6 +88,22 @@ const createMonorepo = (): CodecovMonorepo => {
 };
 
 /**
+ * A monorepo holding one coverage package, so a test can vary that package's
+ * directories without perturbing the shared {@link createMonorepo} fixture.
+ */
+interface CodecovNestedRepo extends CodecovPackage {
+  readonly root: string;
+}
+
+const createNestedRepo = (options: WritePackageOptions): CodecovNestedRepo => {
+  const root = createTempDir();
+  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
+  writeJson(root, 'package.json', { name: build.packageName(), private: true });
+
+  return { ...writePackage(root, build.packageName(), 'alpha', options), root };
+};
+
+/**
  * A single-package repo: the sole coverage package IS the workspace root, so
  * its path relative to the root is the empty string.
  */
@@ -220,26 +236,26 @@ describe.concurrent(generateCodecovSections, () => {
   });
 
   it('omits src from component paths when the package has no src directory', ({ expect }) => {
-    const root = createTempDir();
-    const seed = build.packageName();
-    writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
-    writeJson(root, 'package.json', { name: build.packageName(), private: true });
-    const pkg = writePackage(root, seed, 'alpha', { extraDirs: ['scripts'], hasSrc: false });
+    const { basename, flag, root } = createNestedRepo({
+      extraDirs: ['scripts'],
+      hasSrc: false,
+    });
     const discovery = discoverWorkspace({ cwd: root });
 
     const { component_management: componentManagement } = generateCodecovSections(discovery);
     const component = componentManagement.individual_components.find(
-      comp => comp.component_id === pkg.flag,
+      comp => comp.component_id === flag,
     );
 
-    expect(component?.paths).toStrictEqual([`packages/${pkg.basename}/scripts/**`]);
+    expect(component?.paths).toStrictEqual([`packages/${basename}/scripts/**`]);
   });
 
-  it('falls back to the whole package when no source directory exists', ({ expect }) => {
-    /*
-     * Codecov reads an empty `paths` list as "every file", which would
-     * silently attribute the entire repo to this one component.
-     */
+  /*
+   * Codecov reads an empty `paths` list as "every file", so a package with no
+   * recognized source directory needs a fallback. The two cases below differ
+   * only in the prefix, which is exactly what a regression would collapse.
+   */
+  it('falls back to the whole repo when the root package has no source directory', ({ expect }) => {
     const { flag, root } = createRootRepo({ hasSrc: false });
     const discovery = discoverWorkspace({ cwd: root });
 
@@ -249,6 +265,18 @@ describe.concurrent(generateCodecovSections, () => {
     );
 
     expect(component?.paths).toStrictEqual(['**']);
+  });
+
+  it('falls back to the package dir when a nested package has no sources', ({ expect }) => {
+    const { basename, flag, root } = createNestedRepo({ hasSrc: false });
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { component_management: componentManagement } = generateCodecovSections(discovery);
+    const component = componentManagement.individual_components.find(
+      comp => comp.component_id === flag,
+    );
+
+    expect(component?.paths).toStrictEqual([`packages/${basename}/**`]);
   });
 
   it('flag has carryforward true and correct path', ({ expect }) => {
