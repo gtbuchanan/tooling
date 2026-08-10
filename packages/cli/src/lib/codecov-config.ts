@@ -11,9 +11,10 @@ export interface CodecovFlag {
    */
   readonly carryforward: boolean;
   /**
-   * Paths scoped to this flag.
+   * Paths scoped to this flag. Omitted for the workspace root, whose flag
+   * covers every file — Codecov's own default when `paths` is absent.
    */
-  readonly paths: readonly string[];
+  readonly paths?: readonly string[];
 }
 
 /**
@@ -78,19 +79,31 @@ export interface CodecovSections {
  */
 export const codecovSettings: CodecovSettings = { require_ci_to_pass: false };
 
+/*
+ * Coverage reports address files relative to the repo root, so every emitted
+ * path must be too. A package's own prefix is `<relDir>/`, but the workspace
+ * root's relDir is `''` — interpolating it would emit `/src/**`, an absolute
+ * path that matches nothing in a report.
+ */
+const pathPrefix = (relDir: string): string => relDir === '' ? '' : `${relDir}/`;
+
 const buildComponentPaths = (
   pkg: PackageCapabilities,
   relDir: string,
 ): readonly string[] => {
-  const paths: string[] = [];
-  if (pkg.hasBin) {
-    paths.push(`${relDir}/bin/**`);
-  }
-  if (pkg.hasScripts) {
-    paths.push(`${relDir}/scripts/**`);
-  }
-  paths.push(`${relDir}/src/**`);
-  return paths;
+  const prefix = pathPrefix(relDir);
+  const paths = [
+    ...(pkg.hasBin ? [`${prefix}bin/**`] : []),
+    ...(pkg.hasScripts ? [`${prefix}scripts/**`] : []),
+    ...(pkg.hasSrc ? [`${prefix}src/**`] : []),
+  ];
+
+  /*
+   * Codecov reads an empty path list as "every file", which would silently
+   * attribute the whole repo to this component. A package that keeps its
+   * sources somewhere else still owns its own directory, so fall back to that.
+   */
+  return paths.length > 0 ? paths : [`${prefix}**`];
 };
 
 /**
@@ -131,7 +144,14 @@ const buildCoverageEntries = (
   for (const pkg of packages) {
     const name = codecovName(pkg);
     const relDir = toPosixRelative(rootDir, pkg.dir);
-    flags[name] = { carryforward: true, paths: [`${relDir}/`] };
+    /*
+     * The root package spans the whole repo, and Codecov already treats a
+     * flag with no `paths` that way — there is no root-relative prefix to
+     * name it with.
+     */
+    flags[name] = relDir === ''
+      ? { carryforward: true }
+      : { carryforward: true, paths: [`${relDir}/`] };
     components.push({ component_id: name, name, paths: buildComponentPaths(pkg, relDir) });
   }
   return { components, flags };

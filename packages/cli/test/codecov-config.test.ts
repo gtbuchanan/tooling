@@ -33,6 +33,7 @@ interface CodecovMonorepo {
 
 interface WritePackageOptions {
   readonly extraDirs?: readonly string[];
+  readonly hasSrc?: boolean;
   readonly hasTests?: boolean;
 }
 
@@ -49,14 +50,14 @@ const writePackage = (
   root: string,
   seed: string,
   label: string,
-  { extraDirs = [], hasTests = true }: WritePackageOptions = {},
+  { extraDirs = [], hasSrc = true, hasTests = true }: WritePackageOptions = {},
 ): CodecovPackage => {
   const basename = `${seed}-${label}-dir`;
   const flag = `${seed}-${label}-flag`;
   const name = `@${seed}-scope/${flag}`;
   const dir = path.join(root, 'packages', basename);
-  mkdirSync(path.join(dir, 'src'), { recursive: true });
-  for (const extra of extraDirs) {
+  mkdirSync(dir, { recursive: true });
+  for (const extra of [...(hasSrc ? ['src'] : []), ...extraDirs]) {
     mkdirSync(path.join(dir, extra));
   }
   if (hasTests) {
@@ -84,6 +85,51 @@ const createMonorepo = (): CodecovMonorepo => {
     gamma: writePackage(root, seed, 'gamma', { hasTests: false }),
     root,
   };
+};
+
+/**
+ * A monorepo holding one coverage package, so a test can vary that package's
+ * directories without perturbing the shared {@link createMonorepo} fixture.
+ */
+interface CodecovNestedRepo extends CodecovPackage {
+  readonly root: string;
+}
+
+const createNestedRepo = (options: WritePackageOptions): CodecovNestedRepo => {
+  const root = createTempDir();
+  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
+  writeJson(root, 'package.json', { name: build.packageName(), private: true });
+
+  return { ...writePackage(root, build.packageName(), 'alpha', options), root };
+};
+
+/**
+ * A single-package repo: the sole coverage package IS the workspace root, so
+ * its path relative to the root is the empty string.
+ */
+interface CodecovRootRepo {
+  /**
+   * Expected Codecov flag/component name: the unscoped manifest name.
+   */
+  readonly flag: string;
+  readonly root: string;
+}
+
+const createRootRepo = (
+  { extraDirs = [], hasSrc = true }: Omit<WritePackageOptions, 'hasTests'> = {},
+): CodecovRootRepo => {
+  const root = createTempDir();
+  const flag = build.packageName();
+  for (const dir of [...(hasSrc ? ['src'] : []), ...extraDirs, 'test']) {
+    mkdirSync(path.join(root, dir));
+  }
+  writeJson(root, 'package.json', {
+    devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
+    name: `@${build.packageName()}/${flag}`,
+  });
+  writeFileSync(path.join(root, 'vitest.config.ts'), '');
+
+  return { flag, root };
 };
 
 /**
@@ -160,20 +206,77 @@ describe.concurrent(generateCodecovSections, () => {
      * sole package IS the checkout root, so a basename-derived name changes
      * with the directory the repo happens to live in.
      */
-    const root = createTempDir();
-    const flag = build.packageName();
-    mkdirSync(path.join(root, 'src'));
-    mkdirSync(path.join(root, 'test'));
-    writeJson(root, 'package.json', {
-      devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
-      name: `@${build.packageName()}/${flag}`,
-    });
-    writeFileSync(path.join(root, 'vitest.config.ts'), '');
+    const { flag, root } = createRootRepo();
 
     const discovery = discoverWorkspace({ cwd: root });
     const { flags } = generateCodecovSections(discovery);
 
     expect(Object.keys(flags)).toStrictEqual([flag]);
+  });
+
+  it('root component paths are repo-relative, without a leading slash', ({ expect }) => {
+    const { flag, root } = createRootRepo({ extraDirs: ['bin', 'scripts'] });
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { component_management: componentManagement } = generateCodecovSections(discovery);
+    const component = componentManagement.individual_components.find(
+      comp => comp.component_id === flag,
+    );
+
+    expect(component?.paths).toStrictEqual(['bin/**', 'scripts/**', 'src/**']);
+  });
+
+  it('root flag omits paths so it covers the whole repo', ({ expect }) => {
+    const { flag, root } = createRootRepo();
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { flags } = generateCodecovSections(discovery);
+
+    expect(flags[flag]).toStrictEqual({ carryforward: true });
+  });
+
+  it('omits src from component paths when the package has no src directory', ({ expect }) => {
+    const { basename, flag, root } = createNestedRepo({
+      extraDirs: ['scripts'],
+      hasSrc: false,
+    });
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { component_management: componentManagement } = generateCodecovSections(discovery);
+    const component = componentManagement.individual_components.find(
+      comp => comp.component_id === flag,
+    );
+
+    expect(component?.paths).toStrictEqual([`packages/${basename}/scripts/**`]);
+  });
+
+  /*
+   * Codecov reads an empty `paths` list as "every file", so a package with no
+   * recognized source directory needs a fallback. The two cases below differ
+   * only in the prefix, which is exactly what a regression would collapse.
+   */
+  it('falls back to the whole repo when the root package has no source directory', ({ expect }) => {
+    const { flag, root } = createRootRepo({ hasSrc: false });
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { component_management: componentManagement } = generateCodecovSections(discovery);
+    const component = componentManagement.individual_components.find(
+      comp => comp.component_id === flag,
+    );
+
+    expect(component?.paths).toStrictEqual(['**']);
+  });
+
+  it('falls back to the package dir when a nested package has no sources', ({ expect }) => {
+    const { basename, flag, root } = createNestedRepo({ hasSrc: false });
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const { component_management: componentManagement } = generateCodecovSections(discovery);
+    const component = componentManagement.individual_components.find(
+      comp => comp.component_id === flag,
+    );
+
+    expect(component?.paths).toStrictEqual([`packages/${basename}/**`]);
   });
 
   it('flag has carryforward true and correct path', ({ expect }) => {

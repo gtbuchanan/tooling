@@ -16,6 +16,7 @@ export const makeCapabilities = (
     hasPklPackage: false,
     hasScripts: false,
     hasSkills: false,
+    hasSrc: false,
     hasTest: false,
     hasTypeScript: false,
     hasVitest: false,

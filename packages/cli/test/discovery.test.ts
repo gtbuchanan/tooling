@@ -219,6 +219,16 @@ describe.concurrent(discoverPackage, () => {
     expect(result.hasScripts).toBe(true);
   });
 
+  it('detects src directory', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    mkdirSync(path.join(dir, 'src'));
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasSrc).toBe(true);
+  });
+
   it('detects generate via script prefix', ({ expect }) => {
     const dir = createTempDir();
     const generateKey = `generate:${faker.lorem.word()}`;
@@ -276,6 +286,7 @@ describe.concurrent(discoverPackage, () => {
       hasEslint: false,
       hasGenerate: false,
       hasScripts: false,
+      hasSrc: false,
       hasTest: false,
       hasTypeScript: false,
       hasVitest: false,
