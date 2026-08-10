@@ -31,6 +31,14 @@ describe.concurrent('generateTurboJson (transit)', () => {
     expect(result.tasks).toHaveProperty('transit');
   });
 
+  it('includes the transit node for an e2e-only workspace', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities({ hasVitestE2e: true })]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).toHaveProperty('transit');
+  });
+
   it('excludes the transit node when nothing depends on it', ({ expect }) => {
     const discovery = makeDiscovery([makeCapabilities({ hasPkl: true })]);
 
@@ -102,5 +110,29 @@ describe.concurrent('generateTurboJson (transit)', () => {
     const result = generateTurboJson(discovery);
 
     expect(result.tasks['test:vitest:fast']?.dependsOn).toStrictEqual(['transit']);
+  });
+
+  /*
+   * `^pack` covers a source-only dependency only incidentally — a dependency
+   * with no `pack:npm` script leaves `pack` scriptless and inputs-less, so it
+   * hashes the whole package the way `transit` does. That coverage reaches
+   * direct dependencies only, and disappears entirely when nothing is packed.
+   */
+  it('test:vitest:e2e depends on transit alongside its pack edges', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ hasVitestE2e: true, isPublished: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['test:vitest:e2e']?.dependsOn).toStrictEqual(['pack', '^pack', 'transit']);
+  });
+
+  it('test:vitest:e2e depends on transit when nothing is published', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities({ hasVitestE2e: true })]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['test:vitest:e2e']?.dependsOn).toStrictEqual(['transit']);
   });
 });

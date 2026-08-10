@@ -76,7 +76,7 @@ const generateAggregate = (
  */
 const transitNode = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
-    condition: flags.hasEslint || flags.hasTypeScript || flags.hasVitest,
+    condition: flags.hasE2e || flags.hasEslint || flags.hasTypeScript || flags.hasVitest,
     key: Aggregate.transit,
     value: { dependsOn: [topo(Aggregate.transit)] },
   },

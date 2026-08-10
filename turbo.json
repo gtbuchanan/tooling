@@ -187,7 +187,8 @@
     "test:vitest:e2e": {
       "dependsOn": [
         "pack",
-        "^pack"
+        "^pack",
+        "transit"
       ],
       "env": [
         "CI"
