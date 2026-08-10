@@ -44,6 +44,7 @@ const capabilities = (name: string): PackageCapabilities => ({
   hasPklPackage: false,
   hasScripts: false,
   hasSkills: false,
+  hasSrc: false,
   hasTest: false,
   hasTypeScript: false,
   hasVitest: false,

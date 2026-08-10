@@ -68,6 +68,10 @@ export interface PackageCapabilities {
    */
   readonly hasSkills: boolean;
   /**
+   * Has a `src/` directory.
+   */
+  readonly hasSrc: boolean;
+  /**
    * Has a `test/` directory.
    */
   readonly hasTest: boolean;
@@ -214,6 +218,7 @@ const buildCapabilities = (
     hasPklPackage,
     hasScripts: hasDir(dir, 'scripts'),
     hasSkills: hasDir(dir, 'skills'),
+    hasSrc: hasDir(dir, 'src'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),
     hasVitest,
