@@ -20,6 +20,7 @@ export const Aggregate = {
   pack: 'pack',
   testE2e: 'test:e2e',
   testSlow: 'test:slow',
+  transit: 'transit',
   typecheck: 'typecheck',
 } as const;
 
@@ -147,14 +148,14 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
 /**
  * Creates a topological (cross-package) task dependency.
  */
-const topo = (task: string): string => `^${task}`;
+export const topo = (task: string): string => `^${task}`;
 
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasTypeScript,
     key: taskNames.typecheckTs,
     value: {
-      dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : [])],
+      dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : []), Aggregate.transit],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json',
         ...typeCheckInclude.flatMap(toTurboGlobs),
@@ -320,10 +321,14 @@ const testInputs = [
   'vitest.config.*', '!vitest.config.e2e.*',
 ];
 
+/*
+ * `^compile` rather than `^compile:ts`: the aggregate covers every compile
+ * flavour a dependency might publish from (`compile:skills` today), where the
+ * leaf names one toolchain. It still resolves to a no-op for a dependency that
+ * compiles nothing.
+ */
 const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const deps = [
-    ...(flags.hasPublished ? [topo(taskNames.compileTs)] : []),
-  ];
+  const deps = [...(flags.hasPublished ? [topo(Aggregate.compile)] : []), Aggregate.transit];
 
   return [
     {

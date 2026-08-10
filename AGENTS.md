@@ -439,14 +439,20 @@ matches the `.pkl` file pattern nor contains a literal version (its
 
 ### Turbo cache miss on workspace edits
 
-Source changes in any `packages/*` workspace fully invalidate every
+A source change in a `packages/*` workspace often invalidates every
 task's cache across all packages — `Cached: 0 cached, N total` is
-expected. Turbo 2.x mixes every file in every workspace package
-reachable from root `package.json` deps/devDeps into
-`hashOfInternalDependencies`, which salts every task hash. Our root
-devDeps (`@gtbuchanan/cli`, `eslint-config`, `tsconfig`, `vitest-config`)
-transitively reach all seven packages. Root-only edits (this doc,
+expected rather than a symptom. Turbo 2.x salts every task hash with a
+global `hashOfInternalDependencies` drawn from the workspace packages
+reachable through the root `package.json` deps/devDeps, and our root
+devDeps transitively reach every package. Root-only edits (this doc,
 `.github/`) still hit cache.
+
+That salt is over-broad but **not** a correctness mechanism, and nothing
+should be built on it. Measured with `turbo run … --dry=json`, it moves
+for some files in a workspace package and not for others — two source
+files in the same package can give opposite results. Cross-package
+invalidation is carried by declared task edges instead: the `transit`
+node, documented in the `gtb-build-pipeline` skill.
 
 Consumers see our packages as external npm deps (lockfile-keyed), so
 they're unaffected. See

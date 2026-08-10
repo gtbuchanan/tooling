@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph, transit.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -61,9 +61,10 @@ Aggregate tasks exist only as `dependsOn` targets — no corresponding script:
 
 ```text
 generate:* → generate → typecheck:ts, compile:ts, lint:eslint
+^transit → transit → typecheck:ts, test:vitest:fast, test:vitest:slow
 typecheck:ts → typecheck → check
 typecheck:ts → lint:eslint → lint → check
-^compile:ts → test:vitest:fast → check
+^compile + transit → test:vitest:fast → check
 test:vitest:fast → test:vitest:slow → test:slow → build
 compile:ts → pack:npm → pack → test:vitest:e2e → test:e2e → build
 lint:eslint → deploy:skills → build
@@ -116,11 +117,35 @@ The aggregate stays empty rather than naming leaves the root can't define, becau
 ### Non-obvious dependencies
 
 - **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it.
+- **`typecheck:ts` and the vitest tasks depend on `transit`** — see [The `transit` node](#the-transit-node) below.
+- **Test tasks gate on `^compile`, not `^compile:ts`** — the aggregate covers every compile flavour a dependency publishes from (`compile:skills` today), where the leaf names one toolchain. It still resolves to a no-op for a dependency that compiles nothing.
 - **Test tasks don't depend on `typecheck:ts`** — parallelism wins.
 - **`deploy:skills` depends on `lint:eslint` same-package (no `^`)** — catches broken frontmatter and markdown in `SKILL.md` before deploy. Skills are authored independently per package; there's no topological chain.
 - **`build:ci` excludes `test:slow`, `test:e2e`, `deploy:skills`** — CI runs fast tests; slow/e2e run on full builds; CI has no agents to serve skills to.
 
 `deploy:skills` keys on `skills/**` and `skills-npm.config.ts` only. If you install or remove an agent and want existing skills resymlinked into the new agent's project-local dir, run `gtb turbo run deploy:skills --force` once — turbo's cache otherwise reports HIT and skips the redeploy.
+
+### The `transit` node
+
+Turbo folds a workspace dependency's sources into a consumer's task hash only through a task edge. Tasks that read a dependency as **source** rather than as a build artifact have no artifact task to gate on, so without an edge they replay a cached pass after that dependency changed — a stale green.
+
+`^compile:ts` doesn't close the gap. It covers only dependencies that actually compile; a source-only package (shared test fixtures, internal helpers) declares no such script and propagates nothing. Nor is turbo's global `hashOfInternalDependencies` a substitute — it is over-broad, undeclared, and does not move uniformly across a package's files.
+
+`transit` is turbo's seam for this — a scriptless node whose only edge is `^transit`:
+
+```json
+{
+  "tasks": {
+    "transit": { "dependsOn": ["^transit"] },
+    "typecheck:ts": { "dependsOn": ["transit"] },
+    "test:vitest:fast": { "dependsOn": ["^compile", "transit"] }
+  }
+}
+```
+
+It declares no `inputs`, so turbo hashes the whole package, and it runs nothing, so nothing serializes — depending on it just pulls every transitive workspace dependency's file hashes into the consumer's hash. `gtb sync` emits it whenever the workspace has TypeScript or Vitest, and no package needs a `transit` script.
+
+`lint:eslint` inherits the propagation through its same-package `typecheck:ts` dep and declares no `transit` edge of its own.
 
 ## `gtb sync` and `gtb verify`
 

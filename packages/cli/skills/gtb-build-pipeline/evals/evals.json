@@ -77,11 +77,11 @@
     },
     {
       "expectations": [
-        "Explains that Turbo 2.x mixes every file in every workspace package reachable from root package.json deps/devDeps into hashOfInternalDependencies, salting every task hash",
-        "Notes the root devDeps (e.g., @gtbuchanan/cli, eslint-config, tsconfig, vitest-config) transitively reach all packages",
+        "Explains that Turbo 2.x salts every task hash with a global hashOfInternalDependencies drawn from the workspace packages reachable through the root package.json deps/devDeps, which transitively reach all packages",
+        "Frames the over-invalidation as expected rather than a bug to fix, and warns that the salt is not a correctness mechanism to rely on (it does not move uniformly across a package's files)",
         "Notes that consumers see our packages as external npm deps (lockfile-keyed) and so are unaffected, and that root-only edits (docs, .github/) still hit cache"
       ],
-      "expected_output": "Activates skill. Explains that source changes in any `packages/*` workspace fully invalidate every task across all packages — Turbo 2.x mixes every file in every workspace package reachable from the root `package.json` deps/devDeps into `hashOfInternalDependencies`, salting every task hash. Root devDeps (`@gtbuchanan/cli`, eslint-config, tsconfig, vitest-config) transitively reach all packages. Root-only edits (docs, `.github/`) still hit cache. Consumers see our packages as external npm deps (lockfile-keyed), so they're unaffected. References vercel/turborepo#8202.",
+      "expected_output": "Activates skill. Explains that Turbo 2.x salts every task hash with a global `hashOfInternalDependencies` drawn from the workspace packages reachable through the root `package.json` deps/devDeps, which transitively reach every package — so the wholesale invalidation is expected, not a symptom. Warns the salt is over-broad but not a correctness mechanism: it doesn't move uniformly across a package's files, which is why cross-package invalidation is carried by declared task edges (`transit`) instead. Root-only edits (docs, `.github/`) still hit cache. Consumers see our packages as external npm deps (lockfile-keyed), so they're unaffected. References vercel/turborepo#8202.",
       "files": [],
       "id": 8,
       "prompt": "Why is turbo reporting `Cached: 0 cached, N total` after I edited one source file in one workspace package?"
@@ -97,6 +97,18 @@
       "files": [],
       "id": 9,
       "prompt": "I added a `generate:prisma` script to one of my packages but `gtb verify` is now failing and turbo never seems to run it. What am I missing?"
+    },
+    {
+      "expectations": [
+        "Identifies that turbo folds a workspace dependency's sources into a consumer's hash only through a task edge, and that a source-only package has no artifact task to gate on",
+        "Explains that `^compile:ts` cannot cover it because the fixtures package declares no such script",
+        "Recommends the scriptless `transit` node — `\"transit\": { \"dependsOn\": [\"^transit\"] }` — depended on from `typecheck:ts` and the vitest tasks",
+        "Notes that transit declares no inputs (so turbo hashes the whole package) and runs nothing (so nothing serializes), and that no package needs a transit script"
+      ],
+      "expected_output": "Activates skill. Explains that turbo only folds a dependency's sources into a consumer's task hash through a declared edge, and a source-only package (shared fixtures) has no artifact task to gate on — `^compile:ts` reaches only dependencies that actually compile. The fix is turbo's transit-node seam: a scriptless `\"transit\": { \"dependsOn\": [\"^transit\"] }` task that `typecheck:ts`, `test:vitest:fast`, and `test:vitest:slow` depend on. It declares no `inputs`, so turbo hashes the whole package, and runs nothing, so nothing serializes. `gtb sync` emits it automatically; no package needs a `transit` script.",
+      "files": [],
+      "id": 10,
+      "prompt": "I edited a fixture in my shared test-fixtures workspace package, but the package that imports it still reports a turbo cache hit for `typecheck:ts` and skips. Why?"
     }
   ],
   "skill_name": "gtb-build-pipeline"
