@@ -115,7 +115,8 @@
     },
     "lint:eslint": {
       "dependsOn": [
-        "typecheck:ts"
+        "typecheck:ts",
+        "transit"
       ],
       "inputs": [
         "$TURBO_ROOT$/eslint.config.*",
@@ -186,7 +187,8 @@
     "test:vitest:e2e": {
       "dependsOn": [
         "pack",
-        "^pack"
+        "^pack",
+        "transit"
       ],
       "env": [
         "CI"
@@ -201,7 +203,8 @@
     },
     "test:vitest:fast": {
       "dependsOn": [
-        "^compile:ts"
+        "^compile",
+        "transit"
       ],
       "env": [
         "CI"
@@ -221,7 +224,8 @@
     },
     "test:vitest:slow": {
       "dependsOn": [
-        "^compile:ts"
+        "^compile",
+        "transit"
       ],
       "env": [
         "CI"
@@ -239,6 +243,11 @@
         "dist/test-results/vitest/merge/blob-slow.json"
       ]
     },
+    "transit": {
+      "dependsOn": [
+        "^transit"
+      ]
+    },
     "typecheck": {
       "dependsOn": [
         "typecheck:ts",
@@ -253,7 +262,9 @@
       "outputs": []
     },
     "typecheck:ts": {
-      "dependsOn": [],
+      "dependsOn": [
+        "transit"
+      ],
       "inputs": [
         "$TURBO_ROOT$/tsconfig.base.json",
         "bin/**",

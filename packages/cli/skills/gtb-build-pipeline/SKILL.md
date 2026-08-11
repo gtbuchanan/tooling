@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph, transit.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -61,14 +61,17 @@ Aggregate tasks exist only as `dependsOn` targets — no corresponding script:
 
 ```text
 generate:* → generate → typecheck:ts, compile:ts, lint:eslint
+^transit → transit → typecheck:ts, lint:eslint, test:vitest:*
 typecheck:ts → typecheck → check
 typecheck:ts → lint:eslint → lint → check
-^compile:ts → test:vitest:fast → check
-test:vitest:fast → test:vitest:slow → test:slow → build
+^compile + transit → test:vitest:fast → check
+^compile + transit → test:vitest:slow → test:slow → build
 compile:ts → pack:npm → pack → test:vitest:e2e → test:e2e → build
 lint:eslint → deploy:skills → build
 check + compile + pack → build:ci → build
 ```
+
+This is the maximal graph. Every node and edge above is capability-conditional — `gtb sync` emits only what the workspace's tools call for, so a workspace that publishes nothing gets no `^compile` edge on its test tasks (and no `compile:ts`, `pack:npm`, or `pack` at all), and one without ESLint gets no `lint:eslint`.
 
 Leaf tasks, per-package, run via `gtb task <name>`:
 
@@ -115,12 +118,39 @@ The aggregate stays empty rather than naming leaves the root can't define, becau
 
 ### Non-obvious dependencies
 
-- **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it.
+- **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it. Cross-package invalidation doesn't ride on this edge — `lint:eslint` declares its own `transit` dep — so dropping it costs only the output ordering.
+- **`typecheck:ts`, `lint:eslint`, and every vitest task depend on `transit`** — see [The `transit` node](#the-transit-node) below. This includes `test:vitest:e2e`: it reads packed tarballs, but its own sources import fixture helpers from source-only workspace packages.
+- **Test tasks gate on `^compile`, not `^compile:ts`** — the aggregate covers every compile flavour a dependency publishes from (`compile:skills` today), where the leaf names one toolchain. It still resolves to a no-op for a dependency that compiles nothing.
 - **Test tasks don't depend on `typecheck:ts`** — parallelism wins.
 - **`deploy:skills` depends on `lint:eslint` same-package (no `^`)** — catches broken frontmatter and markdown in `SKILL.md` before deploy. Skills are authored independently per package; there's no topological chain.
 - **`build:ci` excludes `test:slow`, `test:e2e`, `deploy:skills`** — CI runs fast tests; slow/e2e run on full builds; CI has no agents to serve skills to.
 
 `deploy:skills` keys on `skills/**` and `skills-npm.config.ts` only. If you install or remove an agent and want existing skills resymlinked into the new agent's project-local dir, run `gtb turbo run deploy:skills --force` once — turbo's cache otherwise reports HIT and skips the redeploy.
+
+### The `transit` node
+
+Turbo folds a workspace dependency's sources into a consumer's task hash only through a task edge. Tasks that read a dependency as **source** rather than as a build artifact have no artifact task to gate on, so without an edge they replay a cached pass after that dependency changed — a stale green.
+
+`^compile:ts` doesn't close the gap. It covers only dependencies that actually compile; a source-only package (shared test fixtures, internal helpers) declares no such script and propagates nothing. Nor is turbo's global `hashOfInternalDependencies` a substitute — it is over-broad, undeclared, and does not move uniformly across a package's files.
+
+`transit` is turbo's seam for this — a scriptless node whose only edge is `^transit`:
+
+```json
+{
+  "tasks": {
+    "transit": { "dependsOn": ["^transit"] },
+    "typecheck:ts": { "dependsOn": ["transit"] },
+    "lint:eslint": { "dependsOn": ["typecheck:ts", "transit"] },
+    "test:vitest:fast": { "dependsOn": ["^compile", "transit"] }
+  }
+}
+```
+
+It declares no `inputs`, so turbo hashes the whole package, and it runs nothing, so nothing serializes — depending on it just pulls every transitive workspace dependency's file hashes into the consumer's hash. `gtb sync` emits it whenever the workspace has TypeScript, ESLint, Vitest, or e2e tests, and no package needs a `transit` script.
+
+Watch for aggregates that appear to cover this already. `test:vitest:e2e` gates on `^pack`, and a dependency with no `pack:npm` script leaves its `pack` node scriptless and inputs-less — so it hashes the whole package exactly as `transit` does. That coverage is incidental: it reaches direct dependencies only, and resolves to nothing at all when the workspace packs nothing. `transit` is declared alongside it rather than assumed from it.
+
+`lint:eslint` declares the edge itself rather than inheriting it through its same-package `typecheck:ts` dep. That dep is optional — consumers may drop it for parallelism — and isn't generated at all for a workspace without TypeScript, so inheriting would make lint's cross-package invalidation silently conditional.
 
 ## `gtb sync` and `gtb verify`
 

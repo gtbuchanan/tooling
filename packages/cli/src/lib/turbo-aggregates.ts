@@ -5,6 +5,7 @@ import {
   type ToolFlags,
   type TurboTask,
   rootTaskKey,
+  topo,
 } from './turbo-config.ts';
 
 /*
@@ -54,6 +55,31 @@ const generateAggregate = (
     value: isMonorepo ? {} : { dependsOn: [...flags.generateScripts] },
   },
   ...generateLeafTasks(flags, isMonorepo),
+];
+
+/*
+ * Turbo folds a workspace dependency's sources into a consumer's hash only
+ * through a task edge. `typecheck:ts`, `lint:eslint`, and the vitest tasks read
+ * a dependency as source rather than as a build artifact, so they have no
+ * artifact task to gate on and would replay a cached pass after that dependency
+ * changed. `^compile:ts` covers only dependencies that actually compile; a
+ * source-only package (test fixtures, shared helpers) declares no such script
+ * and propagates nothing.
+ *
+ * `transit` is turbo's seam for that: a scriptless node whose only edge is
+ * `^transit`. It declares no `inputs`, so turbo hashes the whole package, and
+ * it runs nothing, so nothing serializes — depending on it simply pulls every
+ * transitive workspace dependency's file hashes into the consumer's task hash.
+ *
+ * Emitted only when something references it, so a workspace with none of the
+ * three toolchains doesn't carry a dangling node.
+ */
+const transitNode = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasE2e || flags.hasEslint || flags.hasTypeScript || flags.hasVitest,
+    key: Aggregate.transit,
+    value: { dependsOn: [topo(Aggregate.transit)] },
+  },
 ];
 
 const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
@@ -188,6 +214,7 @@ export const aggregateTasks = (
 ): readonly ConditionalEntry<TurboTask>[] => [
   ...coverageTasks(flags),
   ...generateAggregate(flags, isMonorepo),
+  ...transitNode(flags),
   ...typecheckAggregate(flags),
   ...compileAggregate(flags),
   ...packAggregate(flags),

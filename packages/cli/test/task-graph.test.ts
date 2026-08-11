@@ -32,7 +32,18 @@ describe.concurrent(resolveSchedule, () => {
     expect(result).toStrictEqual([['compile:ts'], ['pack:npm']]);
   });
 
-  it('skips aggregate (transit) tasks', ({ expect }) => {
+  it('skips the self-topological transit node without detecting a cycle', ({ expect }) => {
+    const turbo = makeTurboJson({
+      'transit': { dependsOn: ['^transit'] },
+      'typecheck:ts': { dependsOn: ['transit'], inputs: ['src/**'], outputs: [] },
+    });
+
+    const result = resolveSchedule('typecheck:ts', turbo);
+
+    expect(result).toStrictEqual([['typecheck:ts']]);
+  });
+
+  it('skips aggregate tasks', ({ expect }) => {
     const turbo = makeTurboJson({
       'check': { dependsOn: ['typecheck'] },
       'typecheck': { dependsOn: ['typecheck:ts'] },

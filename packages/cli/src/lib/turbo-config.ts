@@ -5,6 +5,7 @@ import { localeComparer } from './sort.ts';
 import { typeCheckInclude } from './tsconfig-gen.ts';
 import { aggregateTasks } from './turbo-aggregates.ts';
 import { toTurboGlobs } from './turbo-globs.ts';
+import { testTasks } from './turbo-test-tasks.ts';
 
 /**
  * Turbo-only aggregate task names (no CLI handler).
@@ -20,6 +21,7 @@ export const Aggregate = {
   pack: 'pack',
   testE2e: 'test:e2e',
   testSlow: 'test:slow',
+  transit: 'transit',
   typecheck: 'typecheck',
 } as const;
 
@@ -147,14 +149,14 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
 /**
  * Creates a topological (cross-package) task dependency.
  */
-const topo = (task: string): string => `^${task}`;
+export const topo = (task: string): string => `^${task}`;
 
 const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasTypeScript,
     key: taskNames.typecheckTs,
     value: {
-      dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : [])],
+      dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : []), Aggregate.transit],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json',
         ...typeCheckInclude.flatMap(toTurboGlobs),
@@ -254,10 +256,17 @@ const pklTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   },
 ];
 
+/*
+ * The `transit` edge is declared rather than inherited through `typecheck:ts`:
+ * that edge is optional (consumers may drop it for parallelism) and isn't
+ * generated at all for a workspace without TypeScript, so relying on it would
+ * make lint's cross-package invalidation silently conditional.
+ */
 const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
     ...(flags.hasGenerate ? [Aggregate.generate] : []),
     ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
+    Aggregate.transit,
   ];
   const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**', 'skills/**'];
 
@@ -309,64 +318,6 @@ const rootLintTasks = (
     },
   },
 ];
-
-/*
- * Unlike compile inputs, test inputs can't be resolved from vitest config —
- * vitest configs are executable TypeScript, not statically parseable.
- * Broadening beyond test directories is intentional: tests import source.
- */
-const testInputs = [
-  'bin/**', 'src/**', 'test/**', 'scripts/**',
-  'vitest.config.*', '!vitest.config.e2e.*',
-];
-
-const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const deps = [
-    ...(flags.hasPublished ? [topo(taskNames.compileTs)] : []),
-  ];
-
-  return [
-    {
-      condition: flags.hasVitest,
-      key: taskNames.testVitestFast,
-      value: {
-        dependsOn: deps,
-        env: ['CI'],
-        inputs: testInputs,
-        outputs: ['dist/coverage/vitest/fast/**', 'dist/test-results/vitest/merge/blob-fast.json'],
-      },
-    },
-    {
-      condition: flags.hasVitest,
-      key: taskNames.testVitestSlow,
-      value: {
-        dependsOn: deps,
-        env: ['CI'],
-        inputs: testInputs,
-        outputs: ['dist/coverage/vitest/slow/**', 'dist/test-results/vitest/merge/blob-slow.json'],
-      },
-    },
-    {
-      condition: flags.hasVitest,
-      key: taskNames.coverageVitestMerge,
-      value: {
-        dependsOn: [taskNames.testVitestFast, taskNames.testVitestSlow],
-        inputs: ['dist/test-results/vitest/merge/blob-*.json'],
-        outputs: ['dist/coverage/vitest/merged/**'],
-      },
-    },
-    {
-      condition: flags.hasE2e,
-      key: taskNames.testVitestE2e,
-      value: {
-        dependsOn: flags.hasPublished ? [Aggregate.pack, topo(Aggregate.pack)] : [],
-        env: ['CI'],
-        inputs: ['e2e/**', 'vitest.config.e2e.*'],
-        outputs: ['dist/test-results/vitest/blob-e2e.json'],
-      },
-    },
-  ];
-};
 
 const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {

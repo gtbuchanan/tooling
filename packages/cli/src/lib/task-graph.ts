@@ -110,8 +110,8 @@ const isLeafTask = (task: SchedulerTask): boolean =>
 
 /**
  * Resolves a turbo task into a topologically ordered schedule of leaf
- * tasks. Aggregate (transit-node) tasks are traversed but not included
- * in the output — only executable leaf tasks appear.
+ * tasks. Aggregate tasks — including the `transit` node — are traversed
+ * but not included in the output; only executable leaf tasks appear.
  *
  * Each inner array is a "level" of tasks whose dependencies are all
  * satisfied by prior levels.
