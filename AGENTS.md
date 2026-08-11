@@ -447,6 +447,20 @@ it imports `Defaults.pkl` by relative path, and `PklProject` neither
 matches the `.pkl` file pattern nor contains a literal version (its
 `packageZipUrl` is an interpolation).
 
+`hk-config` is grouped with `hk` by a `packageRule`, so a consumer with
+both pending gets one branch instead of two. The two are mutually
+coupled — `Defaults.pkl` is written against a specific hk
+`Config`/`Builtins` version, and a consumer's `hk.pkl` pins hk twice (the
+`amends` URL and the mise binary) — so either bump landing alone can
+break the other direction, and both edit `hk.pkl`, so the second PR
+always has to rebase. The rule matches `depName` (`hk-config`, as emitted
+by the customManager) rather than `matchSourceUrls`, because the same
+source URL also covers `@gtbuchanan/cli`, which does not belong in the hk
+group. Grouping doesn't _enforce_ a compatible pair — Renovate still
+picks each dep's own latest — it removes the broken intermediate states
+and lets one CI run validate the real combination. It's inert in tooling
+itself, which has no `hk-config` dep to bump.
+
 ### Turbo cache miss on workspace edits
 
 A source change in a `packages/*` workspace often invalidates every

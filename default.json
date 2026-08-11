@@ -53,6 +53,16 @@
       ]
     },
     {
+      "description": "Fold hk-config into the hk group — Defaults.pkl is built against a specific hk Config/Builtins version, so the amends pin and the hk-config import must move together or both intermediate states break. Matched by depName (emitted by the hk-config customManager above), not by source URL: gtbuchanan/tooling also publishes @gtbuchanan/cli, which must stay out of this group",
+      "groupName": "hk",
+      "matchDatasources": [
+        "github-releases"
+      ],
+      "matchDepNames": [
+        "hk-config"
+      ]
+    },
+    {
       "description": "Group pkl updates (mise tool + .chezmoidata version comment share one apple/pkl release)",
       "groupName": "pkl",
       "matchSourceUrls": [
