@@ -1,5 +1,16 @@
 # @gtbuchanan/hk-config
 
+## 0.2.4
+
+### Patch Changes
+
+- 1574fba: Bump the hk package imports to v1.54.1
+
+  `Defaults.pkl` imports `Config.pkl` and `Builtins.pkl` from a
+  version-pinned hk release URL, so consumers of the preset resolve
+  whichever hk the pin names. Move that pin to v1.54.1, matching the
+  version `mise.toml` installs.
+
 ## 0.2.3
 
 ### Patch Changes
