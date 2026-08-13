@@ -18,3 +18,8 @@ the worst contention the suite runs under, not to the test's own cost.
 
 `testTimeout` was already accepted by the e2e entry points; this makes
 it consistent for source tests.
+
+Fixes `testTimeout: 0` on the e2e entry points, where vitest's
+documented way to disable the limit was dropped by a truthiness check
+and silently fell back to the default. `hookTimeout` derives from it
+there, so both were affected.

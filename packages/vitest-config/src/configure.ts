@@ -283,10 +283,15 @@ export const buildGlobalConfig = (
       reporters: ['default', 'blob'],
       setupFiles: resolveSetupFiles(setupOptions),
       ...(spec.tags && { tags: [...spec.tags] }),
-      ...(spec.hookTimeout && {
+      /*
+       * `!== undefined` rather than truthiness: `0` is vitest's documented
+       * way to disable a timeout, so it has to reach the config rather than
+       * being read as "unset".
+       */
+      ...(spec.hookTimeout !== undefined && {
         hookTimeout: spec.hookTimeout,
       }),
-      ...(spec.testTimeout && {
+      ...(spec.testTimeout !== undefined && {
         testTimeout: spec.testTimeout,
       }),
       unstubEnvs: true,

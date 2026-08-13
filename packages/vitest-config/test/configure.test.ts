@@ -335,6 +335,16 @@ describe.concurrent(configurePackage, () => {
     expect(config.test).toHaveProperty('testTimeout', testTimeout);
   });
 
+  /*
+   * `0` is vitest's documented way to disable the timeout, so it has to
+   * survive the config build rather than being read as "unset".
+   */
+  it('preserves a testTimeout of 0', ({ expect }) => {
+    const config = configurePackage({ testTimeout: 0 });
+
+    expect(config.test).toHaveProperty('testTimeout', 0);
+  });
+
   it('leaves testTimeout to vitest by default', ({ expect }) => {
     const config = configurePackage();
 
