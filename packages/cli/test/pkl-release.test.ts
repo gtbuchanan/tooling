@@ -1,62 +1,24 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
-import type { GithubReleaseDeps } from '#src/lib/github-release.js';
-import { createLogger } from '#src/lib/logger.js';
 import { executePublishPkl, planPklRelease } from '#src/lib/pkl-release.js';
-import { captureLogger, createPklWorkspace, createTempDir, writeJson } from './helpers.ts';
-
-interface RunCall {
-  readonly args: readonly string[];
-  readonly command: string;
-}
-
-const silentLogger = createLogger(
-  { write: () => true } as unknown as NodeJS.WritableStream,
-  { write: () => true } as unknown as NodeJS.WritableStream,
-);
-
-interface Stub {
-  readonly deps: GithubReleaseDeps;
-  readonly runCalls: readonly RunCall[];
-  readonly sha: string;
-}
+import {
+  type GithubReleaseStubOptions,
+  captureLogger,
+  createPklWorkspace,
+  createTempDir,
+  stubGithubReleaseDeps,
+  writeJson,
+} from './helpers.ts';
 
 /**
- * Builds injected deps; `exists` decides whether `gh release view` succeeds.
+ * Injected deps rooted at the workspace under test.
  */
 const stubDeps = (
   cwd: string,
-  options: { exists: boolean; logger?: GithubReleaseDeps['logger'] },
-): Stub => {
-  const runCalls: RunCall[] = [];
-  const sha = faker.git.commitSha();
-
-  return {
-    deps: {
-      capture: (command) => {
-        if (command === 'git') {
-          return Promise.resolve(`${sha}\n`);
-        }
-
-        return options.exists
-          ? Promise.resolve('')
-          : Promise.reject(new Error('release not found'));
-      },
-      cwd,
-      logger: options.logger ?? silentLogger,
-      run: (command, runOptions) => {
-        runCalls.push({ args: runOptions?.args ?? [], command });
-
-        return Promise.resolve();
-      },
-    },
-    runCalls,
-    sha,
-  };
-};
+  options: GithubReleaseStubOptions = {},
+) => stubGithubReleaseDeps({ ...options, cwd });
 
 describe.concurrent(planPklRelease, () => {
   it('uses an unscoped <name>@<version> tag for a monorepo member', ({ expect }) => {
@@ -84,18 +46,18 @@ describe.concurrent(planPklRelease, () => {
 describe.concurrent(executePublishPkl, () => {
   it('creates a release tagging HEAD with the assets when none exists', async ({ expect }) => {
     const ws = createPklWorkspace();
-    const { deps, runCalls, sha } = stubDeps(ws.root, { exists: false });
+    const { createCalls, deps, sha } = stubDeps(ws.root);
 
     await executePublishPkl(deps);
 
     const tag = `${ws.name}@${ws.version}`;
 
-    expect(runCalls).toHaveLength(1);
-    expect(runCalls[0]?.command).toBe('gh');
-    expect(runCalls[0]?.args.slice(0, 9)).toStrictEqual([
+    expect(createCalls()).toHaveLength(1);
+    expect(createCalls()[0]?.command).toBe('gh');
+    expect(createCalls()[0]?.args.slice(0, 9)).toStrictEqual([
       'release', 'create', tag, '--target', sha, '--title', tag, '--notes', tag,
     ]);
-    expect(runCalls[0]?.args).toContain(
+    expect(createCalls()[0]?.args).toContain(
       path.join(ws.pkgDir, 'dist', 'packages', 'pkl', `${tag}.zip`),
     );
   });
@@ -110,12 +72,12 @@ describe.concurrent(executePublishPkl, () => {
       path.join(root, 'PklProject'),
       `amends "pkl:Project"\n\npackage {\n  name = "${name}"\n  version = "${version}"\n}\n`,
     );
-    const { deps, runCalls } = stubDeps(root, { exists: false });
+    const { createCalls, deps } = stubDeps(root);
 
     await executePublishPkl(deps);
 
-    expect(runCalls).toHaveLength(1);
-    expect(runCalls[0]?.args.slice(0, 3)).toStrictEqual(['release', 'create', `v${version}`]);
+    expect(createCalls()).toHaveLength(1);
+    expect(createCalls()[0]?.args.slice(0, 3)).toStrictEqual(['release', 'create', `v${version}`]);
   });
 
   it('uses the matching CHANGELOG.md section as the release notes', async ({ expect }) => {
@@ -124,22 +86,24 @@ describe.concurrent(executePublishPkl, () => {
       path.join(ws.pkgDir, 'CHANGELOG.md'),
       `# pkg\n\n## ${ws.version}\n\n### Minor Changes\n\n- Added a thing\n\n## 0.0.1\n\n- old\n`,
     );
-    const { deps, runCalls } = stubDeps(ws.root, { exists: false });
+    const { createCalls, deps } = stubDeps(ws.root);
 
     await executePublishPkl(deps);
 
-    const args = runCalls[0]?.args ?? [];
+    const args = createCalls()[0]?.args ?? [];
 
     expect(args[args.indexOf('--notes') + 1]).toBe('### Minor Changes\n\n- Added a thing');
   });
 
   it('skips when the release already exists', async ({ expect }) => {
     const ws = createPklWorkspace();
-    const { deps, runCalls } = stubDeps(ws.root, { exists: true });
+    const { createCalls, deps } = stubDeps(ws.root, {
+      existingTags: [`${ws.name}@${ws.version}`],
+    });
 
     await executePublishPkl(deps);
 
-    expect(runCalls).toHaveLength(0);
+    expect(createCalls()).toHaveLength(0);
   });
 
   it('throws when the PklProject is missing its package identity', async ({ expect }) => {
@@ -148,7 +112,7 @@ describe.concurrent(executePublishPkl, () => {
       path.join(ws.pkgDir, 'PklProject'),
       'amends "pkl:Project"\n\npackage {\n  version = "1.0.0"\n}\n',
     );
-    const { deps } = stubDeps(ws.root, { exists: false });
+    const { deps } = stubDeps(ws.root);
 
     await expect(executePublishPkl(deps)).rejects.toThrow(/package\.name or package\.version/v);
   });
@@ -158,11 +122,11 @@ describe.concurrent(executePublishPkl, () => {
     writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
     writeJson(root, 'package.json', { name: build.packageName(), private: true });
     const captured = captureLogger();
-    const { deps, runCalls } = stubDeps(root, { exists: false, logger: captured.logger });
+    const { createCalls, deps } = stubDeps(root, { logger: captured.logger });
 
     await executePublishPkl(deps);
 
-    expect(runCalls).toHaveLength(0);
+    expect(createCalls()).toHaveLength(0);
     expect(captured.out()).toContain('no Pkl packages to publish');
   });
 });

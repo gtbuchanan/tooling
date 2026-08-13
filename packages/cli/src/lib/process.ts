@@ -59,6 +59,46 @@ export const capture = async (
   });
 
 /**
+ * A finished command: its exit code and both captured streams (trimmed).
+ */
+export interface ExecResult {
+  readonly exitCode: number;
+  readonly stderr: string;
+  readonly stdout: string;
+}
+
+/**
+ * Spawns a command and resolves its outcome instead of throwing on failure,
+ * so the caller can branch on *why* it failed rather than only that it did.
+ * Prefer this over {@link capture} whenever a non-zero exit is a meaningful
+ * answer (e.g. "no such release") that must be told apart from a genuine
+ * error: `capture` collapses every failure into the same generic rejection,
+ * which turns a transient outage into a false negative. Rejects only when the
+ * command cannot be spawned at all.
+ */
+export const execute = async (
+  command: string,
+  args: readonly string[],
+): Promise<ExecResult> =>
+  new Promise((resolve, reject) => {
+    const child = crossSpawn(command, [...args], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout?.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8');
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      resolve({ exitCode: code ?? 0, stderr: stderr.trim(), stdout: stdout.trim() });
+    });
+  });
+
+/**
  * Spawns a command. Resolves true on exit 0, false on ENOENT
  * (command not found), and rejects on other failures.
  */

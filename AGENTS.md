@@ -343,6 +343,24 @@ through `package.json` scripts backed by `gtb` leaf commands.
     is idempotent and no-ops when the workspace ships no such package, so CD
     runs `gtb publish` unconditionally; a future `.NET` channel adds just
     another `executePublish*` with no workflow change.
+  - **Publishing is failure-isolated at both levels**, because the units it
+    releases are independent and a run that stops early leaves npm and
+    GitHub out of sync until someone notices. One package's failed release
+    doesn't strand its siblings, and one channel's failure doesn't strand
+    the other channels — everything is attempted and the failures are
+    re-thrown together as an `AggregateError`. `changeset publish` is the
+    one exception: it produces the versions the channels release, so a
+    failure there stops the run.
+  - **The skip-if-exists check reads one `gh release list`**, not a
+    `gh release view` per package. Both channels ask about every package
+    they own on every run (that's what backfills a previously-failed
+    release), so per-package checks scale the number of API calls — and
+    therefore the odds that a transient failure is misread as "no such
+    release" — with the package count. A failed listing throws rather than
+    reporting nothing released. As a backstop, a create that GitHub rejects
+    because the tag is taken counts as released rather than failing the
+    run: that also covers a tag reserved by a _deleted_ immutable release,
+    which no listing can report.
   - The `gtb-from-source` input (default `false`) flips the gtb invocation:
     consumers run their installed bin (`pnpm exec gtb`); the only repo that
     vendors `@gtbuchanan/cli` as a workspace package (tooling itself) sets it
