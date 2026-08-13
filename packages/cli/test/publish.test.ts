@@ -45,4 +45,38 @@ describe.concurrent(executePublish, () => {
       'npm:start', 'npm:end', 'releases:start', 'releases:end', 'non-npm:start', 'non-npm:end',
     ]);
   });
+
+  it('runs the non-npm channels even when the npm releases fail', async ({ expect }) => {
+    const order: string[] = [];
+
+    await expect(executePublish({
+      publishNonNpm: () => {
+        order.push('non-npm');
+
+        return Promise.resolve();
+      },
+      releaseNpm: () => Promise.reject(new Error('npm releases exploded')),
+      run: () => Promise.resolve(),
+    })).rejects.toThrow(AggregateError);
+
+    // The channels are independent: one failing must not strand the others.
+    expect(order).toStrictEqual(['non-npm']);
+  });
+
+  it('skips every channel when the registry publish fails', async ({ expect }) => {
+    const order: string[] = [];
+    const channel = (name: string) => () => {
+      order.push(name);
+
+      return Promise.resolve();
+    };
+
+    await expect(executePublish({
+      publishNonNpm: channel('non-npm'),
+      releaseNpm: channel('releases'),
+      run: () => Promise.reject(new Error('changeset publish exploded')),
+    })).rejects.toThrow('changeset publish exploded');
+
+    expect(order).toStrictEqual([]);
+  });
 });

@@ -2,7 +2,7 @@ import { defineCommand } from 'citty';
 import { createLogger } from '../../lib/logger.ts';
 import { executePublishNpmReleases } from '../../lib/npm-release.ts';
 import { executePublishPkl } from '../../lib/pkl-release.ts';
-import { type RunOptions, capture, run } from '../../lib/process.ts';
+import { type RunOptions, execute, run } from '../../lib/process.ts';
 import { rootNames } from './names.ts';
 
 /**
@@ -24,6 +24,11 @@ export interface PublishDeps {
  * registry, and both release channels skip tags that already have a release —
  * so CD runs this unconditionally and a local re-run resumes where a partial
  * failure left off.
+ *
+ * The channels ship to unrelated destinations, so a failing one must not
+ * strand the others: each runs, and their failures surface together at the
+ * end. `changeset publish` is the exception — it is the source of the versions
+ * the channels release, so nothing follows a failure there.
  */
 export const executePublish = async ({
   publishNonNpm,
@@ -31,8 +36,17 @@ export const executePublish = async ({
   run: runCommand,
 }: PublishDeps): Promise<void> => {
   await runCommand('pnpm', { args: ['exec', 'changeset', 'publish'] });
-  await releaseNpm();
-  await publishNonNpm();
+  const failures: unknown[] = [];
+  for (const channel of [releaseNpm, publishNonNpm]) {
+    try {
+      await channel();
+    } catch (error) {
+      failures.push(error);
+    }
+  }
+  if (failures.length > 0) {
+    throw new AggregateError(failures, 'one or more release channels failed');
+  }
 };
 
 /**
@@ -48,7 +62,7 @@ export const publish = defineCommand({
     name: rootNames.publish,
   },
   run: () => {
-    const deps = { capture, cwd: process.cwd(), logger: createLogger(), run };
+    const deps = { cwd: process.cwd(), execute, logger: createLogger() };
 
     return executePublish({
       publishNonNpm: () => executePublishPkl(deps),

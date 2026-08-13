@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Writable } from 'node:stream';
+import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import { generateCodecovSections } from '#src/lib/codecov-config.js';
@@ -9,6 +10,7 @@ import { type PackageCapabilities, discoverWorkspace } from '#src/lib/discovery.
 import {
   mergeCodecovSections, mergePackageScripts, writeJsonFile,
 } from '#src/lib/file-writer.js';
+import type { GithubReleaseDeps } from '#src/lib/github-release.js';
 import { type Logger, createLogger } from '#src/lib/logger.js';
 import { ManifestSchema, unscopedName } from '#src/lib/manifest.js';
 import { UnknownRecord } from '#src/lib/schemas.js';
@@ -53,6 +55,97 @@ export const captureLogger = (): CapturedLogger => {
     logger: createLogger(captureSink(stdoutChunks), captureSink(stderrChunks)),
     out: () => stdoutChunks.join(''),
     err: () => stderrChunks.join(''),
+  };
+};
+
+/**
+ * A single stubbed command invocation.
+ */
+export interface StubCall {
+  readonly args: readonly string[];
+  readonly command: string;
+}
+
+/**
+ * Options for {@link stubGithubReleaseDeps}.
+ */
+export interface GithubReleaseStubOptions {
+  /**
+   * Tags `gh release list` reports as already released.
+   */
+  readonly existingTags?: readonly string[];
+  /**
+   * When set, `gh release list` fails with this stderr instead of listing.
+   */
+  readonly listStderr?: string;
+  readonly logger?: Logger;
+  /**
+   * Tags whose `gh release create` fails, mapped to the stderr it emits.
+   */
+  readonly rejectedTags?: Readonly<Record<string, string>>;
+}
+
+/**
+ * Injected deps plus accessors over the gh calls they recorded.
+ */
+export interface GithubReleaseStub {
+  readonly createCalls: () => readonly StubCall[];
+  readonly deps: GithubReleaseDeps;
+  readonly listCalls: () => readonly StubCall[];
+  readonly sha: string;
+}
+
+const silentLogger = createLogger(
+  new Writable({ write: (_chunk, _enc, cb) => { cb(); } }),
+  new Writable({ write: (_chunk, _enc, cb) => { cb(); } }),
+);
+
+/**
+ * Stubs the gh/git side of the release channels: `git rev-parse` answers with
+ * a generated sha, `gh release list` reports {@link
+ * GithubReleaseStubOptions.existingTags}, and `gh release create` succeeds
+ * unless the tag is listed in `rejectedTags`. Shared by every release-channel
+ * test so they exercise one fake of the real `execute` contract.
+ */
+export const stubGithubReleaseDeps = (
+  options: GithubReleaseStubOptions & { cwd?: string } = {},
+): GithubReleaseStub => {
+  const calls: StubCall[] = [];
+  const sha = faker.git.commitSha();
+  const existingTags = options.existingTags ?? [];
+  const rejectedTags = options.rejectedTags ?? {};
+  const select = (args: readonly string[]) => {
+    if (args[1] === 'list') {
+      return options.listStderr === undefined
+        ? { stdout: JSON.stringify(existingTags.map(tagName => ({ tagName }))) }
+        : { exitCode: 1, stderr: options.listStderr };
+    }
+    const stderr = rejectedTags[args[2] ?? ''];
+
+    return stderr === undefined
+      ? { stdout: `https://github.com/o/r/releases/tag/${args[2] ?? ''}` }
+      : { exitCode: 1, stderr };
+  };
+  const byCommand = (name: string) => () => calls.filter(call => call.args[1] === name);
+
+  return {
+    createCalls: byCommand('create'),
+    deps: {
+      cwd: options.cwd ?? createTempDir(),
+      execute: (command, args) => {
+        calls.push({ args: [...args], command });
+
+        return Promise.resolve({
+          exitCode: 0,
+          stderr: '',
+          stdout: '',
+          ...(command === 'git' ? { stdout: sha } : select(args)),
+        });
+      },
+      logger: options.logger ?? silentLogger,
+    },
+    listCalls: byCommand('list'),
+    sha,
   };
 };
 
