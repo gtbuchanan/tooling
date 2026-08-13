@@ -566,6 +566,34 @@ Custom tags via `configureGlobal({ tags: [{ name: 'db', timeout: 60_000 }] })`.
 Filter with `pnpm exec vitest run --tags-filter="!db"` (run vitest directly
 for custom filter expressions; `gtb` commands only handle the `slow` tag).
 
+**A CPU-heavy package needs a raised `testTimeout`, not less
+parallelism.** Turbo runs packages in parallel, vitest runs files in
+parallel workers, and each file runs up to 5 `concurrent` tests at once.
+Where a single test already does seconds of real work — building an
+ESLint config, starting a TypeScript project service, spawning a child
+process — that stacks up until tests exceed vitest's 5s default and the
+whole batch fails together, passing in isolation and failing under
+`pnpm check`. Raise the limit with `configurePackage({ testTimeout:
+20_000 })`, as `eslint-config` and `test-utils` do.
+
+Reach for the timeout rather than the alternatives. Capping
+`maxConcurrency` measures no faster — these suites are dominated by
+module loading, not test execution — so it only holds wall time under an
+arbitrary limit. `describe.sequential` asserts the tests aren't
+independent, which is usually false. The `slow` tag routes them out of
+`build:ci`, dropping them from PR CI entirely.
+
+Raising the timeout is not free — it is a duration bound, so a higher
+one catches a genuine regression later. It buys reliability in return:
+a wall-clock limit can't distinguish a slower test from a busier
+machine, and these suites have been measured at roughly 30x
+amplification between running alone and running under a full
+`pnpm check`, so the tight default reports load rather than cost. Size
+it to the worst contention the suite runs under. If you want a
+trustworthy performance signal, measure in isolation instead — that is
+what removes the load variable, and it is why a benchmark is a
+different tool rather than a tighter timeout.
+
 Consumer directory conventions:
 
 - `test/` — source tests (unit + integration). Coverage via source config.
