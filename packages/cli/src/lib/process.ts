@@ -1,3 +1,4 @@
+import { constants } from 'node:os';
 import crossSpawn from 'cross-spawn';
 
 /**
@@ -67,6 +68,39 @@ export interface ExecResult {
   readonly stdout: string;
 }
 
+/*
+ * Reported when a child ends without either a code or a signal — a shape Node
+ * documents as impossible. Non-zero regardless, since it is not a success.
+ */
+const unknownFailureExitCode = 1;
+
+/*
+ * What a shell adds to the signal number to report a killed process in `$?`.
+ */
+const signalExitCodeOffset = 128;
+
+/**
+ * The exit code to report for a finished child, from Node's `close` arguments:
+ * exactly one of `code` and `signal` is set. A signal kill has no exit code of
+ * its own, so it takes the shell's `128 + signum` convention. What matters to
+ * every caller is that a killed command is never reported as a success — a
+ * plain `code ?? 0` would claim a `gh release create` that CI killed mid-flight
+ * had created the release.
+ */
+export const resolveExitCode = (
+  code: number | undefined,
+  signal: NodeJS.Signals | undefined,
+): number => {
+  if (code !== undefined) {
+    return code;
+  }
+  if (signal === undefined) {
+    return unknownFailureExitCode;
+  }
+
+  return signalExitCodeOffset + constants.signals[signal];
+};
+
 /**
  * Spawns a command and resolves its outcome instead of throwing on failure,
  * so the caller can branch on *why* it failed rather than only that it did.
@@ -93,8 +127,12 @@ export const execute = async (
       stderr += chunk.toString('utf8');
     });
     child.on('error', reject);
-    child.on('close', (code) => {
-      resolve({ exitCode: code ?? 0, stderr: stderr.trim(), stdout: stdout.trim() });
+    child.on('close', (code, signal) => {
+      resolve({
+        exitCode: resolveExitCode(code ?? undefined, signal ?? undefined),
+        stderr: stderr.trim(),
+        stdout: stdout.trim(),
+      });
     });
   });
 
