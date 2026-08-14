@@ -124,6 +124,17 @@ describe.concurrent(configureEndToEndPackage, () => {
     expect(config.test?.include).toStrictEqual(expectedE2eTestInclude);
   });
 
+  /*
+   * `0` disables the timeout in vitest, and e2e derives `hookTimeout` from
+   * `testTimeout`, so both have to survive rather than fall back to a default.
+   */
+  it('preserves a testTimeout of 0 across both timeouts', ({ expect }) => {
+    const config = configureEndToEndPackage({ testTimeout: 0 });
+
+    expect(config.test).toHaveProperty('testTimeout', 0);
+    expect(config.test).toHaveProperty('hookTimeout', 0);
+  });
+
   it('includes global settings (setupFiles, mockReset)', ({ expect }) => {
     const config = configureEndToEndPackage();
 

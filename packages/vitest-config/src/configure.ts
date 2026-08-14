@@ -30,6 +30,19 @@ export interface VitestConfigureOptions {
    * @defaultValue true
    */
   readonly hasAssertions?: boolean;
+  /**
+   * Per-test timeout in milliseconds. Raise it for a package whose tests do
+   * seconds of real work — building an ESLint config, starting a TypeScript
+   * project service, spawning a child process — so a machine running the rest
+   * of the build in parallel doesn't read as a failure.
+   *
+   * The trade is real: this is a duration bound, so a higher one catches a
+   * performance regression later. It buys reliability instead, because a
+   * wall-clock limit can't tell a slower test from a busier machine. Size it
+   * to the worst contention the suite runs under, not to the test's own cost.
+   * @defaultValue vitest's default (5000)
+   */
+  readonly testTimeout?: number;
 }
 
 /**
@@ -270,10 +283,15 @@ export const buildGlobalConfig = (
       reporters: ['default', 'blob'],
       setupFiles: resolveSetupFiles(setupOptions),
       ...(spec.tags && { tags: [...spec.tags] }),
-      ...(spec.hookTimeout && {
+      /*
+       * `!== undefined` rather than truthiness: `0` is vitest's documented
+       * way to disable a timeout, so it has to reach the config rather than
+       * being read as "unset".
+       */
+      ...(spec.hookTimeout !== undefined && {
         hookTimeout: spec.hookTimeout,
       }),
-      ...(spec.testTimeout && {
+      ...(spec.testTimeout !== undefined && {
         testTimeout: spec.testTimeout,
       }),
       unstubEnvs: true,
@@ -317,6 +335,7 @@ export const configureGlobal = (
     projects: projectPatterns,
     slow: slowOptions = {},
     tags: extraTags = [],
+    testTimeout,
     ...setupOptions
   } = options;
 
@@ -335,6 +354,7 @@ export const configureGlobal = (
         { timeout: defaultSlowTimeout, ...slowOptions, name: 'slow' },
         ...extraTags,
       ],
+      ...(testTimeout !== undefined && { testTimeout }),
     },
     setupOptions,
     resolved,

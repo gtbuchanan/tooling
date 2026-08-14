@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import {
@@ -324,5 +325,29 @@ describe.concurrent(configurePackage, () => {
     const config = configurePackage();
 
     expect(config.test?.exclude).toContain('**/dist/**');
+  });
+
+  it('applies testTimeout when set', ({ expect }) => {
+    const testTimeout = faker.number.int({ min: 1000, max: 60_000 });
+
+    const config = configurePackage({ testTimeout });
+
+    expect(config.test).toHaveProperty('testTimeout', testTimeout);
+  });
+
+  /*
+   * `0` is vitest's documented way to disable the timeout, so it has to
+   * survive the config build rather than being read as "unset".
+   */
+  it('preserves a testTimeout of 0', ({ expect }) => {
+    const config = configurePackage({ testTimeout: 0 });
+
+    expect(config.test).toHaveProperty('testTimeout', 0);
+  });
+
+  it('leaves testTimeout to vitest by default', ({ expect }) => {
+    const config = configurePackage();
+
+    expect(config.test).not.toHaveProperty('testTimeout');
   });
 });
