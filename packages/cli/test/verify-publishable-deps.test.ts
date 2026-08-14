@@ -48,8 +48,8 @@ const publishFields = (isPublished: boolean): Record<string, unknown> =>
 
 /**
  * Scaffolds a two-package monorepo where one package depends on the other.
- * Both directory names derive from one seed with distinct suffixes so they
- * can never collide.
+ * The `-dep` / `-consumer` suffixes keep the two directory names distinct
+ * even when the generated words happen to coincide.
  */
 const createWorkspaceDepProject = (
   options: WorkspaceDepOptions = {},
@@ -62,7 +62,6 @@ const createWorkspaceDepProject = (
     specifier = 'workspace:*',
   } = options;
   const root = createTempDir();
-  const seed = build.packageName();
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
     "packages:\n  - 'packages/*'\n",
@@ -70,7 +69,7 @@ const createWorkspaceDepProject = (
   writeJson(root, 'package.json', { name: build.packageName(), private: true });
 
   const dependencyName = build.scopedPackageName();
-  const dependencyDir = path.join(root, 'packages', `${seed}-dep`);
+  const dependencyDir = path.join(root, 'packages', `${build.packageName()}-dep`);
   mkdirSync(dependencyDir, { recursive: true });
   writeJson(dependencyDir, 'package.json', {
     name: dependencyName,
@@ -78,7 +77,7 @@ const createWorkspaceDepProject = (
   });
 
   const consumerName = build.scopedPackageName();
-  const consumerDir = path.join(root, 'packages', `${seed}-consumer`);
+  const consumerDir = path.join(root, 'packages', `${build.packageName()}-consumer`);
   mkdirSync(consumerDir, { recursive: true });
   writeJson(consumerDir, 'package.json', {
     ...(bundled && { bundleDependencies: [dependencyName] }),

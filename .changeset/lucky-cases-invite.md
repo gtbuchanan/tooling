@@ -13,4 +13,6 @@ consumer can resolve.
 
 Covers `dependencies`, `peerDependencies`, and `optionalDependencies`.
 `devDependencies` are exempt (publishing strips them) as is anything
-listed in `bundleDependencies` (the tarball carries it).
+`bundleDependencies` actually bundles — an explicit name list covers any
+field, while `true` covers `dependencies` alone, so a workspace peer or
+optional dependency stays checked.
