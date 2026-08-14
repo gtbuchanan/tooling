@@ -103,6 +103,19 @@ export interface PackageCapabilities {
    * manifest name is stable across every checkout.
    */
   readonly name: string;
+  /**
+   * Names of workspace packages this package depends on *at install time*:
+   * every `workspace:` specifier in `dependencies`, `peerDependencies`, or
+   * `optionalDependencies`, minus anything `bundleDependencies` ships inside
+   * the tarball. Sorted and deduplicated.
+   *
+   * All three fields survive publish and get pnpm's `workspace:` → concrete
+   * version rewrite at pack time, so each one can point a consumer at a
+   * version that was never published. `devDependencies` is excluded because
+   * publishing strips it — a build-time-only workspace package (one a bundler
+   * inlines, say) belongs there and is correctly invisible here.
+   */
+  readonly workspaceDependencies: readonly string[];
 }
 
 /**
@@ -187,6 +200,43 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
   ...manifest.devDependencies,
 });
 
+/**
+ * Manifest fields a published tarball carries into a consumer's install.
+ */
+const runtimeDependencyFields = [
+  'dependencies',
+  'optionalDependencies',
+  'peerDependencies',
+] as const;
+
+/**
+ * Builds the "does the tarball ship this itself?" predicate from
+ * `bundleDependencies` (or its `bundledDependencies` alias). A bundled
+ * package never resolves from the registry, so its specifier can't 404.
+ * `true` bundles every declared dependency.
+ */
+const bundledPredicate = (manifest: Manifest): ((name: string) => boolean) => {
+  const bundled = manifest.bundleDependencies ?? manifest.bundledDependencies;
+  if (typeof bundled === 'boolean' || bundled === undefined) {
+    return () => bundled === true;
+  }
+
+  const names = new Set(bundled);
+
+  return name => names.has(name);
+};
+
+const collectWorkspaceDependencies = (manifest: Manifest): readonly string[] => {
+  const isBundled = bundledPredicate(manifest);
+  const names = runtimeDependencyFields.flatMap(field =>
+    Object.entries(manifest[field] ?? {})
+      .filter(([name, spec]) => spec.startsWith('workspace:') && !isBundled(name))
+      .map(([name]) => name),
+  );
+
+  return [...new Set(names)].toSorted(localeComparer);
+};
+
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
     .filter(name => name.startsWith(generateTaskPrefix))
@@ -226,6 +276,7 @@ const buildCapabilities = (
     hasVitestTests: hasVitest && hasTest,
     isPublished,
     name: manifest.name ?? path.basename(dir),
+    workspaceDependencies: collectWorkspaceDependencies(manifest),
   };
 };
 

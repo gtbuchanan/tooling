@@ -41,13 +41,24 @@ export const RootManifestSchema = v.object({
 export type RootManifest = v.InferOutput<typeof RootManifestSchema>;
 
 /**
+ * Valibot schema for `bundleDependencies` (and its `bundledDependencies`
+ * alias): the names npm ships inside the tarball, or `true` for every
+ * declared dependency.
+ */
+export const BundleDependenciesSchema = v.union([v.boolean(), StringArray]);
+
+/**
  * Valibot schema for per-package package.json. Uses `looseObject` to preserve extra fields.
  */
 export const ManifestSchema = v.looseObject({
+  bundleDependencies: v.optional(BundleDependenciesSchema),
+  bundledDependencies: v.optional(BundleDependenciesSchema),
   dependencies: v.optional(StringRecord),
   devDependencies: v.optional(StringRecord),
   license: v.optional(v.string()),
   name: v.optional(v.string()),
+  optionalDependencies: v.optional(StringRecord),
+  peerDependencies: v.optional(StringRecord),
   private: v.optional(v.boolean()),
   publishConfig: v.optional(PublishConfigSchema),
   scripts: v.optional(StringRecord),

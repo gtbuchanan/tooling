@@ -24,6 +24,7 @@ export const makeCapabilities = (
     hasVitestTests: false,
     isPublished: false,
     name: 'pkg',
+    workspaceDependencies: [] as readonly string[],
     ...overrides,
   };
   return {

@@ -52,6 +52,7 @@ const capabilities = (name: string): PackageCapabilities => ({
   hasVitestTests: false,
   isPublished: false,
   name,
+  workspaceDependencies: [],
 });
 
 /*

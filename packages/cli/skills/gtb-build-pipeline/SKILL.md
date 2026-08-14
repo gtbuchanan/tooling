@@ -178,6 +178,10 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 Most checks compare a file against what sync would generate. The `turbo` scope carries one that doesn't: the `generate:*` package configurations described above are author-owned, so verify asserts they exist and are wired correctly instead of regenerating them (`--ignore generate:<name>` opts a script out).
 
+**Published packages can't depend on private ones.** The `manifest` scope carries the other non-generated check: every install-time workspace dependency of a published package must itself be published. pnpm rewrites a `workspace:` specifier to the linked package's concrete version at pack time and never asks whether that version reached the registry — a `private: true` package still has a `version` to substitute — so the tarball ships a dependency no consumer can resolve, and `pnpm publish` says nothing. The check covers `dependencies`, `peerDependencies`, and `optionalDependencies`, since all three survive publish and take the same rewrite. Two things are exempt: `devDependencies`, which publishing strips, and anything listed in `bundleDependencies`, which the tarball carries itself. The remedy is publishing the dependency, or moving it to `devDependencies` when it's build-time only — a workspace package a bundler inlines is exactly that, and belongs there regardless.
+
+An e2e suite won't catch this on your behalf. A harness that installs each workspace dependency's local tarball alongside the package under test resolves a private dependency perfectly well; only a real consumer 404s. That gap is what makes the static check worth having.
+
 ## Pre-commit hooks (`gtb hk`)
 
 `gtb hk` runs the [hk](https://hk.jdx.dev) pre-commit hooks, and is what the generated `hk:all` / `hk:base` mise tasks call. It locally applies fixes and in CI runs a non-modifying check (keyed on the `CI` env var), mirroring prek's `run`.
