@@ -13,12 +13,24 @@ runs:
     # (analogous to pnpm `--frozen-lockfile`). jdx/mise-action already
     # sets MISE_YES + MISE_TRUSTED_CONFIG_PATHS, so trust prompts and
     # interactive confirmations are handled by the action itself.
+    #
+    # MISE_GITHUB_TOKEN is set here rather than left to mise-action's
+    # own github_token input (which already defaults to github.token).
+    # The action exports that variable only *after* it has run
+    # `mise self-update`, so when a restored cache holds a different
+    # mise version than the pinned one below, self-update queries the
+    # GitHub releases API unauthenticated and 403s under rate limiting.
+    # Presetting wins because the action skips any variable already in
+    # the environment. See jdx/mise-action#292; drop this line once the
+    # action exports the token before it self-updates.
     - env:
         DATA_DIR: ${{ runner.temp }}/.mise
+        GH_TOKEN: ${{ github.token }}
       name: Configure mise environment
       run: |
         {
           echo "MISE_DATA_DIR=${DATA_DIR}"
+          echo "MISE_GITHUB_TOKEN=${GH_TOKEN}"
           echo "MISE_LOCKED=1"
         } >> "$GITHUB_ENV"
       shell: bash
