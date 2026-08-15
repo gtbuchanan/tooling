@@ -65,7 +65,12 @@
         "tsconfig.build.json"
       ],
       "outputs": [
-        "dist/source/**"
+        "dist/source/**",
+        "!dist/source/.npmignore",
+        "!dist/source/LICENSE",
+        "!dist/source/README.md",
+        "!dist/source/package.json",
+        "!dist/source/skills/**"
       ]
     },
     "coverage:codecov:upload": {
@@ -149,6 +154,7 @@
         "LICENSE",
         "README.md",
         "dist/source/**",
+        "!dist/source/.npmignore",
         "!dist/source/LICENSE",
         "!dist/source/README.md",
         "!dist/source/package.json",
@@ -156,6 +162,7 @@
       ],
       "outputs": [
         "dist/packages/npm/**",
+        "dist/source/.npmignore",
         "dist/source/LICENSE",
         "dist/source/README.md",
         "dist/source/package.json"
