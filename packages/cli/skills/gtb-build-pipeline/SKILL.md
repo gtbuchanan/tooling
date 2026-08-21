@@ -127,6 +127,14 @@ The aggregate stays empty rather than naming leaves the root can't define, becau
 
 `deploy:skills` keys on `skills/**` and `skills-npm.config.ts` only. If you install or remove an agent and want existing skills resymlinked into the new agent's project-local dir, run `gtb turbo run deploy:skills --force` once — turbo's cache otherwise reports HIT and skips the redeploy.
 
+### Who owns what in `dist/source`
+
+More than one task writes the published output directory, and each declares `outputs` covering only its own share: `compile:ts` emits the compiled tree, `compile:skills` fills `skills/`, and `pack:npm` writes the docs, the stamped manifest, and `.npmignore`. `compile:ts` therefore subtracts the others from its `dist/source/**` glob. Overlapping the globs would let one task capture a file it doesn't produce and replay it on a hit — a `compile:ts` entry holding a manifest stamped with whatever version was current when the entry was written.
+
+`compile:ts` also clears the directory before emitting. tsc doesn't track what it emitted, so output whose source was since renamed or deleted survives every rebuild and `pack:npm` ships it; the stale `.tsbuildinfo` has to go too, or tsc reports the removed files as up to date and emits nothing. A package that overrides the `compile:ts` script with its own build step owns that clean itself.
+
+The clean keeps the `pack:npm` files unconditionally, and keeps the compiled skills only while the package still authors a `skills/` directory. That asymmetry is deliberate: `compile:skills` owns the subtree but nothing orders it against `compile:ts`, so deleting it under a package that still has skills would race. Delete the authored directory and that task stops running — and stops being generated once no package has skills — leaving nobody to clear what it last wrote, so the compiled copy becomes an orphan like any other.
+
 ### The `transit` node
 
 Turbo folds a workspace dependency's sources into a consumer's task hash only through a task edge. Tasks that read a dependency as **source** rather than as a build artifact have no artifact task to gate on, so without an edge they replay a cached pass after that dependency changed — a stale green.

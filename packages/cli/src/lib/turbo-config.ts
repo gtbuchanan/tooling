@@ -1,5 +1,8 @@
 import { taskNames } from '../commands/task/names.ts';
 import type { WorkspaceDiscovery } from './discovery.ts';
+import {
+  buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
+} from './dist-source.ts';
 import { skillsConfigFilename } from './skills-config.ts';
 import { localeComparer } from './sort.ts';
 import { typeCheckInclude } from './tsconfig-gen.ts';
@@ -167,6 +170,19 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
   },
 ];
 
+/*
+ * The compiled tree is everything in the output directory the sibling tasks
+ * don't write. Subtracting theirs keeps each task's cache entry to what it
+ * produced: a shared file captured here would be restored on a `compile:ts`
+ * hit, replaying whatever the entry was written with — a stamped manifest
+ * carrying a stale version, for instance.
+ */
+const compileTsOutputs = (flags: ToolFlags): readonly string[] => [
+  `${buildOutDir}/**`,
+  ...packNpmOutDirEntries.map(entry => `!${outDirGlob(entry)}`),
+  ...(flags.hasSkills ? [`!${outDirGlob(skillsOutDirEntry)}/**`] : []),
+];
+
 const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasPublished,
@@ -177,7 +193,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
         '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
         ...flags.compileIncludes.flatMap(toTurboGlobs), 'tsconfig.build.json',
       ],
-      outputs: ['dist/source/**'],
+      outputs: compileTsOutputs(flags),
     },
   },
 ];
@@ -188,7 +204,7 @@ const compileSkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTa
     key: taskNames.compileSkills,
     value: {
       inputs: ['skills/**'],
-      outputs: ['dist/source/skills/**'],
+      outputs: [`${outDirGlob(skillsOutDirEntry)}/**`],
     },
   },
 ];
@@ -204,26 +220,26 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
       ],
       /*
        * pack:npm copies the package README and the package-or-root LICENSE
-       * into dist/source so the published tarball ships them, and writes
-       * dist/source/package.json. Those self-generated files are excluded
-       * from the dist/source input glob — like the manifest, an input whose
-       * presence depends on a prior run salts the hash and prevents cache
-       * hits across fresh worktrees. Their sources (the root LICENSE and
-       * per-package README/LICENSE) are inputs so an edit invalidates the
-       * cache, and the copies are outputs so a cache-hit publish restores
-       * them.
+       * into the output directory so the published tarball ships them, and
+       * writes the stamped manifest and .npmignore alongside. Those
+       * self-generated files are excluded from the output-directory input
+       * glob — an input whose presence depends on a prior run salts the hash
+       * and prevents cache hits across fresh worktrees. Their sources (the
+       * root LICENSE and per-package README/LICENSE) are inputs so an edit
+       * invalidates the cache, and the copies are outputs so a cache-hit
+       * publish restores them.
        */
       inputs: [
         '$TURBO_ROOT$/LICENSE',
         '$TURBO_ROOT$/package.json',
         'LICENSE', 'README.md',
-        'dist/source/**',
-        '!dist/source/LICENSE', '!dist/source/README.md', '!dist/source/package.json',
+        `${buildOutDir}/**`,
+        ...packNpmOutDirEntries.map(entry => `!${outDirGlob(entry)}`),
         'package.json',
       ],
       outputs: [
         'dist/packages/npm/**',
-        'dist/source/LICENSE', 'dist/source/README.md', 'dist/source/package.json',
+        ...packNpmOutDirEntries.map(outDirGlob),
       ],
     },
   },

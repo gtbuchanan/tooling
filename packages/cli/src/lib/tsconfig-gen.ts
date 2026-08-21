@@ -2,6 +2,7 @@ import path from 'node:path';
 import { parseTsconfig } from 'get-tsconfig';
 import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
+import { buildOutDir } from './dist-source.ts';
 import { readJsonFile } from './file-writer.ts';
 import { toPosixRelative } from './paths.ts';
 import { StringArray, UnknownRecord } from './schemas.ts';
@@ -109,7 +110,7 @@ export const typeCheckOwned: Readonly<Record<string, unknown>> = {
  * CompilerOptions owned by the per-package build generator.
  */
 export const buildOwned: Readonly<Record<string, unknown>> = {
-  outDir: 'dist/source',
+  outDir: buildOutDir,
   rootDir: '.',
 };
 
