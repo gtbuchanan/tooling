@@ -6,8 +6,8 @@
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
-import "package://github.com/jdx/hk/releases/download/v1.54.1/hk@1.54.1#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v1.54.1/hk@1.54.1#/Builtins.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.55.0/hk@1.55.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.55.0/hk@1.55.0#/Builtins.pkl"
 
 /// Machine-generated lockfiles — exempt from the file-hygiene fixers.
 lockfileExclude: Regex = Regex(#"[-.]lock(\.|$)"#)
@@ -27,19 +27,25 @@ defaultExclude: Regex = Regex("\(lockfileExclude.pattern)|\(vendorExclude.patter
 // builtin's command (no drift) and keep full shellcheck coverage.
 // The upstream fix (#651) is merged but unreleased as of actionlint 1.7.12 —
 // drop this guard once a release containing it lands.
-// (`Script` holds only strings, so join the builtin's argv `Command` back into one.)
-local actionlintCheck: String = (Builtins.actionlint.check as Config.Command).argv.join(" ")
+// (hk wraps a builtin's command in a `CommandSpec` alongside its declared
+// effect; `Script` holds only strings, so join the argv `Command` back into one.)
+local actionlintSpec: Config.CommandSpec = Builtins.actionlint.check as Config.CommandSpec
+local actionlintCheck: String = (actionlintSpec.command as Config.Command).argv.join(" ")
 
 /// actionlint with the Windows shellcheck-deadlock workaround pre-wired (see
 /// the comment above for mechanism and removal trigger). Binary via mise
 /// `aqua:rhysd/actionlint`; shellcheck (`aqua:koalaman/shellcheck`) on PATH
 /// enables run-script linting on non-Windows platforms.
 actionlint: Config.Step = (Builtins.actionlint) {
-  check = new Config.Script {
-    windows = "actionlint -shellcheck= {{ files }}"
-    linux = actionlintCheck
-    macos = actionlintCheck
-    other = actionlintCheck
+  // Amend the builtin's spec rather than building a new one, so the declared
+  // `effect` keeps tracking upstream.
+  check = (actionlintSpec) {
+    command = new Config.Script {
+      windows = "actionlint -shellcheck= {{ files }}"
+      linux = actionlintCheck
+      macos = actionlintCheck
+      other = actionlintCheck
+    }
   }
 }
 
