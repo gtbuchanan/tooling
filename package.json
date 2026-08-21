@@ -29,7 +29,6 @@
     "@gtbuchanan/eslint-config": "workspace:*",
     "@gtbuchanan/tsconfig": "workspace:*",
     "@gtbuchanan/vitest-config": "workspace:*",
-    "@pnpm/lockfile.types": "catalog:",
     "@tsconfig/strictest": "catalog:",
     "@types/cross-spawn": "catalog:",
     "@types/node": "catalog:",

@@ -21,9 +21,6 @@ catalogs:
     '@faker-js/faker':
       specifier: ^10.4.0
       version: 10.5.0
-    '@pnpm/lockfile.types':
-      specifier: ^1100.0.5
-      version: 1100.0.19
     '@prettier/plugin-xml':
       specifier: ^3.4.2
       version: 3.4.2
@@ -163,8 +160,6 @@ catalogs:
       specifier: ^2.8.3
       version: 2.9.0
 
-pnpmfileChecksum: sha256-4JTEpjwYjI870JHSXvwsz/Wwx7mmLF3ONU+RtM7WfQg=
-
 importers:
 
   .:
@@ -184,9 +179,6 @@ importers:
       '@gtbuchanan/vitest-config':
         specifier: workspace:*
         version: link:packages/vitest-config
-      '@pnpm/lockfile.types':
-        specifier: 'catalog:'
-        version: 1100.0.19
       '@tsconfig/strictest':
         specifier: 'catalog:'
         version: 2.0.8
@@ -1001,22 +993,6 @@ packages:
   '@pkgr/core@0.2.9':
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
-
-  '@pnpm/lockfile.types@1100.0.19':
-    resolution: {integrity: sha512-aGfowxMEG5r3kBA17JD9ZYmLrq8edKNl5aR10S1/5ebmNfCYvstaCH9Bh7U5AEvCwJREXp3i1vRt8rGsmDjYPQ==}
-    engines: {node: '>=22.13'}
-
-  '@pnpm/patching.types@1100.0.1':
-    resolution: {integrity: sha512-79os2WyGOHYnwrGeWNDNfrve12LSon6ovtDQDRktP+aW990pZY8TJ2S8X2lmkcjasi9QdsY5jiBuXvXryfE5xQ==}
-    engines: {node: '>=22.13'}
-
-  '@pnpm/resolving.resolver-base@1101.1.0':
-    resolution: {integrity: sha512-QKVY738e16fn7/A8AlY8YG/kGloPkwnqDTsC8N6f9wHD8t6/vr3W4ouroLzWtiRv2lY/PqCUAC3nYyng/GI+Qg==}
-    engines: {node: '>=22.13'}
-
-  '@pnpm/types@1101.9.0':
-    resolution: {integrity: sha512-lB2aSB2h950UX1GX3JW4AZ86xjXD92YJbV92IBSQqHXXZdiemoVKADLA2cDQ4/wKeS7djY8fkITM6X+6iYF62A==}
-    engines: {node: '>=22.13'}
 
   '@prettier/plugin-xml@3.4.2':
     resolution: {integrity: sha512-/UyNlHfkuLXG6Ed85KB0WBF283xn2yavR+UtRibBRUcvEJId2DSLdGXwJ/cDa1X++SWDPzq3+GSFniHjkNy7yg==}
@@ -3580,20 +3556,6 @@ snapshots:
       error-causes: 3.0.2
 
   '@pkgr/core@0.2.9': {}
-
-  '@pnpm/lockfile.types@1100.0.19':
-    dependencies:
-      '@pnpm/patching.types': 1100.0.1
-      '@pnpm/resolving.resolver-base': 1101.1.0
-      '@pnpm/types': 1101.9.0
-
-  '@pnpm/patching.types@1100.0.1': {}
-
-  '@pnpm/resolving.resolver-base@1101.1.0':
-    dependencies:
-      '@pnpm/types': 1101.9.0
-
-  '@pnpm/types@1101.9.0': {}
 
   '@prettier/plugin-xml@3.4.2(prettier@3.9.6)':
     dependencies:
