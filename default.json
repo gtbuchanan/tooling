@@ -46,6 +46,13 @@
   "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
+      "description": "Group actionlint updates (mise tool + .chezmoidata version comment share one rhysd/actionlint release)",
+      "groupName": "actionlint",
+      "matchSourceUrls": [
+        "https://github.com/rhysd/actionlint"
+      ]
+    },
+    {
       "description": "Group hk updates (mise tool + .pkl package URLs share one release)",
       "groupName": "hk",
       "matchSourceUrls": [
@@ -74,6 +81,13 @@
       "groupName": "pnpm",
       "matchSourceUrls": [
         "https://github.com/pnpm/pnpm"
+      ]
+    },
+    {
+      "description": "Group powershell updates (mise tool + .chezmoidata version comment share one PowerShell/PowerShell release)",
+      "groupName": "powershell",
+      "matchSourceUrls": [
+        "https://github.com/PowerShell/PowerShell"
       ]
     },
     {
