@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
 import { clearCompiledOutput } from '#src/commands/task/compile-ts.js';
 import { buildOutDir } from '#src/lib/dist-source.js';
@@ -18,23 +19,40 @@ interface PackageOptions {
 }
 
 /**
+ * A scaffolded package and the generated facts a test asserts against.
+ */
+interface Package {
+  readonly outDir: string;
+  readonly pkgDir: string;
+  /**
+   * Name of the lone compiled skill. Incidental — nothing branches on it.
+   */
+  readonly skillName: string;
+}
+
+/*
+ * `skills` stays hardcoded throughout: the production code branches on that
+ * exact directory name, so generating it would stop exercising the branch.
+ */
+const skillsDir = 'skills';
+
+/**
  * Scaffolds a package whose `dist/source` holds output from a prior run:
  * compiled files, the `compile:skills` subtree, and the `pack:npm` docs.
  */
-const createPackage = (
-  options: PackageOptions = {},
-): { readonly outDir: string; readonly pkgDir: string } => {
+const createPackage = (options: PackageOptions = {}): Package => {
   const pkgDir = createTempDir();
   const outDir = path.join(pkgDir, buildOutDir);
+  const skillName = faker.lorem.slug();
   if (options.authorsSkills !== false) {
-    mkdirSync(path.join(pkgDir, 'skills'), { recursive: true });
+    mkdirSync(path.join(pkgDir, skillsDir), { recursive: true });
   }
   mkdirSync(path.join(outDir, 'src'), { recursive: true });
-  mkdirSync(path.join(outDir, 'skills', 'my-skill'), { recursive: true });
+  mkdirSync(path.join(outDir, skillsDir, skillName), { recursive: true });
   for (const file of [
     path.join('src', 'renamed.js'),
     path.join('src', 'renamed.d.ts'),
-    path.join('skills', 'my-skill', 'SKILL.md'),
+    path.join(skillsDir, skillName, 'SKILL.md'),
     'tsconfig.tsbuildinfo',
     '.npmignore',
     'LICENSE',
@@ -44,7 +62,7 @@ const createPackage = (
     writeFileSync(path.join(outDir, file), '');
   }
 
-  return { outDir, pkgDir };
+  return { outDir, pkgDir, skillName };
 };
 
 describe.concurrent(clearCompiledOutput, () => {
@@ -65,11 +83,11 @@ describe.concurrent(clearCompiledOutput, () => {
   });
 
   it('preserves the skills subtree compile:skills owns', ({ expect }) => {
-    const { outDir, pkgDir } = createPackage();
+    const { outDir, pkgDir, skillName } = createPackage();
 
     clearCompiledOutput(pkgDir);
 
-    expect(existsSync(path.join(outDir, 'skills', 'my-skill', 'SKILL.md'))).toBe(true);
+    expect(existsSync(path.join(outDir, skillsDir, skillName, 'SKILL.md'))).toBe(true);
   });
 
   it('removes the skills subtree once the package stops authoring skills', ({ expect }) => {
@@ -77,7 +95,7 @@ describe.concurrent(clearCompiledOutput, () => {
 
     clearCompiledOutput(pkgDir);
 
-    expect(existsSync(path.join(outDir, 'skills'))).toBe(false);
+    expect(existsSync(path.join(outDir, skillsDir))).toBe(false);
   });
 
   it('preserves the docs and manifest pack:npm owns', ({ expect }) => {
