@@ -658,3 +658,29 @@ For PRs that don't affect published packages, create an empty changeset
 
 Update CI workflow
 ```
+
+### Changesets private-package versioning
+
+`.changeset/config.json` sets `privatePackages` to
+`{ "tag": false, "version": true }` explicitly. This is **not** a redundant
+restatement of a default — `@changesets/cli` v3 flipped the default to `false`,
+and without the override `@gtbuchanan/hk-config` drops out of
+`changeset version` entirely. Nothing errors when that happens: `gtb sync`
+stamps the frozen `package.json` version into `PklProject`, `gtb publish`
+derives the same release tag it published last time, and the skip-if-exists
+check treats it as already released. The Pkl channel silently stops shipping.
+`tag` stays `false` because `gtb publish` creates the GitHub release itself;
+changesets' own tagging is unused here.
+
+`privatePackages.version` is global, so `ignore` narrows it to the one private
+package whose version is load-bearing. `@gtbuchanan/test-utils` is listed there
+because it exists only as a `devDependency` — it has no published surface, and
+changesets' skipped-dependents validation passes `ignoreDevDependencies: true`,
+so ignoring it raises no `Invalid tree` error. `gtb verify manifest`
+independently forbids a published package from taking a private workspace
+package as a runtime dependency, so that stays true.
+
+Note that `changeset status` only asserts that _some_ changeset exists once any
+versionable package changed — it does not check that a changeset covers the
+package that actually changed. Treat it as a prompt to think about the release,
+not as proof the right package got bumped.
