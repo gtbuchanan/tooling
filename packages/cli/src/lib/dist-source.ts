@@ -23,18 +23,10 @@ export const packNpmOutDirEntries = [
 ] as const;
 
 /**
- * Subdirectory of {@link buildOutDir} `compile:skills` writes.
+ * Subdirectory of {@link buildOutDir} `compile:skills` writes. Named the same
+ * as the authored source directory it mirrors.
  */
 export const skillsOutDirEntry = 'skills';
-
-/**
- * Entries inside {@link buildOutDir} that belong to a task other than
- * `compile:ts`.
- */
-export const foreignOutDirEntries: readonly string[] = [
-  ...packNpmOutDirEntries,
-  skillsOutDirEntry,
-];
 
 /**
  * Prefixes a {@link buildOutDir} entry to form a turbo glob.

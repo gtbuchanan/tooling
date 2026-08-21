@@ -6,12 +6,29 @@ import { buildOutDir } from '#src/lib/dist-source.js';
 import { createTempDir } from './helpers.ts';
 
 /**
+ * Options for {@link createPackage}.
+ */
+interface PackageOptions {
+  /**
+   * Whether the package still authors `skills/`. `false` scaffolds one that
+   * dropped them, leaving only the compiled copy from a prior run. Defaults
+   * to `true`.
+   */
+  readonly authorsSkills?: boolean;
+}
+
+/**
  * Scaffolds a package whose `dist/source` holds output from a prior run:
  * compiled files, the `compile:skills` subtree, and the `pack:npm` docs.
  */
-const createPackage = (): { readonly outDir: string; readonly pkgDir: string } => {
+const createPackage = (
+  options: PackageOptions = {},
+): { readonly outDir: string; readonly pkgDir: string } => {
   const pkgDir = createTempDir();
   const outDir = path.join(pkgDir, buildOutDir);
+  if (options.authorsSkills !== false) {
+    mkdirSync(path.join(pkgDir, 'skills'), { recursive: true });
+  }
   mkdirSync(path.join(outDir, 'src'), { recursive: true });
   mkdirSync(path.join(outDir, 'skills', 'my-skill'), { recursive: true });
   for (const file of [
@@ -53,6 +70,14 @@ describe.concurrent(clearCompiledOutput, () => {
     clearCompiledOutput(pkgDir);
 
     expect(existsSync(path.join(outDir, 'skills', 'my-skill', 'SKILL.md'))).toBe(true);
+  });
+
+  it('removes the skills subtree once the package stops authoring skills', ({ expect }) => {
+    const { outDir, pkgDir } = createPackage({ authorsSkills: false });
+
+    clearCompiledOutput(pkgDir);
+
+    expect(existsSync(path.join(outDir, 'skills'))).toBe(false);
   });
 
   it('preserves the docs and manifest pack:npm owns', ({ expect }) => {

@@ -1,8 +1,25 @@
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
-import { buildOutDir, foreignOutDirEntries } from '../../lib/dist-source.ts';
+import {
+  buildOutDir, packNpmOutDirEntries, skillsOutDirEntry,
+} from '../../lib/dist-source.ts';
 import { run } from '../../lib/process.ts';
+
+/*
+ * Entries this task must leave in place. The `pack:npm` docs and manifest are
+ * unconditional — that task restores them from its own cache entry rather than
+ * re-deriving them here. The compiled skills are conditional on the package
+ * still authoring any: while it does, `compile:skills` owns the subtree and
+ * nothing orders that task against this one, so deleting it would race. Once
+ * the authored directory is gone that task stops running (and stops being
+ * generated at all), leaving nobody to clear what it last wrote — so the
+ * subtree becomes ours to remove, exactly like any other orphaned output.
+ */
+const preservedEntries = (pkgDir: string): readonly string[] => [
+  ...packNpmOutDirEntries,
+  ...(existsSync(path.join(pkgDir, skillsOutDirEntry)) ? [skillsOutDirEntry] : []),
+];
 
 /**
  * Removes the output of a prior `compile:ts` so the next emit is authoritative.
@@ -11,11 +28,6 @@ import { run } from '../../lib/process.ts';
  * was since renamed or removed — the orphan stays behind and `pack:npm` ships
  * it. The stale `.tsbuildinfo` goes too: left in place after the files it
  * describes are gone, it reports them as up to date and tsc emits nothing.
- *
- * Entries another task owns are left alone. `compile:skills` has no edge
- * ordering it against this task, so deleting its subtree would race it, and
- * the `pack:npm` docs and manifest are restored from that task's own cache
- * entry rather than re-derived here.
  */
 export const clearCompiledOutput = (pkgDir: string): void => {
   const outDir = path.join(pkgDir, buildOutDir);
@@ -23,8 +35,9 @@ export const clearCompiledOutput = (pkgDir: string): void => {
     return;
   }
 
+  const preserved = preservedEntries(pkgDir);
   for (const entry of readdirSync(outDir)) {
-    if (foreignOutDirEntries.includes(entry)) {
+    if (preserved.includes(entry)) {
       continue;
     }
     rmSync(path.join(outDir, entry), { force: true, recursive: true });
