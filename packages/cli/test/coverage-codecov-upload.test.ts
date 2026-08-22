@@ -34,6 +34,7 @@ vi.mock(import('#src/lib/process.js'), async (importOriginal) => {
  */
 const capabilities = (name: string): PackageCapabilities => ({
   buildIncludes: [],
+  catalogDependencies: [],
   dir: faker.system.directoryPath(),
   generateScripts: [],
   hasBin: false,

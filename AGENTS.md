@@ -22,7 +22,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
     cd.yml                 — Reusable: gtb version (changesets + manifest sync) then gtb publish (npm via OIDC + non-npm channels)
-    changeset-check.yml    — Reusable: verify a changeset exists
+    changeset-check.yml    — Reusable: verify a changeset exists, and that catalog changes reaching published packages are released
     ci.yml                 — Reusable: build + slow + e2e + coverage
     dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
     pr.yml                 — Pipeline (PR): ci + changeset + deps + pre-commit
@@ -367,8 +367,15 @@ through `package.json` scripts backed by `gtb` leaf commands.
     `true` in `release.yml` to run gtb from source (`pnpm run gtb`), whose
     bin these jobs don't build. This mirrors the `gtbPrefix` repo-shape
     resolution used for generated scripts and mise tasks.
-- **`changeset-check.yml`** — Verifies a changeset exists on every PR.
-  Use `pnpm changeset --empty` for PRs that don't need a version bump.
+- **`changeset-check.yml`** — Two PR gates on releasability.
+  `changeset status` verifies a changeset exists; use `pnpm changeset --empty`
+  for PRs that don't need a version bump. `gtb changeset check` then fails a
+  catalog change that reaches a published package with no changeset releasing
+  it — a gap `status` cannot see, since a catalog bump edits only the
+  workspace root; see the `gtb-build-pipeline` skill. The job installs so both
+  run from `node_modules`. The gate runs through `gtb`, so the caller must
+  depend on `@gtbuchanan/cli`; the `gtb-from-source` input (default `false`)
+  flips the invocation exactly as in `cd.yml`.
 - **`dependency-review.yml`** — Two PR gates on newly-changed deps.
   `Dependency Review` runs `actions/dependency-review-action` (fails on
   advisories at `fail-on-severity`, default `moderate`, and on
