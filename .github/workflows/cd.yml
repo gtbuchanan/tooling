@@ -75,7 +75,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           HK: '0'
         id: changesets-action
-        uses: changesets/action@v2.1.0
+        uses: changesets/action@v2.1.1
         with:
           # GPG-sign the version commit + tags (default git-cli leaves them
           # unverified).
