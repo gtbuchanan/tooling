@@ -1,9 +1,10 @@
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverPackage } from '#src/core/discovery.js';
+import type { Manifest } from '#src/core/manifest.js';
 import { localeComparer } from '#src/core/sort.js';
 import { capabilities } from '#src/toolchains/index.js';
-import { workspaceDependenciesOf } from '#src/toolchains/npm/manifest.js';
+import { catalogDependenciesOf, workspaceDependenciesOf } from '#src/toolchains/npm/manifest.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
 describe.concurrent(workspaceDependenciesOf, () => {
@@ -149,5 +150,72 @@ describe.concurrent(workspaceDependenciesOf, () => {
     const result = discoverPackage(dir, capabilities);
 
     expect(workspaceDependenciesOf(result)).toStrictEqual([]);
+  });
+});
+
+const catalogDependenciesOfManifest = (manifest: Manifest) => catalogDependenciesOf({ manifest });
+
+describe.concurrent(catalogDependenciesOf, () => {
+  it('collects a catalog-backed runtime dependency', ({ expect }) => {
+    const name = build.packageName();
+
+    const result = catalogDependenciesOfManifest({ dependencies: { [name]: 'catalog:' } });
+
+    expect(result).toStrictEqual([{ catalog: 'default', name }]);
+  });
+
+  it('resolves an explicitly named catalog specifier', ({ expect }) => {
+    const name = build.packageName();
+
+    const result = catalogDependenciesOfManifest({
+      dependencies: { [name]: 'catalog:legacy' },
+    });
+
+    expect(result).toStrictEqual([{ catalog: 'legacy', name }]);
+  });
+
+  it('collects peerDependencies and optionalDependencies', ({ expect }) => {
+    const peer = build.packageName();
+    const optional = build.packageName();
+
+    const result = catalogDependenciesOfManifest({
+      optionalDependencies: { [optional]: 'catalog:' },
+      peerDependencies: { [peer]: 'catalog:' },
+    });
+
+    expect(result).toContainEqual({ catalog: 'default', name: peer });
+    expect(result).toContainEqual({ catalog: 'default', name: optional });
+  });
+
+  // Publishing strips devDependencies, so they never reach a consumer.
+  it('excludes devDependencies', ({ expect }) => {
+    const name = build.packageName();
+
+    const result = catalogDependenciesOfManifest({
+      devDependencies: { [name]: 'catalog:' },
+    });
+
+    expect(result).toStrictEqual([]);
+  });
+
+  it('excludes a dependency the tarball bundles', ({ expect }) => {
+    const name = build.packageName();
+
+    const result = catalogDependenciesOfManifest({
+      bundleDependencies: [name],
+      dependencies: { [name]: 'catalog:' },
+    });
+
+    expect(result).toStrictEqual([]);
+  });
+
+  it('ignores a specifier that is not catalog-backed', ({ expect }) => {
+    const name = build.packageName();
+
+    const result = catalogDependenciesOfManifest({
+      dependencies: { [name]: build.semverRange() },
+    });
+
+    expect(result).toStrictEqual([]);
   });
 });

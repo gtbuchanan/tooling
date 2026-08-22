@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph, transit.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -187,6 +187,10 @@ Most checks compare a file against what sync would generate. The `turbo` scope c
 - `gtb hk all [-- <hk args>]` — runs hk across every file.
 
 Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The mise task resolves `gtb` itself per repo shape — see the `mise.tasks.toml` notes above.
+
+## Catalog changeset gate (`gtb changeset check`)
+
+`gtb changeset check [--since <ref>] [--ignore <pkg>]` fails when a pnpm catalog change reaches a published package with no changeset releasing it — a bump `changeset status` cannot see, since the catalog lives at the workspace root and belongs to no package. An empty changeset is **not** coverage. See [the catalog changeset gate reference](references/catalog-changeset-gate.md) before changing what counts as a consumer, as coverage, or as a change.
 
 ## Android-Termux setup
 

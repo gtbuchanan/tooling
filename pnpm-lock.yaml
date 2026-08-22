@@ -167,6 +167,9 @@ catalogs:
     '@changesets/cli':
       specifier: ^3.0.0
       version: 3.0.3
+    '@changesets/config':
+      specifier: ^4.0.1
+      version: 4.0.1
     '@eslint-community/eslint-plugin-eslint-comments':
       specifier: ^4.7.2
       version: 4.8.1
@@ -388,6 +391,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@changesets/config':
+        specifier: 'catalog:'
+        version: 4.0.1
       citty:
         specifier: 'catalog:'
         version: 0.2.2

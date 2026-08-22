@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import { sync } from '#src/codegen/commands/sync.js';
 import { verify } from '#src/codegen/commands/verify.js';
 import { rootNames } from '#src/core/command-names.js';
+import { changeset } from '#src/release/commands/changeset.js';
 import { publish } from '#src/release/commands/publish.js';
 import { version } from '#src/release/commands/version.js';
 import { task } from '#src/task.js';
@@ -19,6 +20,7 @@ export const main = defineCommand({
     name: 'gtb',
   },
   subCommands: {
+    [rootNames.changeset]: changeset,
     [rootNames.hk]: hk,
     [rootNames.prepare]: prepare,
     [rootNames.publish]: publish,

@@ -28,6 +28,7 @@
     "typecheck:ts": "pnpm run gtb task typecheck:ts"
   },
   "dependencies": {
+    "@changesets/config": "catalog:",
     "citty": "catalog:",
     "cross-spawn": "catalog:",
     "find-up-simple": "catalog:",

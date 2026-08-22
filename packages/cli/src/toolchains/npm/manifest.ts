@@ -75,3 +75,68 @@ export const workspaceDependenciesOf = (
 
   return [...new Set(names)].toSorted(localeComparer);
 };
+
+/**
+ * Catalog name for pnpm's top-level `catalog:` block. pnpm also accepts it
+ * spelled explicitly as `catalog:default`.
+ */
+export const defaultCatalogName = 'default';
+
+/**
+ * One catalog-backed dependency declaration: which catalog it resolves
+ * against, and the dependency name.
+ */
+export interface CatalogDependency {
+  readonly catalog: string;
+  readonly name: string;
+}
+
+const catalogPrefix = 'catalog:';
+
+/**
+ * Resolves the catalog a specifier reads from, or `undefined` when the
+ * specifier isn't catalog-backed. Bare `catalog:` and the explicit
+ * `catalog:default` both name the default catalog.
+ */
+const resolveCatalogName = (specifier: string): string | undefined => {
+  if (!specifier.startsWith(catalogPrefix)) {
+    return undefined;
+  }
+  const named = specifier.slice(catalogPrefix.length).trim();
+
+  return named === '' ? defaultCatalogName : named;
+};
+
+/**
+ * Catalog-backed dependencies a package carries into a consumer's install,
+ * sorted and deduplicated.
+ *
+ * pnpm rewrites a `catalog:` specifier to the catalog's concrete range at pack
+ * time, so the published manifest changes whenever that range does — which is
+ * why re-ranging a catalog entry is a consumer-visible change even though no
+ * file inside the package moved.
+ *
+ * The field set and the `bundleDependencies` exclusion mirror
+ * {@link workspaceDependenciesOf} for the same reasons: publishing strips
+ * `devDependencies`, and a bundled dependency ships inside the tarball rather
+ * than resolving from the registry, so neither range reaches a consumer.
+ */
+export const catalogDependenciesOf = (
+  { manifest }: Pick<WorkspacePackage, 'manifest'>,
+): readonly CatalogDependency[] => {
+  const isBundled = bundledPredicate(manifest);
+  const refs = runtimeDependencyFields.flatMap(field =>
+    Object.entries(manifest[field] ?? {})
+      .filter(([name]) => !isBundled(field, name))
+      .flatMap(([name, specifier]) => {
+        const catalog = resolveCatalogName(specifier);
+
+        return catalog === undefined ? [] : { catalog, name };
+      }),
+  );
+  const seen = new Map(refs.map(ref => [`${ref.catalog} ${ref.name}`, ref]));
+
+  return seen.values().toArray().toSorted((left, right) =>
+    localeComparer(left.catalog, right.catalog) ||
+    localeComparer(left.name, right.name));
+};
