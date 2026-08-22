@@ -14,18 +14,39 @@ jobs:
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      - id: changesets
-        uses: gtbuchanan/tooling/.github/actions/pnpm-resolve-pinned@main
-        with:
-          package: '@changesets/cli'
+      # Both gates run out of node_modules: `changeset` for the stock check,
+      # the gtb bin for the catalog gate.
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       - name: Verify changeset exists
-        run: pnpm dlx @changesets/cli@${{ steps.changesets.outputs.version }} status --since=origin/main
+        run: pnpm exec changeset status --since=origin/main
+
+      # `changeset status` maps changed *files* to packages, so a pnpm catalog
+      # bump — which edits only the workspace root — reads as "no package
+      # changed", even though pnpm rewrites `catalog:` to the concrete range at
+      # pack time and every consumer's published manifest moves. No-ops in a
+      # repo with no catalog.
+      - name: Verify catalog changes are released
+        run: >-
+          ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
+          changeset check --since=origin/main
 
 name: Changeset
 
+# The catalog gate runs through `gtb`, so the caller must depend on
+# `@gtbuchanan/cli` (the same requirement `cd.yml` already carries).
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      gtb-from-source:
+        default: false
+        description: >-
+          Run gtb from the workspace source (`pnpm run gtb`) instead of the
+          installed bin (`pnpm exec gtb`). Set true only by the repo that
+          vendors `@gtbuchanan/cli` as a workspace package (tooling itself),
+          whose bin is not built in this job. Consumers leave it false and
+          run their installed, prebuilt bin.
+        type: boolean
 
 permissions:
   contents: read
