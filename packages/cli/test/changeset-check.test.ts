@@ -1,11 +1,16 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import {
   type CatalogGateDeps,
+  changesetCheckCommand,
   checkCatalogGate,
   readBaseWorkspace,
+  runChangesetCheck,
 } from '#src/commands/root/changeset.js';
 import type { ExecResult } from '#src/lib/process.js';
+import { captureLogger, createTempDir, writeJson } from './helpers.ts';
 
 const ok = (stdout: string): ExecResult => ({ exitCode: 0, stderr: '', stdout });
 const fail = (stderr: string): ExecResult => ({ exitCode: 1, stderr, stdout: '' });
@@ -31,6 +36,57 @@ const depsFor = (
   execute: (_command, args) =>
     Promise.resolve(responses[args[0] ?? ''] ?? fail('unexpected call')),
 });
+
+/**
+ * Deps that answer `git show` with the given base revision of the workspace.
+ */
+const depsShowing = (baseWorkspace: string): CatalogGateDeps =>
+  depsFor({
+    'cat-file': ok(''),
+    'rev-parse': ok('abc123'),
+    'show': ok(baseWorkspace),
+  });
+
+interface CatalogWorkspace {
+  readonly baseWorkspace: string;
+  readonly dependency: string;
+  readonly packageName: string;
+  readonly root: string;
+}
+
+/**
+ * Scaffolds a temp monorepo whose one published package declares a
+ * catalog-backed runtime dependency, with the catalog already re-ranged
+ * relative to the returned base revision.
+ */
+const createCatalogWorkspace = (): CatalogWorkspace => {
+  const root = createTempDir();
+  const dependency = build.packageName();
+  const packageName = build.scopedPackageName();
+
+  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), catalogOf(dependency, '^2.0.0'));
+  writeJson(root, 'package.json', { name: build.packageName(), private: true });
+
+  const pkgDir = path.join(root, 'packages', build.packageName());
+  mkdirSync(pkgDir, { recursive: true });
+  writeJson(pkgDir, 'package.json', {
+    dependencies: { [dependency]: 'catalog:' },
+    name: packageName,
+    publishConfig: { directory: build.publishDirectory() },
+    version: build.semverVersion(),
+  });
+
+  const changesetDir = path.join(root, '.changeset');
+  mkdirSync(changesetDir, { recursive: true });
+  writeJson(changesetDir, 'config.json', { ignore: [] });
+
+  return {
+    baseWorkspace: catalogOf(dependency, '^1.0.0'),
+    dependency,
+    packageName,
+    root,
+  };
+};
 
 describe.concurrent(checkCatalogGate, () => {
   it('reports a published consumer of a re-ranged entry', ({ expect }) => {
@@ -164,5 +220,121 @@ describe.concurrent(readBaseWorkspace, () => {
     });
 
     await expect(readBaseWorkspace('origin/main', deps)).rejects.toThrow('corrupt object');
+  });
+});
+
+describe.concurrent(runChangesetCheck, () => {
+  it('flags an uncovered catalog change in a real workspace', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+
+    const drift = await runChangesetCheck(
+      { cwd: workspace.root },
+      depsShowing(workspace.baseWorkspace),
+    );
+
+    expect(drift).toHaveLength(1);
+    expect(drift[0]).toContain(workspace.packageName);
+  });
+
+  it('reads a pending changeset off disk as coverage', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    writeFileSync(
+      path.join(workspace.root, '.changeset', 'cover.md'),
+      `---\n'${workspace.packageName}': patch\n---\n\nBump\n`,
+    );
+
+    const drift = await runChangesetCheck(
+      { cwd: workspace.root },
+      depsShowing(workspace.baseWorkspace),
+    );
+
+    expect(drift).toStrictEqual([]);
+  });
+
+  it('skips a package the changesets config ignores', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    writeJson(path.join(workspace.root, '.changeset'), 'config.json', {
+      ignore: [workspace.packageName],
+    });
+
+    const drift = await runChangesetCheck(
+      { cwd: workspace.root },
+      depsShowing(workspace.baseWorkspace),
+    );
+
+    expect(drift).toStrictEqual([]);
+  });
+
+  /*
+   * A repo with no catalog, no `.changeset` directory, and no changesets
+   * config is a valid consumer of this reusable workflow — it must no-op
+   * rather than throw on the missing files.
+   */
+  it('no-ops on a bare directory with none of the files it reads', async ({ expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', { name: build.packageName(), private: true });
+
+    const drift = await runChangesetCheck({ cwd: root }, depsShowing(''));
+
+    expect(drift).toStrictEqual([]);
+  });
+
+  it('skips a package passed through the ignored option', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+
+    const drift = await runChangesetCheck(
+      { cwd: workspace.root, ignored: new Set([workspace.packageName]) },
+      depsShowing(workspace.baseWorkspace),
+    );
+
+    expect(drift).toStrictEqual([]);
+  });
+});
+
+describe.concurrent(changesetCheckCommand, () => {
+  it('exits zero and reports the pass on a clean workspace', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const captured = captureLogger();
+
+    const exitCode = await changesetCheckCommand(
+      [],
+      { cwd: workspace.root },
+      captured.logger,
+      // Base identical to HEAD, so nothing changed.
+      depsShowing(catalogOf(workspace.dependency, '^2.0.0')),
+    );
+
+    expect(exitCode).toBe(0);
+    expect(captured.out()).toContain('no uncovered catalog changes');
+  });
+
+  it('exits non-zero and reports the drift plus a remedy', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const captured = captureLogger();
+
+    const exitCode = await changesetCheckCommand(
+      [],
+      { cwd: workspace.root },
+      captured.logger,
+      depsShowing(workspace.baseWorkspace),
+    );
+
+    expect(exitCode).toBe(1);
+    expect(captured.err()).toContain(workspace.packageName);
+    expect(captured.err()).toContain('changeset --empty');
+  });
+
+  it('honors a --ignore flag from raw args', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const captured = captureLogger();
+
+    const exitCode = await changesetCheckCommand(
+      ['--ignore', workspace.packageName],
+      { cwd: workspace.root },
+      captured.logger,
+      depsShowing(workspace.baseWorkspace),
+    );
+
+    expect(exitCode).toBe(0);
   });
 });

@@ -61,6 +61,30 @@ describe.concurrent(parseCatalogs, () => {
   it('reports no catalogs when the workspace declares none', ({ expect }) => {
     expect(parseCatalogs(workspaceYaml('')).size).toBe(0);
   });
+
+  it('reports no catalogs for an empty document', ({ expect }) => {
+    expect(parseCatalogs('').size).toBe(0);
+  });
+
+  /*
+   * pnpm spells the top-level block's name `default`, so a repo may declare
+   * part of it under `catalogs:` — both halves have to land in one catalog.
+   */
+  it('merges a `catalogs.default` block into the top-level catalog', ({ expect }) => {
+    const top = build.packageName();
+    const nested = build.packageName();
+    const nestedRange = build.semverRange();
+
+    const catalogs = parseCatalogs(
+      workspaceYaml(
+        `catalog:\n  ${top}: '^1.0.0'\n` +
+        `catalogs:\n  default:\n    ${nested}: '${nestedRange}'\n`,
+      ),
+    );
+
+    expect(catalogs.get('default')?.get(top)).toBe('^1.0.0');
+    expect(catalogs.get('default')?.get(nested)).toBe(nestedRange);
+  });
 });
 
 describe.concurrent(diffCatalogs, () => {
