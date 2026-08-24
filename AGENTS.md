@@ -372,10 +372,12 @@ through `package.json` scripts backed by `gtb` leaf commands.
   for PRs that don't need a version bump. `gtb changeset check` then fails a
   catalog change that reaches a published package with no changeset releasing
   it — a gap `status` cannot see, since a catalog bump edits only the
-  workspace root; see the `gtb-build-pipeline` skill. The job installs so both
-  run from `node_modules`. The gate runs through `gtb`, so the caller must
-  depend on `@gtbuchanan/cli`; the `gtb-from-source` input (default `false`)
-  flips the invocation exactly as in `cd.yml`.
+  workspace root; see the `gtb-build-pipeline` skill. The job installs: the
+  stock check runs the installed `changeset` bin, and gtb needs `node_modules`
+  either way. The gate runs through `gtb`, so the caller must depend on
+  `@gtbuchanan/cli`; the `gtb-from-source` input (default `false`) selects
+  workspace-source execution (`pnpm run gtb`) over the installed bin
+  (`pnpm exec gtb`), exactly as in `cd.yml`.
 - **`dependency-review.yml`** — Two PR gates on newly-changed deps.
   `Dependency Review` runs `actions/dependency-review-action` (fails on
   advisories at `fail-on-severity`, default `moderate`, and on

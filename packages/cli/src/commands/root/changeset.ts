@@ -126,20 +126,30 @@ const defaultDeps: CatalogGateDeps = { execute };
  */
 export const readBaseWorkspace = async (
   base: string,
+  cwd: string,
   deps: CatalogGateDeps,
 ): Promise<string> => {
-  const resolved = await deps.execute('git', ['rev-parse', '--verify', base]);
+  /*
+   * `-C` is what keeps the base revision and the head worktree in the same
+   * repository. `execute` spawns without a `cwd`, so without this every git
+   * call would read the process working directory while the rest of the gate
+   * reads the discovered root — and a `--cwd` pointed elsewhere would diff two
+   * unrelated workspaces, reporting every catalog entry as newly added.
+   */
+  const git = (args: readonly string[]): Promise<ExecResult> =>
+    deps.execute('git', ['-C', cwd, ...args]);
+  const resolved = await git(['rev-parse', '--verify', base]);
   if (resolved.exitCode !== 0) {
     throw new Error(
       `cannot resolve base ref '${base}' — fetch it before running this check`,
     );
   }
   const target = `${base}:${workspaceFileName}`;
-  const exists = await deps.execute('git', ['cat-file', '-e', target]);
+  const exists = await git(['cat-file', '-e', target]);
   if (exists.exitCode !== 0) {
     return '';
   }
-  const shown = await deps.execute('git', ['show', target]);
+  const shown = await git(['show', target]);
   if (shown.exitCode !== 0) {
     throw new Error(`git show ${target} failed: ${shown.stderr}`);
   }
@@ -172,7 +182,11 @@ export const runChangesetCheck = async (
   ]);
 
   return checkCatalogGate({
-    baseWorkspace: await readBaseWorkspace(options.base ?? defaultBaseRef, deps),
+    baseWorkspace: await readBaseWorkspace(
+      options.base ?? defaultBaseRef,
+      discovery.rootDir,
+      deps,
+    ),
     changesetSources: readChangesetSources(discovery.rootDir),
     headWorkspace: readHeadWorkspace(discovery.rootDir),
     ignored,

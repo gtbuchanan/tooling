@@ -28,14 +28,38 @@ const publishedConsumer = (packageName: string, dependency: string) => ({
 });
 
 /**
- * Builds deps whose `git` responses are keyed by subcommand.
+ * Builds deps whose `git` responses are keyed by subcommand. Every call is
+ * expected to lead with `-C <dir>`, so the subcommand is the third argument.
  */
 const depsFor = (
   responses: Readonly<Record<string, ExecResult>>,
 ): CatalogGateDeps => ({
   execute: (_command, args) =>
-    Promise.resolve(responses[args[0] ?? ''] ?? fail('unexpected call')),
+    Promise.resolve(responses[args[2] ?? ''] ?? fail('unexpected call')),
 });
+
+/**
+ * Deps that record every git invocation alongside a fixed base revision.
+ */
+const recordingDeps = (
+  baseWorkspace: string,
+): CatalogGateDeps & { readonly calls: string[][] } => {
+  const calls: string[][] = [];
+
+  return {
+    calls,
+    execute: (_command, args) => {
+      calls.push([...args]);
+      const responses: Record<string, ExecResult> = {
+        'cat-file': ok(''),
+        'rev-parse': ok('abc123'),
+        'show': ok(baseWorkspace),
+      };
+
+      return Promise.resolve(responses[args[2] ?? ''] ?? fail('unexpected call'));
+    },
+  };
+};
 
 /**
  * Deps that answer `git show` with the given base revision of the workspace.
@@ -185,7 +209,7 @@ describe.concurrent(readBaseWorkspace, () => {
       'show': ok(source),
     });
 
-    const result = await readBaseWorkspace('origin/main', deps);
+    const result = await readBaseWorkspace('origin/main', '/repo', deps);
 
     expect(result).toBe(source);
   });
@@ -196,7 +220,7 @@ describe.concurrent(readBaseWorkspace, () => {
       'rev-parse': ok('abc123'),
     });
 
-    const result = await readBaseWorkspace('origin/main', deps);
+    const result = await readBaseWorkspace('origin/main', '/repo', deps);
 
     expect(result).toBe('');
   });
@@ -205,7 +229,7 @@ describe.concurrent(readBaseWorkspace, () => {
     const base = 'origin/nope';
     const deps = depsFor({ 'rev-parse': fail('unknown revision') });
 
-    await expect(readBaseWorkspace(base, deps)).rejects.toThrow(base);
+    await expect(readBaseWorkspace(base, '/repo', deps)).rejects.toThrow(base);
   });
 
   /*
@@ -219,7 +243,7 @@ describe.concurrent(readBaseWorkspace, () => {
       'show': fail('corrupt object'),
     });
 
-    await expect(readBaseWorkspace('origin/main', deps)).rejects.toThrow('corrupt object');
+    await expect(readBaseWorkspace('origin/main', '/repo', deps)).rejects.toThrow('corrupt object');
   });
 });
 
@@ -234,6 +258,25 @@ describe.concurrent(runChangesetCheck, () => {
 
     expect(drift).toHaveLength(1);
     expect(drift[0]).toContain(workspace.packageName);
+  });
+
+  /*
+   * Without `-C`, git reads the process working directory while the rest of
+   * the gate reads the discovered root — so a `--cwd` elsewhere would diff two
+   * unrelated workspaces and report every catalog entry as newly added.
+   */
+  it('runs every git command against the discovered workspace root', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const deps = recordingDeps(workspace.baseWorkspace);
+
+    await runChangesetCheck({ cwd: workspace.root }, deps);
+
+    const prefixes = deps.calls.map(args => args.slice(0, 2));
+
+    expect(prefixes.length).toBeGreaterThan(0);
+    expect(prefixes).toStrictEqual(
+      prefixes.map(() => ['-C', workspace.root]),
+    );
   });
 
   it('reads a pending changeset off disk as coverage', async ({ expect }) => {

@@ -14,8 +14,10 @@ jobs:
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      # Both gates run out of node_modules: `changeset` for the stock check,
-      # the gtb bin for the catalog gate.
+      # The stock check runs the installed `changeset` bin. gtb needs
+      # node_modules either way — for its own dependencies when
+      # `gtb-from-source` runs it from workspace source, or for the bin itself
+      # when it doesn't.
       - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
       - name: Verify changeset exists
