@@ -119,10 +119,10 @@ const defaultDeps: CatalogGateDeps = { execute };
  * Reads `pnpm-workspace.yaml` as of the base ref.
  *
  * A base that genuinely predates the file resolves to `''` (every catalog
- * entry then reads as newly added), but any *other* `git show` failure throws
- * rather than being folded into that same empty answer. Collapsing the two
- * would turn a transient git error into a report that every catalog entry in
- * the workspace just changed — the loudest possible false positive.
+ * entry then reads as newly added), but any *other* git failure throws rather
+ * than being folded into that same empty answer. Collapsing the two would turn
+ * a transient git error into a report that every catalog entry in the
+ * workspace just changed — the loudest possible false positive.
  */
 export const readBaseWorkspace = async (
   base: string,
@@ -144,11 +144,24 @@ export const readBaseWorkspace = async (
       `cannot resolve base ref '${base}' — fetch it before running this check`,
     );
   }
-  const target = `${base}:${workspaceFileName}`;
-  const exists = await git(['cat-file', '-e', target]);
-  if (exists.exitCode !== 0) {
+  /*
+   * `ls-tree` rather than `cat-file -e`, because only it separates the two
+   * outcomes: an absent path is exit 0 with empty stdout, while a corrupt or
+   * unreadable object is non-zero. `cat-file -e` collapses both into the same
+   * non-zero, which would quietly reinstate the false positive below.
+   * `--full-tree` keeps the pathspec root-relative, matching how `git show`
+   * resolves `<rev>:<path>`.
+   */
+  const listed = await git([
+    'ls-tree', '--full-tree', '--name-only', base, '--', workspaceFileName,
+  ]);
+  if (listed.exitCode !== 0) {
+    throw new Error(`git ls-tree ${base} failed: ${listed.stderr}`);
+  }
+  if (listed.stdout === '') {
     return '';
   }
+  const target = `${base}:${workspaceFileName}`;
   const shown = await git(['show', target]);
   if (shown.exitCode !== 0) {
     throw new Error(`git show ${target} failed: ${shown.stderr}`);

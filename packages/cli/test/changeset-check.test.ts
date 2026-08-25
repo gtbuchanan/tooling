@@ -51,7 +51,7 @@ const recordingDeps = (
     execute: (_command, args) => {
       calls.push([...args]);
       const responses: Record<string, ExecResult> = {
-        'cat-file': ok(''),
+        'ls-tree': ok('pnpm-workspace.yaml'),
         'rev-parse': ok('abc123'),
         'show': ok(baseWorkspace),
       };
@@ -66,7 +66,7 @@ const recordingDeps = (
  */
 const depsShowing = (baseWorkspace: string): CatalogGateDeps =>
   depsFor({
-    'cat-file': ok(''),
+    'ls-tree': ok('pnpm-workspace.yaml'),
     'rev-parse': ok('abc123'),
     'show': ok(baseWorkspace),
   });
@@ -204,7 +204,7 @@ describe.concurrent(readBaseWorkspace, () => {
   it('returns the base revision of the workspace file', async ({ expect }) => {
     const source = catalogOf(build.packageName(), '^1.0.0');
     const deps = depsFor({
-      'cat-file': ok(''),
+      'ls-tree': ok('pnpm-workspace.yaml'),
       'rev-parse': ok('abc123'),
       'show': ok(source),
     });
@@ -216,13 +216,28 @@ describe.concurrent(readBaseWorkspace, () => {
 
   it('treats a base predating the file as having no catalogs', async ({ expect }) => {
     const deps = depsFor({
-      'cat-file': fail('does not exist'),
+      'ls-tree': ok(''),
       'rev-parse': ok('abc123'),
     });
 
     const result = await readBaseWorkspace('origin/main', '/repo', deps);
 
     expect(result).toBe('');
+  });
+
+  /*
+   * The absent-file and unreadable-object cases must not collapse: only the
+   * first may answer `''`, or a corrupt base silently reports every catalog
+   * entry as newly added.
+   */
+  it('throws when the historical file lookup itself fails', async ({ expect }) => {
+    const deps = depsFor({
+      'ls-tree': fail('fatal: not a tree object'),
+      'rev-parse': ok('abc123'),
+    });
+
+    await expect(readBaseWorkspace('origin/main', '/repo', deps))
+      .rejects.toThrow('not a tree object');
   });
 
   it('throws naming the base ref when it cannot be resolved', async ({ expect }) => {
@@ -238,7 +253,7 @@ describe.concurrent(readBaseWorkspace, () => {
    */
   it('throws rather than reporting an empty catalog when show fails', async ({ expect }) => {
     const deps = depsFor({
-      'cat-file': ok(''),
+      'ls-tree': ok('pnpm-workspace.yaml'),
       'rev-parse': ok('abc123'),
       'show': fail('corrupt object'),
     });
