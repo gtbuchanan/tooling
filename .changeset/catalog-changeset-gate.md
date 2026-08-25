@@ -17,11 +17,12 @@ dependency field, and fails when no changeset covers them. `devDependencies`,
 bundled dependencies, private packages, and anything in the changesets config's
 `ignore` are excluded, and an empty changeset does not count as coverage.
 
-`changeset-check.yml` runs it alongside the existing `changeset status` gate,
-behind the same `gtb-from-source` input `cd.yml` uses. Since the job now
-installs for the gtb bin, the stock check moved from `pnpm dlx` to
-`pnpm exec` — the `pnpm-resolve-pinned` indirection existed only to avoid the
-install, and it already required `@changesets/cli` to be a root devDependency
-to resolve the version from the lockfile.
+The command runs `changeset status` first, so one invocation covers both the
+stock "a changeset exists" requirement and the catalog gate against a single
+base ref instead of specifying it twice. `changeset-check.yml` is now one step,
+behind the same `gtb-from-source` input `cd.yml` uses. The
+`pnpm-resolve-pinned` + `pnpm dlx` indirection is gone: it existed only to
+avoid an install the gtb bin needs anyway, and it already required
+`@changesets/cli` to be a root devDependency to resolve from the lockfile.
 
 `PackageCapabilities` gains a `catalogDependencies` field.

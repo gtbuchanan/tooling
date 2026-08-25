@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
@@ -9,108 +9,17 @@ import {
   readBaseWorkspace,
   runChangesetCheck,
 } from '#src/commands/root/changeset.js';
-import type { ExecResult } from '#src/lib/process.js';
+import {
+  catalogOf,
+  createCatalogWorkspace,
+  depsFor,
+  depsShowing,
+  fail,
+  ok,
+  publishedConsumer,
+  recordingDeps,
+} from './changeset-check.helpers.ts';
 import { captureLogger, createTempDir, writeJson } from './helpers.ts';
-
-const ok = (stdout: string): ExecResult => ({ exitCode: 0, stderr: '', stdout });
-const fail = (stderr: string): ExecResult => ({ exitCode: 1, stderr, stdout: '' });
-
-const catalogYaml = (entries: string): string =>
-  `packages:\n  - 'packages/*'\ncatalog:\n${entries}`;
-
-const catalogOf = (dependency: string, range: string): string =>
-  catalogYaml(`  ${dependency}: '${range}'\n`);
-
-const publishedConsumer = (packageName: string, dependency: string) => ({
-  catalogDependencies: [{ catalog: 'default', name: dependency }],
-  isPublished: true,
-  name: packageName,
-});
-
-/**
- * Builds deps whose `git` responses are keyed by subcommand. Every call is
- * expected to lead with `-C <dir>`, so the subcommand is the third argument.
- */
-const depsFor = (
-  responses: Readonly<Record<string, ExecResult>>,
-): CatalogGateDeps => ({
-  execute: (_command, args) =>
-    Promise.resolve(responses[args[2] ?? ''] ?? fail('unexpected call')),
-});
-
-/**
- * Deps that record every git invocation alongside a fixed base revision.
- */
-const recordingDeps = (
-  baseWorkspace: string,
-): CatalogGateDeps & { readonly calls: string[][] } => {
-  const calls: string[][] = [];
-
-  return {
-    calls,
-    execute: (_command, args) => {
-      calls.push([...args]);
-      const responses: Record<string, ExecResult> = {
-        'ls-tree': ok('pnpm-workspace.yaml'),
-        'rev-parse': ok('abc123'),
-        'show': ok(baseWorkspace),
-      };
-
-      return Promise.resolve(responses[args[2] ?? ''] ?? fail('unexpected call'));
-    },
-  };
-};
-
-/**
- * Deps that answer `git show` with the given base revision of the workspace.
- */
-const depsShowing = (baseWorkspace: string): CatalogGateDeps =>
-  depsFor({
-    'ls-tree': ok('pnpm-workspace.yaml'),
-    'rev-parse': ok('abc123'),
-    'show': ok(baseWorkspace),
-  });
-
-interface CatalogWorkspace {
-  readonly baseWorkspace: string;
-  readonly dependency: string;
-  readonly packageName: string;
-  readonly root: string;
-}
-
-/**
- * Scaffolds a temp monorepo whose one published package declares a
- * catalog-backed runtime dependency, with the catalog already re-ranged
- * relative to the returned base revision.
- */
-const createCatalogWorkspace = (): CatalogWorkspace => {
-  const root = createTempDir();
-  const dependency = build.packageName();
-  const packageName = build.scopedPackageName();
-
-  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), catalogOf(dependency, '^2.0.0'));
-  writeJson(root, 'package.json', { name: build.packageName(), private: true });
-
-  const pkgDir = path.join(root, 'packages', build.packageName());
-  mkdirSync(pkgDir, { recursive: true });
-  writeJson(pkgDir, 'package.json', {
-    dependencies: { [dependency]: 'catalog:' },
-    name: packageName,
-    publishConfig: { directory: build.publishDirectory() },
-    version: build.semverVersion(),
-  });
-
-  const changesetDir = path.join(root, '.changeset');
-  mkdirSync(changesetDir, { recursive: true });
-  writeJson(changesetDir, 'config.json', { ignore: [] });
-
-  return {
-    baseWorkspace: catalogOf(dependency, '^1.0.0'),
-    dependency,
-    packageName,
-    root,
-  };
-};
 
 describe.concurrent(checkCatalogGate, () => {
   it('reports a published consumer of a re-ranged entry', ({ expect }) => {
@@ -294,6 +203,45 @@ describe.concurrent(runChangesetCheck, () => {
     );
   });
 
+  it('runs changeset status against the same base ref', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const deps = recordingDeps(workspace.baseWorkspace);
+    const base = 'origin/release';
+
+    await runChangesetCheck({ base, cwd: workspace.root }, deps);
+
+    expect(deps.spawned).toStrictEqual([
+      {
+        command: 'pnpm',
+        options: {
+          args: ['exec', 'changeset', 'status', `--since=${base}`],
+          cwd: workspace.root,
+        },
+      },
+    ]);
+  });
+
+  /*
+   * With no changesets at all, every catalog finding would be uncovered too,
+   * so the stock gate's failure subsumes this one rather than doubling it.
+   */
+  it('fails without diffing the catalog when changeset status fails', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const gitCalls: string[][] = [];
+    const deps: CatalogGateDeps = {
+      execute: (_command, args) => {
+        gitCalls.push([...args]);
+
+        return Promise.resolve(ok(''));
+      },
+      run: () => Promise.reject(new Error('exited with code 1')),
+    };
+
+    await expect(runChangesetCheck({ cwd: workspace.root }, deps))
+      .rejects.toThrow('changeset status');
+    expect(gitCalls).toStrictEqual([]);
+  });
+
   it('reads a pending changeset off disk as coverage', async ({ expect }) => {
     const workspace = createCatalogWorkspace();
     writeFileSync(
@@ -380,6 +328,22 @@ describe.concurrent(changesetCheckCommand, () => {
     expect(exitCode).toBe(1);
     expect(captured.err()).toContain(workspace.packageName);
     expect(captured.err()).toContain('changeset --empty');
+  });
+
+  it('reports a hard failure as a non-zero exit, not a rejection', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const captured = captureLogger();
+    const deps: CatalogGateDeps = {
+      execute: () => Promise.resolve(ok('')),
+      run: () => Promise.reject(new Error('exited with code 1')),
+    };
+
+    const exitCode = await changesetCheckCommand(
+      [], { cwd: workspace.root }, captured.logger, deps,
+    );
+
+    expect(exitCode).toBe(1);
+    expect(captured.err()).toContain('changeset status');
   });
 
   it('honors a --ignore flag from raw args', async ({ expect }) => {

@@ -14,21 +14,19 @@ jobs:
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
-      # The stock check runs the installed `changeset` bin. gtb needs
-      # node_modules either way — for its own dependencies when
+      # `gtb changeset check` shells out to the installed `changeset` bin, and
+      # gtb needs node_modules either way — for its own dependencies when
       # `gtb-from-source` runs it from workspace source, or for the bin itself
       # when it doesn't.
       - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
-      - name: Verify changeset exists
-        run: pnpm exec changeset status --since=origin/main
-
-      # `changeset status` maps changed *files* to packages, so a pnpm catalog
-      # bump — which edits only the workspace root — reads as "no package
-      # changed", even though pnpm rewrites `catalog:` to the concrete range at
-      # pack time and every consumer's published manifest moves. No-ops in a
-      # repo with no catalog.
-      - name: Verify catalog changes are released
+      # Runs `changeset status` for the stock "a changeset exists" requirement,
+      # then the catalog gate for what it structurally cannot see: a pnpm
+      # catalog bump edits only the workspace root, so it reads as "no package
+      # changed" even though pnpm rewrites `catalog:` to the concrete range at
+      # pack time and every consumer's published manifest moves. One command so
+      # both resolve the same base ref.
+      - name: Verify changesets cover this PR
         run: >-
           ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
           changeset check --since=origin/main
