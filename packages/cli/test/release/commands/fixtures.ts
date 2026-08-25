@@ -1,24 +1,39 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
-import { type ExecResult, execute } from '#src/core/process.js';
+import { type ExecResult, type RunOptions, execute } from '#src/core/process.js';
 import type { CatalogGateDeps } from '#src/release/commands/changeset.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
+/**
+ * A successful command result carrying the given stdout.
+ */
 export const ok = (stdout: string): ExecResult => ({ exitCode: 0, stderr: '', stdout });
+
+/**
+ * A failed command result carrying the given stderr.
+ */
 export const fail = (stderr: string): ExecResult => ({ exitCode: 1, stderr, stdout: '' });
 
-const catalogYaml = (entries: string): string =>
-  `packages:\n  - 'packages/*'\ncatalog:\n${entries}`;
-
+/**
+ * A `pnpm-workspace.yaml` whose default catalog holds one entry.
+ */
 export const catalogOf = (dependency: string, range: string): string =>
-  catalogYaml(`  ${dependency}: '${range}'\n`);
+  `packages:\n  - 'packages/*'\ncatalog:\n  ${dependency}: '${range}'\n`;
 
+/**
+ * A published package declaring one catalog-backed runtime dependency.
+ */
 export const publishedConsumer = (packageName: string, dependency: string) => ({
   catalogDependencies: [{ catalog: 'default', name: dependency }],
   isPublished: true,
   name: packageName,
 });
+
+/**
+ * A `changeset status` that reports a changeset exists.
+ */
+const statusPasses = (): Promise<void> => Promise.resolve();
 
 /**
  * Builds deps whose `git` responses are keyed by subcommand. Every call is
@@ -29,30 +44,8 @@ export const depsFor = (
 ): CatalogGateDeps => ({
   execute: (_command, args) =>
     Promise.resolve(responses[args[2] ?? ''] ?? fail('unexpected call')),
+  run: statusPasses,
 });
-
-/**
- * Deps that record every git invocation alongside a fixed base revision.
- */
-export const recordingDeps = (
-  baseWorkspace: string,
-): CatalogGateDeps & { readonly calls: string[][] } => {
-  const calls: string[][] = [];
-
-  return {
-    calls,
-    execute: (_command, args) => {
-      calls.push([...args]);
-      const responses: Record<string, ExecResult> = {
-        'ls-tree': ok('pnpm-workspace.yaml'),
-        'rev-parse': ok('abc123'),
-        'show': ok(baseWorkspace),
-      };
-
-      return Promise.resolve(responses[args[2] ?? ''] ?? fail('unexpected call'));
-    },
-  };
-};
 
 /**
  * Deps that answer `git show` with the given base revision of the workspace.
@@ -85,6 +78,46 @@ export const stagedTree = async (repo: string): Promise<string> => {
   return git(repo, ['write-tree']);
 };
 
+/**
+ * One recorded `run` invocation.
+ */
+export interface SpawnedCommand {
+  readonly command: string;
+  readonly options?: RunOptions;
+}
+
+/**
+ * Deps that record every git invocation and every spawned command alongside a
+ * fixed base revision.
+ */
+export const recordingDeps = (
+  baseWorkspace: string,
+): CatalogGateDeps & {
+  readonly calls: string[][];
+  readonly spawned: SpawnedCommand[];
+} => {
+  const calls: string[][] = [];
+  const spawned: SpawnedCommand[] = [];
+
+  return {
+    calls,
+    execute: (_command, args) => {
+      calls.push([...args]);
+
+      return Promise.resolve(depsShowing(baseWorkspace).execute(_command, args));
+    },
+    run: (command, options) => {
+      spawned.push({ command, ...(options !== undefined && { options }) });
+
+      return Promise.resolve();
+    },
+    spawned,
+  };
+};
+
+/**
+ * A scaffolded temp monorepo with one catalog-backed published package.
+ */
 export interface CatalogWorkspace {
   readonly baseWorkspace: string;
   readonly dependency: string;

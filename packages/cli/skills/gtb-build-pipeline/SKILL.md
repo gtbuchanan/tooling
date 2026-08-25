@@ -188,9 +188,9 @@ Most checks compare a file against what sync would generate. The `turbo` scope c
 
 Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The mise task resolves `gtb` itself per repo shape — see the `mise.tasks.toml` notes above.
 
-## Catalog changeset gate (`gtb changeset check`)
+## Changeset gate (`gtb changeset check`)
 
-`gtb changeset check [--since <ref>] [--ignore <pkg>]` fails when a pnpm catalog change reaches a published package with no changeset releasing it — a bump `changeset status` cannot see, since the catalog lives at the workspace root and belongs to no package. An empty changeset is **not** coverage. See [the catalog changeset gate reference](references/catalog-changeset-gate.md) before changing what counts as a consumer, as coverage, or as a change.
+`gtb changeset check [--since <ref>] [--ignore <pkg>]` is the PR releasability gate. It runs `changeset status`, then a catalog gate that fails when a pnpm catalog change reaches a published package with no changeset releasing it — a bump `changeset status` cannot see, since the catalog lives at the workspace root and belongs to no package. Both run against one base ref (default `origin/main`). An empty changeset is **not** coverage. See [the changeset gate reference](references/catalog-changeset-gate.md) before changing what counts as a consumer, as coverage, or as a change.
 
 ## Android-Termux setup
 

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
-import { execute } from '#src/core/process.js';
+import { execute, run } from '#src/core/process.js';
 import { readBaseWorkspace } from '#src/release/commands/changeset.js';
 import { createTempDir } from '#test/helpers.js';
 import {
@@ -87,7 +87,7 @@ describe.concurrent(readBaseWorkspace, () => {
     writeFileSync(path.join(workspaceRoot, 'pnpm-workspace.yaml'), source);
     const tree = await stagedTree(repo);
 
-    const result = await readBaseWorkspace(tree, workspaceRoot, { execute });
+    const result = await readBaseWorkspace(tree, workspaceRoot, { execute, run });
 
     expect(result).toBe(source.trim());
   });

@@ -3,6 +3,7 @@ import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import {
+  type CatalogGateDeps,
   changesetCheckCommand,
   checkCatalogGate,
   runChangesetCheck,
@@ -12,6 +13,7 @@ import {
   catalogOf,
   createCatalogWorkspace,
   depsShowing,
+  ok,
   publishedConsumer,
   recordingDeps,
 } from '#test/release/commands/fixtures.js';
@@ -134,6 +136,45 @@ describe.concurrent(runChangesetCheck, () => {
     expect(prefixes).toStrictEqual(
       prefixes.map(() => ['-C', workspace.root]),
     );
+  });
+
+  it('runs changeset status against the same base ref', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const deps = recordingDeps(workspace.baseWorkspace);
+    const base = 'origin/release';
+
+    await runChangesetCheck({ base, cwd: workspace.root }, deps);
+
+    expect(deps.spawned).toStrictEqual([
+      {
+        command: 'pnpm',
+        options: {
+          args: ['exec', 'changeset', 'status', `--since=${base}`],
+          cwd: workspace.root,
+        },
+      },
+    ]);
+  });
+
+  /*
+   * With no changesets at all, every catalog finding would be uncovered too,
+   * so the stock gate's failure subsumes this one rather than doubling it.
+   */
+  it('fails without diffing the catalog when changeset status fails', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const gitCalls: string[][] = [];
+    const deps: CatalogGateDeps = {
+      execute: (_command, args) => {
+        gitCalls.push([...args]);
+
+        return Promise.resolve(ok(''));
+      },
+      run: () => Promise.reject(new Error('exited with code 1')),
+    };
+
+    await expect(runChangesetCheck({ cwd: workspace.root }, deps))
+      .rejects.toThrow('changeset status');
+    expect(gitCalls).toStrictEqual([]);
   });
 
   it('reads a pending changeset off disk as coverage', async ({ expect }) => {
@@ -288,6 +329,22 @@ describe.concurrent(changesetCheckCommand, () => {
     );
 
     expect(captured.err()).not.toContain('--empty');
+  });
+
+  it('reports a hard failure as a non-zero exit, not a rejection', async ({ expect }) => {
+    const workspace = createCatalogWorkspace();
+    const captured = captureLogger();
+    const deps: CatalogGateDeps = {
+      execute: () => Promise.resolve(ok('')),
+      run: () => Promise.reject(new Error('exited with code 1')),
+    };
+
+    const exitCode = await changesetCheckCommand(
+      [], { cwd: workspace.root }, captured.logger, deps,
+    );
+
+    expect(exitCode).toBe(1);
+    expect(captured.err()).toContain('changeset status');
   });
 
   it('honors a --ignore flag from raw args', async ({ expect }) => {

@@ -6,7 +6,7 @@ import { parseIgnoreArgs } from '#src/codegen/commands/verify.js';
 import { rootNames } from '#src/core/command-names.js';
 import { type WorkspacePackage, discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
-import { type ExecResult, execute } from '#src/core/process.js';
+import { type ExecResult, type RunOptions, execute, run } from '#src/core/process.js';
 import {
   type CatalogConsumer,
   diffCatalogs,
@@ -129,13 +129,15 @@ const readHeadWorkspace = (rootDir: string): string =>
   orWhenAbsent(() => readFileSync(path.join(rootDir, workspaceFileName), 'utf8'), '');
 
 /**
- * Side-effecting git access, injected so the orchestration stays testable.
+ * Side-effecting git and changesets access, injected so the orchestration
+ * stays testable.
  */
 export interface CatalogGateDeps {
   readonly execute: (command: string, args: readonly string[]) => Promise<ExecResult>;
+  readonly run: (command: string, options?: RunOptions) => Promise<void>;
 }
 
-const defaultDeps: CatalogGateDeps = { execute };
+const defaultDeps: CatalogGateDeps = { execute, run };
 
 /**
  * Reads `pnpm-workspace.yaml` as of the base ref.
@@ -204,24 +206,55 @@ export interface RunChangesetCheckOptions {
 }
 
 /**
- * Reads the workspace and git state, then applies {@link checkCatalogGate}.
+ * Runs `changeset status`, which fails when a versionable package changed and
+ * no changeset exists at all. Delegated to changesets rather than
+ * reimplemented, and run with inherited stdio so its own diagnostics reach the
+ * user verbatim.
+ *
+ * This runs first because its failure subsumes the catalog gate's: with no
+ * changesets present, every catalog finding would be uncovered too, so
+ * reporting both is redundant noise.
+ */
+const runChangesetStatus = async (
+  base: string,
+  cwd: string,
+  deps: CatalogGateDeps,
+): Promise<void> => {
+  try {
+    await deps.run('pnpm', {
+      args: ['exec', 'changeset', 'status', `--since=${base}`],
+      cwd,
+    });
+  } catch {
+    /*
+     * Deliberately not "changeset status failed": `pnpm exec` verifies the
+     * workspace's dependencies first, so this also fires when that step fails
+     * and changesets never ran.
+     */
+    throw new Error('changeset status did not pass — see the output above');
+  }
+};
+
+/**
+ * Reads the workspace and git state, then applies both gates: `changeset
+ * status` for the stock "a changeset exists" requirement, then
+ * {@link checkCatalogGate} for the catalog changes it cannot see. Both resolve
+ * the same base ref, which is why they share one command.
  */
 export const runChangesetCheck = async (
   options: RunChangesetCheckOptions = {},
   deps: CatalogGateDeps = defaultDeps,
 ): Promise<readonly string[]> => {
   const discovery = discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() });
+  const base = options.base ?? defaultBaseRef;
+  await runChangesetStatus(base, discovery.rootDir, deps);
   const ignored = new Set([
     ...await readConfiguredIgnores(discovery.rootDir),
     ...(options.ignored ?? []),
   ]);
 
   return checkCatalogGate({
-    baseWorkspace: await readBaseWorkspace(
-      options.base ?? defaultBaseRef,
-      discovery.rootDir,
-      deps,
-    ),
+    baseWorkspace: await readBaseWorkspace(base, discovery.rootDir, deps),
     changesetSources: readChangesetSources(discovery.rootDir),
     headWorkspace: readHeadWorkspace(discovery.rootDir),
     ignored,
@@ -248,14 +281,26 @@ export const changesetCheckCommand = async (
   logger: Logger,
   deps: CatalogGateDeps = defaultDeps,
 ): Promise<number> => {
-  const drift = await runChangesetCheck(
-    {
-      ...(args.since !== undefined && { base: args.since }),
-      ...(args.cwd !== undefined && { cwd: args.cwd }),
-      ignored: parseIgnoreArgs(rawArgs),
-    },
-    deps,
-  );
+  let drift: readonly string[];
+  try {
+    drift = await runChangesetCheck(
+      {
+        ...(args.since !== undefined && { base: args.since }),
+        ...(args.cwd !== undefined && { cwd: args.cwd }),
+        ignored: parseIgnoreArgs(rawArgs),
+      },
+      deps,
+    );
+  } catch (error) {
+    /*
+     * A hard failure (missing changeset, unresolvable base, unreadable git
+     * object) is the gate's answer, not a crash — report it as a non-zero exit
+     * rather than an unhandled rejection.
+     */
+    logger.error(error instanceof Error ? error.message : String(error));
+
+    return 1;
+  }
 
   if (drift.length === 0) {
     logger.info('changeset check passed — no uncovered catalog changes');
