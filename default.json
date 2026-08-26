@@ -84,6 +84,18 @@
       ]
     },
     {
+      "description": "Group Postgres updates — the server image and a postgres-backup-local dump sidecar pin the same major, and pg_dump can't read a newer server, so either bump landing alone breaks dumps. Matched by depName, not source URL: the official postgres image carries no org.opencontainers.image.source label, so Renovate has no sourceUrl to match on",
+      "groupName": "postgres",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchDepNames": [
+        "postgres",
+        "**/postgres",
+        "**/postgres-backup-local"
+      ]
+    },
+    {
       "description": "Group powershell updates (mise tool + .chezmoidata version comment share one PowerShell/PowerShell release)",
       "groupName": "powershell",
       "matchSourceUrls": [
