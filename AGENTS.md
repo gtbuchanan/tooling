@@ -471,14 +471,22 @@ official images make this the common case, not the edge case: `postgres`
 is rebuilt every few days, so its tag is almost always inside the
 quarantine, while the sidecar's tag is not.
 
-`flexible` stops Renovate from marking the update pending at all
-(`process/lookup/filter-checks.js` sets `pendingChecks` only when the
-filter is `strict`). `minimumReleaseAge` still steers which release is
-chosen — Renovate picks the newest one that has aged out when such a
-version exists — but it no longer blocks the branch. For a rolling
-Docker tag with a single candidate, that means the quarantine stops
-applying in practice; accepting that for these deps is the trade that
-keeps a coupled pair in one PR.
+`flexible` keeps `minimumReleaseAge` working as a selection rule while
+stopping it from blocking the branch. Renovate still walks candidates
+newest-first and takes the newest one that has aged out; only when every
+candidate is still pending does it fall back to the highest pending
+candidate, and only `strict` flags that fallback as pending
+(`process/lookup/filter-checks.js` sets `pendingChecks` under `strict`
+alone). The quarantine therefore keeps its full effect wherever a dep
+has an older eligible version to fall back to.
+
+It stops applying in practice only in the degenerate case — a rolling
+Docker tag such as `postgres:18`, whose bucket holds exactly one
+candidate (`separateMultipleMajor` is off, so only the newest major is
+offered, and the datasource versions tags rather than digests) and whose
+release timestamp resets on every rebuild. There is nothing older to
+fall back to, so the fallback is the only path. Accepting that for these
+deps is the trade that keeps a coupled pair in one PR.
 
 A `customManagers` regex entry keeps the hk version embedded in the
 `amends`/`import` package URLs of every `.pkl` file (`hk.pkl`,
