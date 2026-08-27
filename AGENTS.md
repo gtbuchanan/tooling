@@ -450,6 +450,44 @@ week, so without throttling we'd get a bump PR every few days. Each
 throttle clears `minimumReleaseAge` so the 3-day quarantine doesn't
 push a release past its schedule window.
 
+### Renovate group rules and internalChecksFilter
+
+Every `groupName` rule in the preset exists because one upstream
+release lands in two or more places that must move together — a mise
+tool plus a `.pkl` package URL, `packageManager` plus `[tools]`, a
+Postgres server image plus the `postgres-backup-local` sidecar whose
+`pg_dump` can't read a newer server. Each of those groups therefore
+sets `internalChecksFilter: "flexible"`, and dropping that field
+silently reintroduces the bug it fixes.
+
+Under the default `strict`, an update whose release is still inside
+`minimumReleaseAge` is marked pending, and Renovate then **drops the
+pending members from a branch that has any non-pending member** rather
+than holding the branch (`workers/repository/updates/generate.js`: "Branch
+is not pending, removing pending upgrades"). A group whose members age
+out at different rates therefore ships half of itself — precisely the
+broken intermediate state the group was added to prevent. Docker
+official images make this the common case, not the edge case: `postgres`
+is rebuilt every few days, so its tag is almost always inside the
+quarantine, while the sidecar's tag is not.
+
+`flexible` keeps `minimumReleaseAge` working as a selection rule while
+stopping it from blocking the branch. Renovate still walks candidates
+newest-first and takes the newest one that has aged out; only when every
+candidate is still pending does it fall back to the highest pending
+candidate, and only `strict` flags that fallback as pending
+(`process/lookup/filter-checks.js` sets `pendingChecks` under `strict`
+alone). The quarantine therefore keeps its full effect wherever a dep
+has an older eligible version to fall back to.
+
+It stops applying in practice only in the degenerate case — a rolling
+Docker tag such as `postgres:18`, whose bucket holds exactly one
+candidate (`separateMultipleMajor` is off, so only the newest major is
+offered, and the datasource versions tags rather than digests) and whose
+release timestamp resets on every rebuild. There is nothing older to
+fall back to, so the fallback is the only path. Accepting that for these
+deps is the trade that keeps a coupled pair in one PR.
+
 A `customManagers` regex entry keeps the hk version embedded in the
 `amends`/`import` package URLs of every `.pkl` file (`hk.pkl`,
 `packages/hk-config/Defaults.pkl`) in lockstep with the hk release.

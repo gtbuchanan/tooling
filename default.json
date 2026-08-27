@@ -48,6 +48,7 @@
     {
       "description": "Group actionlint updates (mise tool + .chezmoidata version comment share one rhysd/actionlint release)",
       "groupName": "actionlint",
+      "internalChecksFilter": "flexible",
       "matchSourceUrls": [
         "https://github.com/rhysd/actionlint"
       ]
@@ -55,6 +56,7 @@
     {
       "description": "Group hk updates (mise tool + .pkl package URLs share one release)",
       "groupName": "hk",
+      "internalChecksFilter": "flexible",
       "matchSourceUrls": [
         "https://github.com/jdx/hk"
       ]
@@ -62,6 +64,7 @@
     {
       "description": "Fold hk-config into the hk group — Defaults.pkl is built against a specific hk Config/Builtins version, so the amends pin and the hk-config import must move together or both intermediate states break. Matched by depName (emitted by the hk-config customManager above), not by source URL: gtbuchanan/tooling also publishes @gtbuchanan/cli, which must stay out of this group",
       "groupName": "hk",
+      "internalChecksFilter": "flexible",
       "matchDatasources": [
         "github-releases"
       ],
@@ -72,6 +75,7 @@
     {
       "description": "Group pkl updates (mise tool + .chezmoidata version comment share one apple/pkl release)",
       "groupName": "pkl",
+      "internalChecksFilter": "flexible",
       "matchSourceUrls": [
         "https://github.com/apple/pkl"
       ]
@@ -79,6 +83,7 @@
     {
       "description": "Group pnpm updates (the mise tool and package.json's packageManager field pin the same release)",
       "groupName": "pnpm",
+      "internalChecksFilter": "flexible",
       "matchSourceUrls": [
         "https://github.com/pnpm/pnpm"
       ]
@@ -86,6 +91,7 @@
     {
       "description": "Group Postgres updates — the server image and a postgres-backup-local dump sidecar pin the same major, and pg_dump can't read a newer server, so either bump landing alone breaks dumps. Matched by depName, not source URL: the official postgres image carries no org.opencontainers.image.source label, so Renovate has no sourceUrl to match on",
       "groupName": "postgres",
+      "internalChecksFilter": "flexible",
       "matchDatasources": [
         "docker"
       ],
@@ -98,6 +104,7 @@
     {
       "description": "Group powershell updates (mise tool + .chezmoidata version comment share one PowerShell/PowerShell release)",
       "groupName": "powershell",
+      "internalChecksFilter": "flexible",
       "matchSourceUrls": [
         "https://github.com/PowerShell/PowerShell"
       ]
@@ -105,6 +112,7 @@
     {
       "description": "Group playwright-cli monorepo",
       "groupName": "playwright-cli monorepo",
+      "internalChecksFilter": "flexible",
       "matchSourceUrls": [
         "https://github.com/microsoft/playwright-cli"
       ]
