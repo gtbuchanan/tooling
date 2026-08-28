@@ -52,7 +52,7 @@ runs:
         TEMP: ${{ runner.temp }}
         TMP: ${{ runner.temp }}
         TMPDIR: ${{ runner.temp }}
-      uses: jdx/mise-action@v4.2.5
+      uses: jdx/mise-action@v4.3.0
       with:
         cache: false
         version: 2026.8.10
