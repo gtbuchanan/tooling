@@ -26,6 +26,17 @@ const maxLinesMessages = (
 ): readonly Linter.LintMessage[] =>
   messages.filter(message => message.ruleId === 'agent-skills/max-lines');
 
+const maxTokensMessages = (
+  messages: readonly Linter.LintMessage[],
+): readonly Linter.LintMessage[] =>
+  messages.filter(message => message.ruleId === 'agent-skills/max-tokens');
+
+const frontmatter = '---\nname: my-skill\ndescription: ok.\n---\n';
+
+/* One estimated token per 4 characters. Kept on a single line so the
+   500-line `max-lines` cap can't fire alongside the token cap. */
+const buildTokens = (tokenCount: number): string => 'word'.repeat(tokenCount);
+
 describe('configs.recommended references/ max-lines', () => {
   it('passes when the file is at the 300-line limit', ({ expect }) => {
     const messages = maxLinesMessages(lint(buildBody(300)));
@@ -53,6 +64,32 @@ describe('configs.recommended references/ max-lines', () => {
 
   it('does not apply the 300-line cap to SKILL.md', ({ expect }) => {
     const messages = maxLinesMessages(lint(buildBody(400), skillFile));
+
+    expect(messages).toStrictEqual([]);
+  });
+});
+
+describe('configs.recommended SKILL.md max-tokens', () => {
+  it('passes when the body is at the 5000-token limit', ({ expect }) => {
+    const messages = maxTokensMessages(
+      lint(frontmatter + buildTokens(5000), skillFile),
+    );
+
+    expect(messages).toStrictEqual([]);
+  });
+
+  it('flags when the body exceeds the 5000-token limit', ({ expect }) => {
+    const [message, ...rest] = maxTokensMessages(
+      lint(`${frontmatter + buildTokens(5000)}over`, skillFile),
+    );
+
+    expect(rest).toStrictEqual([]);
+    expect(message?.message).toMatch(/~5001 tokens.*recommended is 5000/v);
+    expect(message?.severity).toBe(1);
+  });
+
+  it('does not apply a token cap to references/', ({ expect }) => {
+    const messages = maxTokensMessages(lint(buildTokens(6000)));
 
     expect(messages).toStrictEqual([]);
   });

@@ -5,6 +5,7 @@ import type { ESLint, Linter } from 'eslint';
 import { evalsSchema } from './rules/evals-schema.ts';
 import { fileReferences } from './rules/file-references.ts';
 import { maxLines } from './rules/max-lines.ts';
+import { maxTokens } from './rules/max-tokens.ts';
 import { minEvals } from './rules/min-evals.ts';
 import { nameMatchesDir } from './rules/name-matches-dir.ts';
 import schema from './schema.json' with { type: 'json' };
@@ -53,6 +54,7 @@ const plugin: ESLint.Plugin = {
     'evals-schema': evalsSchema,
     'file-references': fileReferences,
     'max-lines': maxLines,
+    'max-tokens': maxTokens,
     'min-evals': minEvals,
     'name-matches-dir': nameMatchesDir,
   },
@@ -67,6 +69,11 @@ const plugin: ESLint.Plugin = {
  * guidance that ancillary reference files stay focused and smaller
  * than `SKILL.md`; 300 sits just above the p90 line count of files
  * in popular published skills.
+ *
+ * `max-tokens` is wired for `SKILL.md` alone. The spec's token budget
+ * names the instructions tier specifically and gives no figure for
+ * reference files, which are loaded on demand rather than up front —
+ * the 300-line cap already keeps those focused.
  *
  * `recommended` validates frontmatter against the bare spec, so a host
  * extension reads as an unknown property. Repos targeting one or more
@@ -87,6 +94,7 @@ export const configs: {
       rules: {
         'agent-skills/file-references': 'warn',
         'agent-skills/max-lines': ['warn', { max: 500 }],
+        'agent-skills/max-tokens': ['warn', { max: 5000 }],
         'agent-skills/min-evals': 'warn',
         'agent-skills/name-matches-dir': 'warn',
         'md-frontmatter/schema': ['warn', { schema }],
