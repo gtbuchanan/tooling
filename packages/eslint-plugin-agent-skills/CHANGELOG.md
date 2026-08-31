@@ -1,5 +1,17 @@
 # @gtbuchanan/eslint-plugin-agent-skills
 
+## 0.3.0
+
+### Minor Changes
+
+- 61e9e23: Add `agent-skills/max-tokens`, capping the `SKILL.md` body at the Agent
+  Skills spec's recommended instruction-tier token budget. Enabled in
+  `configs.recommended` for `SKILL.md` at 5000 tokens.
+
+### Patch Changes
+
+- @gtbuchanan/eslint-plugin-md-frontmatter@0.1.3
+
 ## 0.2.1
 
 ### Patch Changes

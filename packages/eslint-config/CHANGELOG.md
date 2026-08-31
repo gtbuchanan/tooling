@@ -1,5 +1,15 @@
 # @gtbuchanan/eslint-config
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [61e9e23]
+  - @gtbuchanan/eslint-plugin-agent-skills@0.3.0
+  - @gtbuchanan/eslint-plugin-markdownlint@0.1.2
+  - @gtbuchanan/eslint-plugin-md-frontmatter@0.1.3
+  - @gtbuchanan/eslint-plugin-yamllint@0.1.2
+
 ## 0.5.0
 
 ### Minor Changes
