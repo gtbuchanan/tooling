@@ -41,7 +41,7 @@ jobs:
   version:
     name: Version
     outputs:
-      hasChangesets: ${{ steps.changesets-action.outputs.hasChangesets }}
+      hasChangesets: ${{ steps.changesets-action.outputs.has-changesets }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -62,10 +62,10 @@ jobs:
       # `gtb version` runs `changeset version` then a `manifest`-scoped sync in
       # one process so regenerated native manifests land in the same version
       # commit/PR (the sync no-ops for plain-npm repos). It can't be a `&&`
-      # chain in this input: changesets/action splits `version` on whitespace
-      # and execs it without a shell, so `&&` (and everything after) would be
-      # passed to changesets as bogus positional args ("Too many arguments
-      # passed to changesets").
+      # chain in this input: changesets/action splits `version-script` on
+      # whitespace and execs it without a shell, so `&&` (and everything after)
+      # would be passed to changesets as bogus positional args ("Too many
+      # arguments passed to changesets").
       #
       # `HK=0` skips the hk pre-commit hook on changesets/action's automated
       # commit (mise's postinstall installs the hook in CI too). A
@@ -77,11 +77,12 @@ jobs:
         id: changesets-action
         uses: changesets/action@v2.1.1
         with:
-          # GPG-sign the version commit + tags (default git-cli leaves them
-          # unverified).
-          commitMode: github-api
           github-token: ${{ steps.app-token.outputs.token }}
-          version: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} version
+          # `push-with-git-cli` stays at its `false` default: pushing the
+          # version commit + tags through the GitHub API GPG-signs them and
+          # attributes them to the app that owns `github-token`. The git-cli
+          # path leaves them unverified.
+          version-script: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} version
 
 name: CD
 

@@ -16,9 +16,10 @@ export interface VersionDeps {
  * `manifest` sync scope, so both land in the same changesets version
  * commit/PR. The sync no-ops when the workspace ships no non-npm packages, so
  * this is safe to run unconditionally. Sequenced inside one command because
- * changesets/action runs its `version` input without a shell — a `&&` chain in
- * the workflow gets passed to changesets as bogus positional args ("Too many
- * arguments passed to changesets"), so the chaining has to live here.
+ * changesets/action runs its `version-script` input without a shell — a `&&`
+ * chain in the workflow gets passed to changesets as bogus positional args
+ * ("Too many arguments passed to changesets"), so the chaining has to live
+ * here.
  */
 export const executeVersion = async ({
   run: runCommand,

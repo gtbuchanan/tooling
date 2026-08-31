@@ -323,13 +323,13 @@ through `package.json` scripts backed by `gtb` leaf commands.
   `hasChangesets == 'false'`. Run by `release.yml` as its `CD` job after CI
   passes. Both phases go through `gtb`, so the caller must depend on
   `@gtbuchanan/cli`:
-  - **`gtb version`** is changesets/action's `version` command —
+  - **`gtb version`** is changesets/action's `version-script` command —
     `changeset version` then a `manifest`-scoped sync, in one process so any
     regenerated `PklProject` lands in the same version commit/PR (keeping
     `gtb verify manifest` drift-free). The chaining lives inside `gtb`
-    because changesets/action splits its `version` input on whitespace and
-    execs it without a shell, so a `&&` chain would be passed to changesets
-    as bogus args.
+    because changesets/action splits its `version-script` input on
+    whitespace and execs it without a shell, so a `&&` chain would be passed
+    to changesets as bogus args.
   - **`gtb publish`** runs `changeset publish` (npm, honoring the ambient
     OIDC + `NPM_CONFIG_PROVENANCE` env), then creates a GitHub release per
     published npm package, and then dispatches every non-npm channel (the
