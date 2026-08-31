@@ -19,15 +19,17 @@ constraints that pure schemas can't express. This package ships:
     spec's "one level deep" depth guidance.
   - `agent-skills/max-lines` — markdown-aware version of core's
     `max-lines` that fires under any markdown parser/language.
+  - `agent-skills/max-tokens` — the `SKILL.md` body must stay under
+    the spec's recommended instruction-tier token budget.
   - `agent-skills/min-evals` — each skill must ship at least N
     eval cases in `evals/evals.json`.
   - `agent-skills/evals-schema` — `evals/evals.json` matches the
     canonical schema, with sequential unique `id` values and a
     `skill_name` that matches the sibling `SKILL.md`.
 - A `configs.recommended` flat-config that wires the plugin's rules
-  for `**/skills/*/SKILL.md`, `**/skills/*/references/**/*.md`
-  (with a tighter 300-line `max-lines` cap), and
-  `**/skills/*/evals/evals.json`.
+  for `**/skills/*/SKILL.md` (500 lines, 5000 estimated tokens),
+  `**/skills/*/references/**/*.md` (a tighter 300-line `max-lines`
+  cap, no token cap), and `**/skills/*/evals/evals.json`.
 - A `defineSkillFrontmatterConfig` composer that overlays the
   frontmatter extensions of one or more agent hosts.
 
@@ -157,6 +159,7 @@ export default [
     rules: {
       'agent-skills/file-references': 'error',
       'agent-skills/max-lines': ['error', { max: 500 }],
+      'agent-skills/max-tokens': ['error', { max: 5000 }],
       'agent-skills/min-evals': 'error',
       'agent-skills/name-matches-dir': 'error',
       'md-frontmatter/schema': ['error', { schema: skillFrontmatterSchema }],
@@ -246,6 +249,56 @@ guidance:
 Options:
 
 - `max` — maximum line count. Defaults to `500`.
+
+### `agent-skills/max-tokens`
+
+Caps the `SKILL.md` body at a maximum estimated token count, per the
+spec's
+[Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
+budget for the instructions tier ("**Instructions** (< 5000 tokens
+recommended)"). The recommended config applies it to
+`**/skills/*/SKILL.md` only — the spec names a token figure for that
+tier alone, and gives none for `references/`.
+
+Frontmatter is excluded from the count. The spec accounts for `name`
+and `description` separately, as the ~100-token metadata tier loaded at
+startup, so a long description shouldn't eat the instruction budget.
+
+This complements `max-lines` rather than duplicating it. The two catch
+different shapes of the same problem: a table- or code-heavy skill can
+sit well under 500 lines and still blow the token budget, and a skill
+of many short lines can do the reverse.
+
+Options:
+
+- `max` — maximum estimated token count. Defaults to `5000`.
+
+#### How `agent-skills/max-tokens` estimates tokens
+
+The count is an estimate — four UTF-8 bytes per token — not a real BPE
+tokenization. Every agent host tokenizes differently, and no bundled
+tokenizer would be authoritative across them, so the rule approximates
+rather than taking on a dependency that implies a precision it can't
+deliver.
+
+Measured against a real BPE tokenizer over a corpus of published
+`SKILL.md` bodies, the estimate landed between 1.0x and 1.15x of the
+true count. Treat a report within a few percent of the cap as "close
+enough to review", not as a precise measurement.
+
+The unit is bytes rather than characters because that is what a
+byte-pair tokenizer merges over. For ASCII the two are identical, so
+the calibration above is unaffected either way; outside it they
+diverge sharply. A CJK character is one UTF-16 unit but three UTF-8
+bytes, so a character count under-reads a Chinese or Japanese body by
+roughly 3x — passing a skill far over any real budget.
+
+Where the estimate still under-reads is content a tokenizer fragments
+past one token per few bytes: long base64 blobs, dense runs of table
+punctuation, and emoji, which measured at about 2x. That needs a body
+made mostly of such content to matter — the table-heavy skills in the
+corpus land inside the band above — but it does mean a pass is
+evidence rather than proof.
 
 ### `agent-skills/min-evals`
 
