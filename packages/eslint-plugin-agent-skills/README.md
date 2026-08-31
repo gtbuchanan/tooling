@@ -275,7 +275,7 @@ Options:
 
 #### How `agent-skills/max-tokens` estimates tokens
 
-The count is an estimate — four characters per token — not a real BPE
+The count is an estimate — four UTF-8 bytes per token — not a real BPE
 tokenization. Every agent host tokenizes differently, and no bundled
 tokenizer would be authoritative across them, so the rule approximates
 rather than taking on a dependency that implies a precision it can't
@@ -283,10 +283,22 @@ deliver.
 
 Measured against a real BPE tokenizer over a corpus of published
 `SKILL.md` bodies, the estimate landed between 1.0x and 1.15x of the
-true count. It skews high, which is the useful direction for a budget
-check: a body this rule passes is one a real tokenizer also passes.
-Treat a report within a few percent of the cap as "close enough to
-review", not as a precise measurement.
+true count. Treat a report within a few percent of the cap as "close
+enough to review", not as a precise measurement.
+
+The unit is bytes rather than characters because that is what a
+byte-pair tokenizer merges over. For ASCII the two are identical, so
+the calibration above is unaffected either way; outside it they
+diverge sharply. A CJK character is one UTF-16 unit but three UTF-8
+bytes, so a character count under-reads a Chinese or Japanese body by
+roughly 3x — passing a skill far over any real budget.
+
+Where the estimate still under-reads is content a tokenizer fragments
+past one token per few bytes: long base64 blobs, dense runs of table
+punctuation, and emoji, which measured at about 2x. That needs a body
+made mostly of such content to matter — the table-heavy skills in the
+corpus land inside the band above — but it does mean a pass is
+evidence rather than proof.
 
 ### `agent-skills/min-evals`
 

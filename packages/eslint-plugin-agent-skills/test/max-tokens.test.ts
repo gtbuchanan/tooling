@@ -67,6 +67,34 @@ describe.concurrent('agent-skills/max-tokens', () => {
     }).not.toThrow();
   });
 
+  it('counts UTF-8 bytes rather than characters', ({ expect }) => {
+    /* Byte-pair tokenizers work on UTF-8 bytes, and each of these CJK
+       characters is a single UTF-16 unit but three UTF-8 bytes. Two
+       cases either side of a 10-token budget: 13 characters are 39
+       bytes (10 tokens, passing) and 16 are 48 bytes (12 tokens,
+       failing) — where counting characters would see 4 either way and
+       pass both. */
+    expect(() => {
+      ruleTester.run('agent-skills/max-tokens', maxTokens, {
+        invalid: [
+          {
+            code: frontmatter + '语'.repeat(16),
+            errors: [{ message: /~12 tokens.*recommended is 10/v }],
+            filename: '/repo/skills/my-skill/SKILL.md',
+            options: [{ max: 10 }],
+          },
+        ],
+        valid: [
+          {
+            code: frontmatter + '语'.repeat(13),
+            filename: '/repo/skills/my-skill/SKILL.md',
+            options: [{ max: 10 }],
+          },
+        ],
+      });
+    }).not.toThrow();
+  });
+
   it('excludes frontmatter from the count', ({ expect }) => {
     /* Frontmatter alone is well past a 10-token budget, so a rule
        counting the whole file would flag this. Only the body counts. */
