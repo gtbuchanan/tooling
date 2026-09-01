@@ -28,9 +28,10 @@ constraints that pure schemas can't express. This package ships:
     canonical schema, with sequential unique `id` values and a
     `skill_name` that matches the sibling `SKILL.md`.
 - A `configs.recommended` flat-config that wires the plugin's rules
-  for `**/skills/*/SKILL.md` (500 lines, 5000 estimated tokens),
-  `**/skills/*/references/**/*.md` (a 5000-token backstop, no line
-  cap), and `**/skills/*/evals/evals.json`.
+  for `**/skills/*/SKILL.md` (5000 estimated tokens),
+  `**/skills/*/references/**/*.md` (a 5000-token backstop), and
+  `**/skills/*/evals/evals.json`. Length is gated on tokens alone;
+  `max-lines` ships but is opt-in.
 - A `defineSkillFrontmatterConfig` composer that overlays the
   frontmatter extensions of one or more agent hosts.
 
@@ -235,17 +236,28 @@ Caps a markdown file at a maximum line count. Mirrors core ESLint's
 rule's `Program` visitor never runs against `@eslint/markdown`'s
 `root` mdast node).
 
-The recommended config applies it to `**/skills/*/SKILL.md` at 500
-lines, per the spec's
-[Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
-guidance ("Keep your main `SKILL.md` under 500 lines.").
+**Not enabled by `configs.recommended`** — opt in explicitly if you
+want it. It remains exported because the spec does state a line figure
+("Keep your main `SKILL.md` under 500 lines."), so a repo that wants
+that enforced literally can wire it:
 
-It is not applied to `**/skills/*/references/**/*.md`. Nothing upstream
-caps a reference file — the spec's third tier is "Resources (as
-needed)" and its `references/` guidance is qualitative, while
-Anthropic's `skill-creator` calls bundled resources "unlimited, loaded
-as needed". Those files are bounded by `max-tokens` instead, since the
-cost worth flagging there is context, not length.
+```js
+{
+  files: ['**/skills/*/SKILL.md'],
+  rules: { 'agent-skills/max-lines': ['warn', { max: 500 }] },
+}
+```
+
+The recommended config gates length on `max-tokens` alone. Both rules
+proxy for how much context a skill costs to load, and tokens measure it
+directly. At the ~10–14 tokens per line typical of prose skills, 500
+lines doesn't bind until well past 5000 tokens, so `max-lines` cannot
+fire first — and where a line count does move independently (semantic
+line breaks, one-item-per-line lists, reflowed tables) it moves without
+changing what the agent loads.
+
+Note that this rule counts physical lines: there is no
+`skipBlankLines` / `skipComments` equivalent to core's `max-lines`.
 
 Options:
 

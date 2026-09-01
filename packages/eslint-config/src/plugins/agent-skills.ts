@@ -17,7 +17,7 @@ const toSources = (
 
 /**
  * Agent Skills `SKILL.md` validation. Delegates the entire wiring
- * (frontmatter schema rule, name-matches-dir rule, file-length cap)
+ * (frontmatter schema rule, name-matches-dir rule, token budget)
  * to the plugin's recommended flat-config block, then layers on the
  * frontmatter extensions of whichever hosts are selected.
  */

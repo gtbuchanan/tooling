@@ -91,4 +91,16 @@ describe('configs.recommended SKILL.md max-tokens', () => {
     expect(message?.message).toMatch(/~5001 tokens.*recommended is 5000/v);
     expect(message?.severity).toBe(1);
   });
+
+  /* `max-lines` stays exported for repos that want the spec's 500-line
+     figure enforced literally, but the recommended config gates on
+     tokens alone — see the rule's own docs for why the two aren't the
+     complementary pair they look like. */
+  it('does not cap SKILL.md by line count', ({ expect }) => {
+    const messages = maxLinesMessages(
+      lint(frontmatter + buildBody(600), skillFile),
+    );
+
+    expect(messages).toStrictEqual([]);
+  });
 });

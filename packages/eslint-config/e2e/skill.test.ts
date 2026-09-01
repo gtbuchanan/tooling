@@ -154,7 +154,31 @@ describe.concurrent('SKILL.md validation', () => {
     expect(result.stdout).toMatch(/not found.*references\/MISSING\.md/v);
   });
 
-  it('caps file at 500 lines per the spec', async ({ fixture, expect }) => {
+  it('caps file at the spec token budget', async ({ fixture, expect }) => {
+    const name = skillName();
+    /* Four UTF-8 bytes per estimated token, so this body lands one
+       token past the 5000 the spec recommends for the instructions
+       tier. One line, so a line count can't stand in for it. */
+    const result = await fixture.run({
+      files: {
+        [`skills/${name}/SKILL.md`]: skill(
+          [
+            `name: ${name}`,
+            `description: ${faker.lorem.sentence()}`,
+          ],
+          ['# Example skill', '', 'word'.repeat(5001), ''],
+        ),
+      },
+    });
+
+    expect(result.stdout).toMatch(/max-tokens/v);
+    expect(result.stdout).toMatch(/Maximum recommended is 5000/v);
+  });
+
+  /* The recommended config gates length on tokens alone. `max-lines`
+     still ships, but a repo has to opt into it, so a long file of cheap
+     lines lints clean. */
+  it('does not cap file by line count', async ({ fixture, expect }) => {
     const name = skillName();
     const lines = Array.from(
       { length: 600 },
@@ -167,12 +191,12 @@ describe.concurrent('SKILL.md validation', () => {
             `name: ${name}`,
             `description: ${faker.lorem.sentence()}`,
           ],
-          [...lines, ''],
+          ['# Example skill', '', ...lines, ''],
         ),
       },
     });
 
-    expect(result.stdout).toMatch(/max-lines/v);
-    expect(result.stdout).toMatch(/Maximum allowed is 500/v);
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.stdout).not.toMatch(/max-lines/v);
   });
 });

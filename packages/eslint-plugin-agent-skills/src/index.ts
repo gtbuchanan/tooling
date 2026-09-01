@@ -93,7 +93,14 @@ export const configs: {
       },
       rules: {
         'agent-skills/file-references': 'warn',
-        'agent-skills/max-lines': ['warn', { max: 500 }],
+        /*
+         * `max-lines` is deliberately absent, though the spec does say
+         * "Keep your main `SKILL.md` under 500 lines". At the ~10-14
+         * tokens/line typical of prose skills it cannot fire before
+         * `max-tokens` does, and semantic line breaks or dense lists
+         * raise it without changing what the agent loads. The rule
+         * stays exported for repos wanting the spec's figure literally.
+         */
         'agent-skills/max-tokens': ['warn', { max: 5000 }],
         'agent-skills/min-evals': 'warn',
         'agent-skills/name-matches-dir': 'warn',
@@ -106,23 +113,12 @@ export const configs: {
       plugins: { 'agent-skills': plugin, markdown },
       rules: {
         /*
-         * A backstop, not a spec limit. The spec's third progressive-
-         * disclosure tier is "Resources (as needed)" and its `references/`
-         * guidance is qualitative ("keep individual reference files
-         * focused"); Anthropic's own `skill-creator` calls bundled
-         * resources "unlimited, loaded as needed". So nothing upstream
-         * caps a reference file, and capping one tightly would work
-         * against the point of moving material out of `SKILL.md`.
-         *
-         * What remains worth flagging is a reference file that costs more
-         * to load than the entire instructions tier it was split out of,
-         * which is where the limit comes from: the same 5000 tokens the
-         * spec recommends for a `SKILL.md` body.
-         *
-         * Tokens rather than lines because the cost being bounded is
-         * context, and a line count is a poor proxy for it — semantic
-         * line breaks and dense lists both move it without changing what
-         * the agent loads.
+         * A backstop, not a spec limit. Nothing upstream caps a
+         * reference file: the spec's third tier is "Resources (as
+         * needed)" and `skill-creator` calls bundled resources
+         * "unlimited, loaded as needed". What is still worth flagging is
+         * one costing more to load than the instructions tier it was
+         * split out of — hence the same 5000 tokens.
          */
         'agent-skills/max-tokens': ['warn', { max: 5000 }],
       },
