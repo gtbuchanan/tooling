@@ -251,10 +251,10 @@ that enforced literally can wire it:
 The recommended config gates length on `max-tokens` alone. Both rules
 proxy for how much context a skill costs to load, and tokens measure it
 directly. At the ~10–14 tokens per line typical of prose skills, 500
-lines doesn't bind until well past 5000 tokens, so `max-lines` cannot
-fire first — and where a line count does move independently (semantic
-line breaks, one-item-per-line lists, reflowed tables) it moves without
-changing what the agent loads.
+lines works out to 5200–7000 tokens, so `max-tokens` is the one that
+fires. The line cap leads only below ~10 tokens per line — semantic line
+breaks, one-item-per-line lists, reflowed tables — and there it reports
+formatting, since none of those change what the agent loads.
 
 Note that this rule counts physical lines: there is no
 `skipBlankLines` / `skipComments` equivalent to core's `max-lines`.

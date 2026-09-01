@@ -96,10 +96,11 @@ export const configs: {
         /*
          * `max-lines` is deliberately absent, though the spec does say
          * "Keep your main `SKILL.md` under 500 lines". At the ~10-14
-         * tokens/line typical of prose skills it cannot fire before
-         * `max-tokens` does, and semantic line breaks or dense lists
-         * raise it without changing what the agent loads. The rule
-         * stays exported for repos wanting the spec's figure literally.
+         * tokens/line typical of prose skills, 500 lines is 5200-7000
+         * tokens, so `max-tokens` is the one that fires; the line cap
+         * leads only below ~10 tokens/line, where semantic line breaks
+         * or dense lists raise it without changing what the agent loads.
+         * The rule stays exported for repos wanting the spec's figure.
          */
         'agent-skills/max-tokens': ['warn', { max: 5000 }],
         'agent-skills/min-evals': 'warn',
