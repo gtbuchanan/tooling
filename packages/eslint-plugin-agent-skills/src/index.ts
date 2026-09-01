@@ -105,7 +105,26 @@ export const configs: {
       language: 'markdown/commonmark',
       plugins: { 'agent-skills': plugin, markdown },
       rules: {
-        'agent-skills/max-lines': ['warn', { max: 300 }],
+        /*
+         * A backstop, not a spec limit. The spec's third progressive-
+         * disclosure tier is "Resources (as needed)" and its `references/`
+         * guidance is qualitative ("keep individual reference files
+         * focused"); Anthropic's own `skill-creator` calls bundled
+         * resources "unlimited, loaded as needed". So nothing upstream
+         * caps a reference file, and capping one tightly would work
+         * against the point of moving material out of `SKILL.md`.
+         *
+         * What remains worth flagging is a reference file that costs more
+         * to load than the entire instructions tier it was split out of,
+         * which is where the limit comes from: the same 5000 tokens the
+         * spec recommends for a `SKILL.md` body.
+         *
+         * Tokens rather than lines because the cost being bounded is
+         * context, and a line count is a poor proxy for it — semantic
+         * line breaks and dense lists both move it without changing what
+         * the agent loads.
+         */
+        'agent-skills/max-tokens': ['warn', { max: 5000 }],
       },
     },
     {

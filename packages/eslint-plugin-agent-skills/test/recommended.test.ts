@@ -16,6 +16,10 @@ const buildBody = (lineCount: number): string => Array
   .from({ length: lineCount }, (_unused, index) => `Line ${(index + 1).toString()}.`)
   .join('\n');
 
+/* One estimated token per 4 characters. Kept on a single line so a line
+   count can never stand in for the token count being asserted. */
+const buildTokens = (tokenCount: number): string => 'word'.repeat(tokenCount);
+
 const lint = (
   code: string,
   filename = referencesFile,
@@ -33,37 +37,37 @@ const maxTokensMessages = (
 
 const frontmatter = '---\nname: my-skill\ndescription: ok.\n---\n';
 
-/* One estimated token per 4 characters. Kept on a single line so the
-   500-line `max-lines` cap can't fire alongside the token cap. */
-const buildTokens = (tokenCount: number): string => 'word'.repeat(tokenCount);
-
-describe('configs.recommended references/ max-lines', () => {
-  it('passes when the file is at the 300-line limit', ({ expect }) => {
-    const messages = maxLinesMessages(lint(buildBody(300)));
+describe('configs.recommended references/ max-tokens', () => {
+  it('passes when the file is at the 5000-token limit', ({ expect }) => {
+    const messages = maxTokensMessages(lint(buildTokens(5000)));
 
     expect(messages).toStrictEqual([]);
   });
 
-  it('flags when the file exceeds the 300-line limit', ({ expect }) => {
-    const [message, ...rest] = maxLinesMessages(lint(buildBody(301)));
+  it('flags when the file exceeds the 5000-token limit', ({ expect }) => {
+    const [message, ...rest] = maxTokensMessages(
+      lint(`${buildTokens(5000)}over`),
+    );
 
     expect(rest).toStrictEqual([]);
-    expect(message?.message).toMatch(/301.*Maximum allowed is 300/v);
+    expect(message?.message).toMatch(/~5001 tokens.*recommended is 5000/v);
     expect(message?.severity).toBe(1);
   });
 
   it('honors a top-of-file eslint-disable HTML comment', ({ expect }) => {
     const code =
-      '<!-- eslint-disable agent-skills/max-lines -->\n' +
-      buildBody(500);
+      '<!-- eslint-disable agent-skills/max-tokens -->\n' +
+      buildTokens(6000);
 
-    const messages = maxLinesMessages(lint(code));
+    const messages = maxTokensMessages(lint(code));
 
     expect(messages).toStrictEqual([]);
   });
 
-  it('does not apply the 300-line cap to SKILL.md', ({ expect }) => {
-    const messages = maxLinesMessages(lint(buildBody(400), skillFile));
+  /* The spec caps the instructions tier but leaves resources "as needed",
+     so a reference file is bounded by context cost alone. */
+  it('does not cap references/ by line count', ({ expect }) => {
+    const messages = maxLinesMessages(lint(buildBody(400)));
 
     expect(messages).toStrictEqual([]);
   });
@@ -86,11 +90,5 @@ describe('configs.recommended SKILL.md max-tokens', () => {
     expect(rest).toStrictEqual([]);
     expect(message?.message).toMatch(/~5001 tokens.*recommended is 5000/v);
     expect(message?.severity).toBe(1);
-  });
-
-  it('does not apply a token cap to references/', ({ expect }) => {
-    const messages = maxTokensMessages(lint(buildTokens(6000)));
-
-    expect(messages).toStrictEqual([]);
   });
 });

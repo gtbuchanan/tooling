@@ -19,8 +19,9 @@ constraints that pure schemas can't express. This package ships:
     spec's "one level deep" depth guidance.
   - `agent-skills/max-lines` — markdown-aware version of core's
     `max-lines` that fires under any markdown parser/language.
-  - `agent-skills/max-tokens` — the `SKILL.md` body must stay under
-    the spec's recommended instruction-tier token budget.
+  - `agent-skills/max-tokens` — a markdown body must stay under an
+    estimated token budget, defaulting to the spec's recommended
+    instruction-tier figure.
   - `agent-skills/min-evals` — each skill must ship at least N
     eval cases in `evals/evals.json`.
   - `agent-skills/evals-schema` — `evals/evals.json` matches the
@@ -28,8 +29,8 @@ constraints that pure schemas can't express. This package ships:
     `skill_name` that matches the sibling `SKILL.md`.
 - A `configs.recommended` flat-config that wires the plugin's rules
   for `**/skills/*/SKILL.md` (500 lines, 5000 estimated tokens),
-  `**/skills/*/references/**/*.md` (a tighter 300-line `max-lines`
-  cap, no token cap), and `**/skills/*/evals/evals.json`.
+  `**/skills/*/references/**/*.md` (a 5000-token backstop, no line
+  cap), and `**/skills/*/evals/evals.json`.
 - A `defineSkillFrontmatterConfig` composer that overlays the
   frontmatter extensions of one or more agent hosts.
 
@@ -234,17 +235,17 @@ Caps a markdown file at a maximum line count. Mirrors core ESLint's
 rule's `Program` visitor never runs against `@eslint/markdown`'s
 `root` mdast node).
 
-The recommended config applies it twice, with different caps for
-different file roles per the spec's
+The recommended config applies it to `**/skills/*/SKILL.md` at 500
+lines, per the spec's
 [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
-guidance:
+guidance ("Keep your main `SKILL.md` under 500 lines.").
 
-- `**/skills/*/SKILL.md` — 500 lines ("Keep your main `SKILL.md` under
-  500 lines.").
-- `**/skills/*/references/**/*.md` — 300 lines, since the spec calls
-  for ancillary reference files to be focused and smaller than
-  `SKILL.md`. 300 sits just above the p90 line count observed across
-  popular published skills.
+It is not applied to `**/skills/*/references/**/*.md`. Nothing upstream
+caps a reference file — the spec's third tier is "Resources (as
+needed)" and its `references/` guidance is qualitative, while
+Anthropic's `skill-creator` calls bundled resources "unlimited, loaded
+as needed". Those files are bounded by `max-tokens` instead, since the
+cost worth flagging there is context, not length.
 
 Options:
 
@@ -256,18 +257,18 @@ Caps the `SKILL.md` body at a maximum estimated token count, per the
 spec's
 [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
 budget for the instructions tier ("**Instructions** (< 5000 tokens
-recommended)"). The recommended config applies it to
-`**/skills/*/SKILL.md` only — the spec names a token figure for that
-tier alone, and gives none for `references/`.
+recommended)").
+
+The recommended config applies it to `**/skills/*/SKILL.md` and to
+`**/skills/*/references/**/*.md`, both at 5000. On `SKILL.md` that is
+the spec's own figure. On `references/` it is a backstop rather than a
+spec limit — the spec caps no reference file, so the threshold worth
+flagging is a reference file that costs more to load than the entire
+instructions tier it was split out of.
 
 Frontmatter is excluded from the count. The spec accounts for `name`
 and `description` separately, as the ~100-token metadata tier loaded at
 startup, so a long description shouldn't eat the instruction budget.
-
-This complements `max-lines` rather than duplicating it. The two catch
-different shapes of the same problem: a table- or code-heavy skill can
-sit well under 500 lines and still blow the token budget, and a skill
-of many short lines can do the reverse.
 
 Options:
 
