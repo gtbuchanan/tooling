@@ -56,4 +56,4 @@ pkl = "0.32.1"
 # mise.lock unbumped, failing every `MISE_LOCKED=1` install.
 pnpm = "11.24.0"
 shellcheck = "0.11.0"
-shfmt = "3.13.1"
+shfmt = "3.14.0"
