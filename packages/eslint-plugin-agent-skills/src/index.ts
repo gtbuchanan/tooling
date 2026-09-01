@@ -93,7 +93,15 @@ export const configs: {
       },
       rules: {
         'agent-skills/file-references': 'warn',
-        'agent-skills/max-lines': ['warn', { max: 500 }],
+        /*
+         * `max-lines` is deliberately absent, though the spec does say
+         * "Keep your main `SKILL.md` under 500 lines". At the ~10-14
+         * tokens/line typical of prose skills, 500 lines is 5200-7000
+         * tokens, so `max-tokens` is the one that fires; the line cap
+         * leads only below ~10 tokens/line, where semantic line breaks
+         * or dense lists raise it without changing what the agent loads.
+         * The rule stays exported for repos wanting the spec's figure.
+         */
         'agent-skills/max-tokens': ['warn', { max: 5000 }],
         'agent-skills/min-evals': 'warn',
         'agent-skills/name-matches-dir': 'warn',
@@ -105,7 +113,15 @@ export const configs: {
       language: 'markdown/commonmark',
       plugins: { 'agent-skills': plugin, markdown },
       rules: {
-        'agent-skills/max-lines': ['warn', { max: 300 }],
+        /*
+         * A backstop, not a spec limit. Nothing upstream caps a
+         * reference file: the spec's third tier is "Resources (as
+         * needed)" and `skill-creator` calls bundled resources
+         * "unlimited, loaded as needed". What is still worth flagging is
+         * one costing more to load than the instructions tier it was
+         * split out of — hence the same 5000 tokens.
+         */
+        'agent-skills/max-tokens': ['warn', { max: 5000 }],
       },
     },
     {

@@ -83,9 +83,10 @@ const measureBody = (
  * as the ~100-token metadata tier loaded at startup, so a long
  * description shouldn't eat the instruction budget.
  *
- * Complements `max-lines` rather than duplicating it — a table- or
- * code-heavy skill can sit well under 500 lines and still blow the
- * token budget, and a skill of many short lines can do the reverse.
+ * Supersedes `max-lines` in the recommended config rather than
+ * complementing it: both proxy for context cost and this one measures
+ * it directly, so at typical prose density the line cap cannot fire
+ * first, and where it does move independently it reports formatting.
  *
  * The count is an estimate — see `bytesPerToken` for how it is derived
  * and where it stops holding. Every agent host tokenizes differently
