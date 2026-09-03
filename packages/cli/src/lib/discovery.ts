@@ -4,7 +4,7 @@ import { generateTaskPrefix } from '../commands/task/names.ts';
 import type { Manifest } from './manifest.ts';
 import { hasPackageBlock } from './pkl-project.ts';
 import { localeComparer } from './sort.ts';
-import { buildInclude, resolveBuildIncludes } from './tsconfig-gen.ts';
+import { buildInclude, resolveBuildIncludes, typeCheckInclude } from './tsconfig-gen.ts';
 import {
   type ResolveWorkspaceOptions,
   readParsedManifest,
@@ -79,6 +79,15 @@ export interface PackageCapabilities {
    * Has `@gtbuchanan/tsconfig` dependency or `tsconfig.json`.
    */
   readonly hasTypeScript: boolean;
+  /**
+   * Holds at least one TypeScript file the generated type-check config's
+   * `include` would match. Distinct from {@link hasTypeScript}, which asks
+   * whether the config exists: `gtb sync` writes a `tsconfig.json` at every
+   * workspace root, so at a root the two answer different questions, and
+   * only this one predicts whether `tsc` has anything to do. A config
+   * matching no files is an error to tsc (TS18003), not a no-op.
+   */
+  readonly hasTypeScriptSources: boolean;
   /**
    * Has `@gtbuchanan/vitest-config` dependency or `vitest.config.*`.
    */
@@ -174,6 +183,44 @@ const listFiles = (dir: string): readonly string[] => {
 
 const hasFilePrefix = (files: readonly string[], prefix: string): boolean =>
   files.some(file => file.startsWith(`${prefix}.`));
+
+/**
+ * Extensions tsc accepts as program inputs. Declaration files end in `.ts`
+ * and so are covered — tsc counts them as inputs too.
+ */
+const typeScriptExtensions = ['.cts', '.mts', '.ts', '.tsx'];
+
+const isTypeScriptFile = (name: string): boolean =>
+  typeScriptExtensions.some(ext => name.endsWith(ext));
+
+/*
+ * Answers "any TypeScript under here?" by walking until the first hit.
+ * `readdirSync`'s own `recursive` option would materialize every descendant
+ * to answer a question the first match settles, and discovery runs this for
+ * each package on every `gtb` invocation. `node_modules` is skipped because
+ * tsc's default `exclude` skips it too, so a file found there is not an input.
+ */
+const hasTypeScriptWithin = (dir: string): boolean => {
+  try {
+    return readdirSync(dir, { withFileTypes: true }).some(entry => (entry.isDirectory()
+      ? entry.name !== 'node_modules' && hasTypeScriptWithin(path.join(dir, entry.name))
+      : isTypeScriptFile(entry.name)));
+  } catch {
+    return false;
+  }
+};
+
+/*
+ * Mirrors what the generated type-check config includes: root-level files
+ * (`*`, `.*`) plus every named directory, which tsc walks recursively. The
+ * glob entries cover the directory list's own siblings, so only the named
+ * directories need the walk.
+ */
+const typeCheckDirectories = typeCheckInclude.filter(entry => !entry.includes('*'));
+
+const hasTypeCheckSources = (dir: string, files: readonly string[]): boolean =>
+  files.some(isTypeScriptFile) ||
+  typeCheckDirectories.some(name => hasTypeScriptWithin(path.join(dir, name)));
 
 /**
  * Reads a package's `PklProject` source, or `''` when absent.
@@ -294,6 +341,7 @@ const buildCapabilities = (
     hasSrc: hasDir(dir, 'src'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),
+    hasTypeScriptSources: hasTypeCheckSources(dir, files),
     hasVitest,
     hasVitestE2e: hasFilePrefix(files, 'vitest.config.e2e'),
     hasVitestTests: hasVitest && hasTest,

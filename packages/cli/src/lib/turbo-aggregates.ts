@@ -82,13 +82,21 @@ const transitNode = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] =
   },
 ];
 
+/*
+ * Root tasks must be referenced explicitly — turbo does not roll them into
+ * the bare task name when resolving deps (see `lintAggregate`).
+ */
+const hasAnyTypecheck = (flags: ToolFlags): boolean =>
+  flags.hasTypeScript || flags.hasPkl || flags.hasRootTypeScript;
+
 const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
-    condition: flags.hasTypeScript || flags.hasPkl,
+    condition: hasAnyTypecheck(flags),
     key: Aggregate.typecheck,
     value: {
       dependsOn: [
         ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
+        ...(flags.hasRootTypeScript ? [rootTaskKey(taskNames.typecheckTs)] : []),
         ...(flags.hasPkl ? [taskNames.typecheckPkl] : []),
       ],
     },
@@ -144,7 +152,7 @@ const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
     key: Aggregate.check,
     value: {
       dependsOn: [
-        ...(flags.hasTypeScript || flags.hasPkl ? [Aggregate.typecheck] : []),
+        ...(hasAnyTypecheck(flags) ? [Aggregate.typecheck] : []),
         ...(flags.hasLint ? [Aggregate.lint] : []),
         ...(flags.hasVitest ? [taskNames.testVitestFast] : []),
       ],
