@@ -242,6 +242,25 @@ describe.concurrent(runSync, () => {
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
   });
 
+  /*
+   * Skills consumed as `<root>/skills/<name>/SKILL.md` can't move into a
+   * package, so a monorepo root carrying nothing but its config and `skills/`
+   * is a real shape — and the one where root blindness went unreported,
+   * since a task the expectation never generates is a task verify can't miss.
+   */
+  it('wires the root deploy:skills task when skills live at the root', ({ expect }) => {
+    const { root } = createConsumerProject();
+    mkdirSync(path.join(root, 'skills'));
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    const turboJson: unknown = JSON.parse(readFileSync(path.join(root, 'turbo.json'), 'utf8'));
+    const manifest: unknown = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
+
+    expect(turboJson).toHaveProperty(['tasks', '//#deploy:skills']);
+    expect(manifest).toHaveProperty(['scripts', 'deploy:skills'], 'gtb task deploy:skills');
+  });
+
   it('writes mise.tasks.toml only when the root has a mise.toml', ({ expect }) => {
     const { root } = createConsumerProject();
     const tasksPath = path.join(root, 'mise.tasks.toml');

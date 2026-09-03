@@ -124,6 +124,11 @@ const rootLeafScriptEntries = (
 
   return [
     { condition: flags.hasRootEslint, key: taskNames.lintEslint, value: lintCmd },
+    {
+      condition: flags.hasRootSkills,
+      key: taskNames.deploySkills,
+      value: taskCmd(isSelfHosted, taskNames.deploySkills),
+    },
   ];
 };
 
@@ -182,8 +187,16 @@ const aliasRootScriptEntries = (
     },
     { condition: flags.hasE2e, key: Aggregate.testE2e, value: cmd(Aggregate.testE2e) },
     { condition: flags.hasVitest, key: Aggregate.testSlow, value: cmd(Aggregate.testSlow) },
+    /*
+     * A root that authors skills of its own owns this script name: turbo
+     * dispatches `//#deploy:skills` through it, so an alias here would
+     * re-enter turbo and trip its `recursive_turbo_invocations` guard — the
+     * same collision a single-package repo has, for the same reason. The
+     * root then reaches every package's copy through `build`, or through
+     * `gtb turbo run deploy:skills` directly.
+     */
     {
-      condition: flags.hasSkills,
+      condition: flags.hasSkills && !flags.hasRootSkills,
       key: taskNames.deploySkills,
       value: cmd(taskNames.deploySkills),
     },

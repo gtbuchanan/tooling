@@ -160,6 +160,18 @@ describe.concurrent(generateRootScripts, () => {
     expect(result).toHaveProperty('deploy:skills', 'gtb turbo run deploy:skills');
   });
 
+  /*
+   * Turbo dispatches `//#deploy:skills` through the root script of that name,
+   * so the root can't also carry the alias — it would re-enter turbo.
+   */
+  it('omits the deploy:skills alias when the root owns the leaf', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf({ hasSkills: true }), { hasSkills: true });
+
+    const result = generateRootScripts(discovery);
+
+    expect(result).toHaveProperty('deploy:skills', 'gtb task deploy:skills');
+  });
+
   it('omits every turbo alias in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
@@ -251,6 +263,22 @@ describe.concurrent(generateRequiredRootScripts, () => {
     expect(result['lint:eslint']).toBe(
       'gtb task lint:eslint . --ignore-pattern "packages/*/**"',
     );
+  });
+
+  it('adds root deploy:skills when monorepo root has skills', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf(), { hasSkills: true });
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result).toHaveProperty('deploy:skills', 'gtb task deploy:skills');
+  });
+
+  it('omits root deploy:skills when only packages have skills', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf({ hasSkills: true }));
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result).not.toHaveProperty('deploy:skills');
   });
 
   it('omits root lint:eslint when root has no ESLint', ({ expect }) => {

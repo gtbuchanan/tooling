@@ -180,6 +180,7 @@ const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>
     ...(flags.hasVitest ? [Aggregate.testSlow] : []),
     ...(flags.hasE2e ? [Aggregate.testE2e] : []),
     ...(flags.hasSkills ? [taskNames.deploySkills] : []),
+    ...(flags.hasRootSkills ? [rootTaskKey(taskNames.deploySkills)] : []),
   ];
 
   return [
