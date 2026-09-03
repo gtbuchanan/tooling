@@ -91,6 +91,17 @@ Leaf tasks, per-package, run via `gtb task <name>`:
 
 Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so local and CI caches don't collide — Vitest uses different reporters and coverage settings under CI.
 
+### Root tasks
+
+Work owned by the workspace root rather than any package is emitted as a turbo root task (`//#<name>`), backed by a root `package.json` script of the same name and wired into the aggregate its per-package counterpart feeds:
+
+- `//#lint:eslint` — root has its own `eslint.config.*`. Lints root files per-package lint never sees; `lint` depends on it.
+- `//#deploy:skills` — root has its own `skills/`. Skills consumed as `<root>/skills/<name>/SKILL.md` — the `skills` CLI reading a repo tarball, a dotfiles script symlinking a clone — can't move into a package, so a workspace can package everything else and still author skills at the root; `build` depends on it.
+
+Both are monorepo-only: where the root _is_ the lone package, its per-package task already covers those files.
+
+A root task's script _is_ its command, so a root owning one gets no `gtb turbo run <name>` alias for it — the alias would re-enter turbo and trip the recursion guard above. At such a root `pnpm deploy:skills` deploys the root's own skills; `pnpm build` (or `gtb turbo run deploy:skills`) reaches every package's copy.
+
 ### Codegen tasks (`generate:*`)
 
 Any `generate:*` script in a package's `package.json` is picked up as codegen and ordered ahead of `typecheck:ts`, `compile:ts`, and `lint:eslint`, all of which read generated sources.

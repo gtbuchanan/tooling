@@ -107,6 +107,21 @@ export interface ToolFlags {
    * via the per-package task and don't need a separate root task.
    */
   readonly hasRootEslint: boolean;
+  /**
+   * Workspace root carries its own `skills/` and is a monorepo (so root is
+   * distinct from any package). Skills that can't move into a package —
+   * consumers that read `<root>/skills/<name>/SKILL.md` never see a
+   * package's copy — stay at the root, which is otherwise invisible to
+   * {@link hasSkills}. Single-package repos deploy root skills through the
+   * per-package task and need no root task.
+   */
+  readonly hasRootSkills: boolean;
+  /**
+   * Some *package* has authored skills. The root's own copy is
+   * {@link hasRootSkills}: the per-package skills tasks (`compile:skills`,
+   * `pack:npm`'s dep on it) publish skills inside a tarball, which the root
+   * never does.
+   */
   readonly hasSkills: boolean;
   readonly hasTypeScript: boolean;
   readonly hasVitest: boolean;
@@ -143,6 +158,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     hasPklPackage,
     hasPublished,
     hasRootEslint: discovery.isMonorepo && discovery.root.hasEslint,
+    hasRootSkills: discovery.isMonorepo && discovery.root.hasSkills,
     hasSkills: discovery.packages.some(pkg => pkg.hasSkills),
     hasTypeScript,
     hasVitest,
@@ -348,6 +364,21 @@ const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTas
        */
       dependsOn: flags.hasEslint ? [taskNames.lintEslint] : [],
       inputs: [`$TURBO_ROOT$/${skillsConfigFilename}`, 'skills/**'],
+      outputs: [],
+    },
+  },
+  /*
+   * The root's own copy. Its inputs need no `$TURBO_ROOT$` prefix (a root
+   * task already runs there) and no package-glob subtraction the way
+   * `//#lint:eslint` does — both globs are rooted, so neither can reach a
+   * package's `skills/`.
+   */
+  {
+    condition: flags.hasRootSkills,
+    key: rootTaskKey(taskNames.deploySkills),
+    value: {
+      dependsOn: flags.hasRootEslint ? [rootTaskKey(taskNames.lintEslint)] : [],
+      inputs: [skillsConfigFilename, 'skills/**'],
       outputs: [],
     },
   },
