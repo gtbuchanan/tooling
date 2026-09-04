@@ -125,6 +125,25 @@ jobs:
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
+      # Each e2e fixture runs its own `npm install` into a temp project, so
+      # without a warm npm cache every fixture re-downloads the same
+      # dependency closure from the registry — which is what makes the suite's
+      # wall time track registry latency rather than test work, and what puts
+      # tests over their timeout when the registry is slow. This is npm's own
+      # cache and is separate from the pnpm store `turbo-run` restores: nothing
+      # the workspace install populates is visible to a fixture's npm.
+      #
+      # The fixtures pin external packages to the versions resolved in this
+      # workspace, so the lockfile is what decides which tarballs they ask
+      # for. `restore-keys` still gives a partial hit after a bump, where only
+      # the changed packages are fetched.
+      - uses: actions/cache@v4
+        with:
+          key: npm-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          path: ~/.npm
+          restore-keys: |
+            npm-e2e-${{ runner.os }}-
+
       - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
         with:
           task: test:e2e
