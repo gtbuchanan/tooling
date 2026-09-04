@@ -1,6 +1,35 @@
 import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
-import { createGitEnv, matchTarball, pinned, runCommand } from '#src/fixture.js';
+import {
+  createGitEnv, matchTarball, npmInstallArgs, pinned, runCommand,
+} from '#src/fixture.js';
+
+describe.concurrent(npmInstallArgs, () => {
+  it('installs the given specs', ({ expect }) => {
+    const tarball = faker.system.commonFileName('tgz');
+    const spec = `${faker.word.noun()}@1.2.3`;
+
+    const result = npmInstallArgs([tarball, spec]);
+
+    expect(result.slice(0, 3)).toStrictEqual(['install', tarball, spec]);
+  });
+
+  /*
+   * Each fixture runs its own `npm install`, so anything the registry is
+   * asked for is paid per fixture. The audit request alone posts the whole
+   * dependency tree. Specs are already exact versions (see `pinned`), so
+   * revalidating cached metadata buys nothing a fixture can observe — and
+   * when the registry is slow, these round-trips are what pushes an e2e
+   * test past its timeout.
+   */
+  it('asks the registry for nothing it can take from cache', ({ expect }) => {
+    const result = npmInstallArgs([faker.word.noun()]);
+
+    expect(result).toStrictEqual(
+      expect.arrayContaining(['--prefer-offline', '--no-audit', '--no-fund']),
+    );
+  });
+});
 
 describe.concurrent(matchTarball, () => {
   it('matches a scoped package tarball', ({ expect }) => {
