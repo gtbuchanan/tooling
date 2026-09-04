@@ -137,7 +137,7 @@ jobs:
       # workspace, so the lockfile is what decides which tarballs they ask
       # for. `restore-keys` still gives a partial hit after a bump, where only
       # the changed packages are fetched.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           key: npm-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           path: ~/.npm
