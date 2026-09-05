@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, hk:all, hk:base, mise.tasks.toml, compile:ts, pack:npm, deploy:skills, task graph, transit.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -186,6 +186,23 @@ An e2e suite won't catch this on your behalf. A harness that installs each works
 - `gtb hk all [-- <hk args>]` — runs hk across every file.
 
 Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The mise task resolves `gtb` itself per repo shape — see the `mise.tasks.toml` notes above.
+
+## Changeset gate (`gtb changeset check`)
+
+`gtb changeset check` is the PR releasability gate, and runs two checks against one base ref:
+
+1. `changeset status`, delegated to changesets, which fails when a versionable package changed and no changeset exists at all. It runs first because its failure subsumes the second — with no changesets present, every catalog finding would be uncovered too.
+1. The **catalog gate**, which fails when a pnpm catalog change reaches a published package with no changeset releasing it. It exists because `changeset status` maps changed **files** to packages, and a catalog moves every dependency range to `pnpm-workspace.yaml` at the workspace root — which belongs to no package. The bump therefore reads as "no package changed", while pnpm rewrites `catalog:` to the concrete range at pack time, so every consumer's published manifest moves with no version bump behind it.
+
+- `gtb changeset check [--since <ref>] [--ignore <pkg>]` — the base ref defaults to `origin/main`. The catalog half diffs the `catalog:` / `catalogs:` blocks between that ref and HEAD, maps each changed entry to the published packages declaring it, and exits non-zero for any that no changeset covers.
+
+Both halves share one command precisely so they cannot drift onto different base refs.
+
+Both revisions are parsed and compared as maps, so reordering or reformatting `pnpm-workspace.yaml` reports nothing. Only runtime fields count (`dependencies`, `peerDependencies`, `optionalDependencies`) — publishing strips `devDependencies`, so a test-only bump never fires — and bundled dependencies are excluded, matching how `workspaceDependencies` is collected. Private packages and anything in the changesets config's `ignore` are skipped. An empty changeset is **not** coverage: it is the documented way to say "no release", which is the claim the gate exists to challenge. Removed catalog entries are skipped, since orphaning one requires a `package.json` edit that `changeset status` already sees.
+
+The gate is quiet in practice because of Renovate's `rangeStrategy`: under npm's default an in-range bump touches only `pnpm-lock.yaml`, and the catalog is edited only when the new version falls outside the declared range — so a catalog edit is already a range-boundary crossing, exactly the consumer-visible set. Switching to `rangeStrategy: bump` would make every patch update rewrite the catalog and turn the gate into noise.
+
+A repo with no catalog no-ops.
 
 ## Android-Termux setup
 

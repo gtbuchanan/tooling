@@ -22,7 +22,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
     cd.yml                 — Reusable: gtb version (changesets + manifest sync) then gtb publish (npm via OIDC + non-npm channels)
-    changeset-check.yml    — Reusable: verify a changeset exists
+    changeset-check.yml    — Reusable: gtb changeset check (changeset exists + catalog changes reaching published packages are released)
     ci.yml                 — Reusable: build + slow + e2e + coverage
     dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
     pr.yml                 — Pipeline (PR): ci + changeset + deps + pre-commit
@@ -367,8 +367,17 @@ through `package.json` scripts backed by `gtb` leaf commands.
     `true` in `release.yml` to run gtb from source (`pnpm run gtb`), whose
     bin these jobs don't build. This mirrors the `gtbPrefix` repo-shape
     resolution used for generated scripts and mise tasks.
-- **`changeset-check.yml`** — Verifies a changeset exists on every PR.
-  Use `pnpm changeset --empty` for PRs that don't need a version bump.
+- **`changeset-check.yml`** — Runs `gtb changeset check`, which gates
+  releasability twice in one command: `changeset status` for the stock "a
+  changeset exists" requirement (use `pnpm changeset --empty` for PRs that
+  don't need a version bump), then a catalog gate for what `status`
+  structurally cannot see, since a catalog bump edits only the workspace root.
+  One command so both resolve the same base ref; see the `gtb-build-pipeline`
+  skill. The job installs — gtb needs `node_modules` either way, and it shells
+  out to the installed `changeset` bin. The caller must depend on
+  `@gtbuchanan/cli`; the `gtb-from-source` input (default `false`) selects
+  workspace-source execution (`pnpm run gtb`) over the installed bin
+  (`pnpm exec gtb`), exactly as in `cd.yml`.
 - **`dependency-review.yml`** — Two PR gates on newly-changed deps.
   `Dependency Review` runs `actions/dependency-review-action` (fails on
   advisories at `fail-on-severity`, default `moderate`, and on

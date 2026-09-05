@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { generateTaskPrefix } from '../commands/task/names.ts';
+import { type CatalogDependency, defaultCatalogName } from './catalog-gate.ts';
 import type { Manifest } from './manifest.ts';
 import { hasPackageBlock } from './pkl-project.ts';
 import { localeComparer } from './sort.ts';
@@ -19,6 +20,11 @@ export interface PackageCapabilities {
    * Resolved `include` directories from tsconfig.build.json (published packages only).
    */
   readonly buildIncludes: readonly string[];
+  /**
+   * Catalog-backed runtime dependencies, sorted and deduplicated. See
+   * {@link collectCatalogDependencies}.
+   */
+  readonly catalogDependencies: readonly CatalogDependency[];
   /**
    * Package directory path.
    */
@@ -260,6 +266,55 @@ const collectWorkspaceDependencies = (manifest: Manifest): readonly string[] => 
   return [...new Set(names)].toSorted(localeComparer);
 };
 
+const catalogPrefix = 'catalog:';
+
+/**
+ * Resolves the catalog a specifier reads from, or `undefined` when the
+ * specifier isn't catalog-backed. Bare `catalog:` and the explicit
+ * `catalog:default` both name the default catalog.
+ */
+const resolveCatalogName = (specifier: string): string | undefined => {
+  if (!specifier.startsWith(catalogPrefix)) {
+    return undefined;
+  }
+  const named = specifier.slice(catalogPrefix.length).trim();
+
+  return named === '' ? defaultCatalogName : named;
+};
+
+/**
+ * Catalog-backed dependencies this package carries into a consumer's install.
+ *
+ * pnpm rewrites a `catalog:` specifier to the catalog's concrete range at pack
+ * time, so the published manifest changes whenever that range does — which is
+ * why re-ranging a catalog entry is a consumer-visible change even though no
+ * file inside the package moved.
+ *
+ * The field set and the `bundleDependencies` exclusion mirror
+ * {@link collectWorkspaceDependencies} for the same reasons: publishing strips
+ * `devDependencies`, and a bundled dependency ships inside the tarball rather
+ * than resolving from the registry, so neither range reaches a consumer.
+ */
+export const collectCatalogDependencies = (
+  manifest: Manifest,
+): readonly CatalogDependency[] => {
+  const isBundled = bundledPredicate(manifest);
+  const refs = runtimeDependencyFields.flatMap(field =>
+    Object.entries(manifest[field] ?? {})
+      .filter(([name]) => !isBundled(field, name))
+      .flatMap(([name, specifier]) => {
+        const catalog = resolveCatalogName(specifier);
+
+        return catalog === undefined ? [] : [{ catalog, name }];
+      }),
+  );
+  const seen = new Map(refs.map(ref => [`${ref.catalog} ${ref.name}`, ref]));
+
+  return seen.values().toArray().toSorted((left, right) =>
+    localeComparer(left.catalog, right.catalog) ||
+    localeComparer(left.name, right.name));
+};
+
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
     .filter(name => name.startsWith(generateTaskPrefix))
@@ -281,6 +336,7 @@ const buildCapabilities = (
 
   return {
     buildIncludes: isPublished ? resolveBuildIncludes(dir) : buildInclude,
+    catalogDependencies: collectCatalogDependencies(manifest),
     dir,
     generateScripts,
     hasBin: hasDir(dir, 'bin'),
