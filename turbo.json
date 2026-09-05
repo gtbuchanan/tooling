@@ -15,6 +15,35 @@
         "dist/.eslintcache"
       ]
     },
+    "//#typecheck:ts": {
+      "inputs": [
+        "tsconfig.base.json",
+        "bin/**",
+        "scripts/**",
+        "src/**",
+        "test/**",
+        "e2e/**",
+        "*.cjs",
+        "*.cts",
+        "*.js",
+        "*.jsx",
+        "*.mjs",
+        "*.mts",
+        "*.ts",
+        "*.tsx",
+        ".*.cjs",
+        ".*.cts",
+        ".*.js",
+        ".*.jsx",
+        ".*.mjs",
+        ".*.mts",
+        ".*.ts",
+        ".*.tsx",
+        "tsconfig.json",
+        "tsconfig.*.json"
+      ],
+      "outputs": []
+    },
     "build": {
       "dependsOn": [
         "check",
@@ -258,6 +287,7 @@
     "typecheck": {
       "dependsOn": [
         "typecheck:ts",
+        "//#typecheck:ts",
         "typecheck:pkl"
       ]
     },
