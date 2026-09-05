@@ -1,5 +1,12 @@
 # @gtbuchanan/eslint-config
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [79c96d0]
+  - @gtbuchanan/eslint-plugin-agent-skills@1.0.0
+
 ## 0.5.1
 
 ### Patch Changes
