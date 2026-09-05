@@ -23,10 +23,12 @@ describe.concurrent(npmInstallArgs, () => {
    * test past its timeout.
    */
   it('asks the registry for nothing it can take from cache', ({ expect }) => {
-    const result = npmInstallArgs([faker.word.noun()]);
+    const spec = faker.word.noun();
+
+    const result = npmInstallArgs([spec]);
 
     expect(result).toStrictEqual(
-      expect.arrayContaining(['--prefer-offline', '--no-audit', '--no-fund']),
+      expect.arrayContaining([spec, '--prefer-offline', '--no-audit', '--no-fund']),
     );
   });
 });
