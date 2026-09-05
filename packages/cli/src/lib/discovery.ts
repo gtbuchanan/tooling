@@ -216,15 +216,27 @@ const readEntries = (dir: string): readonly Dirent[] => {
 };
 
 /*
+ * What tsc excludes when a config declares no `exclude` of its own, which
+ * the generated type-check config does not. A file under one of these is not
+ * an input, so finding one there must not make an otherwise-empty root look
+ * checkable. The default also covers `outDir`, which needs no entry here:
+ * it is conventionally `dist/`, and the walk only ever enters the directories
+ * the type-check `include` names.
+ */
+const defaultExcludedDirectories = new Set([
+  'bower_components', 'jspm_packages', 'node_modules',
+]);
+
+/*
  * Answers "any TypeScript under here?" by walking until the first hit.
  * `readdirSync`'s own `recursive` option would materialize every descendant
  * to answer a question the first match settles, and discovery runs this for
- * each package on every `gtb` invocation. `node_modules` is skipped because
- * tsc's default `exclude` skips it too, so a file found there is not an input.
+ * each package on every `gtb` invocation.
  */
 const hasTypeScriptWithin = (dir: string): boolean =>
   readEntries(dir).some(entry => (entry.isDirectory()
-    ? entry.name !== 'node_modules' && hasTypeScriptWithin(path.join(dir, entry.name))
+    ? !defaultExcludedDirectories.has(entry.name) &&
+    hasTypeScriptWithin(path.join(dir, entry.name))
     : isTypeScriptSource(entry)));
 
 /*

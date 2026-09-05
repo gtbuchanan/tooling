@@ -95,18 +95,21 @@ describe.concurrent('typescript source discovery', () => {
   });
 
   /*
-   * tsc's own default `exclude` skips node_modules, so a dependency's
-   * sources are not inputs and must not make an otherwise-empty root
-   * look checkable.
+   * A config that sets no `exclude` gets tsc's default — node_modules,
+   * bower_components, jspm_packages — so a dependency's sources are not
+   * inputs and must not make an otherwise-empty root look checkable.
    */
-  it('ignores typescript inside node_modules', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(path.join(dir, 'src', 'node_modules', 'dep'), { recursive: true });
-    writeFile(dir, path.join('src', 'node_modules', 'dep', 'index.ts'));
+  it.for(['bower_components', 'jspm_packages', 'node_modules'])(
+    'ignores typescript inside %s',
+    (excluded, { expect }) => {
+      const dir = createTempDir();
+      writeJson(dir, 'package.json', {});
+      mkdirSync(path.join(dir, 'src', excluded, 'dep'), { recursive: true });
+      writeFile(dir, path.join('src', excluded, 'dep', 'index.ts'));
 
-    const result = discoverPackage(dir);
+      const result = discoverPackage(dir);
 
-    expect(result.hasTypeScriptSources).toBe(false);
-  });
+      expect(result.hasTypeScriptSources).toBe(false);
+    },
+  );
 });
