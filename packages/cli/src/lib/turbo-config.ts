@@ -117,6 +117,15 @@ export interface ToolFlags {
    */
   readonly hasRootSkills: boolean;
   /**
+   * Workspace root has TypeScript of its own to check and is a monorepo (so
+   * root is distinct from any package). Reads the root's
+   * `hasTypeScriptSources` rather than its `hasTypeScript`: `gtb sync`
+   * writes a root `tsconfig.json` unconditionally, so the latter is true at
+   * every synced root, and a task gated on it would run tsc over a root with
+   * nothing to check — TS18003, an error rather than a no-op.
+   */
+  readonly hasRootTypeScript: boolean;
+  /**
    * Some *package* has authored skills. The root's own copy is
    * {@link hasRootSkills}: the per-package skills tasks (`compile:skills`,
    * `pack:npm`'s dep on it) publish skills inside a tarball, which the root
@@ -141,6 +150,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasPklPackage = discovery.packages.some(pkg => pkg.hasPklPackage);
   const hasPublished = discovery.packages.some(pkg => pkg.isPublished);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
+  const hasRootTypeScript = discovery.isMonorepo && discovery.root.hasTypeScriptSources;
   const compileIncludes = [...new Set(
     discovery.packages.flatMap(pkg => (pkg.isPublished ? pkg.buildIncludes : [])),
   )].toSorted(localeComparer);
@@ -148,7 +158,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   return {
     compileIncludes,
     generateScripts,
-    hasCheck: hasTypeScript || hasEslint || hasVitest || hasPkl,
+    hasCheck: hasTypeScript || hasEslint || hasVitest || hasPkl || hasRootTypeScript,
     hasE2e: discovery.root.hasVitestE2e || discovery.packages.some(pkg => pkg.hasVitestE2e),
     hasEslint,
     hasGenerate: generateScripts.length > 0,
@@ -159,6 +169,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     hasPublished,
     hasRootEslint: discovery.isMonorepo && discovery.root.hasEslint,
     hasRootSkills: discovery.isMonorepo && discovery.root.hasSkills,
+    hasRootTypeScript,
     hasSkills: discovery.packages.some(pkg => pkg.hasSkills),
     hasTypeScript,
     hasVitest,
@@ -351,6 +362,34 @@ const rootLintTasks = (
   },
 ];
 
+/*
+ * The root's own type check. Like `//#lint:eslint` it declares no
+ * `dependsOn`: `generate` and `transit` are package tasks, and turbo resolves
+ * a bare dep name against the task's own package, so naming either from the
+ * root would dangle rather than reach the packages. Nothing is lost on the
+ * artifact side — workspace packages export TypeScript source in-workspace,
+ * so the root type-checks against sources without waiting on a compile.
+ *
+ * The inputs need no `$TURBO_ROOT$` prefix (a root task already runs there)
+ * and no package-glob subtraction: `toTurboGlobs` expands `*` and `.*` to
+ * root-level file patterns rather than recursive ones, and the named
+ * directories are the root's own.
+ */
+const rootTypecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
+  {
+    condition: flags.hasRootTypeScript,
+    key: rootTaskKey(taskNames.typecheckTs),
+    value: {
+      inputs: [
+        'tsconfig.base.json',
+        ...typeCheckInclude.flatMap(toTurboGlobs),
+        'tsconfig.json', 'tsconfig.*.json',
+      ],
+      outputs: [],
+    },
+  },
+];
+
 const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
     condition: flags.hasSkills,
@@ -397,6 +436,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     ...pklTasks(flags),
     ...lintTasks(flags),
     ...rootLintTasks(flags, discovery.packageGlobs),
+    ...rootTypecheckTasks(flags),
     ...testTasks(flags),
     ...deploySkillsTasks(flags),
     ...aggregateTasks(flags, discovery.isMonorepo),

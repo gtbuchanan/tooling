@@ -281,6 +281,27 @@ describe.concurrent(generateRequiredRootScripts, () => {
     expect(result).not.toHaveProperty('deploy:skills');
   });
 
+  it('adds root typecheck:ts when the monorepo root has TypeScript sources', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf(), {
+      hasTypeScript: true,
+      hasTypeScriptSources: true,
+    });
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result).toHaveProperty('typecheck:ts', 'gtb task typecheck:ts');
+  });
+
+  it('omits root typecheck:ts when the root tsconfig has no sources', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf({ hasTypeScript: true }), {
+      hasTypeScript: true,
+    });
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result).not.toHaveProperty('typecheck:ts');
+  });
+
   it('omits root lint:eslint when root has no ESLint', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasEslint: true })],

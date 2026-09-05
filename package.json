@@ -21,6 +21,7 @@
     "prepare": "pnpm run gtb prepare",
     "test:e2e": "pnpm run gtb turbo run test:e2e",
     "test:slow": "pnpm run gtb turbo run test:slow",
+    "typecheck:ts": "pnpm run gtb task typecheck:ts",
     "verify": "pnpm run gtb verify"
   },
   "devDependencies": {
@@ -46,7 +47,7 @@
     "valibot": "catalog:",
     "vitest": "catalog:"
   },
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@11.25.0",
   "engines": {
     "node": ">=24.0.0",
     "pnpm": ">=11.0.0"

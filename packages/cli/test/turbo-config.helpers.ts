@@ -19,6 +19,7 @@ export const makeCapabilities = (
     hasSrc: false,
     hasTest: false,
     hasTypeScript: false,
+    hasTypeScriptSources: false,
     hasVitest: false,
     hasVitestE2e: false,
     hasVitestTests: false,

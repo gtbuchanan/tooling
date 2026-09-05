@@ -97,8 +97,13 @@ Work owned by the workspace root rather than any package is emitted as a turbo r
 
 - `//#lint:eslint` — root has its own `eslint.config.*`. Lints root files per-package lint never sees; `lint` depends on it.
 - `//#deploy:skills` — root has its own `skills/`. Skills consumed as `<root>/skills/<name>/SKILL.md` — the `skills` CLI reading a repo tarball, a dotfiles script symlinking a clone — can't move into a package, so a workspace can package everything else and still author skills at the root; `build` depends on it.
+- `//#typecheck:ts` — root has TypeScript of its own, typically the `eslint.config.ts` / `vitest.config.ts` that per-package `typecheck:ts` never sees; `typecheck` depends on it.
 
-Both are monorepo-only: where the root _is_ the lone package, its per-package task already covers those files.
+All are monorepo-only: where the root _is_ the lone package, its per-package task already covers those files.
+
+**`//#typecheck:ts` keys on sources, not on a tsconfig.** Sync writes a root `tsconfig.json` at every workspace root, so its presence says nothing about whether there is anything to check — and a config whose `include` matches no file is an error to tsc (`TS18003`), not a no-op. The task is therefore emitted only when the root actually holds a TypeScript file that `include` reaches: a root-level `*.ts`, or one nested under `bin/`, `scripts/`, `src/`, `test/`, or `e2e/`.
+
+**Root tasks declare no `dependsOn`.** `generate` and `transit` are package tasks, and turbo resolves a bare dependency name against the task's own package, so naming either from the root dangles rather than reaching the packages. Nothing is lost on the artifact side: workspace packages export TypeScript source in-workspace, so the root type-checks and lints against sources without waiting on a compile.
 
 A root task's script _is_ its command, so a root owning one gets no `gtb turbo run <name>` alias for it — the alias would re-enter turbo and trip the recursion guard above. At such a root `pnpm deploy:skills` deploys the root's own skills; `pnpm build` (or `gtb turbo run deploy:skills`) reaches every package's copy.
 

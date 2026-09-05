@@ -129,6 +129,11 @@ const rootLeafScriptEntries = (
       key: taskNames.deploySkills,
       value: taskCmd(isSelfHosted, taskNames.deploySkills),
     },
+    {
+      condition: flags.hasRootTypeScript,
+      key: taskNames.typecheckTs,
+      value: taskCmd(isSelfHosted, taskNames.typecheckTs),
+    },
   ];
 };
 
