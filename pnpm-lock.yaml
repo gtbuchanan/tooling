@@ -14,7 +14,7 @@ catalogs:
       version: 4.7.2
     '@eslint/json':
       specifier: ^2.0.1
-      version: 2.0.1
+      version: 2.1.0
     '@eslint/markdown':
       specifier: ^8.0.3
       version: 8.0.3
@@ -294,7 +294,7 @@ importers:
         version: 4.7.2(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))
       '@eslint/json':
         specifier: 'catalog:'
-        version: 2.0.1
+        version: 2.1.0
       '@eslint/markdown':
         specifier: 'catalog:'
         version: 8.0.3(supports-color@7.2.0)
@@ -342,7 +342,7 @@ importers:
         version: 1.2.1
       eslint-plugin-pnpm:
         specifier: 'catalog:'
-        version: 1.8.0(@eslint/json@2.0.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))
+        version: 1.8.0(@eslint/json@2.1.0)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-promise:
         specifier: 'catalog:'
         version: 7.3.0(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))
@@ -411,7 +411,7 @@ importers:
     devDependencies:
       '@eslint/json':
         specifier: 'catalog:'
-        version: 2.0.1
+        version: 2.1.0
       '@eslint/markdown':
         specifier: 'catalog:'
         version: 8.0.3(supports-color@7.2.0)
@@ -761,8 +761,8 @@ packages:
     resolution: {integrity: sha512-iPmijIAq4hlIJB86PYmY/fcZORHtjphSqICDbwuw32A/JmkhZQ/K/6TjHE03zqf3n5yABpVcbRAMG8Mi9ojy8g==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@eslint/json@2.0.1':
-    resolution: {integrity: sha512-Thz2j92ceUF3Bq/0TuWb3MWn3Z+Cwc8k5ptF0fakl2D4Mp8mSx07Xr1aQM4R5NoihzarWUdxfOmQ8DesGy4jOg==}
+  '@eslint/json@2.1.0':
+    resolution: {integrity: sha512-Zcg+SXHmdAlo+0ZFwxOvDQye2zxhaFCu/CPdJTsMDSEYZXkX67AWvdwzhI/YdPYNW68Q1Tr1Rv2SsuUZydnjBg==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
   '@eslint/markdown@8.0.3':
@@ -3140,7 +3140,7 @@ snapshots:
       mdn-data: 2.29.0
       source-map-js: 1.2.1
 
-  '@eslint/json@2.0.1':
+  '@eslint/json@2.1.0':
     dependencies:
       '@eslint/core': 1.2.1
       '@eslint/plugin-kit': 0.7.2
@@ -3864,13 +3864,13 @@ snapshots:
     optionalDependencies:
       unrs-resolver: 1.11.1
 
-  eslint-json-compat-utils@0.2.3(@eslint/json@2.0.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(jsonc-eslint-parser@3.3.0):
+  eslint-json-compat-utils@0.2.3(@eslint/json@2.1.0)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(jsonc-eslint-parser@3.3.0):
     dependencies:
       eslint: 10.9.1(jiti@2.7.0)(supports-color@7.2.0)
       esquery: 1.7.0
       jsonc-eslint-parser: 3.3.0
     optionalDependencies:
-      '@eslint/json': 2.0.1
+      '@eslint/json': 2.1.0
 
   eslint-parser-plain@0.1.1: {}
 
@@ -3947,11 +3947,11 @@ snapshots:
 
   eslint-plugin-only-warn@1.2.1: {}
 
-  eslint-plugin-pnpm@1.8.0(@eslint/json@2.0.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0)):
+  eslint-plugin-pnpm@1.8.0(@eslint/json@2.1.0)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0)):
     dependencies:
       empathic: 2.0.1
       eslint: 10.9.1(jiti@2.7.0)(supports-color@7.2.0)
-      eslint-json-compat-utils: 0.2.3(@eslint/json@2.0.1)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(jsonc-eslint-parser@3.3.0)
+      eslint-json-compat-utils: 0.2.3(@eslint/json@2.1.0)(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(jsonc-eslint-parser@3.3.0)
       jsonc-eslint-parser: 3.3.0
       pathe: 2.0.3
       pnpm-workspace-yaml: 1.8.0
