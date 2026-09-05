@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { type Dirent, existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { generateTaskPrefix } from '../commands/task/names.ts';
 import type { Manifest } from './manifest.ts';
@@ -194,21 +194,38 @@ const isTypeScriptFile = (name: string): boolean =>
   typeScriptExtensions.some(ext => name.endsWith(ext));
 
 /*
+ * A name is not a source: a *directory* called `types.ts` matches the
+ * extension, and counting it would generate a task for a root with nothing
+ * to check — the TS18003 failure this whole signal exists to prevent.
+ * `isFile()` also excludes symlinks, which cannot pose as sources for the
+ * same reason. The asymmetry is deliberate: missing a real source costs a
+ * check that was never generated before, while inventing one breaks a build.
+ */
+const isTypeScriptSource = (entry: Dirent): boolean =>
+  entry.isFile() && isTypeScriptFile(entry.name);
+
+/**
+ * Lists a directory's entries, or nothing when it cannot be read.
+ */
+const readEntries = (dir: string): readonly Dirent[] => {
+  try {
+    return readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+};
+
+/*
  * Answers "any TypeScript under here?" by walking until the first hit.
  * `readdirSync`'s own `recursive` option would materialize every descendant
  * to answer a question the first match settles, and discovery runs this for
  * each package on every `gtb` invocation. `node_modules` is skipped because
  * tsc's default `exclude` skips it too, so a file found there is not an input.
  */
-const hasTypeScriptWithin = (dir: string): boolean => {
-  try {
-    return readdirSync(dir, { withFileTypes: true }).some(entry => (entry.isDirectory()
-      ? entry.name !== 'node_modules' && hasTypeScriptWithin(path.join(dir, entry.name))
-      : isTypeScriptFile(entry.name)));
-  } catch {
-    return false;
-  }
-};
+const hasTypeScriptWithin = (dir: string): boolean =>
+  readEntries(dir).some(entry => (entry.isDirectory()
+    ? entry.name !== 'node_modules' && hasTypeScriptWithin(path.join(dir, entry.name))
+    : isTypeScriptSource(entry)));
 
 /*
  * Mirrors what the generated type-check config includes: root-level files
@@ -218,8 +235,8 @@ const hasTypeScriptWithin = (dir: string): boolean => {
  */
 const typeCheckDirectories = typeCheckInclude.filter(entry => !entry.includes('*'));
 
-const hasTypeCheckSources = (dir: string, files: readonly string[]): boolean =>
-  files.some(isTypeScriptFile) ||
+const hasTypeCheckSources = (dir: string): boolean =>
+  readEntries(dir).some(isTypeScriptSource) ||
   typeCheckDirectories.some(name => hasTypeScriptWithin(path.join(dir, name)));
 
 /**
@@ -341,7 +358,7 @@ const buildCapabilities = (
     hasSrc: hasDir(dir, 'src'),
     hasTest,
     hasTypeScript: hasDep(deps, '@gtbuchanan/tsconfig') || files.includes('tsconfig.json'),
-    hasTypeScriptSources: hasTypeCheckSources(dir, files),
+    hasTypeScriptSources: hasTypeCheckSources(dir),
     hasVitest,
     hasVitestE2e: hasFilePrefix(files, 'vitest.config.e2e'),
     hasVitestTests: hasVitest && hasTest,

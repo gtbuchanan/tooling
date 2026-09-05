@@ -69,6 +69,32 @@ describe.concurrent('typescript source discovery', () => {
   });
 
   /*
+   * A name is not a source. Counting a *directory* called `types.ts` would
+   * generate a task for a root with nothing to check, which is the TS18003
+   * failure this signal exists to prevent — so the check reads entry type,
+   * not just the extension.
+   */
+  it('ignores a directory named like a TypeScript file', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    mkdirSync(path.join(dir, 'types.ts'));
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasTypeScriptSources).toBe(false);
+  });
+
+  it('ignores a like-named directory nested in an included directory', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    mkdirSync(path.join(dir, 'src', 'types.ts'), { recursive: true });
+
+    const result = discoverPackage(dir);
+
+    expect(result.hasTypeScriptSources).toBe(false);
+  });
+
+  /*
    * tsc's own default `exclude` skips node_modules, so a dependency's
    * sources are not inputs and must not make an otherwise-empty root
    * look checkable.
