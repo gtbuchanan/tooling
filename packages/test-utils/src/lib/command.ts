@@ -39,6 +39,23 @@ export const createGitEnv = (identity?: { email: string; name: string }): GitEnv
   }),
 });
 
+/*
+ * Every fixture stands up its own project and installs into it, so each one
+ * pays for whatever the registry is asked for. The specs are already exact
+ * versions — tarball paths, and `pinned()` output for externals — so nothing
+ * a fixture can observe depends on revalidating cached metadata, and the
+ * audit request posts the whole dependency tree for a report no test reads.
+ * Left in, those round-trips dominate the suite's wall time and are what
+ * pushes tests past their timeout whenever the registry is slow.
+ */
+const offlineFirstFlags = ['--prefer-offline', '--no-audit', '--no-fund'];
+
+/**
+ * Builds the argv for a fixture's `npm install`, given the specs to install.
+ */
+export const npmInstallArgs = (specs: readonly string[]): readonly string[] =>
+  ['install', ...specs, ...offlineFirstFlags];
+
 /**
  * Synchronous exec helper used by fixture setup (`npm init`, `npm install`).
  * Throws on spawn error or non-zero exit. Internal to the test-utils package.

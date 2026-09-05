@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { exec } from './lib/command.ts';
+import { exec, npmInstallArgs } from './lib/command.ts';
 import { pinned, resolveTarballs } from './lib/tarball.ts';
 
 interface IsolatedFixtureOptions {
@@ -24,7 +24,7 @@ export interface IsolatedFixture {
 
 const npmInit = (cwd: string, packages: readonly string[]): void => {
   exec('npm', ['init', '-y'], { cwd });
-  exec('npm', ['install', ...packages], { cwd });
+  exec('npm', npmInstallArgs(packages), { cwd });
 };
 
 const createSubdir = (parent: string, name: string): string => {

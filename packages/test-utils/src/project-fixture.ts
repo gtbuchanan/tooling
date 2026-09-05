@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { type TestAPI, it as base } from 'vitest';
-import { type CommandResult, exec, runCommand } from './lib/command.ts';
+import { type CommandResult, exec, npmInstallArgs, runCommand } from './lib/command.ts';
 import { pinned, resolveTarballs } from './lib/tarball.ts';
 
 interface ProjectFixtureOptions {
@@ -33,7 +33,7 @@ export const createProjectFixture = (
 
   const pinnedPkgs = (options.packages ?? []).map(pinned);
   exec('npm', ['init', '-y', '--init-type', 'module'], { cwd: projectDir });
-  exec('npm', ['install', ...tarballs, ...pinnedPkgs], { cwd: projectDir });
+  exec('npm', npmInstallArgs([...tarballs, ...pinnedPkgs]), { cwd: projectDir });
 
   const writeFile = (name: string, content: string): string => {
     const filePath = path.join(projectDir, name);
