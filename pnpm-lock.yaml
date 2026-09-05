@@ -74,7 +74,7 @@ catalogs:
       version: 4.17.1
     eslint-plugin-jsdoc:
       specifier: ^64.0.0
-      version: 64.2.1
+      version: 64.3.4
     eslint-plugin-n:
       specifier: ^18.2.2
       version: 18.3.0
@@ -333,7 +333,7 @@ importers:
         version: 4.17.1(@typescript-eslint/utils@8.68.0(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
       eslint-plugin-jsdoc:
         specifier: 'catalog:'
-        version: 64.2.1(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
+        version: 64.3.4(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-n:
         specifier: 'catalog:'
         version: 18.3.0(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
@@ -1701,8 +1701,8 @@ packages:
       eslint-import-resolver-node:
         optional: true
 
-  eslint-plugin-jsdoc@64.2.1:
-    resolution: {integrity: sha512-6GpSYxLPcbMw38S94Cngrgs1Zv8yLinQS1O17OxJVZ6deLbrMRCERUYQKceweSqEuG2kx5Amn4l3aKPkCp4geQ==}
+  eslint-plugin-jsdoc@64.3.4:
+    resolution: {integrity: sha512-aZZp44/yc6UTuH6U+cp1IVTTImfP2gd4JTuc+zMoB76ZI746avwbAqbdTejlKDFIYl6gBBhx3FG+jTRPZjnSXw==}
     engines: {node: ^22.22.2 || >=24.15.0}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
@@ -3911,10 +3911,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-jsdoc@64.2.1(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0):
+  eslint-plugin-jsdoc@64.3.4(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3):
     dependencies:
       '@es-joy/jsdoccomment': 0.95.1
       '@es-joy/resolve.exports': 1.2.0
+      '@typescript-eslint/utils': 8.68.0(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       are-docs-informative: 0.1.1
       comment-parser: 1.4.8
       debug: 4.4.3(supports-color@7.2.0)
@@ -3930,6 +3931,7 @@ snapshots:
       to-valid-identifier: 1.0.0
     transitivePeerDependencies:
       - supports-color
+      - typescript
 
   eslint-plugin-n@18.3.0(eslint@10.9.1(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3):
     dependencies:
