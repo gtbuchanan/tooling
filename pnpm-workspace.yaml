@@ -46,7 +46,7 @@ catalog:
   prettier-plugin-sort-json: ^4.2.0
   prettier-plugin-toml: ^2.0.6
   skills: 1.5.23
-  skills-npm: 1.2.0
+  skills-npm: 1.2.1
   smol-toml: ^1.7.0
   turbo: ^2.5.4
   typescript: ^6.0.0
