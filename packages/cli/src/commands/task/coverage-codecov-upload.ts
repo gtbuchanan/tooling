@@ -3,7 +3,7 @@ import path from 'node:path';
 import { defineCommand } from 'citty';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
-import { codecovName } from '../../lib/codecov-config.ts';
+import { codecovName } from '../../lib/codecov-name.ts';
 import { discoverPackage } from '../../lib/discovery.ts';
 import { run } from '../../lib/process.ts';
 
