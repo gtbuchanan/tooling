@@ -15,10 +15,7 @@ import {
 } from './helpers.ts';
 
 interface ConsumerProject {
-  /**
-   * `flag` is the Codecov flag/component name: the unscoped manifest name.
-   */
-  readonly app: { basename: string; dir: string; flag: string; name: string };
+  readonly app: { basename: string; dir: string; name: string };
   readonly root: string;
 }
 
@@ -29,8 +26,8 @@ const createConsumerProject = (): ConsumerProject => {
      calls could collide and let an assertion pass against the basename. */
   const appSeed = build.packageName();
   const appBasename = `${appSeed}-dir`;
-  const appFlag = `${appSeed}-flag`;
-  const appName = `@${appSeed}-scope/${appFlag}`;
+  const appUnscoped = `${appSeed}-name`;
+  const appName = `@${appSeed}-scope/${appUnscoped}`;
 
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
@@ -64,7 +61,7 @@ const createConsumerProject = (): ConsumerProject => {
   writeFileSync(path.join(appDir, 'vitest.config.ts'), '');
 
   return {
-    app: { basename: appBasename, dir: appDir, flag: appFlag, name: appName },
+    app: { basename: appBasename, dir: appDir, name: appName },
     root,
   };
 };
@@ -168,69 +165,6 @@ describe.concurrent(runVerify, () => {
     const drift = runVerify({ cwd: root, ignored: new Set(['typecheck:ts']) });
 
     expect(drift).toHaveLength(0);
-  });
-
-  it('reports drift when codecov.yml has invalid YAML', ({ expect }) => {
-    const { root } = createConsumerProject();
-    initProject(root);
-    writeFileSync(path.join(root, 'codecov.yml'), 'invalid: [}');
-
-    const drift = runVerify({ cwd: root });
-
-    expect(drift.some(msg => msg.includes('codecov.yml'))).toBe(true);
-  });
-
-  it('reports drift when codecov.yml is empty', ({ expect }) => {
-    const { root } = createConsumerProject();
-    initProject(root);
-    writeFileSync(path.join(root, 'codecov.yml'), '');
-
-    const drift = runVerify({ cwd: root });
-
-    expect(drift.some(msg => msg.includes('codecov.yml'))).toBe(true);
-  });
-
-  it('reports drift when a codecov flag is missing', ({ expect }) => {
-    const { app, root } = createConsumerProject();
-    initProject(root);
-    writeFileSync(
-      path.join(root, 'codecov.yml'),
-      'flags: {}\ncomponent_management:\n  individual_components: []\n',
-    );
-
-    const drift = runVerify({ cwd: root });
-
-    expect(drift.some(msg => msg.includes(`missing flag '${app.flag}'`))).toBe(true);
-  });
-
-  it('ignored set suppresses missing codecov flag drift', ({ expect }) => {
-    const { app, root } = createConsumerProject();
-    initProject(root);
-    writeFileSync(
-      path.join(root, 'codecov.yml'),
-      'codecov:\n  require_ci_to_pass: false\n' +
-      'flags: {}\ncomponent_management:\n  individual_components: []\n',
-    );
-
-    const drift = runVerify({ cwd: root, ignored: new Set([app.flag]) });
-
-    expect(drift).toHaveLength(0);
-  });
-
-  it('reports drift when codecov.require_ci_to_pass is true', ({ expect }) => {
-    const { app, root } = createConsumerProject();
-    initProject(root);
-    writeFileSync(
-      path.join(root, 'codecov.yml'),
-      'codecov:\n  require_ci_to_pass: true\n' +
-      'flags: {}\ncomponent_management:\n  individual_components: []\n',
-    );
-
-    const drift = runVerify({ cwd: root, ignored: new Set([app.flag]) });
-
-    expect(drift).toStrictEqual([
-      'codecov.yml: codecov.require_ci_to_pass must be false (run gtb sync)',
-    ]);
   });
 
   it('skips the mise include check when there is no mise.toml', ({ expect }) => {

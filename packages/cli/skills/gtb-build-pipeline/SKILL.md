@@ -159,11 +159,10 @@ Several tasks write the published output directory, each declaring `outputs` for
 - per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json` (scope: `tsconfig`)
 - per-package + root `package.json` scripts (scope: `scripts`)
 - `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml` (scope: `mise`)
-- `codecov.yml` flags + components (scope: `codecov`)
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
-**Codecov flag/component names.** Derived from each package's unscoped `package.json` name (`@acme/utils` → `utils`), falling back to the directory basename only when a package declares no name — the basename belongs to the checkout, so a worktree or a differently-named clone would regenerate a different `codecov.yml` and drift-fail `gtb verify` in CI. The same derivation backs the `-F` flag `coverage:codecov:upload` sends, so uploads always land under a declared flag. Two packages whose names collide after scope-stripping are a sync error (Codecov keys flags by name); two sharing a directory basename are fine.
+**Codecov flags and gating.** `coverage:codecov:upload` names each flag after the package's unscoped `package.json` name (`@acme/utils` → `utils`), never the directory basename, which a worktree or clone renames. Packages colliding after scope-stripping silently share a flag. The leaf is uncached (`cache: false`) so every commit reaches Codecov: a cached skip leaves no report and so no status, and a required check that never reports blocks a PR forever. `codecov.yml` declares no per-flag statuses; the two repo-wide `coverage.status` checks cover every package and are the ones to require.
 
 **The base tsconfig.** Every generated config extends `./tsconfig.base.json`, the one tsconfig the consumer hand-authors to pick a shared `@gtbuchanan/tsconfig` variant. Sync scaffolds it (extending `@gtbuchanan/tsconfig/node.json`) only when absent and never overwrites it, so an edited variant survives re-sync. `gtb verify` checks its presence — not its contents — since a missing base silently breaks every generated config's `extends`.
 
@@ -173,7 +172,7 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 `mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify mise` asserts the include is present. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
 
-`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The `mise`/`codecov` checks self-skip when the repo doesn't use those tools (no `mise.toml` / no vitest tests).
+`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The `mise` check self-skips when the repo has no `mise.toml`.
 
 Most checks compare a file against what sync would generate. The `turbo` scope carries one that doesn't: the `generate:*` package configurations described above are author-owned, so verify asserts they exist and are wired correctly instead of regenerating them (`--ignore generate:<name>` opts a script out).
 

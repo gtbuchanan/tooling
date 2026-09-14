@@ -1,7 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import * as v from 'valibot';
-import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
-import type { CodecovSections } from './codecov-config.ts';
 import { ManifestSchema } from './manifest.ts';
 import { UnknownRecord } from './schemas.ts';
 import { localeComparer } from './sort.ts';
@@ -100,64 +98,4 @@ export const mergePackageScripts = (
   writeJsonFile(path, raw);
 
   return { added, skipped };
-};
-
-/**
- * Writes a YAML object to a file with single-quoted strings, a leading
- * `---` document-start marker, and a trailing newline. The marker keeps
- * generated output in sync with the `yamllint/document-start` rule, so
- * a follow-up `eslint --fix` pass cannot reintroduce drift.
- */
-export const writeYamlFile = (path: string, data: unknown): void => {
-  writeFileSync(path, stringifyYaml(data, { directives: true, singleQuote: true }));
-};
-
-/*
-Non-object values (e.g. `codecov: true`) fall back to `{}` so sync repairs them.
-*/
-const EmptyObjectFallback = v.fallback(v.looseObject({}), {});
-
-const ExistingCodecovSchema = v.nullable(
-  v.looseObject({
-    codecov: v.optional(EmptyObjectFallback),
-    component_management: v.optional(EmptyObjectFallback),
-  }),
-);
-
-/**
- * Merges generated codecov sections into a `codecov.yml` file.
- * Overwrites `flags`, `component_management.individual_components`, and the
- * tooling-owned top-level `codecov` settings (e.g. `require_ci_to_pass`)
- * with the generated values. Preserves all other keys, including
- * `component_management.default_rules` and any other `codecov.*` subkeys.
- * Creates the file if it does not exist.
- * Throws if the existing file contains invalid YAML.
- */
-export const mergeCodecovSections = (path: string, sections: CodecovSections): void => {
-  let rawYaml: unknown;
-  if (existsSync(path)) {
-    try {
-      rawYaml = parseYaml(readFileSync(path, 'utf8'));
-    } catch {
-      throw new Error(`${path}: invalid YAML — fix or delete it and re-run gtb sync`);
-    }
-  }
-  const existing = v.parse(v.optional(ExistingCodecovSchema), rawYaml) ?? {};
-  const existingCodecov = existing.codecov ?? {};
-  const existingComponentMgmt = existing.component_management ?? {};
-
-  const merged = {
-    ...existing,
-    codecov: {
-      ...existingCodecov,
-      ...sections.codecov,
-    },
-    component_management: {
-      ...existingComponentMgmt,
-      individual_components: sections.component_management.individual_components,
-    },
-    flags: sections.flags,
-  };
-
-  writeYamlFile(path, sortKeysDeep(merged));
 };

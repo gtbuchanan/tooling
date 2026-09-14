@@ -5,11 +5,8 @@ import { Writable } from 'node:stream';
 import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
-import { generateCodecovSections } from '#src/lib/codecov-config.js';
 import { type PackageCapabilities, discoverWorkspace } from '#src/lib/discovery.js';
-import {
-  mergeCodecovSections, mergePackageScripts, writeJsonFile,
-} from '#src/lib/file-writer.js';
+import { mergePackageScripts, writeJsonFile } from '#src/lib/file-writer.js';
 import type { GithubReleaseDeps } from '#src/lib/github-release.js';
 import { type Logger, createLogger } from '#src/lib/logger.js';
 import { ManifestSchema, unscopedName } from '#src/lib/manifest.js';
@@ -325,7 +322,7 @@ export const readScripts = (pkgDir: string): Record<string, string> => {
 };
 
 /**
- * Initializes a fully valid project state (turbo.json, tsconfigs, scripts, codecov.yml).
+ * Initializes a fully valid project state (turbo.json, tsconfigs, scripts).
  */
 export const initProject = (root: string): void => {
   const discovery = discoverWorkspace({ cwd: root });
@@ -341,12 +338,5 @@ export const initProject = (root: string): void => {
       ...manifest,
       scripts: { ...manifest.scripts, ...scripts },
     });
-  }
-
-  if (discovery.packages.some(pkg => pkg.hasVitestTests)) {
-    mergeCodecovSections(
-      path.join(root, 'codecov.yml'),
-      generateCodecovSections(discovery),
-    );
   }
 };

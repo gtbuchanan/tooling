@@ -2,7 +2,6 @@ import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import * as v from 'valibot';
-import { checkCodecovSections } from '../../lib/codecov-verify.ts';
 import { type WorkspaceDiscovery, discoverWorkspace } from '../../lib/discovery.ts';
 import { readJsonFile } from '../../lib/file-writer.ts';
 import { checkGenerateConfigs } from '../../lib/generate-tasks.ts';
@@ -248,8 +247,8 @@ export interface RunVerifyOptions {
 
 /**
  * Validates the artifacts selected by `scopes` (default all) against the
- * baseline from discovery (empty result = no drift). The codecov/mise
- * checks self-skip when the repo lacks those tools.
+ * baseline from discovery (empty result = no drift). The mise check
+ * self-skips when the repo lacks that tool.
  */
 export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
   const cwd = options.cwd ?? process.cwd();
@@ -258,9 +257,6 @@ export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => 
   const discovery = discoverWorkspace({ cwd });
 
   const checks: Record<SyncScope, () => readonly string[]> = {
-    codecov: () => (discovery.packages.some(pkg => pkg.hasVitestTests)
-      ? checkCodecovSections(discovery.rootDir, discovery, ignored)
-      : []),
     manifest: () => [
       ...checkManifests(discovery),
       ...checkPublishableDependencies(discovery),

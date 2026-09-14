@@ -19,9 +19,9 @@ After installing, generate your `turbo.json` and per-package scripts:
 pnpm exec gtb sync
 ```
 
-This reconciles `turbo.json`, tsconfigs, `package.json` scripts, and
-`codecov.yml` with the current workspace. Re-run after adding packages
-or changing capabilities.
+This reconciles `turbo.json`, tsconfigs, and `package.json` scripts
+with the current workspace. Re-run after adding packages or changing
+capabilities.
 
 Run the pipeline via the `gtb turbo` wrapper (generated root scripts
 delegate to it so Android/Termux users get a transparent escape hatch):
@@ -88,12 +88,12 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 
 ### Root commands
 
-| Command   | Purpose                                                 |
-| --------- | ------------------------------------------------------- |
-| `verify`  | Validate generated config against workspace state       |
-| `sync`    | Reconcile `turbo.json`, tsconfigs, scripts, codecov.yml |
-| `turbo`   | Run turbo (with an Android escape hatch)                |
-| `prepare` | Sync skills from installed packages                     |
+| Command   | Purpose                                           |
+| --------- | ------------------------------------------------- |
+| `verify`  | Validate generated config against workspace state |
+| `sync`    | Reconcile `turbo.json`, tsconfigs, scripts        |
+| `turbo`   | Run turbo (with an Android escape hatch)          |
+| `prepare` | Sync skills from installed packages               |
 
 ### Task leaves (`gtb task <name>`)
 

@@ -34,11 +34,11 @@
     },
     {
       "expectations": [
-        "Explains `gtb sync` reconciles generated state — covers turbo.json, per-package tsconfigs, package.json scripts, codecov.yml",
+        "Explains `gtb sync` reconciles generated state — covers turbo.json, per-package tsconfigs, package.json scripts",
         "Explains `gtb verify` validates no drift; exits non-zero if anything is out of sync; intended as a CI drift gate",
         "Mentions that without `--force`, `gtb sync` preserves existing script values (so consumers keep custom overrides)"
       ],
-      "expected_output": "Activates skill. Explains: `gtb sync` reconciles generated state — `turbo.json` tasks and aggregates, per-package `tsconfig.json`/`tsconfig.build.json`, per-package and root `package.json` scripts, `codecov.yml` flags. Without `--force`, existing script values are preserved (consumers keep custom overrides); use `--force` to reset to defaults. `gtb verify` validates no drift from the expected baseline and exits non-zero if anything is out of sync; run in CI as a drift gate.",
+      "expected_output": "Activates skill. Explains: `gtb sync` reconciles generated state — `turbo.json` tasks and aggregates, per-package `tsconfig.json`/`tsconfig.build.json`, per-package and root `package.json` scripts. Without `--force`, existing script values are preserved (consumers keep custom overrides); use `--force` to reset to defaults. `gtb verify` validates no drift from the expected baseline and exits non-zero if anything is out of sync; run in CI as a drift gate.",
       "files": [],
       "id": 4,
       "prompt": "What's the difference between `gtb sync` and `gtb verify`?"
