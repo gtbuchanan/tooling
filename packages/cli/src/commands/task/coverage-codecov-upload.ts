@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import { findUpSync } from 'find-up-simple';
@@ -19,26 +19,12 @@ const PullRequestEventSchema = v.object({
 
 const mergedLcov = 'dist/coverage/vitest/merged/lcov.info';
 const fastLcov = 'dist/coverage/vitest/fast/lcov.info';
-/*
- * Turbo output sentinel. Writing this file after a successful upload
- * lets turbo cache the task — on cache hit (same lcov inputs), turbo
- * skips the upload entirely. Codecov flag carryforward covers the gap
- * for unchanged packages. Must match the `outputs` in turbo.json.
- */
-const sentinelDir = 'dist/coverage/codecov';
-const sentinelFile = path.join(sentinelDir, '.uploaded');
-
 const resolveNetworkRoot = (): string => {
   const cwd = process.cwd();
   const gitPath = findUpSync('.git', { cwd });
   return process.env['GITHUB_WORKSPACE'] ??
     (gitPath === undefined ? undefined : path.dirname(gitPath)) ??
     cwd;
-};
-
-const writeSentinel = (): void => {
-  mkdirSync(sentinelDir, { recursive: true });
-  writeFileSync(sentinelFile, '');
 };
 
 const resolveLcov = (): string | undefined => {
@@ -128,7 +114,5 @@ export const coverageCodecovUpload = defineCommand({
         ...rawArgs,
       ],
     });
-
-    writeSentinel();
   },
 });

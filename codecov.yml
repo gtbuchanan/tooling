@@ -38,31 +38,24 @@ coverage:
 # moment it first uploads and cannot be forgotten into having none.
 flag_management:
   default_rules:
-    # Load-bearing rather than a safety net: turbo caches the upload leaf on
-    # lcov content, so an unchanged package genuinely does not upload, and
-    # Codecov reads a missing flag as 0%.
+    # A safety net rather than the mechanism. `coverage:codecov:upload` is
+    # uncached, so every package uploads on every commit and there is normally
+    # no gap to carry over; this covers the run that skips one anyway — a
+    # filtered build, a leaf that failed before reporting — by holding that
+    # package's last known coverage instead of dropping it from the report,
+    # which Codecov would otherwise read as 0%.
     #
     # Its limit, worth knowing before trusting a green check: Codecov cannot
     # distinguish coverage it carried forward from coverage that never arrived,
     # so an upload that quietly stops happening reports its last value
-    # indefinitely. `release.yml` re-runs CI on main, which is what corrects a
-    # one-off failed upload.
+    # indefinitely.
+    #
+    # No `statuses` here on purpose. A per-flag check would post for all twelve
+    # packages on every commit, burying the ones that moved, and the set would
+    # shift as packages come and go — so it could never be a stable branch
+    # protection requirement. The repo-wide checks above are the gate: they
+    # name no flags, so they cover every package at once under one context.
     carryforward: true
-    statuses:
-      # `include` is the default, and is written out because the alternatives
-      # are what monorepo advice reaches for and neither is wanted here.
-      # `exclude` drops the check for a flag with no new upload, so the set of
-      # checks varies per pull request — indistinguishable, to a branch
-      # protection rule, from a check that has not reported yet. `pass` returns
-      # green without reference to coverage, discarding the carried-forward
-      # number that is the reason carryforward is on above.
-      - flag_coverage_not_uploaded_behavior: include
-        target: auto
-        threshold: 1%
-        type: project
-      - flag_coverage_not_uploaded_behavior: include
-        target: 80%
-        type: patch
 
 # Belt and braces against a report that widens. `@gtbuchanan/vitest-config`
 # collects from `bin/`, `scripts/` and `src/` alone, so these match nothing

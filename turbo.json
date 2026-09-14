@@ -103,15 +103,10 @@
       ]
     },
     "coverage:codecov:upload": {
+      "cache": false,
       "env": [
         "CI",
         "CODECOV_TOKEN"
-      ],
-      "inputs": [
-        "dist/coverage/vitest/**/lcov.info"
-      ],
-      "outputs": [
-        "dist/coverage/codecov/.uploaded"
       ]
     },
     "coverage:merge": {
