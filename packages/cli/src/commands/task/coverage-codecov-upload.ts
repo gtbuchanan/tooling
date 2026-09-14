@@ -112,6 +112,13 @@ export const coverageCodecovUpload = defineCommand({
 
     await run('codecov', {
       args: [
+        /*
+         * An option of `codecov` rather than of `upload-process`, so it
+         * precedes the subcommand — the CLI rejects it after with `No such
+         * option`. Nothing here reads the telemetry, and its flush holds the
+         * process open at the end of every upload.
+         */
+        '--disable-telem',
         'upload-process',
         '--disable-search',
         '--network-root-folder', resolveNetworkRoot(),

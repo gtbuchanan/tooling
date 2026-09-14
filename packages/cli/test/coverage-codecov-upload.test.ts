@@ -136,6 +136,22 @@ describe('coverage:codecov:upload', () => {
     expect(getRunArgs()).toContain('dist/coverage/vitest/fast/lcov.info');
   });
 
+  it('disables telemetry ahead of the subcommand', async ({ expect }) => {
+    vi.stubEnv('CI', 'true');
+    mockExistsSync.mockReturnValue(true);
+
+    await invoke([]);
+
+    const args = getRunArgs();
+
+    /* `--disable-telem` is an option of `codecov`, not of `upload-process`;
+       the CLI rejects it after the subcommand with `No such option`. Assert
+       presence separately — a bare index comparison passes vacuously when the
+       flag is absent, since indexOf returns -1. */
+    expect(args).toContain('--disable-telem');
+    expect(args.indexOf('--disable-telem')).toBeLessThan(args.indexOf('upload-process'));
+  });
+
   it('passes the unscoped package name as flag', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
     mockExistsSync.mockReturnValue(true);
