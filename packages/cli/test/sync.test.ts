@@ -4,7 +4,6 @@ import { Writable } from 'node:stream';
 import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import { describe, it } from 'vitest';
-import { parse as parseYaml } from 'yaml';
 import { runSync, syncCommand } from '#src/commands/root/sync.js';
 import { discoverWorkspace } from '#src/lib/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
@@ -27,10 +26,6 @@ const silentLogger = createLogger(silentSink, silentSink);
 interface ConsumerPackage {
   readonly basename: string;
   readonly dir: string;
-  /**
-   * Codecov flag/component name: the unscoped manifest name.
-   */
-  readonly flag: string;
   readonly name: string;
 }
 
@@ -44,15 +39,14 @@ const createConsumerProject = (): ConsumerProject => {
   const root = createTempDir();
   /* Every directory basename and unscoped manifest name is suffixed from one
      seed, so all six are distinct by construction. Independent builder calls
-     could collide — either letting an assertion pass against the basename, or
-     making the two packages share a flag and fail as a duplicate. */
+     could collide and let an assertion pass against the basename. */
   const seed = build.packageName();
   const appBasename = `${seed}-app-dir`;
-  const appFlag = `${seed}-app-flag`;
-  const appName = `@${seed}-scope/${appFlag}`;
+  const appUnscoped = `${seed}-app-name`;
+  const appName = `@${seed}-scope/${appUnscoped}`;
   const libBasename = `${seed}-lib-dir`;
-  const libFlag = `${seed}-lib-flag`;
-  const libName = `@${seed}-scope/${libFlag}`;
+  const libUnscoped = `${seed}-lib-name`;
+  const libName = `@${seed}-scope/${libUnscoped}`;
 
   writeFileSync(
     path.join(root, 'pnpm-workspace.yaml'),
@@ -102,8 +96,8 @@ const createConsumerProject = (): ConsumerProject => {
   writeFileSync(path.join(libDir, 'eslint.config.ts'), '');
 
   return {
-    app: { basename: appBasename, dir: appDir, flag: appFlag, name: appName },
-    lib: { basename: libBasename, dir: libDir, flag: libFlag, name: libName },
+    app: { basename: appBasename, dir: appDir, name: appName },
+    lib: { basename: libBasename, dir: libDir, name: libName },
     root,
   };
 };
@@ -284,36 +278,6 @@ describe.concurrent(runSync, () => {
 
     expect(existsSync(path.join(root, 'mise.tasks.toml'))).toBe(true);
     expect(existsSync(path.join(root, 'turbo.json'))).toBe(false);
-  });
-
-  it('generates codecov.yml when packages have vitest tests', ({ expect }) => {
-    const { app, root } = createConsumerProject();
-    runSync({ cwd: root, logger: silentLogger });
-
-    const codecovPath = path.join(root, 'codecov.yml');
-
-    expect(existsSync(codecovPath)).toBe(true);
-
-    const content = readFileSync(codecovPath, 'utf8');
-
-    expect(content).toContain(`${app.flag}:`);
-    expect(content).not.toContain(`${app.basename}:`);
-    expect(content).toContain('carryforward');
-  });
-
-  it('preserves user config but forces require_ci_to_pass false', ({ expect }) => {
-    const { root } = createConsumerProject();
-    writeFileSync(
-      path.join(root, 'codecov.yml'),
-      'codecov:\n  require_ci_to_pass: true\ncomment:\n  require_changes: true\n',
-    );
-
-    runSync({ cwd: root, logger: silentLogger });
-
-    const parsed: unknown = parseYaml(readFileSync(path.join(root, 'codecov.yml'), 'utf8'));
-
-    expect(parsed).toHaveProperty('codecov.require_ci_to_pass', false);
-    expect(parsed).toHaveProperty('comment.require_changes', true);
   });
 
   it('force overwrites existing scripts', ({ expect }) => {

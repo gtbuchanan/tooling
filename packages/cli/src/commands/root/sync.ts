@@ -1,12 +1,11 @@
 import { statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
-import { generateCodecovSections } from '../../lib/codecov-config.ts';
 import {
   type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace,
 } from '../../lib/discovery.ts';
 import {
-  type MergeResult, mergeCodecovSections, mergePackageScripts, sortKeysDeep, writeJsonFile,
+  type MergeResult, mergePackageScripts, sortKeysDeep, writeJsonFile,
 } from '../../lib/file-writer.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
 import { generateManifests } from '../../lib/manifest-sync.ts';
@@ -91,15 +90,6 @@ const writeManifests = (logger: Logger, discovery: WorkspaceDiscovery): void => 
   }
 };
 
-const writeCodecovConfig = (logger: Logger, discovery: WorkspaceDiscovery): void => {
-  if (discovery.packages.every(pkg => !pkg.hasVitestTests)) {
-    return;
-  }
-  const filePath = path.join(discovery.rootDir, 'codecov.yml');
-  mergeCodecovSections(filePath, generateCodecovSections(discovery));
-  logger.info(`wrote ${filePath}`);
-};
-
 const writeTurboJson = (logger: Logger, discovery: WorkspaceDiscovery): void => {
   writeSortedAndLog(
     logger, path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery),
@@ -159,8 +149,8 @@ export interface RunSyncOptions {
  * Reconciles generated config with the current workspace state.
  *
  * Writes the artifacts selected by `scopes` (default all): `turbo.json`,
- * per-package tsconfigs, `package.json` scripts, `mise.tasks.toml` (when
- * the root has a `mise.toml`), and `codecov.yml`. With `force: false`
+ * per-package tsconfigs, `package.json` scripts, and `mise.tasks.toml`
+ * (when the root has a `mise.toml`). With `force: false`
  * (default), existing script values are preserved; with `force: true`,
  * they're overwritten.
  */
@@ -172,7 +162,6 @@ export const runSync = (options: RunSyncOptions = {}): void => {
   const discovery = discoverWorkspace({ cwd });
 
   const writers: Record<SyncScope, () => void> = {
-    codecov: () => { writeCodecovConfig(logger, discovery); },
     manifest: () => { writeManifests(logger, discovery); },
     mise: () => { writeMiseTasks(logger, discovery); },
     scripts: () => { writeAllScripts(logger, discovery, shouldForce); },

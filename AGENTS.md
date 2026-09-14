@@ -7,6 +7,7 @@ TypeScript, Vitest configuration, and a shared build CLI.
 
 ```text
 README.md              — Consumer-facing documentation
+codecov.yml            — Hand-authored; per-package rules via flag_management.default_rules, so adding a package needs no edit
 default.json           — Shareable Renovate preset (consumed via `github>gtbuchanan/tooling`)
 hk.pkl                 — hk pre-commit hook config (Pkl); imports packages/hk-config/Defaults.pkl
 mise.lock              — Per-platform binary checksums + download URLs
