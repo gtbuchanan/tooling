@@ -1,9 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
+import * as build from '#src/builders.js';
 import {
   createGitEnv, matchTarball, npmInstallArgs, pinned, runCommand,
 } from '#src/fixture.js';
 import {
+  type ExecRunner,
   exec, formatExecError, isStaleMetadataFailure, npmInstall,
 } from '#src/lib/command.js';
 
@@ -86,16 +88,24 @@ describe.concurrent(isStaleMetadataFailure, () => {
   });
 });
 
+interface RecordedCall {
+  readonly args: readonly string[];
+  readonly cwd: string | undefined;
+}
+
 /**
- * An {@link npmInstall} runner that records each attempt's argv and fails the
- * nth attempt with `failures[n]`, so the retry policy can be exercised without
- * reaching a registry.
+ * An {@link npmInstall} runner that records each attempt's argv and working
+ * directory, and fails the nth attempt with `failures[n]`, so the retry policy
+ * can be exercised without reaching a registry.
  */
 const recordingRunner = (failures: readonly string[]) => {
-  const calls: (readonly string[])[] = [];
-  const run = (_command: string, args: readonly string[]): void => {
+  const calls: RecordedCall[] = [];
+  const run: ExecRunner = (_command, args, options) => {
     const failure = failures[calls.length];
-    calls.push(args);
+    calls.push({
+      args,
+      cwd: typeof options.cwd === 'string' ? options.cwd : undefined,
+    });
     if (failure !== undefined) {
       throw new Error(failure);
     }
@@ -104,13 +114,17 @@ const recordingRunner = (failures: readonly string[]) => {
 };
 
 describe.concurrent(npmInstall, () => {
-  it('installs once when the first attempt succeeds', ({ expect }) => {
+  it('installs the given specs into the given directory', ({ expect }) => {
+    const cwd = faker.system.directoryPath();
+    const spec = build.scopedPackageName();
     const { calls, run } = recordingRunner([]);
 
-    npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+    npmInstall(cwd, [spec], run);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toContain('--prefer-offline');
+    expect(calls[0]).toMatchObject({ cwd });
+    expect(calls[0]?.args).toContain(spec);
+    expect(calls[0]?.args).toContain('--prefer-offline');
   });
 
   /*
@@ -120,13 +134,17 @@ describe.concurrent(npmInstall, () => {
    * the registry rather than report the version missing.
    */
   it('retries against the registry after a stale-metadata failure', ({ expect }) => {
+    const cwd = faker.system.directoryPath();
+    const spec = build.scopedPackageName();
     const { calls, run } = recordingRunner([staleMetadataOutput]);
 
-    npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+    npmInstall(cwd, [spec], run);
 
     expect(calls).toHaveLength(2);
-    expect(calls[1]).toContain('--prefer-online');
-    expect(calls[1]).not.toContain('--prefer-offline');
+    expect(calls[1]).toMatchObject({ cwd });
+    expect(calls[1]?.args).toContain(spec);
+    expect(calls[1]?.args).toContain('--prefer-online');
+    expect(calls[1]?.args).not.toContain('--prefer-offline');
   });
 
   it('rethrows an unrelated failure without retrying', ({ expect }) => {
@@ -134,7 +152,7 @@ describe.concurrent(npmInstall, () => {
     const { calls, run } = recordingRunner([marker]);
 
     expect(() => {
-      npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+      npmInstall(faker.system.directoryPath(), [build.scopedPackageName()], run);
     }).toThrow(new RegExp(marker, 'v'));
     expect(calls).toHaveLength(1);
   });
@@ -143,7 +161,7 @@ describe.concurrent(npmInstall, () => {
     const { calls, run } = recordingRunner([staleMetadataOutput, staleMetadataOutput]);
 
     expect(() => {
-      npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+      npmInstall(faker.system.directoryPath(), [build.scopedPackageName()], run);
     }).toThrow(/ETARGET/v);
     expect(calls).toHaveLength(2);
   });
