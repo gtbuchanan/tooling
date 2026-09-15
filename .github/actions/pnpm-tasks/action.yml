@@ -21,15 +21,38 @@ runs:
         restore-keys: |
           pnpm-${{ runner.os }}-
 
-    # HACK: pnpm has bugs around reporting peer resolution issues, so we
-    # call twice — the second pass catches what the first silently misses.
-    # https://github.com/pnpm/pnpm/issues/7087
-    # https://github.com/pnpm/pnpm/issues/8433
     - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      shell: bash
+
+    # The install above reports nothing about peers: strictPeerDependencies is
+    # enforced during resolution, and a frozen install skips resolution while
+    # the lockfile is up to date. So without this step a mismatch reaches CI
+    # unremarked however the consumer configured pnpm.
+    #
+    # What the setting does still express is whether a mismatch ought to be
+    # fatal, so read it rather than decide for the consumer: a repository that
+    # set it gets the failure it asked for, and one that did not gets a warning
+    # instead of a build break it never opted into.
+    - name: Check peer dependencies
       run: |
-        pnpm install --frozen-lockfile
-        pnpm install --prefer-frozen-lockfile --resolution-only
-        git checkout -- pnpm-lock.yaml
+        set -euo pipefail
+        if pnpm peers check; then
+          exit 0
+        fi
+        # Strip with bash's own expansion rather than tr: this step's job is to
+        # decide whether a mismatch is fatal, so a missing external binary would
+        # fail the very repository the non-strict branch exists to keep passing.
+        strict="$(pnpm config get strict-peer-dependencies)"
+        strict="${strict//[[:space:]]/}"
+        if [ "$strict" = "true" ]; then
+          msg="Unmet peer dependencies, and strictPeerDependencies is set."
+          echo "::error::$msg"
+          exit 1
+        fi
+        msg="Unmet peer dependencies. Set strictPeerDependencies in"
+        msg="$msg pnpm-workspace.yaml to make this fail the build."
+        echo "::warning::$msg"
       shell: bash
 
     - env:
