@@ -57,16 +57,78 @@ export const npmInstallArgs = (specs: readonly string[]): readonly string[] =>
   ['install', ...specs, ...offlineFirstFlags];
 
 /**
+ * A failed {@link exec}, as {@link formatExecError} receives it.
+ */
+export interface ExecFailure {
+  readonly args: readonly string[];
+  readonly command: string;
+  readonly status: number | null;
+  readonly stderr: string;
+  readonly stdout: string;
+}
+
+const maxOutputLines = 40;
+
+/**
+ * Builds the message for a failed {@link exec}, appending the tail of whatever
+ * the child wrote. A fixture's `npm install` reports its cause in one line —
+ * `npm error notarget No matching version found for …` — and discarding it
+ * leaves only an exit code, which names no cause at all.
+ */
+export const formatExecError = (failure: ExecFailure): string => {
+  const summary = `${[failure.command, ...failure.args].join(' ')} exited with ${String(
+    failure.status,
+  )}`;
+  const output = [failure.stdout, failure.stderr]
+    .map(stream => stream.trim())
+    .filter(stream => stream !== '')
+    .join('\n');
+  if (output === '') {
+    return summary;
+  }
+  const lines = output.split(/\r?\n/v);
+  const tail = lines.slice(-maxOutputLines);
+  const notice = tail.length < lines.length
+    ? [`… truncated to the last ${String(maxOutputLines)} lines`]
+    : [];
+  return [summary, '', ...notice, ...tail].join('\n');
+};
+
+const decodeStream = (stream: string | Buffer | null): string => {
+  if (stream === null) {
+    return '';
+  }
+  return typeof stream === 'string' ? stream : stream.toString('utf8');
+};
+
+/*
+ * Captured rather than discarded, so a failure carries its cause. 10MB is
+ * ~1000x what a fixture's `npm install` emits with `--no-fund --no-audit` on a
+ * non-TTY; past it spawnSync reports ENOBUFS, which still beats silence.
+ */
+const maxOutputBytes = 10_000_000;
+
+/**
  * Synchronous exec helper used by fixture setup (`npm init`, `npm install`).
  * Throws on spawn error or non-zero exit. Internal to the test-utils package.
  */
 export const exec = (command: string, args: readonly string[], options: SpawnSyncOptions): void => {
-  const result = crossSpawn.sync(command, [...args], { ...options, stdio: 'ignore' });
+  const result = crossSpawn.sync(command, [...args], {
+    ...options,
+    maxBuffer: maxOutputBytes,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
   if (result.error) {
     throw result.error;
   }
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} exited with ${String(result.status)}`);
+    throw new Error(formatExecError({
+      args,
+      command,
+      status: result.status,
+      stderr: decodeStream(result.stderr),
+      stdout: decodeStream(result.stdout),
+    }));
   }
 };
 
