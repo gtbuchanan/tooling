@@ -155,10 +155,13 @@ export const exec = (command: string, args: readonly string[], options: SpawnSyn
 };
 
 /*
- * npm reports both codes for the same condition — `ETARGET` as the code and
- * `notarget` on each detail line — and prints them for no other failure.
+ * Anchored to npm's own diagnostic line, because the message this reads begins
+ * with the whole command: an unanchored code would match a package whose name
+ * spells it and buy a retry every genuine failure then pays for. npm reports
+ * both codes for the same condition — `ETARGET` as the code and `notarget` on
+ * each detail line — and has spelled the prefix `npm ERR!` in past majors.
  */
-const staleMetadataPattern = /ETARGET|notarget/v;
+const staleMetadataPattern = /^npm (?:error|ERR!) (?:code ETARGET\b|notarget\b)/mv;
 
 /**
  * Whether a failed install is npm resolving against a stale packument: it

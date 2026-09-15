@@ -67,6 +67,23 @@ describe.concurrent(isStaleMetadataFailure, () => {
 
     expect(isStaleMetadataFailure(linkBinsFailure)).toBe(false);
   });
+
+  /*
+   * The message carries the whole command line ahead of the child's output,
+   * so a spec that merely spells the code would otherwise buy a retry that
+   * every genuine failure then pays for.
+   */
+  it('does not claim a failure whose spec merely spells the code', ({ expect }) => {
+    const message = formatExecError({
+      args: ['install', 'notarget-utils@1.0.0'],
+      command: 'npm',
+      status: 1,
+      stderr: 'npm error code ENOENT',
+      stdout: '',
+    });
+
+    expect(isStaleMetadataFailure(message)).toBe(false);
+  });
 });
 
 /**
