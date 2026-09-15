@@ -1,5 +1,28 @@
 # @gtbuchanan/hk-config
 
+## 0.4.0
+
+### Minor Changes
+
+- 91f9b71: Bump the hk package imports to v1.58.1
+
+  `Defaults.pkl` imports `Config.pkl` and `Builtins.pkl` from a
+  version-pinned hk release URL, so consumers of the preset resolve
+  whichever hk the pin names. Move that pin to v1.58.1, matching the
+  version `mise.toml` installs.
+
+  Every step in the preset evaluates against the new schema unchanged, so
+  a consumer that tracks the pin needs no edit of its own.
+
+  hk 1.58.1 is the first release mise installs through the `packslip`
+  backend rather than `aqua` (`registry/hk.toml` declares
+  `min_version = "1.58.1"` on that backend), which rewrites the `hk`
+  entry in a consumer's `mise.lock`: each platform gains a `signer` field
+  naming hk's release workflow and loses `url_api`. Regenerate the entry
+  with `mise lock hk` under mise 2026.9.5 or newer. Earlier mise resolves
+  no platforms for 1.58.1 and leaves the old entry in place, which then
+  fails every `MISE_LOCKED=1` install.
+
 ## 0.3.0
 
 ### Minor Changes
