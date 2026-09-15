@@ -53,7 +53,9 @@ jobs:
       - id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.APP_ID }}
+          # Input rename only — `client-id` replaces the deprecated `app-id`,
+          # and the JWT `iss` claim it feeds accepts an App ID either way.
+          client-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       # `gtb version` needs node_modules (the local changeset bin + gtb itself).
