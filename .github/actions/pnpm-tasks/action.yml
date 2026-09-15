@@ -21,15 +21,14 @@ runs:
         restore-keys: |
           pnpm-${{ runner.os }}-
 
-    # HACK: pnpm has bugs around reporting peer resolution issues, so we
-    # call twice — the second pass catches what the first silently misses.
-    # https://github.com/pnpm/pnpm/issues/7087
-    # https://github.com/pnpm/pnpm/issues/8433
     - name: Install dependencies
-      run: |
-        pnpm install --frozen-lockfile
-        pnpm install --prefer-frozen-lockfile --resolution-only
-        git checkout -- pnpm-lock.yaml
+      run: pnpm install --frozen-lockfile
+      shell: bash
+
+    # A frozen install skips resolution, so unmet peers never surface, even
+    # under strictPeerDependencies. This step fails the build on them.
+    - name: Check peer dependencies
+      run: pnpm peers check
       shell: bash
 
     - env:
