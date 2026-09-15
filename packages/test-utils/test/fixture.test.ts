@@ -3,6 +3,7 @@ import { describe, it } from 'vitest';
 import {
   createGitEnv, matchTarball, npmInstallArgs, pinned, runCommand,
 } from '#src/fixture.js';
+import { exec, formatExecError } from '#src/lib/command.js';
 
 describe.concurrent(npmInstallArgs, () => {
   it('installs the given specs', ({ expect }) => {
@@ -132,6 +133,103 @@ describe.concurrent(runCommand, () => {
     const result = await runCommand('node', ['-e', 'process.exit(42)'], {});
 
     expect(result.exitCode).toBe(42);
+  });
+});
+
+describe.concurrent(formatExecError, () => {
+  it('names the command and its exit status', ({ expect }) => {
+    const command = faker.word.noun();
+    const arg = faker.word.noun();
+
+    const result = formatExecError({
+      args: [arg],
+      command,
+      status: 3,
+      stderr: '',
+      stdout: '',
+    });
+
+    expect(result).toContain(`${command} ${arg}`);
+    expect(result).toContain('3');
+  });
+
+  it('includes what the child wrote to stderr', ({ expect }) => {
+    const marker = faker.string.alphanumeric(12);
+
+    const result = formatExecError({
+      args: [],
+      command: faker.word.noun(),
+      status: 1,
+      stderr: `npm error notarget ${marker}`,
+      stdout: '',
+    });
+
+    expect(result).toContain(marker);
+  });
+
+  it('includes what the child wrote to stdout', ({ expect }) => {
+    const marker = faker.string.alphanumeric(12);
+
+    const result = formatExecError({
+      args: [],
+      command: faker.word.noun(),
+      status: 1,
+      stderr: '',
+      stdout: marker,
+    });
+
+    expect(result).toContain(marker);
+  });
+
+  /*
+   * A failed `npm install` can emit far more than a reader needs, and the
+   * diagnosis is always at the end. Keeping the tail bounds the message
+   * without discarding the part that names the cause.
+   */
+  it('keeps the tail of long output and says it truncated', ({ expect }) => {
+    const first = faker.string.alphanumeric(12);
+    const last = faker.string.alphanumeric(12);
+    const filler = Array.from({ length: 200 }, () => faker.string.alphanumeric(8));
+
+    const result = formatExecError({
+      args: [],
+      command: faker.word.noun(),
+      status: 1,
+      stderr: [first, ...filler, last].join('\n'),
+      stdout: '',
+    });
+
+    expect(result).toContain(last);
+    expect(result).not.toContain(first);
+    expect(result).toMatch(/truncat/iv);
+  });
+
+  it('stays a single line when the child wrote nothing', ({ expect }) => {
+    const result = formatExecError({
+      args: [],
+      command: faker.word.noun(),
+      status: 1,
+      stderr: '   \n  ',
+      stdout: '',
+    });
+
+    expect(result.split('\n')).toHaveLength(1);
+  });
+});
+
+describe.concurrent(exec, () => {
+  it('surfaces the child stderr in the thrown error', ({ expect }) => {
+    const marker = faker.string.alphanumeric(12);
+
+    expect(() => {
+      exec('node', ['-e', `console.error(${JSON.stringify(marker)}); process.exit(3)`], {});
+    }).toThrow(new RegExp(marker, 'v'));
+  });
+
+  it('does not throw when the command succeeds', ({ expect }) => {
+    expect(() => {
+      exec('node', ['-e', 'process.exit(0)'], {});
+    }).not.toThrow();
   });
 });
 
