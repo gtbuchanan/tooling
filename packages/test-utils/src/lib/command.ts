@@ -41,20 +41,42 @@ export const createGitEnv = (identity?: { email: string; name: string }): GitEnv
 
 /*
  * Every fixture stands up its own project and installs into it, so each one
- * pays for whatever the registry is asked for. The specs are already exact
- * versions — tarball paths, and `pinned()` output for externals — so nothing
- * a fixture can observe depends on revalidating cached metadata, and the
- * audit request posts the whole dependency tree for a report no test reads.
- * Left in, those round-trips dominate the suite's wall time and are what
- * pushes tests past their timeout whenever the registry is slow.
+ * pays for whatever the registry is asked for, and the audit request posts the
+ * whole dependency tree for a report no test reads. Left in, those round-trips
+ * dominate the suite's wall time and are what pushes tests past their timeout
+ * whenever the registry is slow.
+ *
+ * Trusting the cache costs correctness, which is why `npmInstall` exists: a
+ * packument cached before a version was published reports that version as
+ * nonexistent, and the specs being exact is what exposes the fixture to it
+ * rather than what protects it. The retry pays the round-trip only then.
  */
 const offlineFirstFlags = ['--prefer-offline', '--no-audit', '--no-fund'];
+
+const revalidateFlags = ['--prefer-online', '--no-audit', '--no-fund'];
+
+/**
+ * Options for {@link npmInstallArgs}.
+ */
+export interface NpmInstallArgsOptions {
+  /**
+   * Reach the registry for metadata instead of trusting the cache.
+   * @defaultValue false
+   */
+  readonly revalidate?: boolean;
+}
 
 /**
  * Builds the argv for a fixture's `npm install`, given the specs to install.
  */
-export const npmInstallArgs = (specs: readonly string[]): readonly string[] =>
-  ['install', ...specs, ...offlineFirstFlags];
+export const npmInstallArgs = (
+  specs: readonly string[],
+  options: NpmInstallArgsOptions = {},
+): readonly string[] => [
+  'install',
+  ...specs,
+  ...(options.revalidate === true ? revalidateFlags : offlineFirstFlags),
+];
 
 /**
  * A failed {@link exec}, as {@link formatExecError} receives it.
@@ -129,6 +151,58 @@ export const exec = (command: string, args: readonly string[], options: SpawnSyn
       stderr: decodeStream(result.stderr),
       stdout: decodeStream(result.stdout),
     }));
+  }
+};
+
+/*
+ * npm reports both codes for the same condition — `ETARGET` as the code and
+ * `notarget` on each detail line — and prints them for no other failure.
+ */
+const staleMetadataPattern = /ETARGET|notarget/v;
+
+/**
+ * Whether a failed install is npm resolving against a stale packument: it
+ * reports a version as nonexistent because the cached metadata predates the
+ * version's publication, rather than because the version does not exist.
+ */
+export const isStaleMetadataFailure = (message: string): boolean =>
+  staleMetadataPattern.test(message);
+
+/**
+ * Runs a command the way {@link exec} does. Injected so {@link npmInstall}'s
+ * retry can be exercised without reaching a registry.
+ */
+export type ExecRunner = (
+  command: string,
+  args: readonly string[],
+  options: SpawnSyncOptions,
+) => void;
+
+const messageOf = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+/**
+ * Installs `specs` into `cwd`, retrying against the registry when the first
+ * attempt fails the way a stale packument makes it fail.
+ *
+ * `--prefer-offline` bypasses staleness checks and fetches only what is
+ * missing, so a packument cached before a version was published reports that
+ * version as nonexistent. A dependency bump leaves the cache in exactly that
+ * state, which is when the fixtures run. Retrying only on that signature keeps
+ * every genuine failure as fast as it was.
+ */
+export const npmInstall = (
+  cwd: string,
+  specs: readonly string[],
+  run: ExecRunner = exec,
+): void => {
+  try {
+    run('npm', npmInstallArgs(specs), { cwd });
+  } catch (error) {
+    if (!isStaleMetadataFailure(messageOf(error))) {
+      throw error;
+    }
+    run('npm', npmInstallArgs(specs, { revalidate: true }), { cwd });
   }
 };
 

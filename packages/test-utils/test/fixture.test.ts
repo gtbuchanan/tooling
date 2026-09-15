@@ -3,7 +3,9 @@ import { describe, it } from 'vitest';
 import {
   createGitEnv, matchTarball, npmInstallArgs, pinned, runCommand,
 } from '#src/fixture.js';
-import { exec, formatExecError } from '#src/lib/command.js';
+import {
+  exec, formatExecError, isStaleMetadataFailure, npmInstall,
+} from '#src/lib/command.js';
 
 describe.concurrent(npmInstallArgs, () => {
   it('installs the given specs', ({ expect }) => {
@@ -31,6 +33,102 @@ describe.concurrent(npmInstallArgs, () => {
     expect(result).toStrictEqual(
       expect.arrayContaining([spec, '--prefer-offline', '--no-audit', '--no-fund']),
     );
+  });
+
+  it('reaches the registry when asked to revalidate', ({ expect }) => {
+    const spec = faker.word.noun();
+
+    const result = npmInstallArgs([spec], { revalidate: true });
+
+    expect(result).toContain('--prefer-online');
+    expect(result).not.toContain('--prefer-offline');
+  });
+});
+
+/*
+ * Verbatim npm output, so the predicate is pinned to what npm actually prints
+ * rather than to a paraphrase that drifts from it.
+ */
+const staleMetadataOutput = [
+  'npm error code ETARGET',
+  'npm error notarget No matching version found for eslint-plugin-unicorn@^74.0.0.',
+].join('\n');
+
+describe.concurrent(isStaleMetadataFailure, () => {
+  it('recognizes npm resolving against a stale packument', ({ expect }) => {
+    expect(isStaleMetadataFailure(staleMetadataOutput)).toBe(true);
+  });
+
+  it('does not claim an unrelated install failure', ({ expect }) => {
+    const linkBinsFailure = [
+      '[ENOENT] ENOENT: no such file or directory, mkdir',
+      "  '/home/runner/work/tooling/node_modules/.pnpm/pkg/node_modules/.bin'",
+    ].join('\n');
+
+    expect(isStaleMetadataFailure(linkBinsFailure)).toBe(false);
+  });
+});
+
+/**
+ * An {@link npmInstall} runner that records each attempt's argv and fails the
+ * nth attempt with `failures[n]`, so the retry policy can be exercised without
+ * reaching a registry.
+ */
+const recordingRunner = (failures: readonly string[]) => {
+  const calls: (readonly string[])[] = [];
+  const run = (_command: string, args: readonly string[]): void => {
+    const failure = failures[calls.length];
+    calls.push(args);
+    if (failure !== undefined) {
+      throw new Error(failure);
+    }
+  };
+  return { calls, run };
+};
+
+describe.concurrent(npmInstall, () => {
+  it('installs once when the first attempt succeeds', ({ expect }) => {
+    const { calls, run } = recordingRunner([]);
+
+    npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain('--prefer-offline');
+  });
+
+  /*
+   * `--prefer-offline` bypasses staleness checks, so a packument cached before
+   * a version was published yields ETARGET for a version that exists. That is
+   * the state a dependency bump leaves the cache in, so the retry has to reach
+   * the registry rather than report the version missing.
+   */
+  it('retries against the registry after a stale-metadata failure', ({ expect }) => {
+    const { calls, run } = recordingRunner([staleMetadataOutput]);
+
+    npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).toContain('--prefer-online');
+    expect(calls[1]).not.toContain('--prefer-offline');
+  });
+
+  it('rethrows an unrelated failure without retrying', ({ expect }) => {
+    const marker = faker.string.alphanumeric(12);
+    const { calls, run } = recordingRunner([marker]);
+
+    expect(() => {
+      npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+    }).toThrow(new RegExp(marker, 'v'));
+    expect(calls).toHaveLength(1);
+  });
+
+  it('surfaces the retry failure when revalidating does not help', ({ expect }) => {
+    const { calls, run } = recordingRunner([staleMetadataOutput, staleMetadataOutput]);
+
+    expect(() => {
+      npmInstall(faker.system.directoryPath(), [faker.word.noun()], run);
+    }).toThrow(/ETARGET/v);
+    expect(calls).toHaveLength(2);
   });
 });
 
