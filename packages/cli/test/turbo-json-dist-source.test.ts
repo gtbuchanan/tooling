@@ -8,24 +8,16 @@ import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
  * replay a stale copy of it on a hit.
  */
 describe.concurrent('generateTurboJson (dist/source ownership)', () => {
-  it('excludes the generated manifest from pack:npm inputs', ({ expect }) => {
+  it('hashes no path under the output directory in pack:npm inputs', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
+      makeCapabilities({ hasSkills: true, isPublished: true }),
     ]);
 
     const result = generateTurboJson(discovery);
 
-    expect(result.tasks['pack:npm']?.inputs).toContain('!dist/source/package.json');
-  });
-
-  it('excludes the generated .npmignore from pack:npm inputs', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
-    ]);
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.tasks['pack:npm']?.inputs).toContain('!dist/source/.npmignore');
+    expect(result.tasks['pack:npm']?.inputs ?? []).toStrictEqual(
+      expect.not.arrayContaining([expect.stringContaining('dist/source')]),
+    );
   });
 
   it('claims every file it writes as a pack:npm output', ({ expect }) => {
