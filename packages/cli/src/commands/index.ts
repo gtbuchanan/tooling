@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { changeset } from './root/changeset.ts';
 import { hk } from './root/hk.ts';
 import { rootNames } from './root/names.ts';
 import { prepare } from './root/prepare.ts';
@@ -19,6 +20,7 @@ export const main = defineCommand({
     name: 'gtb',
   },
   subCommands: {
+    [rootNames.changeset]: changeset,
     [rootNames.hk]: hk,
     [rootNames.prepare]: prepare,
     [rootNames.publish]: publish,
