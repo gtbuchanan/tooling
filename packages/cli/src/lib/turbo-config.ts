@@ -246,22 +246,24 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
         ...(flags.hasSkills ? [taskNames.compileSkills] : []),
       ],
       /*
-       * pack:npm copies the package README and the package-or-root LICENSE
-       * into the output directory so the published tarball ships them, and
-       * writes the stamped manifest and .npmignore alongside. Those
-       * self-generated files are excluded from the output-directory input
-       * glob — an input whose presence depends on a prior run salts the hash
-       * and prevents cache hits across fresh worktrees. Their sources (the
-       * root LICENSE and per-package README/LICENSE) are inputs so an edit
-       * invalidates the cache, and the copies are outputs so a cache-hit
-       * publish restores them.
+       * The compiled tree this packs is deliberately absent from the inputs.
+       * Turbo folds a dependency's task hash into its dependents, so the
+       * `compile:ts`/`compile:skills` edges above already key this task to the
+       * sources that produce what it packs. Hashing the output directory on
+       * top of that keys it to whatever a prior run happened to leave on
+       * disk — the same sources then hash differently in a warm tree than on
+       * a fresh checkout, costing cache hits without buying any correctness.
+       *
+       * What remains are the files pack:npm reads from outside the output
+       * directory: the package README and the package-or-root LICENSE it
+       * copies in so the tarball ships them, and the manifests it stamps the
+       * published one from. The copies are outputs, so a cache hit restores
+       * them.
        */
       inputs: [
         '$TURBO_ROOT$/LICENSE',
         '$TURBO_ROOT$/package.json',
         'LICENSE', 'README.md',
-        `${buildOutDir}/**`,
-        ...packNpmOutDirEntries.map(entry => `!${outDirGlob(entry)}`),
         'package.json',
       ],
       outputs: [

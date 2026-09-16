@@ -170,7 +170,7 @@ describe.concurrent(resolveSchedule, () => {
       'pack': { dependsOn: ['pack:npm'] },
       'pack:npm': {
         dependsOn: ['compile:ts'],
-        inputs: ['dist/source/**'],
+        inputs: ['package.json'],
         outputs: ['dist/packages/npm/**'],
       },
       'test:e2e': { dependsOn: ['test:vitest:e2e'] },

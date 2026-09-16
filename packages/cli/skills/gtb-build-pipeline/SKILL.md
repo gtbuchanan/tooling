@@ -145,7 +145,7 @@ The aggregate stays empty rather than naming leaves the root can't define, becau
 
 ### Who owns what in `dist/source`
 
-Several tasks write the published output directory, each declaring `outputs` for only its own share, and `compile:ts` clears the directory before emitting. See [the `dist/source` ownership reference](references/dist-source-ownership.md) before changing an output glob or overriding `compile:ts`.
+Several tasks write the published output directory, each declaring `outputs` for only its own share, and `compile:ts` clears the directory before emitting. See [the `dist/source` ownership reference](references/dist-source-ownership.md) before changing an input or output glob or overriding `compile:ts`.
 
 ### The `transit` node
 
