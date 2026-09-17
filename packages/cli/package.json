@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/cli",
-  "version": "0.7.1",
+  "version": "1.0.0",
   "description": "Shared build CLI",
   "type": "module",
   "imports": {

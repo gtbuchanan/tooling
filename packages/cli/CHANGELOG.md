@@ -1,5 +1,51 @@
 # @gtbuchanan/cli
 
+## 1.0.0
+
+### Major Changes
+
+- 345c36e: Remove the `codecov` sync and verify scope
+
+  `gtb sync` no longer writes `codecov.yml` and `gtb verify` no longer checks it
+  for drift. `gtb sync codecov` and `gtb verify codecov` now exit non-zero as
+  unknown scopes.
+
+  Codecov's `flag_management.default_rules` applies per-package rules to every
+  flag it ingests, so the enumerated `flags` and `component_management` blocks
+  the generator existed to write are no longer needed. Hand-author `codecov.yml`
+  instead; a new package earns the rules the moment it first uploads, which the
+  generator could only manage on a re-sync.
+
+### Minor Changes
+
+- 345c36e: Upload coverage to Codecov on every run
+
+  `coverage:codecov:upload` is now generated with `cache: false` and no
+  `inputs`/`outputs`, so turbo runs it every time instead of skipping packages
+  whose coverage hasn't moved.
+
+  Caching it meant a commit that moved no coverage uploaded nothing, so Codecov
+  held no report for that commit and posted no status — and a status check that
+  never reports blocks a pull request permanently. Uploading every run is what
+  makes `codecov/project` and `codecov/patch` dependable enough to require in
+  branch protection. The cost is one Codecov CLI invocation per package per run.
+
+  The upload also passes `--disable-telem`, whose flush otherwise holds the
+  process open at the end of each upload.
+
+  Re-run `gtb sync turbo` to pick up the task change.
+
+### Patch Changes
+
+- 46e3238: Stop hashing the compiled output directory into `pack:npm`
+
+  Turbo folds a dependency's task hash into its dependents, so the generated
+  `compile:ts` and `compile:skills` edges already key `pack:npm` to the sources
+  that produce what it packs. Listing `dist/source/**` on top of that also keyed
+  it to whatever a prior run left on disk, so one source state hashed one way in
+  a warm tree and another on a fresh checkout — spurious cache misses, with no
+  correctness to show for them.
+
 ## 0.7.1
 
 ### Patch Changes
