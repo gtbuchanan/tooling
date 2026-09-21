@@ -15,6 +15,14 @@ allow-dependencies-licenses:
   - pkg:npm/lightningcss-linux-x64-musl
   - pkg:npm/lightningcss-win32-arm64-msvc
   - pkg:npm/lightningcss-win32-x64-msvc
+  # vscode-{css,html}-languageservice: the npm artifacts declare MIT.
+  # GitHub's CC-BY-SA-2.5 is an assessment of the upstream repo, where
+  # MDN-derived data carries share-alike terms. Excluded by name rather than
+  # allow-listing CC-BY-SA, so share-alike still gets gated everywhere else.
+  # Volar pulls both in: @vue/language-service reads the <style> and
+  # <template> blocks of a single-file component through them.
+  - pkg:npm/vscode-css-languageservice
+  - pkg:npm/vscode-html-languageservice
 # Permissive OSS licenses accepted for direct + transitive dependencies.
 # SPDX identifiers — see https://spdx.org/licenses/.
 # Add new entries with care; license terms vary materially.
