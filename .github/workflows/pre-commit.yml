@@ -18,8 +18,17 @@ jobs:
       # The eslint step shells out to `pnpm exec eslint`, so it needs
       # node_modules. Node-free consumers set `use-pnpm: false` to skip
       # this and run the builtin/tool-backed hooks alone.
-      - if: inputs.use-pnpm
+      #
+      # `pnpm-commands` serves the repo whose linted source imports a
+      # generated file: in a fresh checkout that import resolves to the
+      # `error` type and the type-aware rules fire on code that is fine.
+      # The commands run through pnpm, so they install too. Gating them
+      # on `use-pnpm` would skip the step that runs them and leave the
+      # hooks reading the tree they exist to complete.
+      - if: inputs.use-pnpm || inputs.pnpm-commands != ''
         uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+        with:
+          commands: ${{ inputs.pnpm-commands }}
 
       - env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -31,6 +40,13 @@ name: Pre-Commit
 on:
   workflow_call:
     inputs:
+      pnpm-commands:
+        default: ''
+        description: >-
+          Newline-delimited commands to run through pnpm after install, so
+          hk steps see files a codegen task writes (e.g. `exec turbo run
+          generate`). Implies `use-pnpm`.
+        type: string
       use-pnpm:
         default: false
         description: >-

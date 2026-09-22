@@ -396,7 +396,15 @@ through `package.json` scripts backed by `gtb` leaf commands.
   files (hk resolved from mise). The `use-pnpm` input (default
   `false`) opts into `pnpm install` for steps that shell out to the
   project's deps — this repo's `pnpm exec eslint` step sets it `true`;
-  everything else runs hk alone.
+  everything else runs hk alone. The `pnpm-commands` input (default
+  empty) takes newline-delimited commands to run through pnpm after
+  that install, and implies it. A repo whose linted source imports a
+  generated file needs one: the import resolves to the `error` type in
+  a fresh checkout, so the type-aware rules fire on correct code while
+  `CI / Build` passes on the same commit, because turbo's `lint` task
+  depends on the codegen task. Such a repo passes
+  `exec turbo run generate`. Committing the generated file is the other
+  way out, and trades the gitignore for a staleness check.
 
 Composite actions:
 
