@@ -2,6 +2,7 @@
  * CLI names for root-level commands.
  */
 export const rootNames = {
+  changeset: 'changeset',
   hk: 'hk',
   prepare: 'prepare',
   publish: 'publish',
