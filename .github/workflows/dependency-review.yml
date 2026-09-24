@@ -13,6 +13,7 @@ jobs:
         with:
           comment-summary-in-pr: ${{ inputs.comment-summary-in-pr }}
           config-file: ${{ inputs.config-file }}
+          external-repo-token: ${{ github.token }}
           fail-on-severity: ${{ inputs.fail-on-severity }}
 
   version-check:
