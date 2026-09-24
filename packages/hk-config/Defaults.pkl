@@ -136,20 +136,27 @@ recommended: Mapping<String, Config.Step> = new {
 /// `check` and `fix` run the same steps in check and fix mode (no stash — they
 /// run over all files, not a partial commit). Consumer:
 /// `hooks = Defaults.hooksFor(allSteps)`.
-function hooksFor(allSteps: Mapping<String, Config.Step>): Mapping<String, Config.Hook> = new {
-  ["pre-commit"] {
-    fix = true
-    stash = "patch-file"
-    steps {
-      ...allSteps
-      ["no-commit-to-branch"] = Builtins.no_commit_to_branch
+function hooksFor(allSteps: Mapping<String, Config.Step>): Mapping<String, Config.Hook> =
+  // Keep the explicit `Mapping<String, Config.Hook>`: pklr, the Pkl evaluator
+  // hk embeds, merges into an existing Mapping entry only where it recorded
+  // the value type, which neither a bare `new { ... }` nor the return
+  // annotation does. Without it, a consumer amending a hook silently loses
+  // every preset step. pklr 2.0.5 merges either form, so there's no removal
+  // trigger once hk picks it up: https://github.com/jdx/pklr/pull/189
+  new Mapping<String, Config.Hook> {
+    ["pre-commit"] {
+      fix = true
+      stash = "patch-file"
+      steps {
+        ...allSteps
+        ["no-commit-to-branch"] = Builtins.no_commit_to_branch
+      }
+    }
+    ["check"] {
+      steps { ...allSteps }
+    }
+    ["fix"] {
+      fix = true
+      steps { ...allSteps }
     }
   }
-  ["check"] {
-    steps { ...allSteps }
-  }
-  ["fix"] {
-    fix = true
-    steps { ...allSteps }
-  }
-}
