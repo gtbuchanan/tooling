@@ -1,0 +1,11 @@
+---
+# actionlint validates action inputs against a database of popular actions
+# baked in at its release. That snapshot predates create-github-app-token
+# v3.1.0, which added `client-id` and deprecated `app-id`, so it reads a
+# correct `cd.yml` as both missing a required input and using an unknown one.
+# Remove this file once an actionlint release refreshes that entry.
+paths:
+  .github/workflows/cd.yml:
+    ignore:
+      - 'input "client-id" is not defined in action'
+      - 'missing input "app-id" which is required'
