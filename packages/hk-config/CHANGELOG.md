@@ -1,5 +1,34 @@
 # @gtbuchanan/hk-config
 
+## 0.5.0
+
+### Minor Changes
+
+- ea1ea31: Bump the hk package imports to v2.5.0
+
+  `Defaults.pkl` imports `Config.pkl` and `Builtins.pkl` from a
+  version-pinned hk release URL, so consumers of the preset resolve
+  whichever hk the pin names. Move that pin to v2.5.0, matching the
+  version `mise.toml` installs.
+
+  A consumer moves its own `hk.pkl` `amends` URL to v2.5.0 in the same
+  change that takes this release. The preset's steps carry `tests` typed
+  by the hk package it imports, and Pkl treats the same class from two
+  hk versions as unrelated types, so a config that amends one version
+  while importing a preset built on another fails to evaluate with
+  `property 'expect' expected StepTestExpect, got Object`.
+
+### Patch Changes
+
+- 1e980b0: Annotate the mapping `hooksFor` builds, so amending a hook keeps the preset's steps
+
+  The evaluator hk embeds merges into an existing Mapping entry only where it
+  recorded the Mapping's value type, which a bare `new { ... }` does not. A
+  consumer amending one hook therefore rebuilt that hook from the amendment
+  alone and silently lost every preset step — `check` running one step and
+  exiting 0. Consumers carrying the re-spread workaround
+  (`steps { ...allSteps ["extra"] = extraStep }`) can drop it.
+
 ## 0.4.0
 
 ### Minor Changes
