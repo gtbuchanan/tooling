@@ -1,3 +1,4 @@
+export { changeset, checkCatalogGate } from './changeset.ts';
 export { rootNames } from './names.ts';
 export { prepare } from './prepare.ts';
 export { sync } from './sync.ts';

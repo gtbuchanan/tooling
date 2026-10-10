@@ -3,6 +3,10 @@ jobs:
   changeset:
     name: Changeset
     uses: ./.github/workflows/changeset-check.yml
+    # This repo vendors @gtbuchanan/cli as a workspace package, so the
+    # catalog gate runs gtb from source rather than an installed bin.
+    with:
+      gtb-from-source: true
 
   ci:
     name: CI
