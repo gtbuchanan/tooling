@@ -298,7 +298,7 @@ catalogs:
       version: 1.2.1
     smol-toml:
       specifier: ^1.7.0
-      version: 1.9.0
+      version: 1.9.1
     turbo:
       specifier: ^2.5.4
       version: 2.11.7
@@ -411,7 +411,7 @@ importers:
         version: 1.2.1
       smol-toml:
         specifier: 'catalog:'
-        version: 1.9.0
+        version: 1.9.1
       typescript:
         specifier: '>=5.0.0'
         version: 6.0.3
@@ -2722,8 +2722,8 @@ packages:
     engines: {node: '>=22.20.0'}
     hasBin: true
 
-  smol-toml@1.9.0:
-    resolution: {integrity: sha512-hpd+HLON7HdZXqYchMM/+LaTTbdK0AU3NngIJ4KVyWbY9bfQqdL9cD+4yf6dUoU2Ap4VsU0JkQi6FxAI1B2mXQ==}
+  smol-toml@1.9.1:
+    resolution: {integrity: sha512-j7WyPdf0CJoutMzMoPLF/bVXHtKZIT9Rb4eGeEbWw8X2t5oirjPgpL+OpaENZrILYaXqYwnVH+qgUwVbl+pUJQ==}
     engines: {node: '>= 18'}
 
   sort-object-keys@2.1.0:
@@ -5122,7 +5122,7 @@ snapshots:
       tar: 7.5.22
       yaml: 2.9.1
 
-  smol-toml@1.9.0: {}
+  smol-toml@1.9.1: {}
 
   sort-object-keys@2.1.0: {}
 
