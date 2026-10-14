@@ -256,7 +256,7 @@ catalogs:
       version: 74.0.0
     eslint-plugin-yml:
       specifier: ^3.6.0
-      version: 3.8.1
+      version: 3.9.0
     find-up-simple:
       specifier: ^1.0.1
       version: 1.0.1
@@ -516,7 +516,7 @@ importers:
         version: 74.0.0(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-yml:
         specifier: 'catalog:'
-        version: 3.8.1(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))
+        version: 3.9.0(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))
       prettier:
         specifier: 'catalog:'
         version: 3.9.9
@@ -1932,8 +1932,8 @@ packages:
     peerDependencies:
       eslint: '>=10.4'
 
-  eslint-plugin-yml@3.8.1:
-    resolution: {integrity: sha512-E/70psRwxz5EJ8dBtzrFfqSiiInuSytbdtFCjueb/GcKjsWzPBfxfhtQePImMAPjHwMA/VDurO7DJwStDJ4wWg==}
+  eslint-plugin-yml@3.9.0:
+    resolution: {integrity: sha512-o4ByMVFd/mGc0Q/vJmbG9pz7Kyg/BiKAGnWCzvMLqzpa2KMdpUrLgF5a6yYeL2mf1Br/9dckd0ADl3vw7uF+jA==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24.0.0}
     peerDependencies:
       eslint: '>=9.38.0'
@@ -4152,7 +4152,7 @@ snapshots:
       strip-indent: 4.1.1
       yaml: 2.9.1
 
-  eslint-plugin-yml@3.8.1(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0)):
+  eslint-plugin-yml@3.9.0(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0)):
     dependencies:
       '@eslint/core': 1.2.1
       '@eslint/plugin-kit': 0.7.3
