@@ -128,6 +128,14 @@
       ]
     },
     {
+      "description": "Group worktrunk updates (mise tool + .chezmoidata Termux pin share one max-sixty/worktrunk release)",
+      "groupName": "worktrunk",
+      "internalChecksFilter": "flexible",
+      "matchSourceUrls": [
+        "https://github.com/max-sixty/worktrunk"
+      ]
+    },
+    {
       "description": "Restrict noisy pre-commit hook updates to bi-monthly",
       "matchSourceUrls": [
         "https://github.com/renovatebot/pre-commit-hooks"
