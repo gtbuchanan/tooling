@@ -4,6 +4,9 @@
   "globalDependencies": [
     "mise.lock",
     "mise.toml",
+    "packages/cli/bin/**",
+    "packages/cli/package.json",
+    "packages/cli/src/**",
     "pnpm-lock.yaml"
   ],
   "tasks": {
