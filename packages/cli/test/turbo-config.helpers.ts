@@ -1,3 +1,4 @@
+import type { CatalogDependency } from '#src/lib/catalog-gate.js';
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/lib/discovery.js';
 import { buildInclude } from '#src/lib/tsconfig-gen.js';
 
@@ -6,6 +7,7 @@ export const makeCapabilities = (
 ): PackageCapabilities => {
   const merged = {
     buildIncludes: [...buildInclude] as readonly string[],
+    catalogDependencies: [] as readonly CatalogDependency[],
     dir: '/fake/pkg',
     generateScripts: [] as readonly string[],
     hasBin: false,
