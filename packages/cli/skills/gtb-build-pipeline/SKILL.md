@@ -62,6 +62,7 @@ Aggregate tasks exist only as `dependsOn` targets — no corresponding script:
 ```text
 generate:* → generate → typecheck:ts, compile:ts, lint:eslint
 ^transit → transit → typecheck:ts, lint:eslint, test:vitest:*
+^transit → //#typecheck:ts, //#lint:eslint
 typecheck:ts → typecheck → check
 typecheck:ts → lint:eslint → lint → check
 ^compile + transit → test:vitest:fast → check
@@ -103,7 +104,7 @@ All are monorepo-only: where the root _is_ the lone package, its per-package tas
 
 **`//#typecheck:ts` keys on sources, not on a tsconfig.** Sync writes a root `tsconfig.json` at every workspace root, so its presence says nothing about whether there is anything to check — and a config whose `include` matches no file is an error to tsc (`TS18003`), not a no-op. The task is therefore emitted only when the root actually holds a TypeScript file that `include` reaches: a root-level `*.ts`, or one nested under `bin/`, `scripts/`, `src/`, `test/`, or `e2e/`.
 
-**Root tasks declare no `dependsOn`.** `generate` and `transit` are package tasks, and turbo resolves a bare dependency name against the task's own package, so naming either from the root dangles rather than reaching the packages. Nothing is lost on the artifact side: workspace packages export TypeScript source in-workspace, so the root type-checks and lints against sources without waiting on a compile.
+**`//#lint:eslint` and `//#typecheck:ts` depend on `^transit`.** Turbo resolves `^transit` from the root through the root manifest's workspace dependencies, so an edit to a workspace package the root consumes — its ESLint config, a shared tsconfig — reaches the root task's hash. A bare `transit` or `generate` would resolve against the root itself and dangle. Nothing is lost on the artifact side: workspace packages export TypeScript source in-workspace, so the root type-checks and lints against sources without waiting on a compile.
 
 A root task's script _is_ its command, so a root owning one gets no `gtb turbo run <name>` alias for it — the alias would re-enter turbo and trip the recursion guard above. At such a root `pnpm deploy:skills` deploys the root's own skills; `pnpm build` (or `gtb turbo run deploy:skills`) reaches every package's copy.
 

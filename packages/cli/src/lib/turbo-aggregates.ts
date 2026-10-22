@@ -71,12 +71,15 @@ const generateAggregate = (
  * it runs nothing, so nothing serializes — depending on it simply pulls every
  * transitive workspace dependency's file hashes into the consumer's task hash.
  *
- * Emitted only when something references it, so a workspace with none of the
- * three toolchains doesn't carry a dangling node.
+ * The root's lint and type-check tasks reach it too, through `^transit`.
+ *
+ * Emitted only when something references it, so a workspace with none of
+ * these tasks doesn't carry a dangling node.
  */
 const transitNode = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
-    condition: flags.hasE2e || flags.hasEslint || flags.hasTypeScript || flags.hasVitest,
+    condition: flags.hasE2e || flags.hasEslint || flags.hasTypeScript || flags.hasVitest ||
+      flags.hasRootEslint || flags.hasRootTypeScript,
     key: Aggregate.transit,
     value: { dependsOn: [topo(Aggregate.transit)] },
   },
