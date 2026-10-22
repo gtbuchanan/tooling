@@ -39,6 +39,55 @@ describe.concurrent('generateTurboJson (transit)', () => {
     expect(result.tasks).toHaveProperty('transit');
   });
 
+  /*
+   * A root task reaches the workspace packages the root depends on only
+   * through `^transit`; without it, an edit to a root-consumed package (the
+   * ESLint config the root lints with) replays the root's cached pass.
+   */
+  it('//#lint:eslint depends on the root\'s workspace dependencies', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasEslint: true })],
+      { hasEslint: true },
+    );
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['//#lint:eslint']?.dependsOn).toStrictEqual(['^transit']);
+  });
+
+  it('//#typecheck:ts depends on the root\'s workspace dependencies', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasTypeScript: true }), makeCapabilities()],
+      { hasTypeScript: true, hasTypeScriptSources: true },
+    );
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['//#typecheck:ts']?.dependsOn).toStrictEqual(['^transit']);
+  });
+
+  it('includes the transit node when only the root lints', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasPkl: true }), makeCapabilities({ hasPkl: true })],
+      { hasEslint: true },
+    );
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).toHaveProperty('transit');
+  });
+
+  it('includes the transit node when only the root type-checks', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasPkl: true }), makeCapabilities({ hasPkl: true })],
+      { hasTypeScriptSources: true },
+    );
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).toHaveProperty('transit');
+  });
+
   it('excludes the transit node when nothing depends on it', ({ expect }) => {
     const discovery = makeDiscovery([makeCapabilities({ hasPkl: true })]);
 

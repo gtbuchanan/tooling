@@ -377,20 +377,18 @@ const rootLintTasks = (
     condition: flags.hasRootEslint,
     key: rootTaskKey(taskNames.lintEslint),
     value: {
-      inputs: [
-        '$TURBO_DEFAULT$',
-        ...packageGlobs.map(glob => `!${toPackageIgnore(glob)}`),
-      ],
+      dependsOn: [topo(Aggregate.transit)],
+      inputs: ['$TURBO_DEFAULT$', ...packageGlobs.map(glob => `!${toPackageIgnore(glob)}`)],
       outputs: ['dist/.eslintcache'],
     },
   },
 ];
 
 /*
- * The root's own type check. Like `//#lint:eslint` it declares no
- * `dependsOn`: `generate` and `transit` are package tasks, and turbo resolves
- * a bare dep name against the task's own package, so naming either from the
- * root would dangle rather than reach the packages. Nothing is lost on the
+ * The root's own type check. Like `//#lint:eslint` it depends on `^transit`,
+ * which turbo resolves through the root manifest's workspace dependencies, so
+ * an edit to a package the root consumes reaches its hash; a bare `transit`
+ * would resolve against the root itself and dangle. Nothing is lost on the
  * artifact side — workspace packages export TypeScript source in-workspace,
  * so the root type-checks against sources without waiting on a compile.
  *
@@ -404,6 +402,7 @@ const rootTypecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTa
     condition: flags.hasRootTypeScript,
     key: rootTaskKey(taskNames.typecheckTs),
     value: {
+      dependsOn: [topo(Aggregate.transit)],
       inputs: [
         'tsconfig.base.json',
         ...typeCheckInclude.flatMap(toTurboGlobs),

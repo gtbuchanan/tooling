@@ -11,6 +11,9 @@
   ],
   "tasks": {
     "//#lint:eslint": {
+      "dependsOn": [
+        "^transit"
+      ],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!packages/*/**"
@@ -20,6 +23,9 @@
       ]
     },
     "//#typecheck:ts": {
+      "dependsOn": [
+        "^transit"
+      ],
       "inputs": [
         "tsconfig.base.json",
         "bin/**",

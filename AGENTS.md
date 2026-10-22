@@ -540,8 +540,11 @@ That salt is over-broad but **not** a correctness mechanism, and nothing
 should be built on it. Measured with `turbo run … --dry=json`, it moves
 for some files in a workspace package and not for others — two source
 files in the same package can give opposite results. Cross-package
-invalidation is carried by declared task edges instead: the `transit`
-node, documented in the `gtb-build-pipeline` skill.
+invalidation is carried by declared edges instead: package tasks depend on
+the `transit` node, the root's `//#lint:eslint` / `//#typecheck:ts` on
+`^transit` (documented in the `gtb-build-pipeline` skill), and every task on
+the vendored CLI's sources through `globalDependencies`, since packages run
+`gtb` from source with no dependency edge to follow.
 
 Consumers see our packages as external npm deps (lockfile-keyed), so
 they're unaffected. See
