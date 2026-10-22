@@ -1,5 +1,16 @@
 # @gtbuchanan/cli
 
+## 1.1.0
+
+### Minor Changes
+
+- 980a8fa: Disable turbo's agent guidance in the generated `turbo.json`. When turbo detects an AI agent, it rewrites a managed block into the root `AGENTS.md`, which then shows up as an uncommitted change in every agent session.
+
+### Patch Changes
+
+- 557f13d: Make the generated root `//#lint:eslint` and `//#typecheck:ts` tasks depend on `^transit`. Without that edge, an edit to a workspace package the root consumes, such as its ESLint config or a shared tsconfig, replayed the root task's cached pass.
+- c0fadc1: List the vendored CLI's sources in the generated `turbo.json`'s `globalDependencies` when self-hosted. Packages there run gtb from source by relative path, so no task edge reached the CLI, and some edits to it replayed stale cached results in every other package.
+
 ## 1.0.0
 
 ### Major Changes
