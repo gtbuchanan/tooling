@@ -34,6 +34,39 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
     expect(result.globalDependencies).toStrictEqual(['pnpm-lock.yaml']);
   });
 
+  /*
+   * Self-hosted packages run gtb from the CLI's source by relative path, with
+   * no dependency edge turbo can follow, so the CLI's sources must salt every
+   * task explicitly.
+   */
+  it('emits the vendored CLI sources in globalDependencies when self-hosted', ({ expect }) => {
+    const cli = makeCapabilities({
+      buildIncludes: ['bin', 'src'],
+      dir: '/fake/root/tools/cli',
+      name: '@gtbuchanan/cli',
+    });
+    const discovery = makeDiscovery([cli, makeCapabilities()], { isSelfHosted: true });
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.globalDependencies).toStrictEqual([
+      'pnpm-lock.yaml', 'tools/cli/bin/**', 'tools/cli/package.json', 'tools/cli/src/**',
+    ]);
+  });
+
+  it('normalizes dot-prefixed CLI build includes', ({ expect }) => {
+    const cli = makeCapabilities({
+      buildIncludes: ['./src'],
+      dir: '/fake/root/tools/cli',
+      name: '@gtbuchanan/cli',
+    });
+    const discovery = makeDiscovery([cli, makeCapabilities()], { isSelfHosted: true });
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.globalDependencies).toContain('tools/cli/src/**');
+  });
+
   it('emits mise files and the lockfile when self-hosted with mise.toml', ({ expect }) => {
     const discovery = makeDiscovery([makeCapabilities()], {
       hasMise: true,
