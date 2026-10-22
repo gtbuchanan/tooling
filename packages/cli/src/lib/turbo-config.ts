@@ -48,6 +48,12 @@ export interface TurboTask {
 export interface TurboJson {
   readonly $schema: string;
   /**
+   * Always `false`. Left on, turbo rewrites a managed block into the root
+   * `AGENTS.md` whenever it detects an AI agent, which surfaces as an
+   * uncommitted change in every agent session.
+   */
+  readonly agentGuidance: false;
+  /**
    * Files hashed into every task. Emitted only when discovery detects them.
    */
   readonly globalDependencies?: readonly string[];
@@ -461,6 +467,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
 
   return {
     $schema: 'https://turbo.build/schema.json',
+    agentGuidance: false,
     ...(globalDependencies.length > 0 && { globalDependencies }),
     tasks: collect(entries),
   };
