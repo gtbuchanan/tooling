@@ -1,4 +1,5 @@
 import { taskNames } from '../commands/task/names.ts';
+import { codegenDeps } from './turbo-aggregates.ts';
 import {
   Aggregate,
   type ConditionalEntry,
@@ -24,7 +25,11 @@ const testInputs = [
  * compiles nothing.
  */
 export const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const deps = [...(flags.hasPublished ? [topo(Aggregate.compile)] : []), Aggregate.transit];
+  const deps = [
+    ...(flags.hasPublished ? [topo(Aggregate.compile)] : []),
+    ...codegenDeps(flags),
+    Aggregate.transit,
+  ];
 
   return [
     {

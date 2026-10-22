@@ -8,7 +8,7 @@ import { toPosixRelative } from './paths.ts';
 import { skillsConfigFilename } from './skills-config.ts';
 import { localeComparer } from './sort.ts';
 import { typeCheckInclude } from './tsconfig-gen.ts';
-import { aggregateTasks } from './turbo-aggregates.ts';
+import { aggregateTasks, codegenDeps, rootSourceDeps } from './turbo-aggregates.ts';
 import { toTurboGlobs } from './turbo-globs.ts';
 import { testTasks } from './turbo-test-tasks.ts';
 
@@ -208,7 +208,7 @@ const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[
     condition: flags.hasTypeScript,
     key: taskNames.typecheckTs,
     value: {
-      dependsOn: [...(flags.hasGenerate ? [Aggregate.generate] : []), Aggregate.transit],
+      dependsOn: [...codegenDeps(flags), Aggregate.transit],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json',
         ...typeCheckInclude.flatMap(toTurboGlobs),
@@ -237,7 +237,7 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
     condition: flags.hasPublished,
     key: taskNames.compileTs,
     value: {
-      dependsOn: [topo(taskNames.compileTs), ...(flags.hasGenerate ? [Aggregate.generate] : [])],
+      dependsOn: [topo(taskNames.compileTs), ...codegenDeps(flags)],
       inputs: [
         '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
         ...flags.compileIncludes.flatMap(toTurboGlobs), 'tsconfig.build.json',
@@ -331,7 +331,7 @@ const pklTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
  */
 const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
   const deps = [
-    ...(flags.hasGenerate ? [Aggregate.generate] : []),
+    ...codegenDeps(flags),
     ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
     Aggregate.transit,
   ];
@@ -377,7 +377,7 @@ const rootLintTasks = (
     condition: flags.hasRootEslint,
     key: rootTaskKey(taskNames.lintEslint),
     value: {
-      dependsOn: [topo(Aggregate.transit)],
+      dependsOn: rootSourceDeps(flags),
       inputs: ['$TURBO_DEFAULT$', ...packageGlobs.map(glob => `!${toPackageIgnore(glob)}`)],
       outputs: ['dist/.eslintcache'],
     },
@@ -385,10 +385,10 @@ const rootLintTasks = (
 ];
 
 /*
- * The root's own type check. Like `//#lint:eslint` it depends on `^transit`,
- * which turbo resolves through the root manifest's workspace dependencies, so
- * an edit to a package the root consumes reaches its hash; a bare `transit`
- * would resolve against the root itself and dangle. Nothing is lost on the
+ * The root's own type check. Like `//#lint:eslint` it depends on `^transit`
+ * (and `^generate`), which turbo resolves through the root manifest's
+ * workspace dependencies, so an edit to a package the root consumes reaches
+ * its hash. Nothing is lost on the
  * artifact side — workspace packages export TypeScript source in-workspace,
  * so the root type-checks against sources without waiting on a compile.
  *
@@ -402,7 +402,7 @@ const rootTypecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTa
     condition: flags.hasRootTypeScript,
     key: rootTaskKey(taskNames.typecheckTs),
     value: {
-      dependsOn: [topo(Aggregate.transit)],
+      dependsOn: rootSourceDeps(flags),
       inputs: [
         'tsconfig.base.json',
         ...typeCheckInclude.flatMap(toTurboGlobs),
