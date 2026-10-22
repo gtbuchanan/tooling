@@ -112,15 +112,15 @@ A root task's script _is_ its command, so a root owning one gets no `gtb turbo r
 
 Any `generate:*` script in a package's `package.json` is picked up as codegen and ordered ahead of the tasks reading generated sources. Those also wait on their dependencies' codegen ([why](references/transit-node.md)).
 
-Where the _leaf_ tasks get declared depends on the repo shape, because only the package knows what its codegen reads and writes. That matters more than it looks: turbo restores a cached task's declared `outputs` on a hit, so a leaf with none replays its logs, skips the run, restores nothing — and the generated files stay missing while every downstream task reports success. A script name tells `gtb sync` nothing about outputs, so it doesn't guess.
+Where the _leaf_ tasks get declared depends on the repo shape, because only the package knows what its codegen reads and writes. That matters: turbo restores a cached task's declared `outputs` on a hit, so a leaf with none skips the run and restores nothing, and the generated files stay missing while every downstream task reports success. A script name tells `gtb sync` nothing about outputs, so it doesn't guess.
 
-**Monorepo** — the root `generate` aggregate is emitted empty, and each package declares its own leaves in a package configuration (`packages/<pkg>/turbo.json`):
+**Monorepo** — the root `generate` aggregate names no leaves, only `^generate`, and each package declares its own leaves in a package configuration (`packages/<pkg>/turbo.json`):
 
 ```json
 {
   "extends": ["//"],
   "tasks": {
-    "generate": { "dependsOn": ["generate:prisma"] },
+    "generate": { "dependsOn": ["$TURBO_EXTENDS$", "generate:prisma"] },
     "generate:prisma": {
       "inputs": ["prisma/schema.prisma"],
       "outputs": ["src/generated/**"]
@@ -129,7 +129,7 @@ Where the _leaf_ tasks get declared depends on the repo shape, because only the 
 }
 ```
 
-The aggregate stays empty rather than naming leaves the root can't define, because turbo aborts the entire run when a task in `dependsOn` resolves to no definition anywhere in the config chain (`Could not find "<pkg>#generate:prisma" in root turbo.json`). The flip side is that a package which never writes this file fails quietly — its `generate` node has nothing under it, so codegen is skipped and downstream tasks read whatever is already on disk. `gtb verify` closes that gap: it reports packages with `generate:*` scripts and no package configuration, leaves missing from `generate`'s `dependsOn`, and leaves declaring neither `outputs` nor `cache: false`.
+`$TURBO_EXTENDS$` keeps the root's `^generate`, which this `dependsOn` would replace. The root names no leaves, because turbo aborts the entire run when a task in `dependsOn` resolves to no definition anywhere in the config chain (`Could not find "<pkg>#generate:prisma" in root turbo.json`). A package that never writes this file therefore fails quietly: codegen is skipped and downstream tasks read whatever is on disk. `gtb verify` closes that gap: it reports packages with `generate:*` scripts and no package configuration, leaves or `$TURBO_EXTENDS$` missing from `generate`'s `dependsOn`, and leaves declaring neither `outputs` nor `cache: false`.
 
 **Single-package repo** — turbo offers package configurations only for workspace packages, and the lone `turbo.json` is sync-owned, so there is no seam to hand off to. Sync declares the leaves itself with `cache: false`. Codegen then re-runs on every invocation, which is slower than a cache hit and the only safe default when the outputs are unknowable.
 
