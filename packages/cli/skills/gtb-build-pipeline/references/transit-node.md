@@ -21,4 +21,6 @@ It declares no `inputs`, so turbo hashes the whole package, and it runs nothing,
 
 Watch for aggregates that appear to cover this already. `test:vitest:e2e` gates on `^pack`, and a dependency with no `pack:npm` script leaves its `pack` node scriptless and inputs-less — so it hashes the whole package exactly as `transit` does. That coverage is incidental: it reaches direct dependencies only, and resolves to nothing at all when the workspace packs nothing. `transit` is declared alongside it rather than assumed from it.
 
+Because `transit` runs nothing, it orders nothing either, so it can't stand in for `^generate`. A dependency read as source may import its own generated module, which is usually gitignored, and a consumer with only `transit` would read a file nothing has written yet. Every task that depends on `transit`, `test:vitest:e2e` included, therefore also depends on `^generate` once the workspace has codegen; `^compile:ts` doesn't cover it, for the same reason it doesn't cover invalidation.
+
 `lint:eslint` declares the edge itself rather than inheriting it through its same-package `typecheck:ts` dep. That dep is optional — consumers may drop it for parallelism — and isn't generated at all for a workspace without TypeScript, so inheriting would make lint's cross-package invalidation silently conditional.

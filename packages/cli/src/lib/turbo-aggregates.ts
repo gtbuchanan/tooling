@@ -57,6 +57,26 @@ const generateAggregate = (
   ...generateLeafTasks(flags, isMonorepo),
 ];
 
+/**
+ * Codegen edges for a task reading its own package's sources and its
+ * dependencies'. Generated files are usually gitignored, so an import of a
+ * dependency's generated module races the codegen writing it unless ordered:
+ * `transit` hashes the dependency but runs nothing, and `^compile:ts` skips a
+ * source-only dependency.
+ */
+export const codegenDeps = (flags: ToolFlags): readonly string[] =>
+  flags.hasGenerate ? [Aggregate.generate, topo(Aggregate.generate)] : [];
+
+/**
+ * Edges for a root task reading the root's workspace dependencies as source.
+ * Only the `^` forms: turbo resolves a bare name against the root itself,
+ * where neither `generate` nor `transit` is defined.
+ */
+export const rootSourceDeps = (flags: ToolFlags): readonly string[] => [
+  ...(flags.hasGenerate ? [topo(Aggregate.generate)] : []),
+  topo(Aggregate.transit),
+];
+
 /*
  * Turbo folds a workspace dependency's sources into a consumer's hash only
  * through a task edge. `typecheck:ts`, `lint:eslint`, and the vitest tasks read

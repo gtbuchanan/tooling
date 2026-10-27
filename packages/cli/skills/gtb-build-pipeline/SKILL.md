@@ -60,9 +60,9 @@ node_modules launcher (which rejects the platform upfront). See
 Aggregate tasks exist only as `dependsOn` targets — no corresponding script:
 
 ```text
-generate:* → generate → typecheck:ts, compile:ts, lint:eslint
+generate:* → generate + ^generate → typecheck:ts, compile:ts, lint:eslint, test:vitest:*
 ^transit → transit → typecheck:ts, lint:eslint, test:vitest:*
-^transit → //#typecheck:ts, //#lint:eslint
+^generate + ^transit → //#typecheck:ts, //#lint:eslint
 typecheck:ts → typecheck → check
 typecheck:ts → lint:eslint → lint → check
 ^compile + transit → test:vitest:fast → check
@@ -110,7 +110,7 @@ A root task's script _is_ its command, so a root owning one gets no `gtb turbo r
 
 ### Codegen tasks (`generate:*`)
 
-Any `generate:*` script in a package's `package.json` is picked up as codegen and ordered ahead of `typecheck:ts`, `compile:ts`, and `lint:eslint`, all of which read generated sources.
+Any `generate:*` script in a package's `package.json` is picked up as codegen and ordered ahead of the tasks reading generated sources. Those also wait on their dependencies' codegen ([why](references/transit-node.md)).
 
 Where the _leaf_ tasks get declared depends on the repo shape, because only the package knows what its codegen reads and writes. That matters more than it looks: turbo restores a cached task's declared `outputs` on a hit, so a leaf with none replays its logs, skips the run, restores nothing — and the generated files stay missing while every downstream task reports success. A script name tells `gtb sync` nothing about outputs, so it doesn't guess.
 

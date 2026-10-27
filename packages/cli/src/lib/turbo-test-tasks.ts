@@ -1,4 +1,5 @@
 import { taskNames } from '../commands/task/names.ts';
+import { codegenDeps } from './turbo-aggregates.ts';
 import {
   Aggregate,
   type ConditionalEntry,
@@ -24,7 +25,11 @@ const testInputs = [
  * compiles nothing.
  */
 export const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const deps = [...(flags.hasPublished ? [topo(Aggregate.compile)] : []), Aggregate.transit];
+  const deps = [
+    ...(flags.hasPublished ? [topo(Aggregate.compile)] : []),
+    ...codegenDeps(flags),
+    Aggregate.transit,
+  ];
 
   return [
     {
@@ -58,7 +63,8 @@ export const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask
     },
     /*
      * E2E tests read packed tarballs, but their own sources import fixture
-     * helpers from source-only workspace packages, so they need `transit` too.
+     * helpers from source-only workspace packages, so they need `transit` and
+     * the codegen edges too: `^pack` orders no source-only dependency.
      * `^pack` looks like it already covers that — a dependency with no
      * `pack:npm` script leaves `pack` scriptless and inputs-less, so it hashes
      * the whole package exactly as `transit` does — but that is incidental: it
@@ -71,6 +77,7 @@ export const testTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask
       value: {
         dependsOn: [
           ...(flags.hasPublished ? [Aggregate.pack, topo(Aggregate.pack)] : []),
+          ...codegenDeps(flags),
           Aggregate.transit,
         ],
         env: ['CI'],
