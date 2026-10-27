@@ -60,7 +60,7 @@ node_modules launcher (which rejects the platform upfront). See
 Aggregate tasks exist only as `dependsOn` targets — no corresponding script:
 
 ```text
-generate:* → generate + ^generate → typecheck:ts, compile:ts, lint:eslint, test:vitest:{fast,slow}
+generate:* → generate + ^generate → typecheck:ts, compile:ts, lint:eslint, test:vitest:*
 ^transit → transit → typecheck:ts, lint:eslint, test:vitest:*
 ^generate + ^transit → //#typecheck:ts, //#lint:eslint
 typecheck:ts → typecheck → check

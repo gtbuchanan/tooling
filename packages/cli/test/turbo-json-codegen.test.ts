@@ -3,7 +3,8 @@ import { generateTurboJson } from '#src/lib/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
 
 const sourceReaders = [
-  'typecheck:ts', 'compile:ts', 'lint:eslint', 'test:vitest:fast', 'test:vitest:slow',
+  'typecheck:ts', 'compile:ts', 'lint:eslint',
+  'test:vitest:fast', 'test:vitest:slow', 'test:vitest:e2e',
 ];
 
 describe.concurrent('generateTurboJson (codegen edges)', () => {
@@ -17,6 +18,7 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
         generateScripts: ['generate:test'],
         hasEslint: true,
         hasTypeScript: true,
+        hasVitestE2e: true,
         hasVitestTests: true,
         isPublished: true,
       }),
@@ -27,11 +29,13 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
     expect(result.tasks[task]?.dependsOn).toContain('^generate');
   });
 
-  it.for(['test:vitest:fast', 'test:vitest:slow'])(
+  it.for(['test:vitest:fast', 'test:vitest:slow', 'test:vitest:e2e'])(
     '%s waits on its own generate',
     (task, { expect }) => {
       const discovery = makeDiscovery([
-        makeCapabilities({ generateScripts: ['generate:test'], hasVitestTests: true }),
+        makeCapabilities({
+          generateScripts: ['generate:test'], hasVitestE2e: true, hasVitestTests: true,
+        }),
       ]);
 
       const result = generateTurboJson(discovery);
@@ -62,7 +66,11 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
   it.for(sourceReaders)('%s has no generate deps without generate scripts', (task, { expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        hasEslint: true, hasTypeScript: true, hasVitestTests: true, isPublished: true,
+        hasEslint: true,
+        hasTypeScript: true,
+        hasVitestE2e: true,
+        hasVitestTests: true,
+        isPublished: true,
       }),
     ]);
 
