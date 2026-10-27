@@ -48,7 +48,7 @@ node = "24.21.0"
 "npm:renovate" = { trust_policy_excludes = [
   "@yarnpkg/libzip",
 ], version = "44.176.2" }
-pkl = "0.32.1"
+pkl = "0.32.2"
 # Deliberately duplicates `packageManager` in package.json (turbo requires
 # that field). Renovate groups both bumps into one PR — see the "pnpm"
 # packageRule in default.json. Reading the version from package.json via
