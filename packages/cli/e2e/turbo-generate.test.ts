@@ -129,8 +129,7 @@ describe.concurrent('generate tasks through turbo', () => {
       readFileSync(path.join(workspace, 'turbo.json'), 'utf8'),
     );
 
-    expect(rootTasks).toHaveProperty('tasks.generate');
-    expect(rootTasks).not.toHaveProperty('tasks.generate.dependsOn');
+    expect(rootTasks).toHaveProperty('tasks.generate.dependsOn', ['^generate']);
     expect(rootTasks).not.toHaveProperty('tasks.generate:stamp');
 
     const verify = await fixture.run('gtb', ['verify', '-C', workspace, 'turbo']);
@@ -149,7 +148,7 @@ describe.concurrent('generate tasks through turbo', () => {
     writeJson(pkgDir, 'turbo.json', {
       extends: ['//'],
       tasks: {
-        'generate': { dependsOn: ['generate:stamp'] },
+        'generate': { dependsOn: ['$TURBO_EXTENDS$', 'generate:stamp'] },
         'generate:stamp': { inputs: ['package.json'], outputs: ['generated/**'] },
       },
     });
