@@ -15,6 +15,12 @@ allow-dependencies-licenses:
   - pkg:npm/lightningcss-linux-x64-musl
   - pkg:npm/lightningcss-win32-arm64-msvc
   - pkg:npm/lightningcss-win32-x64-msvc
+  # renovate AGPL-3.0-only (dev-only CLI): mise's `npm:renovate` provides
+  # renovate-config-validator for the pre-commit hooks. It runs locally and
+  # is never linked, bundled or distributed, so AGPL's network clause has
+  # nothing to attach to. Dependency Graph sees it through the mise lockfile
+  # sidecar's package.json. Excluded by name so AGPL stays gated elsewhere.
+  - pkg:npm/renovate
   # vscode-{css,html}-languageservice: the npm artifacts declare MIT.
   # GitHub's CC-BY-SA-2.5 is an assessment of the upstream repo, where
   # MDN-derived data carries share-alike terms. Excluded by name rather than

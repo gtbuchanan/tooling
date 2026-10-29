@@ -390,7 +390,11 @@ through `package.json` scripts backed by `gtb` leaf commands.
   shared license policy, so consumers inherit it. Posts a PR summary
   comment on failure; caller must grant `pull-requests: write`. Both
   jobs require GitHub's Dependency Graph enabled; coverage is limited
-  to ecosystems it indexes (npm + Actions here), so mise tools and
+  to ecosystems it indexes (npm + Actions here). mise's `npm:` tools
+  are the exception: lockfile v3 commits each one's `package.json`
+  sidecar under `.mise/locks/`, which Dependency Graph indexes, so both
+  jobs see the tool itself (not its transitive tree — the sidecar's
+  `aube-lock.yaml` isn't a format it reads). Other mise tools and
   `hk.pkl` steps aren't covered — Renovate's managers handle those
   independently.
 - **`pre-commit.yml`** — Runs the `hk:base` mise task on PR changed
