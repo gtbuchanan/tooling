@@ -3,7 +3,11 @@ import { generateTurboJson } from '#src/lib/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
 
 describe.concurrent(generateTurboJson, () => {
-  it('leaves the monorepo generate aggregate empty for packages to fill', ({ expect }) => {
+  /*
+   * Packages fill in their own leaves; the root only chains codegen through
+   * dependencies, so a package without codegen still passes it along.
+   */
+  it('chains the monorepo generate aggregate through dependencies', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ generateScripts: ['generate:prisma'] })],
       { isMonorepo: true },
@@ -11,8 +15,7 @@ describe.concurrent(generateTurboJson, () => {
 
     const result = generateTurboJson(discovery);
 
-    expect(result.tasks).toHaveProperty('generate');
-    expect(result.tasks['generate']).toStrictEqual({});
+    expect(result.tasks['generate']).toStrictEqual({ dependsOn: ['^generate'] });
   });
 
   it('omits generate leaf tasks from a monorepo root', ({ expect }) => {

@@ -76,6 +76,15 @@ const createGenerateProject = (options: GenerateProjectOptions): GenerateProject
   return { configPath, pkgDir, root };
 };
 
+/**
+ * turbo's marker for keeping the root's `dependsOn` in a package override.
+ */
+const extendsRoot = '$TURBO_EXTENDS$';
+
+const unextendedMessage = (configPath: string): string =>
+  `${configPath}: task 'generate' must list '${extendsRoot}' first ` +
+  'to keep the root\'s ^generate';
+
 const verifyTurbo = (root: string, ignored?: ReadonlySet<string>): readonly string[] =>
   runVerify({
     cwd: root,
@@ -88,7 +97,7 @@ describe.concurrent('generate task verification', () => {
     const { root } = createGenerateProject({
       scripts: ['generate:prisma'],
       tasks: {
-        'generate': { dependsOn: ['generate:prisma'] },
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'] },
         'generate:prisma': { inputs: ['schema.prisma'], outputs: ['generated/**'] },
       },
     });
@@ -100,7 +109,7 @@ describe.concurrent('generate task verification', () => {
     const { root } = createGenerateProject({
       scripts: ['generate:prisma'],
       tasks: {
-        'generate': { dependsOn: ['generate:prisma'] },
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'] },
         'generate:prisma': { cache: false },
       },
     });
@@ -121,7 +130,7 @@ describe.concurrent('generate task verification', () => {
       extendsValue: [],
       scripts: ['generate:prisma'],
       tasks: {
-        'generate': { dependsOn: ['generate:prisma'] },
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'] },
         'generate:prisma': { outputs: ['generated/**'] },
       },
     });
@@ -136,7 +145,7 @@ describe.concurrent('generate task verification', () => {
     });
     writeJson(pkgDir, 'turbo.json', {
       tasks: {
-        'generate': { dependsOn: ['generate:prisma'] },
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'] },
         'generate:prisma': { outputs: ['generated/**'] },
       },
     });
@@ -155,14 +164,67 @@ describe.concurrent('generate task verification', () => {
 
     expect(verifyTurbo(root)).toStrictEqual([
       `${configPath}: task 'generate' must depend on 'generate:prisma'`,
+      unextendedMessage(configPath),
     ]);
+  });
+
+  /*
+   * A package's `dependsOn` replaces the root's, so without the marker the
+   * root's `^generate` stops here and a dependency two hops away races.
+   */
+  it('reports an aggregate that drops the root\'s dependencies', ({ expect }) => {
+    const { configPath, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: {
+        'generate': { dependsOn: ['generate:prisma'] },
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([unextendedMessage(configPath)]);
+  });
+
+  it('reports a marker that is not the first entry', ({ expect }) => {
+    const { configPath, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: {
+        'generate': { dependsOn: ['generate:prisma', extendsRoot] },
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([unextendedMessage(configPath)]);
+  });
+
+  it('reports a marker on a task that opts out of inheritance', ({ expect }) => {
+    const { configPath, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: {
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'], extends: false },
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([unextendedMessage(configPath)]);
+  });
+
+  it('accepts an explicit ^generate in place of the marker', ({ expect }) => {
+    const { root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: {
+        'generate': { dependsOn: ['^generate', 'generate:prisma'] },
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([]);
   });
 
   it('reports a script left out of the generate aggregate', ({ expect }) => {
     const { configPath, root } = createGenerateProject({
       scripts: ['generate:paraglide', 'generate:prisma'],
       tasks: {
-        'generate': { dependsOn: ['generate:prisma'] },
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'] },
         'generate:paraglide': { outputs: ['messages/**'] },
         'generate:prisma': { outputs: ['generated/**'] },
       },
@@ -181,6 +243,7 @@ describe.concurrent('generate task verification', () => {
 
     expect(verifyTurbo(root)).toStrictEqual([
       `${configPath}: task 'generate' must depend on 'generate:prisma'`,
+      unextendedMessage(configPath),
     ]);
   });
 
@@ -194,13 +257,14 @@ describe.concurrent('generate task verification', () => {
     expect(verifyTurbo(root)).toStrictEqual([
       `${configPath}: task 'generate' must depend on 'generate:prisma'`,
       `${configPath}: missing task 'generate:prisma'`,
+      unextendedMessage(configPath),
     ]);
   });
 
   it('reports a leaf script with no task definition', ({ expect }) => {
     const { configPath, root } = createGenerateProject({
       scripts: ['generate:prisma'],
-      tasks: { generate: { dependsOn: ['generate:prisma'] } },
+      tasks: { generate: { dependsOn: [extendsRoot, 'generate:prisma'] } },
     });
 
     expect(verifyTurbo(root)).toStrictEqual([
@@ -212,7 +276,7 @@ describe.concurrent('generate task verification', () => {
     const { configPath, root } = createGenerateProject({
       scripts: ['generate:prisma'],
       tasks: {
-        'generate': { dependsOn: ['generate:prisma'] },
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'] },
         'generate:prisma': { inputs: ['schema.prisma'] },
       },
     });
@@ -226,7 +290,7 @@ describe.concurrent('generate task verification', () => {
     const { configPath, root } = createGenerateProject({
       scripts: ['generate:prisma'],
       tasks: {
-        'generate': { dependsOn: ['generate:prisma'] },
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'] },
         'generate:prisma': { outputs: [] },
       },
     });

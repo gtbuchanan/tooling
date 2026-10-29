@@ -4,7 +4,7 @@ import * as v from 'valibot';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
 import { readJsonFile } from './file-writer.ts';
 import { StringArray, UnknownRecord } from './schemas.ts';
-import { Aggregate } from './turbo-config.ts';
+import { Aggregate, topo } from './turbo-config.ts';
 
 /**
  * Package configuration (`packages/<pkg>/turbo.json`) as far as the
@@ -18,6 +18,7 @@ const PackageConfigSchema = v.looseObject({
 const TaskSchema = v.looseObject({
   cache: v.optional(v.boolean()),
   dependsOn: v.optional(StringArray),
+  extends: v.optional(v.boolean()),
   outputs: v.optional(StringArray),
 });
 
@@ -68,6 +69,36 @@ const checkAggregateWiring = (
     : [`${filePath}: task '${Aggregate.generate}' must depend on '${script}'`];
 };
 
+/**
+ * turbo's marker for keeping the root's array entries in a package override.
+ */
+const extendsMarker = '$TURBO_EXTENDS$';
+
+/*
+ * A package configuration's `dependsOn` replaces the root's, so an aggregate
+ * listing only its leaves drops the root's `^generate`. Its dependencies'
+ * codegen then goes unordered, and a consumer two hops away races it. turbo
+ * honours the marker only as the first entry, and a task with `extends: false`
+ * inherits nothing for it to keep.
+ */
+const checkAggregateExtends = (
+  filePath: string,
+  tasks: Record<string, unknown>,
+): readonly string[] => {
+  const result = v.safeParse(TaskSchema, tasks[Aggregate.generate]);
+  const task = result.success ? result.output : {};
+  const dependsOn = task.dependsOn ?? [];
+  const isRootKept = task.extends !== false && dependsOn[0] === extendsMarker;
+  const hasRootEdge = isRootKept || dependsOn.includes(topo(Aggregate.generate));
+
+  return hasRootEdge
+    ? []
+    : [
+        `${filePath}: task '${Aggregate.generate}' must list '${extendsMarker}' first ` +
+        `to keep the root's ${topo(Aggregate.generate)}`,
+      ];
+};
+
 const checkPackageConfig = (
   filePath: string,
   config: PackageConfig,
@@ -82,10 +113,13 @@ const checkPackageConfig = (
   }
   const tasks = config.tasks ?? {};
 
-  return scripts.flatMap(script => [
-    ...checkAggregateWiring(filePath, tasks, script),
-    ...checkLeafTask(filePath, tasks, script),
-  ]);
+  return [
+    ...scripts.flatMap(script => [
+      ...checkAggregateWiring(filePath, tasks, script),
+      ...checkLeafTask(filePath, tasks, script),
+    ]),
+    ...checkAggregateExtends(filePath, tasks),
+  ];
 };
 
 const checkPackage = (
@@ -109,8 +143,8 @@ const checkPackage = (
 
 /**
  * Asserts every package with `generate:*` scripts wires them into its own
- * package configuration. The generated root `turbo.json` leaves the
- * `generate` aggregate empty for monorepos (only the package knows what its
+ * package configuration. The generated root `turbo.json` names no leaves in
+ * the monorepo `generate` aggregate (only the package knows what its
  * codegen reads and writes), which means a package that never declares its
  * leaves silently skips generation instead of failing — this check is what
  * makes that loud. Single-package repos have no package configuration to

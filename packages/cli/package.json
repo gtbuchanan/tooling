@@ -48,10 +48,14 @@
   "peerDependencies": {
     "skills": "^1.5.1",
     "skills-npm": "^1.1.1",
+    "turbo": ">=2.7.0",
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "skills-npm": {
+      "optional": true
+    },
+    "turbo": {
       "optional": true
     }
   },

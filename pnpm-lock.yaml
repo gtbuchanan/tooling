@@ -412,6 +412,9 @@ importers:
       smol-toml:
         specifier: 'catalog:'
         version: 1.9.1
+      turbo:
+        specifier: '>=2.7.0'
+        version: 2.11.10
       typescript:
         specifier: '>=5.0.0'
         version: 6.0.3

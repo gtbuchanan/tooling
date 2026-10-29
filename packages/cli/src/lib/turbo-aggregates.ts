@@ -17,12 +17,16 @@ import {
  * on disk (or nothing).
  *
  * Monorepos therefore push the leaves down to the packages, using the seam
- * turbo provides for exactly this: the root aggregate stays empty and each
- * package declares `generate` plus its own leaves — with real inputs and
- * outputs — in a package configuration (`packages/<pkg>/turbo.json` extending
- * `//`). Only the package knows what its codegen emits. A package that skips
- * the wiring silently never generates, so `gtb verify` asserts it (see
- * `checkGenerateConfigs`).
+ * turbo provides for exactly this: each package declares `generate` plus its
+ * own leaves — with real inputs and outputs — in a package configuration
+ * (`packages/<pkg>/turbo.json` extending `//`). Only the package knows what
+ * its codegen emits. A package that skips the wiring silently never
+ * generates, so `gtb verify` asserts it (see `checkGenerateConfigs`).
+ *
+ * The root aggregate names no leaves, only `^generate`, so a package with no
+ * codegen of its own still orders its consumers behind its dependencies'.
+ * A package configuration's `dependsOn` replaces the root's, so verify also
+ * asserts each one keeps it through `$TURBO_EXTENDS$`.
  *
  * Single-package repos get no such seam — turbo supports package
  * configurations only for workspace packages, and the lone turbo.json is
@@ -52,7 +56,7 @@ const generateAggregate = (
   {
     condition: flags.hasGenerate,
     key: Aggregate.generate,
-    value: isMonorepo ? {} : { dependsOn: [...flags.generateScripts] },
+    value: { dependsOn: isMonorepo ? [topo(Aggregate.generate)] : [...flags.generateScripts] },
   },
   ...generateLeafTasks(flags, isMonorepo),
 ];
