@@ -167,6 +167,13 @@ export interface WorkspaceDiscovery {
   readonly rootDir: string;
 }
 
+/**
+ * The workspace package that vendors `@gtbuchanan/cli`, wherever the
+ * workspace keeps it. Undefined outside a self-hosted workspace.
+ */
+export const vendoredCli = (discovery: WorkspaceDiscovery): PackageCapabilities | undefined =>
+  discovery.packages.find(pkg => pkg.name === '@gtbuchanan/cli');
+
 const hasDir = (base: string, name: string): boolean =>
   existsSync(path.join(base, name));
 

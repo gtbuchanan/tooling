@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { rootNames } from '../commands/root/names.ts';
 import { taskCommandName, taskNames } from '../commands/task/names.ts';
 import type { PackageCapabilities, WorkspaceDiscovery } from './discovery.ts';
@@ -80,23 +81,25 @@ const packageScriptEntries = (
 /**
  * Generates the gtb shim script for self-hosted packages.
  */
-const gtbShim = (pkgDir: string, rootDir: string): string => {
-  const rel = toPosixRelative(pkgDir, rootDir);
+const gtbShim = (pkgDir: string, cliDir: string): string => {
+  const bin = path.posix.join(toPosixRelative(pkgDir, cliDir), 'bin/gtb.ts');
 
-  return `node --experimental-strip-types ${rel}/packages/cli/bin/gtb.ts`;
+  return `node --experimental-strip-types ${bin}`;
 };
 
 /**
- * Generates per-package scripts from capabilities.
+ * Generates per-package scripts from capabilities. `cliDir` is the vendored
+ * CLI package's directory (from `vendoredCli`), which the self-hosted
+ * `gtb` shim runs from source.
  */
 export const generatePackageScripts = (
   caps: PackageCapabilities,
   isSelfHosted: boolean,
-  rootDir?: string,
+  cliDir?: string,
 ): Record<string, string> => {
   const scripts = collect(packageScriptEntries(caps, isSelfHosted));
-  if (isSelfHosted && rootDir !== undefined) {
-    scripts['gtb'] = gtbShim(caps.dir, rootDir);
+  if (isSelfHosted && cliDir !== undefined) {
+    scripts['gtb'] = gtbShim(caps.dir, cliDir);
   }
 
   return scripts;

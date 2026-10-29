@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { taskNames } from '../commands/task/names.ts';
-import type { WorkspaceDiscovery } from './discovery.ts';
+import { type WorkspaceDiscovery, vendoredCli } from './discovery.ts';
 import {
   buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
 } from './dist-source.ts';
@@ -189,14 +189,15 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
  * script rather than a dependency, so no task edge reaches the CLI and an
  * edit to it would otherwise replay every other package's cached results.
  */
-const vendoredCliSources = (discovery: WorkspaceDiscovery): readonly string[] =>
-  discovery.packages
-    .filter(pkg => pkg.name === '@gtbuchanan/cli')
-    .flatMap((pkg) => {
-      const rel = toPosixRelative(discovery.rootDir, pkg.dir);
-      return ['package.json', ...pkg.buildIncludes.flatMap(toTurboGlobs)]
-        .map(file => path.posix.join(rel, file));
-    });
+const vendoredCliSources = (discovery: WorkspaceDiscovery): readonly string[] => {
+  const cli = vendoredCli(discovery);
+  if (cli === undefined) {
+    return [];
+  }
+  const rel = toPosixRelative(discovery.rootDir, cli.dir);
+  return ['package.json', ...cli.buildIncludes.flatMap(toTurboGlobs)]
+    .map(file => path.posix.join(rel, file));
+};
 
 /**
  * Creates a topological (cross-package) task dependency.

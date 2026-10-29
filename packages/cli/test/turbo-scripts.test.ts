@@ -81,11 +81,28 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates gtb shim for self-hosted packages', ({ expect }) => {
     const caps = makeCapabilities({ dir: '/root/packages/app', hasTypeScript: true });
 
-    const result = generatePackageScripts(caps, true, '/root');
+    const result = generatePackageScripts(caps, true, '/root/packages/cli');
 
     expect(result).toHaveProperty('typecheck:ts', 'pnpm run gtb task typecheck:ts');
-    expect(result['gtb']).toContain('node --experimental-strip-types');
-    expect(result['gtb']).toContain('packages/cli/bin/gtb.ts');
+    expect(result).toHaveProperty('gtb', 'node --experimental-strip-types ../cli/bin/gtb.ts');
+  });
+
+  it('points the gtb shim at the CLI wherever the workspace keeps it', ({ expect }) => {
+    const caps = makeCapabilities({ dir: '/root/packages/app' });
+
+    const result = generatePackageScripts(caps, true, '/root/tools/gtb');
+
+    expect(result).toHaveProperty(
+      'gtb', 'node --experimental-strip-types ../../tools/gtb/bin/gtb.ts',
+    );
+  });
+
+  it('points the CLI package\'s own gtb shim at its bin', ({ expect }) => {
+    const caps = makeCapabilities({ dir: '/root/tools/gtb' });
+
+    const result = generatePackageScripts(caps, true, '/root/tools/gtb');
+
+    expect(result).toHaveProperty('gtb', 'node --experimental-strip-types bin/gtb.ts');
   });
 
   it('generates nothing for empty capabilities', ({ expect }) => {
