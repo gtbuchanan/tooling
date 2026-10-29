@@ -32,6 +32,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
     release.yml            — Pipeline (push): CI gate + CD
 packages/
   cli/                          — @gtbuchanan/cli (gtb build CLI for consumers)
+    src/                        — Layered core ← tasks ← toolchains/<name> ← codegen ← release; eslint.config.ts lints the import direction
     skills/                     — Authored Agent Skills deployed by `gtb task deploy:skills`
   eslint-config/                — @gtbuchanan/eslint-config (ESLint configure())
   eslint-plugin-agent-skills/   — @gtbuchanan/eslint-plugin-agent-skills (Agent Skills schema + rules)
