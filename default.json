@@ -39,6 +39,18 @@
   "extends": [
     "config:recommended"
   ],
+  "ignorePaths": [
+    "**/__fixtures__/**",
+    "**/__tests__/**",
+    "**/.config/mise/locks/**",
+    "**/.mise/locks/**",
+    "**/bower_components/**",
+    "**/examples/**",
+    "**/node_modules/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/vendor/**"
+  ],
   "labels": [
     "dependencies"
   ],

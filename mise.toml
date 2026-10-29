@@ -1,6 +1,9 @@
-# Soft floor for minimum_release_age_excludes (below): older mise warns and
-# ignores the field instead of failing.
-min_version = { soft = "2026.6.2" }
+# The oldest mise that reads mise.lock's `lockfile_version = 3`, declared so an
+# older one fails with a version error instead of a confusing lockfile one.
+# This floor also covers minimum_release_age_excludes (below), added in
+# 2026.6.2. CI pins its own version in `.github/actions/mise-setup`, which only
+# has to stay at or above this.
+min_version = "2026.9.16"
 
 [env]
 # hk wraps hook steps in `mise x` so mise-managed tools resolve without
