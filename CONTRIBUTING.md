@@ -91,14 +91,14 @@ changeset — CI enforces this.
 
 mise itself is Termux-packaged here (`pkg install mise`), but **mise's
 install backends have no Android targets for this repo's tools** —
-`node`, `pnpm`, `hk`, `pkl`, and `actionlint` all key off
-`android/arm64`, for which aqua/core ship no assets. Each is installed
+`node`, `pnpm`, `hk`, `pkl`, and `jactionlint` all key off
+`android/arm64`, for which their backends ship no assets. Each is installed
 out of band and disabled in mise so it doesn't try to manage them:
 
 ```toml
 # ~/.config/mise/config.toml
 [settings]
-disable_tools = ["node", "pnpm", "hk", "pkl", "actionlint"]
+disable_tools = ["node", "pnpm", "hk", "pkl", "jactionlint"]
 ```
 
 - **node** — `pkg install nodejs-lts`; mise's `core:node` only builds
@@ -109,7 +109,7 @@ disable_tools = ["node", "pnpm", "hk", "pkl", "actionlint"]
 - **hk** — download the static musl aarch64 release tarball
   (`hk-aarch64-unknown-linux-musl.tar.gz`); it runs unmodified on
   Bionic.
-- **actionlint** — download the prebuilt `linux_arm64` release; it's a
+- **jactionlint** — download the prebuilt `linux_arm64` release; it's a
   static Go binary that runs unmodified. hk orchestrates it as a
   workflow-lint step but doesn't depend on it at runtime.
 - **pkl** — Apple ships only `pkl-linux-aarch64`, a glibc-dynamic binary

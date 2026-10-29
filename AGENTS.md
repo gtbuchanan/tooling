@@ -102,11 +102,11 @@ coverage, setupFiles, and mock reset.
   `check` / `fix` hooks via `Defaults.hooksFor`:
   - File hygiene — `Defaults.fileHygiene` (large files, EOF newline, BOM,
     trailing whitespace, each with the lockfile-exclude pre-wired)
-  - `actionlint` — `Defaults.actionlint`, binary via mise `aqua:rhysd/actionlint`.
-    actionlint runs `shellcheck` (mise `aqua:koalaman/shellcheck`) on workflow
-    `run:` scripts when it's on PATH; the shared preset's step wraps the builtin
-    to disable shellcheck on Windows only, working around an actionlint deadlock
-    (see the comment in `Defaults.pkl` for mechanism and removal trigger).
+  - `jactionlint` — `Defaults.jactionlint`, binary via mise `github:jdx/jactionlint`
+    (the maintained actionlint fork). Lints workflows, composite actions and
+    Dependabot config, and runs `shellcheck` (mise `aqua:koalaman/shellcheck`)
+    on `run:` scripts when it's on PATH. The preset pins the `correctness`
+    profile (see the doc comment in `Defaults.pkl` for why).
   - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)
   - `shellcheck` / `shfmt` — from `Defaults.shell` (via `recommended`),
@@ -122,13 +122,13 @@ coverage, setupFiles, and mock reset.
     wired into `pre-commit` by `Defaults.hooksFor` (commit-time-only guard)
 - **`@gtbuchanan/hk-config` preset** (`packages/hk-config/Defaults.pkl`).
   The reusable building blocks (`fileHygiene`, `forbidSubmodules`,
-  `renovateConfig`, `actionlint`, `shellcheck`, `shfmt`, and the
+  `renovateConfig`, `jactionlint`, `shellcheck`, `shfmt`, and the
   `defaultExclude` primitive) ship as a Pkl package — `shellcheck` /
   `shfmt` select by content type (extension **and** shebang, so
   extensionless scripts match) with `defaultExclude` pre-wired. The preset
   also exports the `shell` group (`shellcheck` + `shfmt`), the `recommended`
   step mapping (file hygiene + `forbid-submodules` + `renovate-config` +
-  `actionlint` + shell — every step glob/type-gated, so inapplicable ones are
+  `jactionlint` + shell — every step glob/type-gated, so inapplicable ones are
   inert) for one-line adoption, and `hooksFor(steps)` which builds the standard
   `pre-commit` / `check` / `fix` trio (pre-commit stashes via `patch-file` and
   adds the commit-time-only `no-commit-to-branch` guard). It's private to

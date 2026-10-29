@@ -1,7 +1,7 @@
 /// Shared hk building blocks for @gtbuchanan/tooling consumers. The fast path:
 /// spread `...recommended` into a step mapping, add your repo-specific steps
 /// (e.g. eslint), and build the hook trio with `hooksFor(steps)`. The
-/// individual steps (`fileHygiene`, `actionlint`, `shell`, ...) and the
+/// individual steps (`fileHygiene`, `jactionlint`, `shell`, ...) and the
 /// `defaultExclude` primitive stay exported for granular composition.
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
@@ -19,34 +19,30 @@ vendorExclude: Regex = Regex(#"^vendor/"#)
 /// vendored sources. Wire onto your own steps with `exclude = Defaults.defaultExclude`.
 defaultExclude: Regex = Regex("\(lockfileExclude.pattern)|\(vendorExclude.pattern)")
 
-// actionlint pipes each `run:` script to shellcheck's stdin before starting
-// the process, so a script larger than the kernel pipe buffer deadlocks the
-// hook (rhysd/actionlint#650). Buffer sizes are smaller on Windows/macOS than
-// on Linux, so it bites a Windows-primary dev loop but not CI. Disable
-// shellcheck on Windows only; CI (Linux) and other platforms reuse the
-// builtin's command (no drift) and keep full shellcheck coverage.
-// The upstream fix (#651) is merged but unreleased as of actionlint 1.7.12 —
-// drop this guard once a release containing it lands.
-// (hk wraps a builtin's command in a `CommandSpec` alongside its declared
-// effect; `Script` holds only strings, so join the argv `Command` back into one.)
-local actionlintSpec: Config.CommandSpec = Builtins.actionlint.check as Config.CommandSpec
-local actionlintCheck: String = (actionlintSpec.command as Config.Command).argv.join(" ")
-
-/// actionlint with the Windows shellcheck-deadlock workaround pre-wired (see
-/// the comment above for mechanism and removal trigger). Binary via mise
-/// `aqua:rhysd/actionlint`; shellcheck (`aqua:koalaman/shellcheck`) on PATH
-/// enables run-script linting on non-Windows platforms.
-actionlint: Config.Step = (Builtins.actionlint) {
-  // Amend the builtin's spec rather than building a new one, so the declared
-  // `effect` keeps tracking upstream.
-  check = (actionlintSpec) {
-    command = new Config.Script {
-      windows = "actionlint -shellcheck= {{ files }}"
-      linux = actionlintCheck
-      macos = actionlintCheck
-      other = actionlintCheck
-    }
+// Insert `--profile correctness` after the `jactionlint` word of a builtin
+// command, wherever it sits: `check_diff` runs it behind `hk util sarif-diff`.
+// Amending the builtin's spec rather than building a new one keeps its argv
+// and declared `effect` tracking upstream.
+local function correctnessProfile(spec: Config.CommandSpec): Config.CommandSpec = (spec) {
+  command = new Config.Command {
+    argv = (spec.command as Config.Command).argv.flatMap((arg) ->
+      if (arg == "jactionlint") List(arg, "--profile", "correctness") else List(arg)
+    )
   }
+}
+
+/// jactionlint (a maintained actionlint fork) over workflows, composite
+/// actions and Dependabot config, limited to its `correctness` profile: the
+/// checks actionlint makes. The `default` profile adds hardening rules
+/// (timeouts, concurrency groups, SHA-pinned actions) whose autofixes would
+/// rewrite a consumer's workflows during pre-commit. The flag overrides the
+/// `profile` of `.github/jactionlint.yaml`, so a repo wanting a stricter one
+/// amends this step's argv instead. Binary via mise `github:jdx/jactionlint`;
+/// shellcheck (`aqua:koalaman/shellcheck`) on PATH enables run-script linting.
+jactionlint: Config.Step = (Builtins.jactionlint) {
+  check = correctnessProfile(Builtins.jactionlint.check as Config.CommandSpec)
+  check_diff = correctnessProfile(Builtins.jactionlint.check_diff as Config.CommandSpec)
+  fix = correctnessProfile(Builtins.jactionlint.fix as Config.CommandSpec)
 }
 
 /// File-hygiene builtins with the lockfile-exclude already wired.
@@ -120,7 +116,7 @@ shell: Mapping<String, Config.Step> = new {
 /// intentionally omitted — it's specific to preset-authoring repos.
 recommended: Mapping<String, Config.Step> = new {
   ...fileHygiene
-  ["actionlint"] = actionlint
+  ["jactionlint"] = jactionlint
   ["forbid-submodules"] = forbidSubmodules
   ["renovate-config"] = renovateConfig
   ...shell

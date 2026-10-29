@@ -58,11 +58,11 @@
   "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
-      "description": "Group actionlint updates (mise tool + .chezmoidata version comment share one rhysd/actionlint release)",
-      "groupName": "actionlint",
+      "description": "Group jactionlint updates (mise tool + .chezmoidata version comment share one jdx/jactionlint release)",
+      "groupName": "jactionlint",
       "internalChecksFilter": "flexible",
       "matchSourceUrls": [
-        "https://github.com/rhysd/actionlint"
+        "https://github.com/jdx/jactionlint"
       ]
     },
     {
