@@ -147,10 +147,10 @@ export const checkManifests = (
 ): readonly string[] =>
   generateManifests(discovery).flatMap(({ content, filePath }) => {
     if (!existsSync(filePath)) {
-      return [`${filePath}: missing (run gtb sync)`];
+      return `${filePath}: missing (run gtb sync)`;
     }
 
     return readFileSync(filePath, 'utf8') === content
       ? []
-      : [`${filePath}: out of date (run gtb sync manifest)`];
+      : `${filePath}: out of date (run gtb sync manifest)`;
   });

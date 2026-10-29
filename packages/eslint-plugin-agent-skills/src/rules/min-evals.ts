@@ -16,8 +16,7 @@ const defaultMin = 1;
 const countEvals = (evalsPath: string): number => {
   try {
     const parsed: unknown = JSON.parse(fs.readFileSync(evalsPath, 'utf8'));
-    if (typeof parsed !== 'object' || parsed === null) return 0;
-    if (!('evals' in parsed)) return 0;
+    if (typeof parsed !== 'object' || parsed === null || !('evals' in parsed)) return 0;
     const { evals } = parsed;
     return Array.isArray(evals) ? evals.length : 0;
   } catch {

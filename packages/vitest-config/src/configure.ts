@@ -167,10 +167,9 @@ const findGitRoot = (cwd: string): string | undefined => {
 
 const resolveCoverageProjectRoot = (cwd: string): string => {
   const githubWorkspace = process.env['GITHUB_WORKSPACE'];
-  if (githubWorkspace !== undefined && githubWorkspace !== '') {
-    return githubWorkspace;
-  }
-  return findGitRoot(cwd) ?? cwd;
+  return githubWorkspace === undefined || githubWorkspace === ''
+    ? findGitRoot(cwd) ?? cwd
+    : githubWorkspace;
 };
 
 /**
@@ -190,7 +189,7 @@ export const resolveProjectDirs = (
         .filter(entry => entry.isDirectory())
         .map(entry => path.join(parent, entry.name));
     }
-    return [path.resolve(process.cwd(), pattern)];
+    return path.resolve(process.cwd(), pattern);
   });
 
 /**
@@ -217,10 +216,7 @@ const buildProjectEntry = (
   dir: string,
   configureFn: () => UserWorkspaceConfig,
 ): string | UserWorkspaceConfig => {
-  if (hasVitestConfig(dir)) {
-    return dir;
-  }
-  return buildWorkspaceEntry(dir, configureFn);
+  return hasVitestConfig(dir) ? dir : buildWorkspaceEntry(dir, configureFn);
 };
 
 const resolveProjects = (

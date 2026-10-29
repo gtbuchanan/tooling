@@ -85,10 +85,7 @@ const mockDiscoverPackage = vi.mocked(discoverPackage);
 
 const getRunArgs = (): readonly string[] => {
   const lastCall = mockRun.mock.calls.at(-1);
-  if (lastCall === undefined) {
-    return [];
-  }
-  return lastCall[1]?.args ?? [];
+  return lastCall === undefined ? [] : lastCall[1]?.args ?? [];
 };
 
 const invoke = async (rawArgs: readonly string[]): Promise<void> => {

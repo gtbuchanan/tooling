@@ -44,12 +44,16 @@ const syncScripts = (root: string): void => {
 };
 
 /**
- * Adds one script, leaving the rest of the manifest (and so discovery) intact.
+ * Adds a check script shadowing the turbo task of the same name, leaving
+ * the rest of the manifest (and so discovery) intact.
  */
-const addScript = (root: string, name: string, value: string): void => {
+const addShadowingCheckScript = (root: string): void => {
   const filePath = path.join(root, 'package.json');
   const manifest = readJsonFile(filePath);
-  writeJsonFile(filePath, { ...manifest, scripts: { ...readScripts(root), [name]: value } });
+  writeJsonFile(filePath, {
+    ...manifest,
+    scripts: { ...readScripts(root), check: 'gtb turbo run check' },
+  });
 };
 
 describe.concurrent('single-package root scripts', () => {
@@ -89,7 +93,7 @@ describe.concurrent('single-package root scripts', () => {
   it('reports a leftover aggregate script as drift', ({ expect }) => {
     const root = createSinglePackageProject();
     syncScripts(root);
-    addScript(root, 'check', 'gtb turbo run check');
+    addShadowingCheckScript(root);
 
     const drift = runVerify({ cwd: root, scopes: new Set(['scripts']) });
 
@@ -102,7 +106,7 @@ describe.concurrent('single-package root scripts', () => {
   it('suppresses the shadowing report through the ignored set', ({ expect }) => {
     const root = createSinglePackageProject();
     syncScripts(root);
-    addScript(root, 'check', 'gtb turbo run check');
+    addShadowingCheckScript(root);
 
     const drift = runVerify({
       cwd: root,

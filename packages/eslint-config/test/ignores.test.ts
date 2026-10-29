@@ -71,21 +71,21 @@ describe.concurrent('ignores', () => {
    * and dotfile handling are the real thing.
    */
   it('ignores every package manager lockfile spelling by default', async ({ expect }) => {
-    const wouldSkip = await createSkipPredicate();
+    const isSkipped = await createSkipPredicate();
 
     for (const file of [
       'Cargo.lock', 'bun.lock', 'deno.lock', 'mise.lock', 'npm-shrinkwrap.json',
       'package-lock.json', 'packages.lock.json', 'pnpm-lock.yaml', 'uv.lock',
     ]) {
-      await expect(wouldSkip(`nested/dir/${file}`)).resolves.toBe(true);
+      await expect(isSkipped(`nested/dir/${file}`)).resolves.toBe(true);
     }
   });
 
   it('leaves tracked data files it can lint alone', async ({ expect }) => {
-    const wouldSkip = await createSkipPredicate();
+    const isSkipped = await createSkipPredicate();
 
     for (const file of ['package.json', 'pnpm-workspace.yaml', 'turbo.json']) {
-      await expect(wouldSkip(`nested/dir/${file}`)).resolves.toBe(false);
+      await expect(isSkipped(`nested/dir/${file}`)).resolves.toBe(false);
     }
   });
 });
@@ -96,11 +96,11 @@ describe.concurrent('gitignore', () => {
    * `**\/dist/`), which only prunes a directory if ESLint reads it as one.
    */
   it('ignores directories a .gitignore excludes', async ({ expect }) => {
-    const wouldSkip = await createSkipPredicate({ '.': 'build-output/\n' });
+    const isSkipped = await createSkipPredicate({ '.': 'build-output/\n' });
 
-    await expect(wouldSkip('packages/thing/build-output/index.js'))
+    await expect(isSkipped('packages/thing/build-output/index.js'))
       .resolves.toBe(true);
-    await expect(wouldSkip('packages/thing/src/index.js')).resolves.toBe(false);
+    await expect(isSkipped('packages/thing/src/index.js')).resolves.toBe(false);
   });
 
   it('derives ignores from .gitignore by default', async ({ expect }) => {

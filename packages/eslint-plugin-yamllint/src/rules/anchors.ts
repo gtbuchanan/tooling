@@ -40,14 +40,14 @@ const collectAnchors = (doc: Document.Parsed): CollectedAnchors => {
       return;
     }
 
-    if (isScalar(node) || isCollection(node)) {
-      const { anchor, range } = node;
-      if (anchor && range) {
-        const list = anchorMap.get(anchor) ?? [];
-        list.push(range);
-        anchorMap.set(anchor, list);
-      }
-    }
+    if (!isScalar(node) && !isCollection(node)) return;
+
+    const { anchor, range } = node;
+    if (!anchor || !range) return;
+
+    const list = anchorMap.get(anchor) ?? [];
+    list.push(range);
+    anchorMap.set(anchor, list);
   });
 
   return { aliases: aliasMap, anchors: anchorMap };
@@ -69,14 +69,14 @@ const reportAnchorIssues = (
       }
     }
 
-    if (options.shouldForbidUnused && !collected.aliases.has(name)) {
-      const first = ranges[0];
-      if (!first) continue;
-      context.report({
-        loc: toEslintLoc(lineCounter, first[0]),
-        message: `unused anchor "&${name}"`,
-      });
-    }
+    if (!options.shouldForbidUnused || collected.aliases.has(name)) continue;
+
+    const first = ranges[0];
+    if (!first) continue;
+    context.report({
+      loc: toEslintLoc(lineCounter, first[0]),
+      message: `unused anchor "&${name}"`,
+    });
   }
 };
 

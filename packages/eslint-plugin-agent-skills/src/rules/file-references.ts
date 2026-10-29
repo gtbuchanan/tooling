@@ -98,8 +98,7 @@ export const fileReferences: FileReferencesRule = {
 
     const checkUrl = (node: Definition | Image | Link): void => {
       const { url } = node;
-      if (url === '') return;
-      if (externalUrlPattern.test(url)) return;
+      if (url === '' || externalUrlPattern.test(url)) return;
       const cleanUrl = stripFragmentAndQuery(url);
       if (cleanUrl === '') return;
 
