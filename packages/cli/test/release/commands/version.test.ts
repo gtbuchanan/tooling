@@ -1,0 +1,39 @@
+import { describe, it } from 'vitest';
+import { executeVersion } from '#src/release/commands/version.js';
+
+interface RunCall {
+  readonly args: readonly string[];
+  readonly command: string;
+}
+
+describe.concurrent(executeVersion, () => {
+  it('awaits changeset version before the manifest-scoped sync', async ({ expect }) => {
+    const order: string[] = [];
+    const runCalls: RunCall[] = [];
+    let syncScopes: readonly string[] = [];
+    let hasRunFinished = false;
+
+    await executeVersion({
+      run: async (command, options) => {
+        order.push('run:start');
+        runCalls.push({ args: options?.args ?? [], command });
+        await Promise.resolve();
+        hasRunFinished = true;
+        order.push('run:end');
+      },
+      // `sync` is synchronous (`=> void`); it must not run until `run` settled.
+      sync: (options) => {
+        expect(hasRunFinished).toBe(true);
+
+        order.push('sync');
+        syncScopes = [...(options.scopes ?? [])];
+      },
+    });
+
+    expect(runCalls).toStrictEqual([
+      { args: ['exec', 'changeset', 'version'], command: 'pnpm' },
+    ]);
+    expect(syncScopes).toStrictEqual(['manifest']);
+    expect(order).toStrictEqual(['run:start', 'run:end', 'sync']);
+  });
+});

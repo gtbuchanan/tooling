@@ -1,0 +1,270 @@
+import path from 'node:path';
+import { rootNames } from '../core/command-names.ts';
+import type { PackageCapabilities, WorkspaceDiscovery } from '../core/discovery.ts';
+import { toPosixRelative } from '../core/paths.ts';
+import { localeComparer } from '../core/sort.ts';
+import { taskCommandName, taskNames } from '../tasks/names.ts';
+import {
+  Aggregate,
+  type ConditionalEntry,
+  type ToolFlags,
+  collect,
+  resolveToolFlags,
+  toPackageIgnore,
+} from './turbo-config.ts';
+
+/*
+ * Self-hosted repos define gtb as a package.json script (shim to source).
+ * Bare `gtb` only resolves node_modules/.bin — not sibling scripts — so
+ * self-hosted must invoke the script via `pnpm run gtb`.
+ */
+const gtbPrefix = (isSelfHosted: boolean): string =>
+  isSelfHosted ? 'pnpm run gtb' : 'gtb';
+
+const taskCmd = (isSelfHosted: boolean, name: string): string =>
+  `${gtbPrefix(isSelfHosted)} ${taskCommandName} ${name}`;
+
+const rootCmd = (isSelfHosted: boolean, name: string): string =>
+  `${gtbPrefix(isSelfHosted)} ${name}`;
+
+const packageScriptEntries = (
+  caps: PackageCapabilities,
+  isSelfHosted: boolean,
+): readonly ConditionalEntry<string>[] => {
+  const cmd = (name: string): string => taskCmd(isSelfHosted, name);
+
+  return [
+    {
+      condition: caps.hasTypeScript,
+      key: taskNames.typecheckTs,
+      value: cmd(taskNames.typecheckTs),
+    },
+    { condition: caps.isPublished, key: taskNames.compileTs, value: cmd(taskNames.compileTs) },
+    {
+      condition: caps.isPublished && caps.hasSkills,
+      key: taskNames.compileSkills,
+      value: cmd(taskNames.compileSkills),
+    },
+    { condition: caps.isPublished, key: taskNames.packNpm, value: cmd(taskNames.packNpm) },
+    { condition: caps.hasPkl, key: taskNames.typecheckPkl, value: cmd(taskNames.typecheckPkl) },
+    { condition: caps.hasPklPackage, key: taskNames.packPkl, value: cmd(taskNames.packPkl) },
+    { condition: caps.hasEslint, key: taskNames.lintEslint, value: cmd(taskNames.lintEslint) },
+    {
+      condition: caps.hasVitestTests,
+      key: taskNames.testVitestFast,
+      value: cmd(taskNames.testVitestFast),
+    },
+    {
+      condition: caps.hasVitestTests,
+      key: taskNames.testVitestSlow,
+      value: cmd(taskNames.testVitestSlow),
+    },
+    {
+      condition: caps.hasVitestE2e,
+      key: taskNames.testVitestE2e,
+      value: cmd(taskNames.testVitestE2e),
+    },
+    {
+      condition: caps.hasVitestTests,
+      key: taskNames.coverageCodecovUpload,
+      value: cmd(taskNames.coverageCodecovUpload),
+    },
+    {
+      condition: caps.hasVitestTests,
+      key: taskNames.coverageVitestMerge,
+      value: cmd(taskNames.coverageVitestMerge),
+    },
+    { condition: caps.hasSkills, key: taskNames.deploySkills, value: cmd(taskNames.deploySkills) },
+  ];
+};
+
+/**
+ * Generates the gtb shim script for self-hosted packages.
+ */
+const gtbShim = (pkgDir: string, cliDir: string): string => {
+  const bin = path.posix.join(toPosixRelative(pkgDir, cliDir), 'bin/gtb.ts');
+
+  return `node --experimental-strip-types ${bin}`;
+};
+
+/**
+ * Generates per-package scripts from capabilities. `cliDir` is the vendored
+ * CLI package's directory (from `vendoredCli`), which the self-hosted
+ * `gtb` shim runs from source.
+ */
+export const generatePackageScripts = (
+  caps: PackageCapabilities,
+  isSelfHosted: boolean,
+  cliDir?: string,
+): Record<string, string> => {
+  const scripts = collect(packageScriptEntries(caps, isSelfHosted));
+  if (isSelfHosted && cliDir !== undefined) {
+    scripts['gtb'] = gtbShim(caps.dir, cliDir);
+  }
+
+  return scripts;
+};
+
+/**
+ * Root-leaf scripts — leaf tasks turbo dispatches at the workspace root
+ * via `//#<task>`. Distinct from alias scripts (which delegate to turbo)
+ * and from required scripts like `prepare`/`verify`. Generated at sync
+ * time so workspace-shape inputs (package globs) are baked in.
+ *
+ * Patterns use double quotes for cross-platform shell compatibility:
+ * cmd.exe treats single quotes as literal characters (Windows pnpm
+ * default), while both shells respect double quotes for arg grouping.
+ */
+const rootLeafScriptEntries = (
+  flags: ToolFlags,
+  isSelfHosted: boolean,
+  packageGlobs: readonly string[],
+): readonly ConditionalEntry<string>[] => {
+  const ignoreFlags = packageGlobs
+    .map(glob => `--ignore-pattern "${toPackageIgnore(glob)}"`)
+    .join(' ');
+  const lintCmd = `${taskCmd(isSelfHosted, taskNames.lintEslint)} . ${ignoreFlags}`;
+
+  return [
+    { condition: flags.hasRootEslint, key: taskNames.lintEslint, value: lintCmd },
+    {
+      condition: flags.hasRootSkills,
+      key: taskNames.deploySkills,
+      value: taskCmd(isSelfHosted, taskNames.deploySkills),
+    },
+    {
+      condition: flags.hasRootTypeScript,
+      key: taskNames.typecheckTs,
+      value: taskCmd(isSelfHosted, taskNames.typecheckTs),
+    },
+  ];
+};
+
+/**
+ * Required root scripts — validated by `gtb verify`.
+ */
+const requiredRootScripts = (
+  discovery: WorkspaceDiscovery,
+  flags: ToolFlags,
+): Readonly<Record<string, string>> => ({
+  [rootNames.prepare]: rootCmd(discovery.isSelfHosted, rootNames.prepare),
+  [rootNames.verify]: rootCmd(discovery.isSelfHosted, rootNames.verify),
+  ...collect(
+    rootLeafScriptEntries(flags, discovery.isSelfHosted, discovery.packageGlobs),
+  ),
+});
+
+/**
+ * Optional turbo alias scripts — generated by `gtb sync`, not validated.
+ * Monorepo-only; see {@link forbiddenRootScripts} for why single-package
+ * repos get none.
+ *
+ * Aliases route through `gtb turbo` rather than `turbo` directly so the
+ * Android escape hatch (resolve Linux platform binary, bypass turbo's
+ * launcher) activates transparently. On every other platform `gtb turbo`
+ * is a thin pass-through, so this does not change behavior.
+ */
+const aliasRootScriptEntries = (
+  flags: ToolFlags,
+  isSelfHosted: boolean,
+): readonly ConditionalEntry<string>[] => {
+  const cmd = (name: string): string =>
+    `${rootCmd(isSelfHosted, rootNames.turbo)} run ${name}`;
+
+  return [
+    { condition: flags.hasCheck, key: Aggregate.check, value: cmd(Aggregate.check) },
+    {
+      condition: flags.hasCheck || flags.hasPackable,
+      key: Aggregate.buildCi,
+      value: cmd(Aggregate.buildCi),
+    },
+    {
+      condition: flags.hasCheck || flags.hasPackable || flags.hasE2e,
+      key: Aggregate.build,
+      value: cmd(Aggregate.build),
+    },
+    {
+      condition: flags.hasVitest,
+      key: Aggregate.coverageMerge,
+      value: cmd(Aggregate.coverageMerge),
+    },
+    {
+      condition: flags.hasPackable,
+      key: Aggregate.pack,
+      value: cmd(Aggregate.pack),
+    },
+    { condition: flags.hasE2e, key: Aggregate.testE2e, value: cmd(Aggregate.testE2e) },
+    { condition: flags.hasVitest, key: Aggregate.testSlow, value: cmd(Aggregate.testSlow) },
+    /*
+     * A root that authors skills of its own owns this script name: turbo
+     * dispatches `//#deploy:skills` through it, so an alias here would
+     * re-enter turbo and trip its `recursive_turbo_invocations` guard — the
+     * same collision a single-package repo has, for the same reason. The
+     * root then reaches every package's copy through `build`, or through
+     * `gtb turbo run deploy:skills` directly.
+     */
+    {
+      condition: flags.hasSkills && !flags.hasRootSkills,
+      key: taskNames.deploySkills,
+      value: cmd(taskNames.deploySkills),
+    },
+  ];
+};
+
+/**
+ * Root script names a single-package repo must not define — the aggregate
+ * tasks whose alias scripts only a monorepo can carry. Empty for monorepos.
+ *
+ * Restricted to the {@link Aggregate} names because only they are
+ * command-less. `deploy:skills` is also aliased in a monorepo, but it is a
+ * leaf task: the single-package root owns its `gtb task` script, so listing it
+ * would make `gtb sync` and `gtb verify` contradict each other.
+ *
+ * In a monorepo the alias is inert to turbo: `check` is a *package* task, so
+ * `turbo run check` fans out to the packages and never reaches the root's
+ * `check` script. In a single-package repo the root IS the package, so turbo
+ * resolves the aggregate to the root script, which re-invokes turbo — and
+ * turbo aborts the run with its `recursive_turbo_invocations` guard. The loop
+ * is real rather than a heuristic false positive, so no rewriting of the alias
+ * escapes it: dispatching to the leaf tasks (`gtb turbo run typecheck:ts …`)
+ * still trips the guard, and a turbo-free alias would run *in addition to* the
+ * aggregate's dependencies. Single-package repos therefore dispatch aggregates
+ * directly (`gtb turbo run check`); only the leaf scripts, which call
+ * `gtb task` and never turbo, are generated.
+ *
+ * `gtb verify` reports these so a repo synced before the aliases were gated
+ * learns which scripts to delete.
+ */
+export const forbiddenRootScripts = (
+  discovery: WorkspaceDiscovery,
+): readonly string[] => {
+  if (discovery.isMonorepo) {
+    return [];
+  }
+  const aggregates = new Set<string>(Object.values(Aggregate));
+  const aliases = aliasRootScriptEntries(resolveToolFlags(discovery), discovery.isSelfHosted);
+
+  return Object.keys(collect(aliases))
+    .filter(name => aggregates.has(name))
+    .toSorted(localeComparer);
+};
+
+/**
+ * Generates all root-level scripts (required + optional aliases).
+ */
+export const generateRootScripts = (
+  discovery: WorkspaceDiscovery,
+): Record<string, string> => {
+  const flags = resolveToolFlags(discovery);
+  return {
+    ...(discovery.isMonorepo && collect(aliasRootScriptEntries(flags, discovery.isSelfHosted))),
+    ...requiredRootScripts(discovery, flags),
+  };
+};
+
+/**
+ * Generates only required root scripts for drift validation.
+ */
+export const generateRequiredRootScripts = (
+  discovery: WorkspaceDiscovery,
+): Record<string, string> => ({ ...requiredRootScripts(discovery, resolveToolFlags(discovery)) });

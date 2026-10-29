@@ -153,9 +153,9 @@ coverage, setupFiles, and mock reset.
   `baseUri`/`packageZipUrl` (written as `\(name)` and `\(name)@\(version)`
   interpolations respectively), leaving `name` and everything else verbatim. The interpolations are
   byte-stable, so a version bump changes only the `version` line. This is the
-  generic non-npm-manifest seam (`lib/manifest-sync.ts`, a kind-keyed writer
+  generic non-npm-manifest seam (`codegen/manifest-sync.ts`, a kind-keyed writer
   registry; the source-text helper — brace-match + line patch, no Pkl parser —
-  is `lib/pkl-project.ts`); a future .NET `.csproj` writer patches the same way.
+  is `core/pkl-project.ts`); a future .NET `.csproj` writer patches the same way.
   `gtb verify manifest` asserts no drift on the owned fields.
   **Publishability is the presence of a `package {}` block** — Pkl's own
   definition of a distributable package — so a deps-only or block-less

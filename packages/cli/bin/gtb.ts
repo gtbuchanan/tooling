@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 import { runMain } from 'citty';
-import { main } from '../src/commands/index.ts';
+import { main } from '../src/main.ts';
 
 await runMain(main);

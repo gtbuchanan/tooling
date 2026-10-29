@@ -1,0 +1,361 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { Writable } from 'node:stream';
+import * as build from '@gtbuchanan/test-utils/builders';
+import * as v from 'valibot';
+import { describe, it } from 'vitest';
+import { runSync, syncCommand } from '#src/codegen/commands/sync.js';
+import {
+  generatePackageScripts,
+  generateRootScripts,
+  generateTurboJson,
+} from '#src/codegen/turbo-config.js';
+import { discoverWorkspace } from '#src/core/discovery.js';
+import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/core/file-writer.js';
+import { createLogger } from '#src/core/logger.js';
+import { ManifestSchema } from '#src/core/manifest.js';
+import { captureLogger, createTempDir, writeJson } from '../../helpers.ts';
+
+const silentSink = new Writable({
+  write: (_chunk, _enc, cb) => {
+    cb();
+  },
+});
+const silentLogger = createLogger(silentSink, silentSink);
+
+interface ConsumerPackage {
+  readonly basename: string;
+  readonly dir: string;
+  readonly name: string;
+}
+
+interface ConsumerProject {
+  readonly app: ConsumerPackage;
+  readonly lib: ConsumerPackage;
+  readonly root: string;
+}
+
+const createConsumerProject = (): ConsumerProject => {
+  const root = createTempDir();
+  /* Every directory basename and unscoped manifest name is suffixed from one
+     seed, so all six are distinct by construction. Independent builder calls
+     could collide and let an assertion pass against the basename. */
+  const seed = build.packageName();
+  const appBasename = `${seed}-app-dir`;
+  const appUnscoped = `${seed}-app-name`;
+  const appName = `@${seed}-scope/${appUnscoped}`;
+  const libBasename = `${seed}-lib-dir`;
+  const libUnscoped = `${seed}-lib-name`;
+  const libName = `@${seed}-scope/${libUnscoped}`;
+
+  writeFileSync(
+    path.join(root, 'pnpm-workspace.yaml'),
+    "packages:\n  - 'packages/*'\n",
+  );
+  writeJson(root, 'package.json', {
+    devDependencies: {
+      '@gtbuchanan/cli': build.semverRange(),
+      '@gtbuchanan/eslint-config': build.semverRange(),
+      '@gtbuchanan/tsconfig': build.semverRange(),
+      '@gtbuchanan/vitest-config': build.semverRange(),
+    },
+    name: build.packageName(),
+    private: true,
+    scripts: { prepare: 'gtb prepare' },
+  });
+
+  const appDir = path.join(root, 'packages', appBasename);
+  mkdirSync(path.join(appDir, 'src'), { recursive: true });
+  mkdirSync(path.join(appDir, 'test'), { recursive: true });
+  writeJson(appDir, 'package.json', {
+    devDependencies: {
+      '@gtbuchanan/eslint-config': build.semverRange(),
+      '@gtbuchanan/tsconfig': build.semverRange(),
+      '@gtbuchanan/vitest-config': build.semverRange(),
+    },
+    name: appName,
+    publishConfig: { directory: build.publishDirectory() },
+    version: build.semverVersion(),
+  });
+  writeFileSync(path.join(appDir, 'tsconfig.json'), '{}');
+  writeFileSync(path.join(appDir, 'eslint.config.ts'), '');
+  writeFileSync(path.join(appDir, 'vitest.config.ts'), '');
+
+  const libDir = path.join(root, 'packages', libBasename);
+  mkdirSync(path.join(libDir, 'src'), { recursive: true });
+  writeJson(libDir, 'package.json', {
+    devDependencies: {
+      '@gtbuchanan/eslint-config': build.semverRange(),
+      '@gtbuchanan/tsconfig': build.semverRange(),
+    },
+    name: libName,
+    private: true,
+    version: build.semverVersion(),
+  });
+  writeFileSync(path.join(libDir, 'tsconfig.json'), '{}');
+  writeFileSync(path.join(libDir, 'eslint.config.ts'), '');
+
+  return {
+    app: { basename: appBasename, dir: appDir, name: appName },
+    lib: { basename: libBasename, dir: libDir, name: libName },
+    root,
+  };
+};
+
+describe.concurrent('sync helpers', () => {
+  it('generates turbo.json with correct tasks for consumer project', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const turboJson = generateTurboJson(discovery);
+
+    expect(Object.keys(turboJson.tasks)).toStrictEqual(
+      expect.arrayContaining([
+        'build', 'build:ci', 'check', 'compile:ts', 'lint:eslint',
+        'pack:npm', 'test:vitest:fast', 'test:vitest:slow', 'typecheck:ts',
+      ]),
+    );
+  });
+
+  it('generates per-package scripts with gtb task commands', ({ expect }) => {
+    const { app, root } = createConsumerProject();
+    const discovery = discoverWorkspace({ cwd: root });
+    const appPkg = discovery.packages.find(pkg => pkg.dir === app.dir);
+
+    const scripts = generatePackageScripts(appPkg!, discovery.isSelfHosted);
+
+    expect(scripts).toMatchObject({
+      'compile:ts': 'gtb task compile:ts',
+      'lint:eslint': 'gtb task lint:eslint',
+      'test:vitest:fast': 'gtb task test:vitest:fast',
+      'test:vitest:slow': 'gtb task test:vitest:slow',
+      'typecheck:ts': 'gtb task typecheck:ts',
+    });
+  });
+
+  it('generates fewer scripts for private package without tests', ({ expect }) => {
+    const { lib, root } = createConsumerProject();
+    const discovery = discoverWorkspace({ cwd: root });
+    const libPkg = discovery.packages.find(pkg => pkg.dir === lib.dir);
+
+    const scripts = generatePackageScripts(libPkg!, discovery.isSelfHosted);
+
+    expect(scripts).toHaveProperty('typecheck:ts');
+    expect(scripts).toHaveProperty('lint:eslint');
+    expect(scripts).not.toHaveProperty('compile:ts');
+    expect(scripts).not.toHaveProperty('test:vitest:fast');
+  });
+
+  it('generates root convenience scripts', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const scripts = generateRootScripts(discovery);
+
+    expect(scripts).toMatchObject({
+      'build': 'gtb turbo run build',
+      'build:ci': 'gtb turbo run build:ci',
+      'check': 'gtb turbo run check',
+      'pack': 'gtb turbo run pack',
+      'prepare': 'gtb prepare',
+      'verify': 'gtb verify',
+    });
+  });
+
+  it('writes turbo.json and merges scripts end-to-end', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const discovery = discoverWorkspace({ cwd: root });
+
+    const turboPath = path.join(root, 'turbo.json');
+    writeJsonFile(turboPath, generateTurboJson(discovery));
+
+    expect(existsSync(turboPath)).toBe(true);
+
+    const parsed: unknown = JSON.parse(readFileSync(turboPath, 'utf8'));
+
+    expect(parsed).toHaveProperty('$schema');
+    expect(parsed).toHaveProperty('tasks');
+  });
+
+  it('merges scripts without overwriting existing', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const discovery = discoverWorkspace({ cwd: root });
+    const rootScripts = generateRootScripts(discovery);
+
+    const result = mergePackageScripts(
+      path.join(root, 'package.json'), rootScripts, false,
+    );
+
+    expect(result.skipped).toContain('prepare');
+    expect(result.added).toContain('check');
+  });
+
+  it('detects self-hosted workspace', ({ expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
+    });
+
+    const discovery = discoverWorkspace({ cwd: root });
+
+    expect(discovery.isSelfHosted).toBe(true);
+  });
+});
+
+describe.concurrent(runSync, () => {
+  it('writes turbo.json and scripts', ({ expect }) => {
+    const { app, root } = createConsumerProject();
+    runSync({ cwd: root, logger: silentLogger });
+
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
+
+    const scripts: unknown = JSON.parse(
+      readFileSync(path.join(app.dir, 'package.json'), 'utf8'),
+    );
+
+    expect(scripts).toHaveProperty('scripts.typecheck:ts');
+  });
+
+  it('points the self-hosted gtb shim at the discovered CLI', ({ expect }) => {
+    const root = createTempDir();
+    writeFileSync(
+      path.join(root, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'packages/*'\n  - 'tools/*'\n",
+    );
+    writeJson(root, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
+    });
+    const appDir = path.join(root, 'packages', 'app');
+    const cliDir = path.join(root, 'tools', 'gtb');
+    mkdirSync(appDir, { recursive: true });
+    mkdirSync(cliDir, { recursive: true });
+    writeJson(appDir, 'package.json', { name: build.scopedPackageName() });
+    writeJson(cliDir, 'package.json', { name: '@gtbuchanan/cli' });
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    const manifest: unknown = JSON.parse(
+      readFileSync(path.join(appDir, 'package.json'), 'utf8'),
+    );
+
+    expect(manifest).toHaveProperty(
+      ['scripts', 'gtb'], 'node --experimental-strip-types ../../tools/gtb/bin/gtb.ts',
+    );
+  });
+
+  /*
+   * Skills consumed as `<root>/skills/<name>/SKILL.md` can't move into a
+   * package, so a monorepo root carrying nothing but its config and `skills/`
+   * is a real shape — and the one where root blindness went unreported,
+   * since a task the expectation never generates is a task verify can't miss.
+   */
+  it('wires the root deploy:skills task when skills live at the root', ({ expect }) => {
+    const { root } = createConsumerProject();
+    mkdirSync(path.join(root, 'skills'));
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    const turboJson: unknown = JSON.parse(readFileSync(path.join(root, 'turbo.json'), 'utf8'));
+    const manifest: unknown = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
+
+    expect(turboJson).toHaveProperty(['tasks', '//#deploy:skills']);
+    expect(manifest).toHaveProperty(['scripts', 'deploy:skills'], 'gtb task deploy:skills');
+  });
+
+  it('writes mise.tasks.toml only when the root has a mise.toml', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const tasksPath = path.join(root, 'mise.tasks.toml');
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    expect(existsSync(tasksPath)).toBe(false);
+
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+    runSync({ cwd: root, logger: silentLogger });
+
+    expect(existsSync(tasksPath)).toBe(true);
+    expect(readFileSync(tasksPath, 'utf8')).toContain('hk:all');
+  });
+
+  it('scoped to mise writes only mise.tasks.toml, not turbo.json', ({ expect }) => {
+    const { root } = createConsumerProject();
+    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
+
+    runSync({ cwd: root, logger: silentLogger, scopes: new Set(['mise']) });
+
+    expect(existsSync(path.join(root, 'mise.tasks.toml'))).toBe(true);
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(false);
+  });
+
+  it('force overwrites existing scripts', ({ expect }) => {
+    const { app, root } = createConsumerProject();
+    runSync({ cwd: root, logger: silentLogger });
+
+    const appPkg = path.join(app.dir, 'package.json');
+    const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
+    const scripts = { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' };
+    writeJsonFile(appPkg, { ...manifest, scripts });
+
+    runSync({ cwd: root, force: true, logger: silentLogger });
+
+    const result: unknown = JSON.parse(readFileSync(appPkg, 'utf8'));
+
+    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
+  });
+});
+
+describe.concurrent(syncCommand, () => {
+  it('returns 1 and logs when given an unknown scope', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger, err } = captureLogger();
+
+    const code = syncCommand({ cwd: root, scopes: ['bogus'] }, logger);
+
+    expect(code).toBe(1);
+    expect(err()).toContain('unknown scope');
+  });
+
+  it('returns 0 for a valid scope', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger } = captureLogger();
+
+    expect(syncCommand({ cwd: root, scopes: ['turbo'] }, logger)).toBe(0);
+  });
+
+  it('passes cwd from args through to runSync', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger } = captureLogger();
+
+    syncCommand({ cwd: root }, logger);
+
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(true);
+  });
+
+  it('passes force from args through to runSync', ({ expect }) => {
+    const { app, root } = createConsumerProject();
+    const { logger } = captureLogger();
+    syncCommand({ cwd: root }, logger);
+
+    const appPkg = path.join(app.dir, 'package.json');
+    const manifest = v.parse(ManifestSchema, readJsonFile(appPkg));
+    writeJsonFile(appPkg, {
+      ...manifest,
+      scripts: { ...manifest.scripts, 'typecheck:ts': 'custom-tsc' },
+    });
+
+    syncCommand({ cwd: root, force: true }, logger);
+
+    const result: unknown = JSON.parse(readFileSync(appPkg, 'utf8'));
+
+    expect(result).toHaveProperty('scripts.typecheck:ts', 'gtb task typecheck:ts');
+  });
+
+  it('routes progress messages through the injected logger', ({ expect }) => {
+    const { root } = createConsumerProject();
+    const { logger, out } = captureLogger();
+
+    syncCommand({ cwd: root }, logger);
+
+    expect(out()).toContain(`wrote ${path.join(root, 'turbo.json')}`);
+  });
+});

@@ -5,18 +5,18 @@ import { Writable } from 'node:stream';
 import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
-import { type PackageCapabilities, discoverWorkspace } from '#src/lib/discovery.js';
-import { mergePackageScripts, writeJsonFile } from '#src/lib/file-writer.js';
-import type { GithubReleaseDeps } from '#src/lib/github-release.js';
-import { type Logger, createLogger } from '#src/lib/logger.js';
-import { ManifestSchema, unscopedName } from '#src/lib/manifest.js';
-import { UnknownRecord } from '#src/lib/schemas.js';
 import {
   generateTsconfigBase, planTsconfigs, tsconfigBaseFileName,
-} from '#src/lib/tsconfig-gen.js';
+} from '#src/codegen/tsconfig-gen.js';
 import {
   generatePackageScripts, generateRootScripts, generateTurboJson,
-} from '#src/lib/turbo-config.js';
+} from '#src/codegen/turbo-config.js';
+import { type PackageCapabilities, discoverWorkspace } from '#src/core/discovery.js';
+import { mergePackageScripts, writeJsonFile } from '#src/core/file-writer.js';
+import { type Logger, createLogger } from '#src/core/logger.js';
+import { ManifestSchema, unscopedName } from '#src/core/manifest.js';
+import { UnknownRecord } from '#src/core/schemas.js';
+import type { GithubReleaseDeps } from '#src/release/github-release.js';
 
 /**
  * Creates an isolated temp directory for test fixtures.
