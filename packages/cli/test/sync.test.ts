@@ -5,7 +5,7 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import { describe, it } from 'vitest';
 import { runSync, syncCommand } from '#src/commands/root/sync.js';
-import { discoverWorkspace, vendoredCli } from '#src/lib/discovery.js';
+import { discoverWorkspace } from '#src/lib/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/lib/file-writer.js';
 import { createLogger } from '#src/lib/logger.js';
 import { ManifestSchema } from '#src/lib/manifest.js';
@@ -200,34 +200,6 @@ describe.concurrent('sync helpers', () => {
 
     expect(discovery.isSelfHosted).toBe(true);
   });
-
-  it('points the self-hosted gtb shim at the discovered CLI', ({ expect }) => {
-    const root = createTempDir();
-    writeFileSync(
-      path.join(root, 'pnpm-workspace.yaml'),
-      "packages:\n  - 'packages/*'\n  - 'tools/*'\n",
-    );
-    writeJson(root, 'package.json', {
-      devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
-    });
-    const appName = build.scopedPackageName();
-    const appDir = path.join(root, 'packages', 'app');
-    const cliDir = path.join(root, 'tools', 'gtb');
-    mkdirSync(appDir, { recursive: true });
-    mkdirSync(cliDir, { recursive: true });
-    writeJson(appDir, 'package.json', { name: appName });
-    writeJson(cliDir, 'package.json', { name: '@gtbuchanan/cli' });
-
-    const discovery = discoverWorkspace({ cwd: root });
-    const app = discovery.packages.find(pkg => pkg.name === appName)!;
-    const scripts = generatePackageScripts(
-      app, discovery.isSelfHosted, vendoredCli(discovery)?.dir,
-    );
-
-    expect(scripts).toHaveProperty(
-      'gtb', 'node --experimental-strip-types ../../tools/gtb/bin/gtb.ts',
-    );
-  });
 });
 
 describe.concurrent(runSync, () => {
@@ -242,6 +214,33 @@ describe.concurrent(runSync, () => {
     );
 
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
+  });
+
+  it('points the self-hosted gtb shim at the discovered CLI', ({ expect }) => {
+    const root = createTempDir();
+    writeFileSync(
+      path.join(root, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'packages/*'\n  - 'tools/*'\n",
+    );
+    writeJson(root, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
+    });
+    const appDir = path.join(root, 'packages', 'app');
+    const cliDir = path.join(root, 'tools', 'gtb');
+    mkdirSync(appDir, { recursive: true });
+    mkdirSync(cliDir, { recursive: true });
+    writeJson(appDir, 'package.json', { name: build.scopedPackageName() });
+    writeJson(cliDir, 'package.json', { name: '@gtbuchanan/cli' });
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    const manifest: unknown = JSON.parse(
+      readFileSync(path.join(appDir, 'package.json'), 'utf8'),
+    );
+
+    expect(manifest).toHaveProperty(
+      ['scripts', 'gtb'], 'node --experimental-strip-types ../../tools/gtb/bin/gtb.ts',
+    );
   });
 
   /*
