@@ -196,6 +196,18 @@ describe.concurrent('generate task verification', () => {
     expect(verifyTurbo(root)).toStrictEqual([unextendedMessage(configPath)]);
   });
 
+  it('reports a marker on a task that opts out of inheritance', ({ expect }) => {
+    const { configPath, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: {
+        'generate': { dependsOn: [extendsRoot, 'generate:prisma'], extends: false },
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([unextendedMessage(configPath)]);
+  });
+
   it('accepts an explicit ^generate in place of the marker', ({ expect }) => {
     const { root } = createGenerateProject({
       scripts: ['generate:prisma'],

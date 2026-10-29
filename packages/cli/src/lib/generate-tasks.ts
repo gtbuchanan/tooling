@@ -18,6 +18,7 @@ const PackageConfigSchema = v.looseObject({
 const TaskSchema = v.looseObject({
   cache: v.optional(v.boolean()),
   dependsOn: v.optional(StringArray),
+  extends: v.optional(v.boolean()),
   outputs: v.optional(StringArray),
 });
 
@@ -77,16 +78,18 @@ const extendsMarker = '$TURBO_EXTENDS$';
  * A package configuration's `dependsOn` replaces the root's, so an aggregate
  * listing only its leaves drops the root's `^generate`. Its dependencies'
  * codegen then goes unordered, and a consumer two hops away races it. turbo
- * honours the marker only as the first entry.
+ * honours the marker only as the first entry, and a task with `extends: false`
+ * inherits nothing for it to keep.
  */
 const checkAggregateExtends = (
   filePath: string,
   tasks: Record<string, unknown>,
 ): readonly string[] => {
   const result = v.safeParse(TaskSchema, tasks[Aggregate.generate]);
-  const dependsOn = result.success ? result.output.dependsOn ?? [] : [];
-  const hasRootEdge = dependsOn[0] === extendsMarker ||
-    dependsOn.includes(topo(Aggregate.generate));
+  const task = result.success ? result.output : {};
+  const dependsOn = task.dependsOn ?? [];
+  const isRootKept = task.extends !== false && dependsOn[0] === extendsMarker;
+  const hasRootEdge = isRootKept || dependsOn.includes(topo(Aggregate.generate));
 
   return hasRootEdge
     ? []
