@@ -59,9 +59,13 @@ runs:
         COMMANDS: ${{ inputs.commands }}
       if: inputs.commands != ''
       name: Run pnpm commands
+      # Split each line into argv with read -a rather than an unquoted $cmd,
+      # which would also glob-expand any word that matches a file.
       run: |
         while IFS= read -r cmd; do
-          [ -n "$cmd" ] && pnpm $cmd
+          read -ra args <<< "$cmd"
+          [ "${#args[@]}" -gt 0 ] || continue
+          pnpm "${args[@]}"
         done <<< "$COMMANDS"
       shell: bash
 
