@@ -200,26 +200,6 @@ describe.concurrent('sync helpers', () => {
 
     expect(discovery.isSelfHosted).toBe(true);
   });
-
-  it('generates gtb shim for self-hosted', ({ expect }) => {
-    const root = createTempDir();
-    writeJson(root, 'package.json', {
-      devDependencies: {
-        '@gtbuchanan/cli': 'workspace:*',
-        '@gtbuchanan/tsconfig': 'workspace:*',
-      },
-    });
-    mkdirSync(path.join(root, 'src'));
-    writeFileSync(path.join(root, 'tsconfig.json'), '{}');
-
-    const discovery = discoverWorkspace({ cwd: root });
-    const scripts = generatePackageScripts(
-      discovery.packages[0]!, discovery.isSelfHosted, discovery.rootDir,
-    );
-
-    expect(scripts['typecheck:ts']).toBe('pnpm run gtb task typecheck:ts');
-    expect(scripts['gtb']).toContain('packages/cli/bin/gtb.ts');
-  });
 });
 
 describe.concurrent(runSync, () => {
@@ -234,6 +214,33 @@ describe.concurrent(runSync, () => {
     );
 
     expect(scripts).toHaveProperty('scripts.typecheck:ts');
+  });
+
+  it('points the self-hosted gtb shim at the discovered CLI', ({ expect }) => {
+    const root = createTempDir();
+    writeFileSync(
+      path.join(root, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'packages/*'\n  - 'tools/*'\n",
+    );
+    writeJson(root, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
+    });
+    const appDir = path.join(root, 'packages', 'app');
+    const cliDir = path.join(root, 'tools', 'gtb');
+    mkdirSync(appDir, { recursive: true });
+    mkdirSync(cliDir, { recursive: true });
+    writeJson(appDir, 'package.json', { name: build.scopedPackageName() });
+    writeJson(cliDir, 'package.json', { name: '@gtbuchanan/cli' });
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    const manifest: unknown = JSON.parse(
+      readFileSync(path.join(appDir, 'package.json'), 'utf8'),
+    );
+
+    expect(manifest).toHaveProperty(
+      ['scripts', 'gtb'], 'node --experimental-strip-types ../../tools/gtb/bin/gtb.ts',
+    );
   });
 
   /*

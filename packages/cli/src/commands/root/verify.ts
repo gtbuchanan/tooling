@@ -2,7 +2,7 @@ import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import * as v from 'valibot';
-import { type WorkspaceDiscovery, discoverWorkspace } from '../../lib/discovery.ts';
+import { type WorkspaceDiscovery, discoverWorkspace, vendoredCli } from '../../lib/discovery.ts';
 import { readJsonFile } from '../../lib/file-writer.ts';
 import { checkGenerateConfigs } from '../../lib/generate-tasks.ts';
 import { type Logger, createLogger } from '../../lib/logger.ts';
@@ -229,7 +229,9 @@ const checkAllScripts = (
   ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
   ...checkShadowedAggregates(discovery, ignored),
   ...discovery.packages.flatMap(pkg => checkScripts(
-    pkg.dir, generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir), ignored,
+    pkg.dir,
+    generatePackageScripts(pkg, discovery.isSelfHosted, vendoredCli(discovery)?.dir),
+    ignored,
   )),
 ];
 

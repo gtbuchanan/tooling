@@ -2,7 +2,7 @@ import { statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import {
-  type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace,
+  type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace, vendoredCli,
 } from '../../lib/discovery.ts';
 import {
   type MergeResult, mergePackageScripts, sortKeysDeep, writeJsonFile,
@@ -57,7 +57,9 @@ const writePackageScripts = (
   discovery: WorkspaceDiscovery,
   shouldForce: boolean,
 ): void => {
-  const scripts = generatePackageScripts(pkg, discovery.isSelfHosted, discovery.rootDir);
+  const scripts = generatePackageScripts(
+    pkg, discovery.isSelfHosted, vendoredCli(discovery)?.dir,
+  );
   if (Object.keys(scripts).length === 0) {
     return;
   }
