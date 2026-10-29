@@ -1,10 +1,11 @@
 import { type Dirent, existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { generateTaskPrefix } from '../commands/task/names.ts';
+import {
+  buildInclude, generateTaskPrefix, resolveBuildIncludes, typeCheckInclude,
+} from './layout.ts';
 import type { Manifest } from './manifest.ts';
 import { hasPackageBlock } from './pkl-project.ts';
 import { localeComparer } from './sort.ts';
-import { buildInclude, resolveBuildIncludes, typeCheckInclude } from './tsconfig-gen.ts';
 import {
   type ResolveWorkspaceOptions,
   readParsedManifest,

@@ -1,5 +1,5 @@
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/lib/discovery.js';
-import { buildInclude } from '#src/lib/tsconfig-gen.js';
+import { buildInclude } from '#src/lib/layout.js';
 
 export const makeCapabilities = (
   overrides: Partial<PackageCapabilities> = {},

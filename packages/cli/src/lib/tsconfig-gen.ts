@@ -1,11 +1,11 @@
 import path from 'node:path';
-import { parseTsconfig } from 'get-tsconfig';
 import * as v from 'valibot';
 import type { PackageCapabilities } from './discovery.ts';
 import { buildOutDir } from './dist-source.ts';
 import { readJsonFile } from './file-writer.ts';
+import { buildInclude, typeCheckInclude } from './layout.ts';
 import { toPosixRelative } from './paths.ts';
-import { StringArray, UnknownRecord } from './schemas.ts';
+import { UnknownRecord } from './schemas.ts';
 
 /**
  * File name of the single hand-authored tsconfig every generated config
@@ -29,37 +29,6 @@ export const generateTsconfigBase = (
   variant: string = defaultTsconfigVariant,
 ): { readonly extends: readonly string[] } =>
   ({ extends: [`@gtbuchanan/tsconfig/${variant}.json`] });
-
-/**
- * Directories and file patterns included in tsconfig.json for type-checking.
- */
-export const typeCheckInclude = ['bin', 'scripts', 'src', 'test', 'e2e', '*', '.*'] as const;
-
-/**
- * Directories included in tsconfig.build.json for compilation.
- */
-export const buildInclude = ['bin', 'src'] as const;
-
-/**
- * Resolves the effective `include` globs from a package's tsconfig.build.json,
- * following `extends` — including node_modules package specifiers and their
- * `exports` maps — via {@link parseTsconfig}, which mirrors tsc's resolution
- * without depending on the `typescript` package. The globs feed turbo's
- * `compile:ts` cache inputs, so patterns (e.g. `*.proto.ts`) are preserved
- * verbatim rather than expanded to matched files; an `include` inherited from
- * an extended config is rebased to that config's location, matching tsc. Falls
- * back to {@link buildInclude} when the file is missing, unparsable, or its
- * `extends` chain cannot be resolved.
- */
-export const resolveBuildIncludes = (dir: string): readonly string[] => {
-  try {
-    const { include } = parseTsconfig(path.join(dir, 'tsconfig.build.json'));
-    const result = v.safeParse(StringArray, include);
-    return result.success ? result.output : buildInclude;
-  } catch {
-    return buildInclude;
-  }
-};
 
 /**
  * Shape of a generated tsconfig file.

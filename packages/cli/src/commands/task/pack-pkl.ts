@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { pklPackDestination } from '../../lib/pkl-release.ts';
+import { pklPackDestination } from '../../lib/pkl-pack.ts';
 import { run } from '../../lib/process.ts';
 
 /**

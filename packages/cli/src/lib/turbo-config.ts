@@ -4,10 +4,10 @@ import { type WorkspaceDiscovery, vendoredCli } from './discovery.ts';
 import {
   buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
 } from './dist-source.ts';
+import { typeCheckInclude } from './layout.ts';
 import { toPosixRelative } from './paths.ts';
 import { skillsConfigFilename } from './skills-config.ts';
 import { localeComparer } from './sort.ts';
-import { typeCheckInclude } from './tsconfig-gen.ts';
 import { aggregateTasks, codegenDeps, rootSourceDeps } from './turbo-aggregates.ts';
 import { toTurboGlobs } from './turbo-globs.ts';
 import { testTasks } from './turbo-test-tasks.ts';
