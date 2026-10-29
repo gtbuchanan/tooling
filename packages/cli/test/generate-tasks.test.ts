@@ -82,7 +82,7 @@ const createGenerateProject = (options: GenerateProjectOptions): GenerateProject
 const extendsRoot = '$TURBO_EXTENDS$';
 
 const unextendedMessage = (configPath: string): string =>
-  `${configPath}: task 'generate' must depend on '${extendsRoot}' ` +
+  `${configPath}: task 'generate' must list '${extendsRoot}' first ` +
   'to keep the root\'s ^generate';
 
 const verifyTurbo = (root: string, ignored?: ReadonlySet<string>): readonly string[] =>
@@ -177,6 +177,18 @@ describe.concurrent('generate task verification', () => {
       scripts: ['generate:prisma'],
       tasks: {
         'generate': { dependsOn: ['generate:prisma'] },
+        'generate:prisma': { outputs: ['generated/**'] },
+      },
+    });
+
+    expect(verifyTurbo(root)).toStrictEqual([unextendedMessage(configPath)]);
+  });
+
+  it('reports a marker that is not the first entry', ({ expect }) => {
+    const { configPath, root } = createGenerateProject({
+      scripts: ['generate:prisma'],
+      tasks: {
+        'generate': { dependsOn: ['generate:prisma', extendsRoot] },
         'generate:prisma': { outputs: ['generated/**'] },
       },
     });

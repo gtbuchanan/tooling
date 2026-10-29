@@ -76,7 +76,8 @@ const extendsMarker = '$TURBO_EXTENDS$';
 /*
  * A package configuration's `dependsOn` replaces the root's, so an aggregate
  * listing only its leaves drops the root's `^generate`. Its dependencies'
- * codegen then goes unordered, and a consumer two hops away races it.
+ * codegen then goes unordered, and a consumer two hops away races it. turbo
+ * honours the marker only as the first entry.
  */
 const checkAggregateExtends = (
   filePath: string,
@@ -84,13 +85,13 @@ const checkAggregateExtends = (
 ): readonly string[] => {
   const result = v.safeParse(TaskSchema, tasks[Aggregate.generate]);
   const dependsOn = result.success ? result.output.dependsOn ?? [] : [];
-  const hasRootEdge = dependsOn.includes(extendsMarker) ||
+  const hasRootEdge = dependsOn[0] === extendsMarker ||
     dependsOn.includes(topo(Aggregate.generate));
 
   return hasRootEdge
     ? []
     : [
-        `${filePath}: task '${Aggregate.generate}' must depend on '${extendsMarker}' ` +
+        `${filePath}: task '${Aggregate.generate}' must list '${extendsMarker}' first ` +
         `to keep the root's ${topo(Aggregate.generate)}`,
       ];
 };
