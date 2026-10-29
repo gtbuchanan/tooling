@@ -80,6 +80,20 @@ describe.concurrent('eslint CLI integration', () => {
     expect(result).toMatchObject({ exitCode: 0, stdout: '' });
   });
 
+  it('accepts mock-prefixed doubles whatever they return', async ({ fixture, expect }) => {
+    const result = await fixture.run({
+      files: {
+        'doubles.ts': [
+          'export const mockExistsSync = (): boolean => true;',
+          "export const mockRun = (): string => 'ran';", '',
+        ].join('\n'),
+      },
+      flags: ['--max-warnings=0'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0, stdout: '' });
+  });
+
   it('allows require() in .cjs but not .js', async ({ fixture, expect }) => {
     // The .cjs extension forces CommonJS, so require() is the only option
     const code = "const path = require('node:path');\n\nmodule.exports = path;\n";

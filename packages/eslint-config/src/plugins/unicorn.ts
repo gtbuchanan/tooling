@@ -14,8 +14,15 @@ const plugin: PluginFactory = () => [
     rules: {
       /* Justification: `try` marks an action that reports success rather than
          a predicate — the established Try* idiom (e.g. .NET's TryParse). The
-         rule's default prefixes admit no equivalent */
-      'unicorn/consistent-boolean-name': ['warn', { prefixes: { try: true } }],
+         rule's default prefixes admit no equivalent. A `mock` name is a test
+         double (`mockExistsSync = vi.mocked(existsSync)`) named for the
+         function it stands in for, whatever that returns, so it is ignored
+         rather than made a prefix, which would require every mock to be
+         boolean */
+      'unicorn/consistent-boolean-name': ['warn', {
+        ignore: ['^mock[A-Z]'],
+        prefixes: { try: true },
+      }],
       // TODO: Re-enable and configure allowlist in a separate PR
       'unicorn/name-replacements': 'off',
       // Justification: Cannot distinguish intentional from accidental arity matches
