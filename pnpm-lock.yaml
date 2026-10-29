@@ -283,7 +283,7 @@ catalogs:
       version: 4.1.11
     prettier-plugin-packagejson:
       specifier: ^3.0.2
-      version: 3.0.2
+      version: 3.0.3
     prettier-plugin-sort-json:
       specifier: ^4.2.0
       version: 4.2.0
@@ -528,7 +528,7 @@ importers:
         version: 4.1.11(prettier@3.9.10)
       prettier-plugin-packagejson:
         specifier: 'catalog:'
-        version: 3.0.2(prettier@3.9.10)
+        version: 3.0.3(prettier@3.9.10)
       prettier-plugin-sort-json:
         specifier: 'catalog:'
         version: 4.2.0(prettier@3.9.10)
@@ -2614,8 +2614,8 @@ packages:
     peerDependencies:
       prettier: '>=3.0.0 <4.0.0'
 
-  prettier-plugin-packagejson@3.0.2:
-    resolution: {integrity: sha512-kmoj3hEynXwoHDo8ZhmWAIjRBoQWCDUVackiWfSDWdgD0rS3LGB61T9zoVbume/cotYdCoadUh4sqViAmXvpBQ==}
+  prettier-plugin-packagejson@3.0.3:
+    resolution: {integrity: sha512-qhxhcs3/ppNH8ZhFMbMnucE9VqITVn3Vvu/LF0jcWfVJqlgEo1c9eoiTr1WiaMIKbEEqQb4JTZ8MBZGtGRfAoQ==}
     peerDependencies:
       prettier: ^3
     peerDependenciesMeta:
@@ -2729,9 +2729,9 @@ packages:
   sort-object-keys@2.1.0:
     resolution: {integrity: sha512-SOiEnthkJKPv2L6ec6HMwhUcN0/lppkeYuN1x63PbyPRrgSPIuBJCiYxYyvWRTtjMlOi14vQUCGUJqS6PLVm8g==}
 
-  sort-package-json@3.6.1:
-    resolution: {integrity: sha512-Chgejw1+10p2D0U2tB7au1lHtz6TkFnxmvZktyBCRyV0GgmF6nl1IxXxAsPtJVsUyg/fo+BfCMAVVFUVRkAHrQ==}
-    engines: {node: '>=20'}
+  sort-package-json@4.1.0:
+    resolution: {integrity: sha512-CI7HgkV5rCE5dbYYJMuXkxgiSLc3uJczff9ic3kHuY5QRYKUbfsDSKN4DjTpvqejdJEkKLusQ64ykTte5ypr1A==}
+    engines: {node: '>=22'}
     hasBin: true
 
   source-map-js@1.2.1:
@@ -5012,9 +5012,9 @@ snapshots:
       prettier: 3.9.10
       proxy-vir: 2.0.4
 
-  prettier-plugin-packagejson@3.0.2(prettier@3.9.10):
+  prettier-plugin-packagejson@3.0.3(prettier@3.9.10):
     dependencies:
-      sort-package-json: 3.6.1
+      sort-package-json: 4.1.0
     optionalDependencies:
       prettier: 3.9.10
 
@@ -5126,7 +5126,7 @@ snapshots:
 
   sort-object-keys@2.1.0: {}
 
-  sort-package-json@3.6.1:
+  sort-package-json@4.1.0:
     dependencies:
       detect-indent: 7.0.2
       detect-newline: 4.0.1
