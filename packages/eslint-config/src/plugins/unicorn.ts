@@ -22,6 +22,10 @@ const plugin: PluginFactory = () => [
       'unicorn/no-array-callback-reference': 'off',
       // Justification: reduce is a valid functional fold; banning it pushes toward mutable loops
       'unicorn/no-array-reduce': 'off',
+      /* Justification: Strips the asterisk gutter that
+         jsdoc/require-asterisk-prefix requires, so no multi-line
+         documentation comment can satisfy both */
+      'unicorn/no-asterisk-prefix-in-documentation-comments': 'off',
       /* Justification: Flags Symbol.dispose/Symbol.asyncDispose, which are
          standard (Explicit Resource Management) but excluded from unicorn's
          ECMAScript baseline; the rule has no allowlist option to permit them */

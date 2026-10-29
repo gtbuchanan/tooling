@@ -61,6 +61,25 @@ describe.concurrent('eslint CLI integration', () => {
     expect(stdout).toContain('unicorn/no-process-exit');
   });
 
+  /*
+   * jsdoc/require-asterisk-prefix demands the gutter and
+   * unicorn/no-asterisk-prefix-in-documentation-comments strips it, so with
+   * both enabled no multi-line documentation comment passes either way.
+   */
+  it('accepts a multi-line doc comment with an asterisk gutter', async ({ fixture, expect }) => {
+    const result = await fixture.run({
+      files: {
+        'documented.ts': [
+          '/**', ' * Greets the reader.', ' *', ' * Twice, for emphasis.', ' */',
+          "export const greeting = 'hello';", '',
+        ].join('\n'),
+      },
+      flags: ['--max-warnings=0'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0, stdout: '' });
+  });
+
   it('allows require() in .cjs but not .js', async ({ fixture, expect }) => {
     // The .cjs extension forces CommonJS, so require() is the only option
     const code = "const path = require('node:path');\n\nmodule.exports = path;\n";
