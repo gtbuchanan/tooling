@@ -84,7 +84,7 @@ const packageScriptEntries = (
 const gtbShim = (pkgDir: string, cliDir: string): string => {
   const bin = path.posix.join(toPosixRelative(pkgDir, cliDir), 'bin/gtb.ts');
 
-  return `node --experimental-strip-types ${bin}`;
+  return `node ${bin}`;
 };
 
 /**

@@ -239,7 +239,7 @@ describe.concurrent(runSync, () => {
     );
 
     expect(manifest).toHaveProperty(
-      ['scripts', 'gtb'], 'node --experimental-strip-types ../../tools/gtb/bin/gtb.ts',
+      ['scripts', 'gtb'], 'node ../../tools/gtb/bin/gtb.ts',
     );
   });
 

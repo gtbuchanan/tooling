@@ -18,8 +18,8 @@
     "bin"
   ],
   "scripts": {
-    "compile:ts": "node --experimental-strip-types scripts/build.ts",
-    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "compile:ts": "node scripts/build.ts",
+    "gtb": "node ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb task lint:eslint",
     "pack:npm": "pnpm run gtb task pack:npm",
     "typecheck:ts": "pnpm run gtb task typecheck:ts"

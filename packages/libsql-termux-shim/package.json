@@ -19,10 +19,10 @@
     "src"
   ],
   "scripts": {
-    "compile:ts": "node --experimental-strip-types scripts/build.ts",
+    "compile:ts": "node scripts/build.ts",
     "coverage:codecov:upload": "pnpm run gtb task coverage:codecov:upload",
     "coverage:vitest:merge": "pnpm run gtb task coverage:vitest:merge",
-    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "gtb": "node ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb task lint:eslint",
     "pack:npm": "pnpm run gtb task pack:npm",
     "test:vitest:fast": "pnpm run gtb task test:vitest:fast",

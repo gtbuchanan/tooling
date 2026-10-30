@@ -5,7 +5,7 @@
   "description": "Shared hk pre-commit preset (Pkl)",
   "type": "module",
   "scripts": {
-    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "gtb": "node ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb task lint:eslint",
     "pack:pkl": "pnpm run gtb task pack:pkl",
     "typecheck:pkl": "pnpm run gtb task typecheck:pkl",

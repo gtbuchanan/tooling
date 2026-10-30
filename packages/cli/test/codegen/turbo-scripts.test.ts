@@ -84,7 +84,7 @@ describe.concurrent(generatePackageScripts, () => {
     const result = generatePackageScripts(caps, true, '/root/packages/cli');
 
     expect(result).toHaveProperty('typecheck:ts', 'pnpm run gtb task typecheck:ts');
-    expect(result).toHaveProperty('gtb', 'node --experimental-strip-types ../cli/bin/gtb.ts');
+    expect(result).toHaveProperty('gtb', 'node ../cli/bin/gtb.ts');
   });
 
   it('points the gtb shim at the CLI wherever the workspace keeps it', ({ expect }) => {
@@ -93,7 +93,7 @@ describe.concurrent(generatePackageScripts, () => {
     const result = generatePackageScripts(caps, true, '/root/tools/gtb');
 
     expect(result).toHaveProperty(
-      'gtb', 'node --experimental-strip-types ../../tools/gtb/bin/gtb.ts',
+      'gtb', 'node ../../tools/gtb/bin/gtb.ts',
     );
   });
 
@@ -102,7 +102,7 @@ describe.concurrent(generatePackageScripts, () => {
 
     const result = generatePackageScripts(caps, true, '/root/tools/gtb');
 
-    expect(result).toHaveProperty('gtb', 'node --experimental-strip-types bin/gtb.ts');
+    expect(result).toHaveProperty('gtb', 'node bin/gtb.ts');
   });
 
   it('generates nothing for empty capabilities', ({ expect }) => {

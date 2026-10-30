@@ -13,7 +13,7 @@
   "scripts": {
     "coverage:codecov:upload": "pnpm run gtb task coverage:codecov:upload",
     "coverage:vitest:merge": "pnpm run gtb task coverage:vitest:merge",
-    "gtb": "node --experimental-strip-types ../../packages/cli/bin/gtb.ts",
+    "gtb": "node ../../packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb task lint:eslint",
     "test:vitest:fast": "pnpm run gtb task test:vitest:fast",
     "test:vitest:slow": "pnpm run gtb task test:vitest:slow",

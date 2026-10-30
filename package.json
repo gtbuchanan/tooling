@@ -15,7 +15,7 @@
     "check": "pnpm run gtb turbo run check",
     "coverage:merge": "pnpm run gtb turbo run coverage:merge",
     "deploy:skills": "pnpm run gtb turbo run deploy:skills",
-    "gtb": "node --experimental-strip-types packages/cli/bin/gtb.ts",
+    "gtb": "node packages/cli/bin/gtb.ts",
     "lint:eslint": "pnpm run gtb task lint:eslint . --ignore-pattern \"packages/*/**\"",
     "pack": "pnpm run gtb turbo run pack",
     "prepare": "pnpm run gtb prepare",
