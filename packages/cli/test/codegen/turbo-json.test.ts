@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent(generateTurboJson, () => {
@@ -199,15 +199,18 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks).not.toHaveProperty('test:vitest:fast');
   });
 
-  it('includes test:vitest:e2e when root has e2e config', ({ expect }) => {
+  it('omits test:vitest:e2e when only a monorepo root has e2e config', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities()],
-      { hasVitestE2e: true },
+      [makeCapabilities({ isPublished: true })],
+      { hasVitestE2e: true, isMonorepo: true },
     );
 
     const result = generateTurboJson(discovery);
 
-    expect(result.tasks).toHaveProperty('test:vitest:e2e');
+    expect(result.tasks).not.toHaveProperty('test:vitest:e2e');
+    expect(result.tasks).not.toHaveProperty('test:e2e');
+    expect(result.tasks['build']?.dependsOn).not.toContain('test:e2e');
+    expect(generateRootScripts(discovery)).not.toHaveProperty('test:e2e');
   });
 
   it('includes pack:npm when any package is published', ({ expect }) => {
@@ -243,6 +246,19 @@ describe.concurrent(generateTurboJson, () => {
       'compile:ts',
       'compile:skills',
     ]);
+  });
+
+  it('omits compile:skills when no published package has skills', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makeCapabilities({ dir: '/fake/published', isPublished: true }),
+      makeCapabilities({ dir: '/fake/skilled', hasSkills: true }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).not.toHaveProperty('compile:skills');
+    expect(result.tasks['pack:npm']?.dependsOn).toStrictEqual(['compile:ts']);
+    expect(result.tasks['compile']?.dependsOn).toStrictEqual(['compile:ts']);
   });
 
   it('omits lint:eslint from deploy:skills dependsOn when no package has ESLint', ({ expect }) => {

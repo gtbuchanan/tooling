@@ -110,6 +110,12 @@ export interface ToolFlags {
   readonly hasPklPackage: boolean;
   readonly hasPublished: boolean;
   /**
+   * Some package both publishes and authors skills, which is the package
+   * `compile:skills` runs in. Skills and publishing on different packages
+   * leave the task with nothing to run.
+   */
+  readonly hasPublishedSkills: boolean;
+  /**
    * Workspace root has its own ESLint config and is a monorepo (so root
    * is distinct from any package). Single-package repos lint root files
    * via the per-package task and don't need a separate root task.
@@ -167,7 +173,8 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     compileIncludes,
     generateScripts,
     hasCheck: hasTypeScript || hasEslint || hasVitest || hasPkl || hasRootTypeScript,
-    hasE2e: discovery.root.hasVitestE2e || discovery.packages.some(pkg => pkg.hasVitestE2e),
+    // Packages only: a monorepo root's e2e config has no script to run it.
+    hasE2e: discovery.packages.some(pkg => pkg.hasVitestE2e),
     hasEslint,
     hasGenerate: generateScripts.length > 0,
     hasLint: hasEslint,
@@ -175,6 +182,7 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
     hasPkl,
     hasPklPackage,
     hasPublished,
+    hasPublishedSkills: discovery.packages.some(pkg => pkg.isPublished && pkg.hasSkills),
     hasRootEslint: discovery.isMonorepo && discovery.root.hasEslint,
     hasRootSkills: discovery.isMonorepo && discovery.root.hasSkills,
     hasRootTypeScript,
@@ -246,11 +254,8 @@ const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] 
       outputs: compileTsOutputs(flags),
     },
   },
-];
-
-const compileSkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
   {
-    condition: flags.hasSkills && flags.hasPublished,
+    condition: flags.hasPublishedSkills,
     key: taskNames.compileSkills,
     value: {
       inputs: ['skills/**'],
@@ -266,7 +271,7 @@ const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => 
     value: {
       dependsOn: [
         taskNames.compileTs,
-        ...(flags.hasSkills ? [taskNames.compileSkills] : []),
+        ...(flags.hasPublishedSkills ? [taskNames.compileSkills] : []),
       ],
       /*
        * The compiled tree this packs is deliberately absent from the inputs.
@@ -455,7 +460,6 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
   const entries = [
     ...typecheckTasks(flags),
     ...compileTasks(flags),
-    ...compileSkillsTasks(flags),
     ...packTasks(flags),
     ...pklTasks(flags),
     ...lintTasks(flags),
