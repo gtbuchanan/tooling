@@ -72,6 +72,11 @@ export interface ToolFlags {
   readonly hasEslint: boolean;
   readonly hasGenerate: boolean;
   readonly generateScripts: readonly string[];
+  /**
+   * Some package or a monorepo root lints, so the `lint` aggregate has a
+   * member. The root counts on its own: without it a root-only ESLint config
+   * generates `//#lint:eslint` that no aggregate runs.
+   */
   readonly hasLint: boolean;
   /**
    * Some package produces a release artifact to pack — an npm-published
@@ -142,22 +147,24 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasPklPackage = discovery.packages.some(pkg => pkg.hasPklPackage);
   const hasPublished = discovery.packages.some(pkg => pkg.isPublished);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
+  const hasRootEslint = discovery.isMonorepo && discovery.root.hasEslint;
   const hasRootTypeScript = discovery.isMonorepo && discovery.root.hasTypeScriptSources;
+  const hasLint = hasEslint || hasRootEslint;
 
   return {
     generateScripts,
-    hasCheck: hasTypeScript || hasEslint || hasVitest || hasPkl || hasRootTypeScript,
+    hasCheck: hasTypeScript || hasLint || hasVitest || hasPkl || hasRootTypeScript,
     // Packages only: a monorepo root's e2e config has no script to run it.
     hasE2e: discovery.packages.some(pkg => pkg.hasVitestE2e),
     hasEslint,
     hasGenerate: generateScripts.length > 0,
-    hasLint: hasEslint,
+    hasLint,
     hasPackable: hasPublished || hasPklPackage,
     hasPkl,
     hasPklPackage,
     hasPublished,
     hasPublishedSkills: discovery.packages.some(pkg => pkg.isPublished && pkg.hasSkills),
-    hasRootEslint: discovery.isMonorepo && discovery.root.hasEslint,
+    hasRootEslint,
     hasRootSkills: discovery.isMonorepo && discovery.root.hasSkills,
     hasRootTypeScript,
     hasSkills: discovery.packages.some(pkg => pkg.hasSkills),

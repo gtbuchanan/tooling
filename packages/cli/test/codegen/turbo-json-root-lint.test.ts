@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const monorepoWithRootEslint = (): ReturnType<typeof makeDiscovery> =>
@@ -48,5 +48,18 @@ describe.concurrent('generateTurboJson — root lint', () => {
     const result = generateTurboJson(monorepoWithRootEslint());
 
     expect(result.tasks['lint']?.dependsOn).toContain('//#lint:eslint');
+  });
+
+  it('checks //#lint:eslint when only the monorepo root has ESLint', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities(), makeCapabilities()],
+      { hasEslint: true },
+    );
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['lint']?.dependsOn).toStrictEqual(['//#lint:eslint']);
+    expect(result.tasks['check']?.dependsOn).toStrictEqual(['lint']);
+    expect(generateRootScripts(discovery)).toHaveProperty('check');
   });
 });
