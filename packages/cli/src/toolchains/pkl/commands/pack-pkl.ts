@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
-import { run } from '../../../core/process.ts';
-import { pklPackDestination } from '../pkl-pack.ts';
+import { run } from '#src/core/process.js';
+import { pklPackDestination } from '#src/toolchains/pkl/pkl-pack.js';
 
 /**
  * Packages the Pkl project into `dist/packages/pkl/` via `pkl project

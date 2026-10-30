@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
-import type { PackageCapabilities, WorkspaceDiscovery } from '../core/discovery.ts';
-import { readJsonFile } from '../core/file-writer.ts';
-import { StringArray, UnknownRecord } from '../core/schemas.ts';
-import { Aggregate, topo } from './turbo-config.ts';
+import { Aggregate, topo } from '#src/codegen/turbo-config.js';
+import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import { readJsonFile } from '#src/core/file-writer.js';
+import { StringArray, UnknownRecord } from '#src/core/schemas.js';
 
 /**
  * Package configuration (`packages/<pkg>/turbo.json`) as far as the

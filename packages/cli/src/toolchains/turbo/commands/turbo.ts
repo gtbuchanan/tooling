@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
-import { rootNames } from '../../../core/command-names.ts';
-import { run } from '../../../core/process.ts';
+import { rootNames } from '#src/core/command-names.js';
+import { run } from '#src/core/process.js';
 
 /**
  * Setup help shown when the global turbo binary is missing on Android.

@@ -3,7 +3,7 @@ import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { runVerify } from '#src/codegen/commands/verify.js';
-import { createTempDir, writeJson } from '../../helpers.ts';
+import { createTempDir, writeJson } from '#test/helpers.js';
 
 /**
  * Runtime manifest field a workspace dependency can be declared through.

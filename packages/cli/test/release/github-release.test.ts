@@ -6,7 +6,7 @@ import {
   publishReleases,
   releaseTag,
 } from '#src/release/github-release.js';
-import { captureLogger, createTempDir, stubGithubReleaseDeps } from '../helpers.ts';
+import { captureLogger, createTempDir, stubGithubReleaseDeps } from '#test/helpers.js';
 
 /**
  * A package to release, identified by a generated name/version pair. `dir`

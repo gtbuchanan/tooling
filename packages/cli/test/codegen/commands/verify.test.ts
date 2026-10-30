@@ -12,7 +12,7 @@ import { discoverWorkspace } from '#src/core/discovery.js';
 import { writeJsonFile } from '#src/core/file-writer.js';
 import {
   captureLogger, createTempDir, initProject, readScripts, readTurboTasks, writeJson,
-} from '../../helpers.ts';
+} from '#test/helpers.js';
 
 interface ConsumerProject {
   readonly app: { basename: string; dir: string; name: string };

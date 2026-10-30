@@ -5,7 +5,7 @@ import { describe, it } from 'vitest';
 import {
   checkMiseTasksInclude, generateMiseTasks, miseTasksFileName,
 } from '#src/codegen/mise-tasks.js';
-import { createTempDir } from '../helpers.ts';
+import { createTempDir } from '#test/helpers.js';
 
 describe.concurrent(generateMiseTasks, () => {
   it('emits hk:all and hk:base as loadable include-format tasks', ({ expect }) => {

@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
-import type { Logger } from '../core/logger.ts';
-import type { ExecResult } from '../core/process.ts';
+import type { Logger } from '#src/core/logger.js';
+import type { ExecResult } from '#src/core/process.js';
 
 /**
  * Side-effecting I/O the GitHub-release channels depend on. Injected so the

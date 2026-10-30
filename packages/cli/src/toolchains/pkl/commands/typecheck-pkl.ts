@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { defineCommand } from 'citty';
-import { capture } from '../../../core/process.ts';
-import { localeComparer } from '../../../core/sort.ts';
+import { capture } from '#src/core/process.js';
+import { localeComparer } from '#src/core/sort.js';
 
 /**
  * Lists hand-authored Pkl modules in a directory (sorted, excludes PklProject).

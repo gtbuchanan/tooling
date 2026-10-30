@@ -1,19 +1,19 @@
 import { defineCommand } from 'citty';
-import { taskCommandName, taskNames } from './tasks/names.ts';
-import { coverageCodecovUpload } from './toolchains/codecov/commands/coverage-codecov-upload.ts';
-import { lintEslint } from './toolchains/eslint/commands/lint-eslint.ts';
-import { packNpm } from './toolchains/npm/commands/pack-npm.ts';
-import { packPkl } from './toolchains/pkl/commands/pack-pkl.ts';
-import { typecheckPkl } from './toolchains/pkl/commands/typecheck-pkl.ts';
-import { compileSkills } from './toolchains/skills/commands/compile-skills.ts';
-import { deploySkills } from './toolchains/skills/commands/deploy-skills.ts';
-import { compileTs } from './toolchains/typescript/commands/compile-ts.ts';
-import { typecheckTs } from './toolchains/typescript/commands/typecheck-ts.ts';
-import { coverageVitestMerge } from './toolchains/vitest/commands/coverage-vitest-merge.ts';
-import { testVitestE2e } from './toolchains/vitest/commands/test-vitest-e2e.ts';
-import { testVitestFast } from './toolchains/vitest/commands/test-vitest-fast.ts';
-import { testVitestSlow } from './toolchains/vitest/commands/test-vitest-slow.ts';
-import { testVitest } from './toolchains/vitest/commands/test-vitest.ts';
+import { taskCommandName, taskNames } from '#src/tasks/names.js';
+import { coverageCodecovUpload } from '#src/toolchains/codecov/commands/coverage-codecov-upload.js';
+import { lintEslint } from '#src/toolchains/eslint/commands/lint-eslint.js';
+import { packNpm } from '#src/toolchains/npm/commands/pack-npm.js';
+import { packPkl } from '#src/toolchains/pkl/commands/pack-pkl.js';
+import { typecheckPkl } from '#src/toolchains/pkl/commands/typecheck-pkl.js';
+import { compileSkills } from '#src/toolchains/skills/commands/compile-skills.js';
+import { deploySkills } from '#src/toolchains/skills/commands/deploy-skills.js';
+import { compileTs } from '#src/toolchains/typescript/commands/compile-ts.js';
+import { typecheckTs } from '#src/toolchains/typescript/commands/typecheck-ts.js';
+import { coverageVitestMerge } from '#src/toolchains/vitest/commands/coverage-vitest-merge.js';
+import { testVitestE2e } from '#src/toolchains/vitest/commands/test-vitest-e2e.js';
+import { testVitestFast } from '#src/toolchains/vitest/commands/test-vitest-fast.js';
+import { testVitestSlow } from '#src/toolchains/vitest/commands/test-vitest-slow.js';
+import { testVitest } from '#src/toolchains/vitest/commands/test-vitest.js';
 
 /**
  * `gtb task <name>` — invokes a single leaf build tool.
@@ -41,4 +41,4 @@ export const task = defineCommand({
   },
 });
 
-export { prepack } from './toolchains/npm/commands/pack-npm.ts';
+export { prepack } from '#src/toolchains/npm/commands/pack-npm.js';

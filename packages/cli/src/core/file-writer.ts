@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import * as v from 'valibot';
-import { ManifestSchema } from './manifest.ts';
-import { UnknownRecord } from './schemas.ts';
-import { localeComparer } from './sort.ts';
+import { ManifestSchema } from '#src/core/manifest.js';
+import { UnknownRecord } from '#src/core/schemas.js';
+import { localeComparer } from '#src/core/sort.js';
 
 const jsonIndent = 2;
 

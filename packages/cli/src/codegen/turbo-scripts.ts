@@ -1,9 +1,4 @@
 import path from 'node:path';
-import { rootNames } from '../core/command-names.ts';
-import type { PackageCapabilities, WorkspaceDiscovery } from '../core/discovery.ts';
-import { toPosixRelative } from '../core/paths.ts';
-import { localeComparer } from '../core/sort.ts';
-import { taskCommandName, taskNames } from '../tasks/names.ts';
 import {
   Aggregate,
   type ConditionalEntry,
@@ -11,7 +6,12 @@ import {
   collect,
   resolveToolFlags,
   toPackageIgnore,
-} from './turbo-config.ts';
+} from '#src/codegen/turbo-config.js';
+import { rootNames } from '#src/core/command-names.js';
+import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import { toPosixRelative } from '#src/core/paths.js';
+import { localeComparer } from '#src/core/sort.js';
+import { taskCommandName, taskNames } from '#src/tasks/names.js';
 
 /*
  * Self-hosted repos define gtb as a package.json script (shim to source).

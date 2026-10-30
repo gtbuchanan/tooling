@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
-import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
+import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson (globalDependencies)', () => {
   it('emits globalDependencies for mise files when the workspace has mise.toml', ({ expect }) => {

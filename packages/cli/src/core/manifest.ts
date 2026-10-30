@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { StringArray, StringRecord } from './schemas.ts';
+import { StringArray, StringRecord } from '#src/core/schemas.js';
 
 /**
  * Valibot schema for the `publishConfig` field of package.json.
@@ -110,9 +110,9 @@ export const resolveLicense = (
  *
  * - `imports`: pnpm doesn't natively promote `publishConfig.imports`.
  *   `rewriteRelativeImportExtensions` only rewrites relative imports,
- *   not subpath imports (`#src/*`). Dev uses .ts extensions via the
- *   source imports map; published packages need a separate map (e.g.
- *   `"#src/*.ts": "./*.js"`).
+ *   not subpath imports (`#src/*`). Dev maps the `.js` specifiers onto
+ *   `.ts` sources; published packages need a separate map (e.g.
+ *   `"#src/*.js": "./src/*.js"`).
  * - `os`/`cpu`/`libc`: top-level platform fields trip pnpm's
  *   "Unsupported platform" warning during workspace scans. Keeping
  *   them under `publishConfig` quiets dev; promoting at publish keeps

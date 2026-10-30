@@ -5,7 +5,7 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverPackage, discoverWorkspace } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
-import { createTempDir, writeJson } from '../helpers.ts';
+import { createTempDir, writeJson } from '#test/helpers.js';
 
 const writeFile = (dir: string, name: string, content = ''): void => {
   writeFileSync(path.join(dir, name), content);

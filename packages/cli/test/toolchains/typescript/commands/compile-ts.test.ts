@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
 import { buildOutDir } from '#src/core/dist-source.js';
 import { clearCompiledOutput } from '#src/toolchains/typescript/commands/compile-ts.js';
-import { createTempDir } from '../../../helpers.ts';
+import { createTempDir } from '#test/helpers.js';
 
 /**
  * Options for {@link createPackage}.

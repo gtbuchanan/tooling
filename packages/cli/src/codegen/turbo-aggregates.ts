@@ -1,4 +1,3 @@
-import { taskNames } from '../tasks/names.ts';
 import {
   Aggregate,
   type ConditionalEntry,
@@ -6,7 +5,8 @@ import {
   type TurboTask,
   rootTaskKey,
   topo,
-} from './turbo-config.ts';
+} from '#src/codegen/turbo-config.js';
+import { taskNames } from '#src/tasks/names.js';
 
 /*
  * `generate:*` scripts are author-owned codegen. Discovery finds the names,

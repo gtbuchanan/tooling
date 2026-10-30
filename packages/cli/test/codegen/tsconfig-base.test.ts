@@ -5,7 +5,7 @@ import { describe, it } from 'vitest';
 import { runSync } from '#src/codegen/commands/sync.js';
 import { runVerify } from '#src/codegen/commands/verify.js';
 import { readJsonFile } from '#src/core/file-writer.js';
-import { captureLogger, createTempDir, writeJson } from '../helpers.ts';
+import { captureLogger, createTempDir, writeJson } from '#test/helpers.js';
 
 /**
  * Scaffolds a minimal TypeScript workspace whose root is the lone package.

@@ -3,9 +3,9 @@ import path from 'node:path';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
 import { parse } from 'yaml';
-import { readJsonFile } from './file-writer.ts';
-import { type Manifest, ManifestSchema } from './manifest.ts';
-import { StringArray } from './schemas.ts';
+import { readJsonFile } from '#src/core/file-writer.js';
+import { type Manifest, ManifestSchema } from '#src/core/manifest.js';
+import { StringArray } from '#src/core/schemas.js';
 
 /**
  * Resolved workspace context for pack operations.

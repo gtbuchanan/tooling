@@ -4,7 +4,8 @@
   "description": "Shared build CLI",
   "type": "module",
   "imports": {
-    "#src/*": "./src/*"
+    "#src/*.js": "./src/*.ts",
+    "#test/*.js": "./test/*.ts"
   },
   "exports": {
     ".": "./src/index.ts"
@@ -71,7 +72,7 @@
       ".": "./src/index.js"
     },
     "imports": {
-      "#src/*.ts": "./src/*.js"
+      "#src/*.js": "./src/*.js"
     },
     "linkDirectory": false
   }

@@ -3,9 +3,9 @@ import path from 'node:path';
 import { defineCommand } from 'citty';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
-import { discoverPackage } from '../../../core/discovery.ts';
-import { run } from '../../../core/process.ts';
-import { codecovName } from '../codecov-name.ts';
+import { discoverPackage } from '#src/core/discovery.js';
+import { run } from '#src/core/process.js';
+import { codecovName } from '#src/toolchains/codecov/codecov-name.js';
 
 const HeadSchema = v.object({
   sha: v.string(),

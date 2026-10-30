@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
-import { type RunSyncOptions, runSync } from '../../codegen/commands/sync.ts';
-import { rootNames } from '../../core/command-names.ts';
-import { type RunOptions, run } from '../../core/process.ts';
+import { type RunSyncOptions, runSync } from '#src/codegen/commands/sync.js';
+import { rootNames } from '#src/core/command-names.js';
+import { type RunOptions, run } from '#src/core/process.js';
 
 /**
  * Injected side effects for {@link executeVersion}.

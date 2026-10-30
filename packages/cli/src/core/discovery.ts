@@ -2,15 +2,15 @@ import { type Dirent, existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import {
   buildInclude, generateTaskPrefix, resolveBuildIncludes, typeCheckInclude,
-} from './layout.ts';
-import type { Manifest } from './manifest.ts';
-import { hasPackageBlock } from './pkl-project.ts';
-import { localeComparer } from './sort.ts';
+} from '#src/core/layout.js';
+import type { Manifest } from '#src/core/manifest.js';
+import { hasPackageBlock } from '#src/core/pkl-project.js';
+import { localeComparer } from '#src/core/sort.js';
 import {
   type ResolveWorkspaceOptions,
   readParsedManifest,
   resolveWorkspace,
-} from './workspace.ts';
+} from '#src/core/workspace.js';
 
 /**
  * Capabilities detected for a single package.

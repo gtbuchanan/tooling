@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { parseTsconfig } from 'get-tsconfig';
 import * as v from 'valibot';
-import { StringArray } from './schemas.ts';
+import { StringArray } from '#src/core/schemas.js';
 
 /*
  * How a package is laid out. Discovery reads these to describe a package, and

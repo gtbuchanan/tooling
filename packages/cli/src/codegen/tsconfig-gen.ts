@@ -1,11 +1,11 @@
 import path from 'node:path';
 import * as v from 'valibot';
-import type { PackageCapabilities } from '../core/discovery.ts';
-import { buildOutDir } from '../core/dist-source.ts';
-import { readJsonFile } from '../core/file-writer.ts';
-import { buildInclude, typeCheckInclude } from '../core/layout.ts';
-import { toPosixRelative } from '../core/paths.ts';
-import { UnknownRecord } from '../core/schemas.ts';
+import type { PackageCapabilities } from '#src/core/discovery.js';
+import { buildOutDir } from '#src/core/dist-source.js';
+import { readJsonFile } from '#src/core/file-writer.js';
+import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
+import { toPosixRelative } from '#src/core/paths.js';
+import { UnknownRecord } from '#src/core/schemas.js';
 
 /**
  * File name of the single hand-authored tsconfig every generated config

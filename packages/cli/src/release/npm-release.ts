@@ -1,6 +1,6 @@
-import { discoverWorkspace } from '../core/discovery.ts';
-import { readParsedManifest } from '../core/workspace.ts';
-import { type GithubReleaseDeps, publishReleases } from './github-release.ts';
+import { discoverWorkspace } from '#src/core/discovery.js';
+import { readParsedManifest } from '#src/core/workspace.js';
+import { type GithubReleaseDeps, publishReleases } from '#src/release/github-release.js';
 
 /**
  * Creates a GitHub release for every published npm package's current version,

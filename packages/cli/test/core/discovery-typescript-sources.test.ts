@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
 import { discoverPackage } from '#src/core/discovery.js';
-import { createTempDir, writeJson } from '../helpers.ts';
+import { createTempDir, writeJson } from '#test/helpers.js';
 
 const writeFile = (dir: string, name: string): void => {
   writeFileSync(path.join(dir, name), '');

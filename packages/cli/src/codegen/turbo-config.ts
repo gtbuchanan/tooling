@@ -1,16 +1,16 @@
 import path from 'node:path';
-import { type WorkspaceDiscovery, vendoredCli } from '../core/discovery.ts';
+import { aggregateTasks, codegenDeps, rootSourceDeps } from '#src/codegen/turbo-aggregates.js';
+import { toTurboGlobs } from '#src/codegen/turbo-globs.js';
+import { testTasks } from '#src/codegen/turbo-test-tasks.js';
+import { type WorkspaceDiscovery, vendoredCli } from '#src/core/discovery.js';
 import {
   buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
-} from '../core/dist-source.ts';
-import { typeCheckInclude } from '../core/layout.ts';
-import { toPosixRelative } from '../core/paths.ts';
-import { localeComparer } from '../core/sort.ts';
-import { taskNames } from '../tasks/names.ts';
-import { skillsConfigFilename } from '../toolchains/skills/skills-config.ts';
-import { aggregateTasks, codegenDeps, rootSourceDeps } from './turbo-aggregates.ts';
-import { toTurboGlobs } from './turbo-globs.ts';
-import { testTasks } from './turbo-test-tasks.ts';
+} from '#src/core/dist-source.js';
+import { typeCheckInclude } from '#src/core/layout.js';
+import { toPosixRelative } from '#src/core/paths.js';
+import { localeComparer } from '#src/core/sort.js';
+import { taskNames } from '#src/tasks/names.js';
+import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
 
 /**
  * Turbo-only aggregate task names (no CLI handler).
@@ -494,4 +494,4 @@ export {
   generatePackageScripts,
   generateRequiredRootScripts,
   generateRootScripts,
-} from './turbo-scripts.ts';
+} from '#src/codegen/turbo-scripts.js';

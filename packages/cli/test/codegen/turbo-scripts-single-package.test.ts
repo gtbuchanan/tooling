@@ -5,7 +5,7 @@ import { describe, it } from 'vitest';
 import { runSync } from '#src/codegen/commands/sync.js';
 import { runVerify } from '#src/codegen/commands/verify.js';
 import { readJsonFile, writeJsonFile } from '#src/core/file-writer.js';
-import { captureLogger, createTempDir, readScripts, writeJson } from '../helpers.ts';
+import { captureLogger, createTempDir, readScripts, writeJson } from '#test/helpers.js';
 
 /**
  * Scaffolds a repo whose root _is_ the lone package — a `pnpm-workspace.yaml`

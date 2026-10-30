@@ -10,14 +10,14 @@ import {
   buildOutput,
   buildRepoFields,
   resolveLicense,
-} from '../../../core/manifest.ts';
-import { toPosixRelative } from '../../../core/paths.ts';
+} from '#src/core/manifest.js';
+import { toPosixRelative } from '#src/core/paths.js';
 import {
   type ResolveWorkspaceOptions,
   readManifest,
   readParsedManifest,
   resolveWorkspace,
-} from '../../../core/workspace.ts';
+} from '#src/core/workspace.js';
 
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';

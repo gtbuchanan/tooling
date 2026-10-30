@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { run } from '../../../core/process.ts';
+import { run } from '#src/core/process.js';
 
 /**
  * Merges fast + slow coverage blobs into a unified report.

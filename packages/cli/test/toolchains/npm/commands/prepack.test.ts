@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { prepack } from '#src/toolchains/npm/commands/pack-npm.js';
-import { createTempDir } from '../../../helpers.ts';
+import { createTempDir } from '#test/helpers.js';
 
 const jsonIndent = 2;
 

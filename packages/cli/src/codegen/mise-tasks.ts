@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify } from 'smol-toml';
 import * as v from 'valibot';
-import type { WorkspaceDiscovery } from '../core/discovery.ts';
-import { StringArray } from '../core/schemas.ts';
+import type { WorkspaceDiscovery } from '#src/core/discovery.js';
+import { StringArray } from '#src/core/schemas.js';
 
 /**
  * Filename of the generated, fully-owned mise tasks include.

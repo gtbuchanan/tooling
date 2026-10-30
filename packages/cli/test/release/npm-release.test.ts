@@ -10,7 +10,7 @@ import {
   createTempDir,
   stubGithubReleaseDeps,
   writeJson,
-} from '../helpers.ts';
+} from '#test/helpers.js';
 
 /**
  * Injected deps rooted at the workspace under test.

@@ -1,9 +1,9 @@
 import { createRequire } from 'node:module';
 import { defineCommand } from 'citty';
-import { toPosixRelative } from '../../../core/paths.ts';
-import { run } from '../../../core/process.ts';
-import { resolveWorkspace } from '../../../core/workspace.ts';
-import { loadConfiguredAgents } from '../skills-config.ts';
+import { toPosixRelative } from '#src/core/paths.js';
+import { run } from '#src/core/process.js';
+import { resolveWorkspace } from '#src/core/workspace.js';
+import { loadConfiguredAgents } from '#src/toolchains/skills/skills-config.js';
 
 const require = createRequire(import.meta.url);
 

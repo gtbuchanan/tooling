@@ -1,1 +1,1 @@
-export { main } from './main.ts';
+export { main } from '#src/main.js';

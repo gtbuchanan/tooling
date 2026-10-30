@@ -1,12 +1,12 @@
-import { taskNames } from '../tasks/names.ts';
-import { codegenDeps } from './turbo-aggregates.ts';
+import { codegenDeps } from '#src/codegen/turbo-aggregates.js';
 import {
   Aggregate,
   type ConditionalEntry,
   type ToolFlags,
   type TurboTask,
   topo,
-} from './turbo-config.ts';
+} from '#src/codegen/turbo-config.js';
+import { taskNames } from '#src/tasks/names.js';
 
 /*
  * Unlike compile inputs, test inputs can't be resolved from vitest config —

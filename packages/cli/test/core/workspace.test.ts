@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { resolveWorkspace } from '#src/core/workspace.js';
-import { createTempDir } from '../helpers.ts';
+import { createTempDir } from '#test/helpers.js';
 
 describe.concurrent(resolveWorkspace, () => {
   it('detects monorepo with packages glob', ({ expect }) => {

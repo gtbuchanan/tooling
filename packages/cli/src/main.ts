@@ -1,14 +1,14 @@
 import { defineCommand } from 'citty';
-import { sync } from './codegen/commands/sync.ts';
-import { verify } from './codegen/commands/verify.ts';
-import { rootNames } from './core/command-names.ts';
-import { publish } from './release/commands/publish.ts';
-import { version } from './release/commands/version.ts';
-import { task } from './task.ts';
-import { taskCommandName } from './tasks/names.ts';
-import { hk } from './toolchains/hk/commands/hk.ts';
-import { prepare } from './toolchains/skills/commands/prepare.ts';
-import { turbo } from './toolchains/turbo/commands/turbo.ts';
+import { sync } from '#src/codegen/commands/sync.js';
+import { verify } from '#src/codegen/commands/verify.js';
+import { rootNames } from '#src/core/command-names.js';
+import { publish } from '#src/release/commands/publish.js';
+import { version } from '#src/release/commands/version.js';
+import { task } from '#src/task.js';
+import { taskCommandName } from '#src/tasks/names.js';
+import { hk } from '#src/toolchains/hk/commands/hk.js';
+import { prepare } from '#src/toolchains/skills/commands/prepare.js';
+import { turbo } from '#src/toolchains/turbo/commands/turbo.js';
 
 /**
  * Root `gtb` command. Dispatches user commands at the root and leaf tools under `task`.

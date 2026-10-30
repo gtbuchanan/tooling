@@ -3,8 +3,8 @@ import path from 'node:path';
 import { defineCommand } from 'citty';
 import {
   buildOutDir, packNpmOutDirEntries, skillsOutDirEntry,
-} from '../../../core/dist-source.ts';
-import { run } from '../../../core/process.ts';
+} from '#src/core/dist-source.js';
+import { run } from '#src/core/process.js';
 
 /*
  * Entries this task must leave in place. The `pack:npm` docs and manifest are

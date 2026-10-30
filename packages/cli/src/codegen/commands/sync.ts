@@ -1,30 +1,30 @@
 import { statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
-import { rootNames } from '../../core/command-names.ts';
-import {
-  type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace, vendoredCli,
-} from '../../core/discovery.ts';
-import {
-  type MergeResult, mergePackageScripts, sortKeysDeep, writeJsonFile,
-} from '../../core/file-writer.ts';
-import { type Logger, createLogger } from '../../core/logger.ts';
-import { generateManifests } from '../manifest-sync.ts';
-import { generateMiseTasks, miseTasksFileName } from '../mise-tasks.ts';
+import { generateManifests } from '#src/codegen/manifest-sync.js';
+import { generateMiseTasks, miseTasksFileName } from '#src/codegen/mise-tasks.js';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
-} from '../sync-scopes.ts';
+} from '#src/codegen/sync-scopes.js';
 import {
   generateTsconfigBase,
   planTsconfigs,
   readUserCompilerOptions,
   tsconfigBaseFileName,
-} from '../tsconfig-gen.ts';
+} from '#src/codegen/tsconfig-gen.js';
 import {
   generatePackageScripts,
   generateRootScripts,
   generateTurboJson,
-} from '../turbo-config.ts';
+} from '#src/codegen/turbo-config.js';
+import { rootNames } from '#src/core/command-names.js';
+import {
+  type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace, vendoredCli,
+} from '#src/core/discovery.js';
+import {
+  type MergeResult, mergePackageScripts, sortKeysDeep, writeJsonFile,
+} from '#src/core/file-writer.js';
+import { type Logger, createLogger } from '#src/core/logger.js';
 
 const logMergeResult = (logger: Logger, label: string, result: MergeResult): void => {
   if (result.added.length > 0) {

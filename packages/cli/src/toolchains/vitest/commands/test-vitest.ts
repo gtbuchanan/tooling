@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { run } from '../../../core/process.ts';
+import { run } from '#src/core/process.js';
 
 /**
  * Runs all source tests via Vitest.

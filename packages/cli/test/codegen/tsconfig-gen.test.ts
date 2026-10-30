@@ -8,7 +8,7 @@ import {
   planTsconfigs,
 } from '#src/codegen/tsconfig-gen.js';
 import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
-import { makeCapabilities } from './turbo-config.helpers.ts';
+import { makeCapabilities } from '#test/codegen/turbo-config.helpers.js';
 
 const descriptorAt = (
   descriptors: readonly TsconfigDescriptor[],

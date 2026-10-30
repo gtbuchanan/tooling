@@ -1,7 +1,7 @@
 import { cpSync, existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
-import { readParsedManifest } from '../../../core/workspace.ts';
+import { readParsedManifest } from '#src/core/workspace.js';
 
 /**
  * Copies authored skills from `skills/` into `dist/source/skills/` so

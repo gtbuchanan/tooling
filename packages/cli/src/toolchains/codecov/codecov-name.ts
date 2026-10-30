@@ -1,5 +1,5 @@
-import type { PackageCapabilities } from '../../core/discovery.ts';
-import { unscopedName } from '../../core/manifest.ts';
+import type { PackageCapabilities } from '#src/core/discovery.js';
+import { unscopedName } from '#src/core/manifest.js';
 
 /**
  * Codecov flag name for a package: its unscoped manifest name.

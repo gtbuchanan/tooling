@@ -4,7 +4,7 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { checkManifests, generateManifests } from '#src/codegen/manifest-sync.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
-import { createPklWorkspace, createTempDir, pklProjectSource, writeJson } from '../helpers.ts';
+import { createPklWorkspace, createTempDir, pklProjectSource, writeJson } from '#test/helpers.js';
 
 /**
  * Scaffolds a single-package repo (root = package) with a publishable Pkl package.

@@ -2,7 +2,7 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverPackage } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
-import { createTempDir, writeJson } from '../helpers.ts';
+import { createTempDir, writeJson } from '#test/helpers.js';
 
 describe.concurrent('workspace dependency discovery', () => {
   it('collects runtime workspace dependency names', ({ expect }) => {

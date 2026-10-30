@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
 import { pklModules } from '#src/toolchains/pkl/commands/typecheck-pkl.js';
-import { createTempDir } from '../../../helpers.ts';
+import { createTempDir } from '#test/helpers.js';
 
 describe.concurrent(pklModules, () => {
   it('lists .pkl modules sorted, excluding the extensionless PklProject', ({ expect }) => {

@@ -6,7 +6,7 @@ import { describe, it } from 'vitest';
 import {
   mergePackageScripts, sortKeysDeep, writeJsonFile,
 } from '#src/core/file-writer.js';
-import { createTempDir } from '../helpers.ts';
+import { createTempDir } from '#test/helpers.js';
 
 const readJson = (filePath: string): unknown =>
   JSON.parse(readFileSync(filePath, 'utf8'));

@@ -3,7 +3,7 @@ import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { runVerify } from '#src/codegen/commands/verify.js';
-import { createTempDir, initProject, writeJson } from '../helpers.ts';
+import { createTempDir, initProject, writeJson } from '#test/helpers.js';
 
 /**
  * Task definitions for a package configuration, as authored.

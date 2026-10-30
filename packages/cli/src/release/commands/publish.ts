@@ -1,9 +1,9 @@
 import { defineCommand } from 'citty';
-import { rootNames } from '../../core/command-names.ts';
-import { createLogger } from '../../core/logger.ts';
-import { type RunOptions, execute, run } from '../../core/process.ts';
-import { executePublishNpmReleases } from '../npm-release.ts';
-import { executePublishPkl } from '../pkl-release.ts';
+import { rootNames } from '#src/core/command-names.js';
+import { createLogger } from '#src/core/logger.js';
+import { type RunOptions, execute, run } from '#src/core/process.js';
+import { executePublishNpmReleases } from '#src/release/npm-release.js';
+import { executePublishPkl } from '#src/release/pkl-release.js';
 
 /**
  * Injected side effects for {@link executePublish}.

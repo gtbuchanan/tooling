@@ -1,9 +1,13 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { discoverWorkspace } from '../core/discovery.ts';
-import { readPackageName, readPackageVersion } from '../core/pkl-project.ts';
-import { pklPackDestination } from '../toolchains/pkl/pkl-pack.ts';
-import { type GithubReleaseDeps, publishReleases, releaseTag } from './github-release.ts';
+import { discoverWorkspace } from '#src/core/discovery.js';
+import { readPackageName, readPackageVersion } from '#src/core/pkl-project.js';
+import {
+  type GithubReleaseDeps,
+  publishReleases,
+  releaseTag,
+} from '#src/release/github-release.js';
+import { pklPackDestination } from '#src/toolchains/pkl/pkl-pack.js';
 
 /**
  * A planned GitHub release for one Pkl package. `tag` mirrors changesets'

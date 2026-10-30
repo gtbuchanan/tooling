@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { run } from '../../../core/process.ts';
+import { run } from '#src/core/process.js';
 
 /**
  * Runs end-to-end tests via Vitest with the e2e config.

@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
-import { rootNames } from '../../../core/command-names.ts';
-import { trySpawn } from '../../../core/process.ts';
+import { rootNames } from '#src/core/command-names.js';
+import { trySpawn } from '#src/core/process.js';
 
 const syncInstalledSkills = async (): Promise<void> => {
   if (!await trySpawn('skills-npm', ['--recursive', '--yes'])) {

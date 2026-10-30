@@ -2,10 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import hostedGitInfo from 'hosted-git-info';
 import * as v from 'valibot';
-import type { PackageCapabilities, WorkspaceDiscovery } from '../core/discovery.ts';
-import { RootManifestSchema } from '../core/manifest.ts';
-import { patchPackageBlock } from '../core/pkl-project.ts';
-import { readManifest, readParsedManifest } from '../core/workspace.ts';
+import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import { RootManifestSchema } from '#src/core/manifest.js';
+import { patchPackageBlock } from '#src/core/pkl-project.js';
+import { readManifest, readParsedManifest } from '#src/core/workspace.js';
 
 /**
  * A native package manifest derived from `package.json` — the generic seam

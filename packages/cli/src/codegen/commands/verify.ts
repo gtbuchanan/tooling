@@ -2,31 +2,31 @@ import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import * as v from 'valibot';
-import { rootNames } from '../../core/command-names.ts';
-import { type WorkspaceDiscovery, discoverWorkspace, vendoredCli } from '../../core/discovery.ts';
-import { readJsonFile } from '../../core/file-writer.ts';
-import { type Logger, createLogger } from '../../core/logger.ts';
-import { StringArray, UnknownRecord } from '../../core/schemas.ts';
-import { readParsedManifest } from '../../core/workspace.ts';
-import { checkGenerateConfigs } from '../generate-tasks.ts';
-import { checkManifests } from '../manifest-sync.ts';
-import { checkMiseTasksInclude } from '../mise-tasks.ts';
+import { checkGenerateConfigs } from '#src/codegen/generate-tasks.js';
+import { checkManifests } from '#src/codegen/manifest-sync.js';
+import { checkMiseTasksInclude } from '#src/codegen/mise-tasks.js';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
-} from '../sync-scopes.ts';
+} from '#src/codegen/sync-scopes.js';
 import {
   type GeneratedTsconfig,
   planTsconfigs,
   readUserCompilerOptions,
   tsconfigBaseFileName,
-} from '../tsconfig-gen.ts';
+} from '#src/codegen/tsconfig-gen.js';
 import {
   type TurboJson,
   forbiddenRootScripts,
   generatePackageScripts,
   generateRequiredRootScripts,
   generateTurboJson,
-} from '../turbo-config.ts';
+} from '#src/codegen/turbo-config.js';
+import { rootNames } from '#src/core/command-names.js';
+import { type WorkspaceDiscovery, discoverWorkspace, vendoredCli } from '#src/core/discovery.js';
+import { readJsonFile } from '#src/core/file-writer.js';
+import { type Logger, createLogger } from '#src/core/logger.js';
+import { StringArray, UnknownRecord } from '#src/core/schemas.js';
+import { readParsedManifest } from '#src/core/workspace.js';
 
 const TurboJsonSchema = v.looseObject({
   tasks: v.optional(UnknownRecord),

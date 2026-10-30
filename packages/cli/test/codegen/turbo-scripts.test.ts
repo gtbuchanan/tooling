@@ -6,7 +6,7 @@ import {
   generateRootScripts,
 } from '#src/codegen/turbo-config.js';
 import type { PackageCapabilities } from '#src/core/discovery.js';
-import { makeCapabilities, makeDiscovery } from './turbo-config.helpers.ts';
+import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 /**
  * Two identical packages — the minimum `makeDiscovery` reads as a monorepo.

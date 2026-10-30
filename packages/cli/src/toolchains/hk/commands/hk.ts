@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
-import { rootNames } from '../../../core/command-names.ts';
-import { type RunOptions, capture, run } from '../../../core/process.ts';
+import { rootNames } from '#src/core/command-names.js';
+import { type RunOptions, capture, run } from '#src/core/process.js';
 
 /**
  * hk runs a non-modifying gate in CI and autofixes locally, mirroring

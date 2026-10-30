@@ -14,7 +14,7 @@ import { discoverWorkspace } from '#src/core/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/core/file-writer.js';
 import { createLogger } from '#src/core/logger.js';
 import { ManifestSchema } from '#src/core/manifest.js';
-import { captureLogger, createTempDir, writeJson } from '../../helpers.ts';
+import { captureLogger, createTempDir, writeJson } from '#test/helpers.js';
 
 const silentSink = new Writable({
   write: (_chunk, _enc, cb) => {
