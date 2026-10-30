@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "erasableSyntaxOnly": true,
     "noEmit": true
   },
   "extends": "../../tsconfig.base.json",
