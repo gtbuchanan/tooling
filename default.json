@@ -171,9 +171,11 @@
       ]
     },
     {
-      "description": "Skip release-age quarantine for gtbuchanan's own packages",
+      "description": "Skip release-age quarantine for gtbuchanan's own packages (personal account plus the readonly-mcp and lsp-mux orgs)",
       "matchSourceUrls": [
-        "https://github.com/gtbuchanan/{/,}**"
+        "https://github.com/gtbuchanan/{/,}**",
+        "https://github.com/lsp-mux/{/,}**",
+        "https://github.com/readonly-mcp/{/,}**"
       ],
       "minimumReleaseAge": "0 days"
     }
