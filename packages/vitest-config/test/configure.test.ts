@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
@@ -19,6 +22,20 @@ const expectedUnitTestInclude = allScriptExtensions.map(
 );
 
 const packageName = '@gtbuchanan/vitest-config';
+
+/**
+ * Creates a project directory under a fresh temp parent, optionally with its
+ * own vitest config. Paths are absolute, so patterns don't depend on cwd.
+ */
+const createProjectDir = (options: { readonly hasConfig: boolean }) => {
+  const parent = mkdtempSync(path.join(tmpdir(), 'vitest-config-test-'));
+  const dir = path.join(parent, build.packageName());
+  mkdirSync(dir);
+  if (options.hasConfig) {
+    writeFileSync(path.join(dir, 'vitest.config.ts'), 'export default {};\n');
+  }
+  return dir;
+};
 
 describe.concurrent(configure, () => {
   it('enables mockReset by default', ({ expect }) => {
@@ -191,6 +208,24 @@ describe.concurrent(configureGlobal, () => {
 
     expect(config.test?.tags).toStrictEqual([
       { name: 'slow', timeout: 600_000 },
+    ]);
+  });
+
+  it('lists a project with its own vitest config by directory', ({ expect }) => {
+    const dir = createProjectDir({ hasConfig: true });
+
+    const config = configureGlobal({ projects: [dir] });
+
+    expect(config.test?.projects).toStrictEqual([dir]);
+  });
+
+  it('builds an inline entry for a project without its own config', ({ expect }) => {
+    const dir = createProjectDir({ hasConfig: false });
+
+    const config = configureGlobal({ projects: [dir] });
+
+    expect(config.test?.projects).toStrictEqual([
+      buildWorkspaceEntry(dir, configureProject),
     ]);
   });
 
