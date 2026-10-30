@@ -111,17 +111,22 @@ const plugin: PluginFactory = () => [
   },
   {
     /*
-     * Prettier has no native TOML parser; prettier-plugin-toml (taplo)
+     * Prettier has no native TOML parser; prettier-plugin-toml (tombi)
      * registers one. eslint-plugin-toml handles lint-only correctness
      * rules (see toml.ts), so formatting is owned here.
+     *
+     * Unlike JSON and YAML, TOML keys aren't sorted. Tombi sorts only where
+     * a JSON schema asks for it, and the plugin always disables schemas.
      */
     files: ['**/*.toml'],
     languageOptions: { parser: format.parserPlain },
     plugins: { format },
     rules: prettierRule('toml', {
       plugins: [tomlPlugin],
-      // Justification: Alphabetical keys reduce merge conflicts, matching JSON/YAML
-      reorderKeys: true,
+      /* Justification: Double quotes are TOML's convention (the spec, Cargo,
+         pyproject, mise) and what TOML libraries such as smol-toml emit, so
+         generated files stay formatted */
+      singleQuote: false,
     }),
   },
   {
