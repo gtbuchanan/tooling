@@ -79,10 +79,9 @@ export const planTurboInvocation = (
   }
   const resolveBin = options.resolveAndroidBinary ?? resolveAndroidTurboBinary;
   const resolved = resolveBin();
-  if (resolved === undefined) {
-    return { kind: 'error', message: androidSetupHelp };
-  }
-  return { args: [...options.rawArgs], bin: resolved, kind: 'spawn' };
+  return resolved === undefined
+    ? { kind: 'error', message: androidSetupHelp }
+    : { args: [...options.rawArgs], bin: resolved, kind: 'spawn' };
 };
 
 /**

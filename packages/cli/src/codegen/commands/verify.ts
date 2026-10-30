@@ -39,10 +39,12 @@ export const parseIgnoreArgs = (args: readonly string[]): ReadonlySet<string> =>
   const ignored = new Set<string>();
   for (let idx = 0; idx < args.length; idx++) {
     const next = args[idx + 1];
-    if (next !== undefined && args[idx] === '--ignore') {
-      ignored.add(next);
-      idx++;
+    if (next === undefined || args[idx] !== '--ignore') {
+      continue;
     }
+
+    ignored.add(next);
+    idx++;
   }
 
   return ignored;

@@ -49,18 +49,16 @@ const compileCache = new WeakMap<object, ValidateFunction>();
 const compile = (schema: SchemaObject): ValidateFunction => {
   const cached = compileCache.get(schema);
   if (cached) return cached;
-  const validate = ajv.compile(schema);
-  compileCache.set(schema, validate);
-  return validate;
+  const isValid = ajv.compile(schema);
+  compileCache.set(schema, isValid);
+  return isValid;
 };
 
 const decodeJsonPointer = (segment: string): string =>
   segment.replaceAll('~1', '/').replaceAll('~0', '~');
 
-const splitInstancePath = (path: string): readonly string[] => {
-  if (path === '') return [];
-  return path.split('/').slice(1).map(decodeJsonPointer);
-};
+const splitInstancePath = (path: string): readonly string[] =>
+  path === '' ? [] : path.split('/').slice(1).map(decodeJsonPointer);
 
 const findPairByKey = (
   map: YAMLMap,
@@ -172,7 +170,7 @@ export const schema: Rule.RuleModule = {
       const options = context.options[0] as SchemaRuleOptions | undefined;
       if (!options) return;
 
-      const validate = compile(options.schema);
+      const isValid = compile(options.schema);
       const text = context.sourceCode.getText();
       const { frontmatter, lineCounter } = parseMarkdown(
         context.sourceCode,
@@ -192,9 +190,9 @@ export const schema: Rule.RuleModule = {
       }
 
       const data: unknown = frontmatter.document.toJS();
-      if (validate(data)) return;
+      if (isValid(data)) return;
 
-      const errors = validate.errors ?? [];
+      const errors = isValid.errors ?? [];
       const fallbackLoc: AST.SourceLocation = {
         end: toEslintLoc(lineCounter, frontmatter.endOffset),
         start: toEslintLoc(lineCounter, frontmatter.contentOffset),

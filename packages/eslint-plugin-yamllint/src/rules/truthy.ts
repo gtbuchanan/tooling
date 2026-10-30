@@ -56,12 +56,13 @@ export const truthy: Rule.RuleModule = {
 
       for (const doc of documents) {
         visit(doc, (_key, node) => {
-          if (!isScalar(node)) return;
-          if (node.type !== Scalar.PLAIN) return;
+          if (!isScalar(node) || node.type !== Scalar.PLAIN) return;
           const { source } = node;
-          if (source === undefined) return;
-          if (!yaml11Booleans.has(source)) return;
-          if (allowedValues.has(source)) return;
+          if (
+            source === undefined ||
+            !yaml11Booleans.has(source) ||
+            allowedValues.has(source)
+          ) return;
 
           if (_key === 'key' && !shouldCheckKeys) return;
 

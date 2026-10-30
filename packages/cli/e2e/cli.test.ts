@@ -21,8 +21,8 @@ const jsonIndent = 2;
 const readJson = (path: string): unknown =>
   JSON.parse(readFileSync(path, 'utf8'));
 
-const writeJson = (dir: string, name: string, data: unknown): void => {
-  const filePath = path.join(dir, name);
+const writePackageJson = (dir: string, data: unknown): void => {
+  const filePath = path.join(dir, 'package.json');
   mkdirSync(path.join(filePath, '..'), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(data, undefined, jsonIndent)}\n`);
 };
@@ -74,7 +74,7 @@ describe.concurrent('gtb task pack:npm', () => {
   it('produces tarball for publishable package', async ({ expect }) => {
     using fixture = createFixture();
     const name = build.scopedPackageName();
-    writeJson(fixture.projectDir, 'package.json', {
+    writePackageJson(fixture.projectDir, {
       name,
       publishConfig: { directory: build.publishDirectory() },
       version: build.semverVersion(),
@@ -94,7 +94,7 @@ describe.concurrent('gtb task pack:npm', () => {
 
   it('skips private package', async ({ expect }) => {
     using fixture = createFixture();
-    writeJson(fixture.projectDir, 'package.json', {
+    writePackageJson(fixture.projectDir, {
       name: build.scopedPackageName(),
       private: true,
       publishConfig: { directory: build.publishDirectory() },
@@ -111,7 +111,7 @@ describe.concurrent('gtb task pack:npm', () => {
 
   it('skips package without publishConfig.directory', async ({ expect }) => {
     using fixture = createFixture();
-    writeJson(fixture.projectDir, 'package.json', {
+    writePackageJson(fixture.projectDir, {
       name: build.scopedPackageName(),
       version: build.semverVersion(),
     });
@@ -134,7 +134,7 @@ describe.concurrent('gtb task pack:npm', () => {
     const version = build.semverVersion();
     const publishDir = build.publishDirectory();
     const publishedExports = build.exportsMap();
-    writeJson(fixture.projectDir, 'package.json', {
+    writePackageJson(fixture.projectDir, {
       bugs,
       dependencies,
       devDependencies: build.dependencyMap(),
@@ -172,7 +172,7 @@ describe.concurrent('gtb task pack:npm', () => {
 
   it('cleans dist/packages/npm before packing', async ({ expect }) => {
     using fixture = createFixture();
-    writeJson(fixture.projectDir, 'package.json', {
+    writePackageJson(fixture.projectDir, {
       name: build.scopedPackageName(),
       publishConfig: { directory: build.publishDirectory() },
       version: build.semverVersion(),

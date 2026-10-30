@@ -25,9 +25,9 @@ export interface BaseRef {
  */
 export const resolveBaseRef = (argv: readonly string[]): BaseRef => {
   const [first, ...tail] = argv;
-  return first !== undefined && !first.startsWith('-')
-    ? { base: first, rest: tail }
-    : { base: 'origin/main', rest: [...argv] };
+  return first === undefined || first.startsWith('-')
+    ? { base: 'origin/main', rest: [...argv] }
+    : { base: first, rest: tail };
 };
 
 /**

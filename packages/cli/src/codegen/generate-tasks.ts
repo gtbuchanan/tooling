@@ -49,11 +49,9 @@ const checkLeafTask = (
     return [`${filePath}: missing task '${script}'`];
   }
   const result = v.safeParse(TaskSchema, tasks[script]);
-  if (!result.success || !isRestorable(result.output)) {
-    return [`${filePath}: task '${script}' must declare outputs or cache: false`];
-  }
-
-  return [];
+  return result.success && isRestorable(result.output)
+    ? []
+    : [`${filePath}: task '${script}' must declare outputs or cache: false`];
 };
 
 const checkAggregateWiring = (

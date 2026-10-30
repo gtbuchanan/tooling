@@ -41,9 +41,7 @@ export const octalValues: Rule.RuleModule = {
 
       for (const doc of documents) {
         visit(doc, (_key, node) => {
-          if (!isScalar(node)) return;
-          if (node.type !== Scalar.PLAIN) return;
-          if (!node.source) return;
+          if (!isScalar(node) || node.type !== Scalar.PLAIN || !node.source) return;
 
           const range = node.range;
           if (!range) return;

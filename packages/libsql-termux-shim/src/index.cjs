@@ -112,11 +112,8 @@ const bind = (params) => {
  * @param {unknown} row Row as `node:sqlite` produced it.
  * @returns {unknown} Row with the prototype libsql callers expect.
  */
-const plainRow = (row) => {
-  if (typeof row !== 'object' || row === null || Array.isArray(row)) return row;
-
-  return { ...row };
-};
+const plainRow = row =>
+  typeof row !== 'object' || row === null || Array.isArray(row) ? row : { ...row };
 
 /**
  * Opens a local database.

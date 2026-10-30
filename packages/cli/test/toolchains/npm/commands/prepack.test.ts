@@ -26,9 +26,9 @@ const scaffoldPackage = (
     path.join(root, 'pnpm-workspace.yaml'),
     "packages:\n  - 'packages/*'\n",
   );
-  writeFormattedJson(root, 'package.json', { ...overrides.rootManifest });
+  writePackageJson(root, { ...overrides.rootManifest });
   mkdirSync(pkgDir, { recursive: true });
-  writeFormattedJson(pkgDir, 'package.json', {
+  writePackageJson(pkgDir, {
     name: build.scopedPackageName(),
     publishConfig: { directory: publishDir },
     ...overrides.pkgManifest,
@@ -37,11 +37,11 @@ const scaffoldPackage = (
 };
 
 /**
- * Writes formatted JSON (matches prepack output for assertion).
+ * Writes a formatted package.json (matches prepack output for assertion).
  */
-const writeFormattedJson = (dir: string, name: string, data: unknown): void => {
+const writePackageJson = (dir: string, data: unknown): void => {
   writeFileSync(
-    path.join(dir, name),
+    path.join(dir, 'package.json'),
     `${JSON.stringify(data, undefined, jsonIndent)}\n`,
   );
 };
@@ -67,10 +67,10 @@ describe.concurrent(prepack, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeFormattedJson(root, 'package.json', { bugs, homepage, repository });
+    writePackageJson(root, { bugs, homepage, repository });
     const pkgDir = path.join(root, pkgDirRelative);
     mkdirSync(pkgDir, { recursive: true });
-    writeFormattedJson(pkgDir, 'package.json', {
+    writePackageJson(pkgDir, {
       dependencies,
       devDependencies: build.dependencyMap(),
       exports: build.exportsMap(),
@@ -109,10 +109,10 @@ describe.concurrent(prepack, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeFormattedJson(root, 'package.json', {});
+    writePackageJson(root, {});
     const pkgDir = path.join(root, 'packages', pkgBasename);
     mkdirSync(pkgDir, { recursive: true });
-    writeFormattedJson(pkgDir, 'package.json', {
+    writePackageJson(pkgDir, {
       name,
       publishConfig: { directory: publishDir },
     });
@@ -138,10 +138,10 @@ describe.concurrent(prepack, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeFormattedJson(root, 'package.json', {});
+    writePackageJson(root, {});
     const pkgDir = path.join(root, 'packages', pkgBasename);
     mkdirSync(pkgDir, { recursive: true });
-    writeFormattedJson(pkgDir, 'package.json', {
+    writePackageJson(pkgDir, {
       bin: build.binMap(),
       name,
       publishConfig: {
@@ -166,10 +166,10 @@ describe.concurrent(prepack, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeFormattedJson(root, 'package.json', {});
+    writePackageJson(root, {});
     const pkgDir = path.join(root, 'packages', pkgBasename);
     mkdirSync(pkgDir, { recursive: true });
-    writeFormattedJson(pkgDir, 'package.json', {
+    writePackageJson(pkgDir, {
       name,
       private: true,
       publishConfig: { directory: publishDir },
@@ -191,10 +191,10 @@ describe.concurrent(prepack, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    writeFormattedJson(root, 'package.json', {});
+    writePackageJson(root, {});
     const pkgDir = path.join(root, 'packages', pkgBasename);
     mkdirSync(pkgDir, { recursive: true });
-    writeFormattedJson(pkgDir, 'package.json', { name });
+    writePackageJson(pkgDir, { name });
 
     prepack({ cwd: root });
 
@@ -316,7 +316,7 @@ describe.concurrent(prepack, () => {
     const publishDir = build.publishDirectory();
     const publishedExports = build.exportsMap();
 
-    writeFormattedJson(root, 'package.json', {
+    writePackageJson(root, {
       name,
       publishConfig: {
         directory: publishDir,
