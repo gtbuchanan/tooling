@@ -284,6 +284,21 @@ describe.concurrent('eslint CLI integration', () => {
     );
   });
 
+  /*
+   * TOML opts out of the shared singleQuote, and tombi has no key sorting
+   * without a schema, which the TOML plugin disables, so keys keep their
+   * written order.
+   */
+  it('formats TOML double-quoted without reordering keys', async ({ fixture, expect }) => {
+    const result = await fixture.run({
+      files: { 'config.toml': "[tools]\nzeta = '1'\nalpha = \"2\"\n" },
+      flags: ['--fix'],
+    });
+
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.readFile('config.toml')).toBe('[tools]\nzeta = "1"\nalpha = "2"\n');
+  });
+
   it('detects yamllint violations in YAML files', async ({ fixture, expect }) => {
     const yaml = '---\ncountry: NO\nperms: 0777\n';
     const result = await fixture.run({
