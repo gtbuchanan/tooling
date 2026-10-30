@@ -1,12 +1,6 @@
-import {
-  Aggregate,
-  type ConditionalEntry,
-  type ToolFlags,
-  type TurboTask,
-  rootTaskKey,
-  topo,
-} from '#src/codegen/turbo-config.js';
+import { Aggregate, type ConditionalEntry, type ToolFlags } from '#src/codegen/turbo-config.js';
 import { taskNames } from '#src/tasks/names.js';
+import { type TurboTask, rootTaskKey, topo } from '#src/tasks/turbo-task.js';
 
 /*
  * `generate:*` scripts are author-owned codegen. Discovery finds the names,
@@ -59,26 +53,6 @@ const generateAggregate = (
     value: { dependsOn: isMonorepo ? [topo(Aggregate.generate)] : [...flags.generateScripts] },
   },
   ...generateLeafTasks(flags, isMonorepo),
-];
-
-/**
- * Codegen edges for a task reading its own package's sources and its
- * dependencies'. Generated files are usually gitignored, so an import of a
- * dependency's generated module races the codegen writing it unless ordered:
- * `transit` hashes the dependency but runs nothing, and `^compile:ts` skips a
- * source-only dependency.
- */
-export const codegenDeps = (flags: ToolFlags): readonly string[] =>
-  flags.hasGenerate ? [Aggregate.generate, topo(Aggregate.generate)] : [];
-
-/**
- * Edges for a root task reading the root's workspace dependencies as source.
- * Only the `^` forms: turbo resolves a bare name against the root itself,
- * where neither `generate` nor `transit` is defined.
- */
-export const rootSourceDeps = (flags: ToolFlags): readonly string[] => [
-  ...(flags.hasGenerate ? [topo(Aggregate.generate)] : []),
-  topo(Aggregate.transit),
 ];
 
 /*
@@ -225,27 +199,6 @@ const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>
   ];
 };
 
-/*
- * No dependsOn — CI downloads coverage artifacts before running.
- *
- * Uncached on purpose. Caching on lcov content skipped the upload for every
- * package whose coverage hadn't moved, which left Codecov with no report for
- * that commit and therefore no commit status — and a required status check
- * that never reports blocks a pull request permanently. Uploading every time
- * is what makes the Codecov statuses dependable enough to gate on; the cost
- * is one CLI invocation per package per run.
- */
-const coverageTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasVitest,
-    key: taskNames.coverageCodecovUpload,
-    value: {
-      cache: false,
-      env: ['CI', 'CODECOV_TOKEN'],
-    },
-  },
-];
-
 /**
  * Collects aggregate and standalone task entries from tool flags.
  * `isMonorepo` is passed separately: it describes the repo's shape rather
@@ -255,7 +208,6 @@ export const aggregateTasks = (
   flags: ToolFlags,
   isMonorepo: boolean,
 ): readonly ConditionalEntry<TurboTask>[] => [
-  ...coverageTasks(flags),
   ...generateAggregate(flags, isMonorepo),
   ...transitNode(flags),
   ...typecheckAggregate(flags),

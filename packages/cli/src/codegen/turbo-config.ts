@@ -1,16 +1,12 @@
 import path from 'node:path';
-import { aggregateTasks, codegenDeps, rootSourceDeps } from '#src/codegen/turbo-aggregates.js';
+import { leaves } from '#src/codegen/leaves.js';
+import { aggregateTasks } from '#src/codegen/turbo-aggregates.js';
 import { toTurboGlobs } from '#src/codegen/turbo-globs.js';
-import { testTasks } from '#src/codegen/turbo-test-tasks.js';
 import { type WorkspaceDiscovery, vendoredCli } from '#src/core/discovery.js';
-import {
-  buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
-} from '#src/core/dist-source.js';
-import { typeCheckInclude } from '#src/core/layout.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { localeComparer } from '#src/core/sort.js';
-import { taskNames } from '#src/tasks/names.js';
-import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
+import { createTaskGraph, leafTasks } from '#src/tasks/graph.js';
+import type { TurboTask } from '#src/tasks/turbo-task.js';
 
 /**
  * Turbo-only aggregate task names (no CLI handler).
@@ -29,20 +25,6 @@ export const Aggregate = {
   transit: 'transit',
   typecheck: 'typecheck',
 } as const;
-
-/**
- * Turborepo task definition.
- */
-export interface TurboTask {
-  /**
-   * Opts a task out of caching entirely. Omitted means turbo's default (`true`).
-   */
-  readonly cache?: boolean;
-  readonly dependsOn?: readonly string[];
-  readonly env?: readonly string[];
-  readonly inputs?: readonly string[];
-  readonly outputs?: readonly string[];
-}
 
 /**
  * Generated turbo.json structure.
@@ -85,10 +67,6 @@ export const collect = <Value>(
  * Flags summarizing which tool categories are active across all packages.
  */
 export interface ToolFlags {
-  /**
-   * Union of tsconfig.build.json `include` directories across published packages.
-   */
-  readonly compileIncludes: readonly string[];
   readonly hasCheck: boolean;
   readonly hasE2e: boolean;
   readonly hasEslint: boolean;
@@ -165,12 +143,8 @@ export const resolveToolFlags = (discovery: WorkspaceDiscovery): ToolFlags => {
   const hasPublished = discovery.packages.some(pkg => pkg.isPublished);
   const hasVitest = discovery.packages.some(pkg => pkg.hasVitestTests);
   const hasRootTypeScript = discovery.isMonorepo && discovery.root.hasTypeScriptSources;
-  const compileIncludes = [...new Set(
-    discovery.packages.flatMap(pkg => (pkg.isPublished ? pkg.buildIncludes : [])),
-  )].toSorted(localeComparer);
 
   return {
-    compileIncludes,
     generateScripts,
     hasCheck: hasTypeScript || hasEslint || hasVitest || hasPkl || hasRootTypeScript,
     // Packages only: a monorepo root's e2e config has no script to run it.
@@ -208,267 +182,11 @@ const vendoredCliSources = (discovery: WorkspaceDiscovery): readonly string[] =>
 };
 
 /**
- * Creates a topological (cross-package) task dependency.
- */
-export const topo = (task: string): string => `^${task}`;
-
-const typecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasTypeScript,
-    key: taskNames.typecheckTs,
-    value: {
-      dependsOn: [...codegenDeps(flags), Aggregate.transit],
-      inputs: [
-        '$TURBO_ROOT$/tsconfig.base.json',
-        ...typeCheckInclude.flatMap(toTurboGlobs),
-        'tsconfig.json', 'tsconfig.*.json',
-      ],
-      outputs: [],
-    },
-  },
-];
-
-/*
- * The compiled tree is everything in the output directory the sibling tasks
- * don't write. Subtracting theirs keeps each task's cache entry to what it
- * produced: a shared file captured here would be restored on a `compile:ts`
- * hit, replaying whatever the entry was written with — a stamped manifest
- * carrying a stale version, for instance.
- */
-const compileTsOutputs = (flags: ToolFlags): readonly string[] => [
-  `${buildOutDir}/**`,
-  ...packNpmOutDirEntries.map(entry => `!${outDirGlob(entry)}`),
-  ...(flags.hasSkills ? [`!${outDirGlob(skillsOutDirEntry)}/**`] : []),
-];
-
-const compileTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasPublished,
-    key: taskNames.compileTs,
-    value: {
-      dependsOn: [topo(taskNames.compileTs), ...codegenDeps(flags)],
-      inputs: [
-        '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
-        ...flags.compileIncludes.flatMap(toTurboGlobs), 'tsconfig.build.json',
-      ],
-      outputs: compileTsOutputs(flags),
-    },
-  },
-  {
-    condition: flags.hasPublishedSkills,
-    key: taskNames.compileSkills,
-    value: {
-      inputs: ['skills/**'],
-      outputs: [`${outDirGlob(skillsOutDirEntry)}/**`],
-    },
-  },
-];
-
-const packTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasPublished,
-    key: taskNames.packNpm,
-    value: {
-      dependsOn: [
-        taskNames.compileTs,
-        ...(flags.hasPublishedSkills ? [taskNames.compileSkills] : []),
-      ],
-      /*
-       * The compiled tree this packs is deliberately absent from the inputs.
-       * Turbo folds a dependency's task hash into its dependents, so the
-       * `compile:ts`/`compile:skills` edges above already key this task to the
-       * sources that produce what it packs. Hashing the output directory on
-       * top of that keys it to whatever a prior run happened to leave on
-       * disk — the same sources then hash differently in a warm tree than on
-       * a fresh checkout, costing cache hits without buying any correctness.
-       *
-       * What remains are the files pack:npm reads from outside the output
-       * directory: the package README and the package-or-root LICENSE it
-       * copies in so the tarball ships them, and the manifests it stamps the
-       * published one from. The copies are outputs, so a cache hit restores
-       * them.
-       */
-      inputs: [
-        '$TURBO_ROOT$/LICENSE',
-        '$TURBO_ROOT$/package.json',
-        'LICENSE', 'README.md',
-        'package.json',
-      ],
-      outputs: [
-        'dist/packages/npm/**',
-        ...packNpmOutDirEntries.map(outDirGlob),
-      ],
-    },
-  },
-];
-
-/*
- * Pkl package tasks. `typecheck:pkl` evaluates the modules to validate them
- * (`pkl eval` renders to stdout, which the handler discards — pure
- * validation, hence no outputs, mirroring `typecheck:ts`). `pack:pkl` is the
- * sole artifact-producing step (`pkl project package` → the release zip),
- * mirroring `pack:npm`. There is no `compile:pkl`: nothing consumes a rendered
- * intermediate — consumers import the source `.pkl` shipped inside the zip.
- */
-const pklInputs = ['*.pkl', 'PklProject'];
-
-const pklTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasPkl,
-    key: taskNames.typecheckPkl,
-    value: { inputs: pklInputs, outputs: [] },
-  },
-  {
-    condition: flags.hasPklPackage,
-    key: taskNames.packPkl,
-    value: {
-      dependsOn: [taskNames.typecheckPkl],
-      inputs: [...pklInputs, 'package.json'],
-      outputs: ['dist/packages/pkl/**'],
-    },
-  },
-];
-
-/*
- * The `transit` edge is declared rather than inherited through `typecheck:ts`:
- * that edge is optional (consumers may drop it for parallelism) and isn't
- * generated at all for a workspace without TypeScript, so relying on it would
- * make lint's cross-package invalidation silently conditional.
- */
-const lintTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const deps = [
-    ...codegenDeps(flags),
-    ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
-    Aggregate.transit,
-  ];
-  const inputs = ['bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**', 'skills/**'];
-
-  return [
-    {
-      condition: flags.hasEslint,
-      key: taskNames.lintEslint,
-      value: {
-        dependsOn: deps,
-        inputs: ['$TURBO_ROOT$/eslint.config.*', ...inputs, 'eslint.config.*'],
-        outputs: ['dist/.eslintcache'],
-      },
-    },
-  ];
-};
-
-/**
- * Converts a pnpm workspace package glob into an ESLint/turbo ignore
- * pattern that matches files under any directory the glob resolves to.
- * `packages/*` → `packages/*​/**` (descendants of any direct subdir).
- */
-export const toPackageIgnore = (glob: string): string => `${glob}/**`;
-
-/**
- * Turbo task key for tasks dispatched at the workspace root.
- */
-export const rootTaskKey = (name: string): string => `//#${name}`;
-
-const rootLintTasks = (
-  flags: ToolFlags,
-  packageGlobs: readonly string[],
-): readonly ConditionalEntry<TurboTask>[] => [
-  /*
-   * `$TURBO_DEFAULT$` expands to root files minus gitignored paths
-   * (dist/, node_modules/, .turbo/, .claude/worktrees/); only package
-   * dirs need explicit subtraction since they're tracked but owned by
-   * per-package lint. Cache file lives in the root cwd's dist/,
-   * distinct from per-package caches that live in each package's dist/.
-   */
-  {
-    condition: flags.hasRootEslint,
-    key: rootTaskKey(taskNames.lintEslint),
-    value: {
-      dependsOn: rootSourceDeps(flags),
-      inputs: ['$TURBO_DEFAULT$', ...packageGlobs.map(glob => `!${toPackageIgnore(glob)}`)],
-      outputs: ['dist/.eslintcache'],
-    },
-  },
-];
-
-/*
- * The root's own type check. Like `//#lint:eslint` it depends on `^transit`
- * (and `^generate`), which turbo resolves through the root manifest's
- * workspace dependencies, so an edit to a package the root consumes reaches
- * its hash. Nothing is lost on the
- * artifact side — workspace packages export TypeScript source in-workspace,
- * so the root type-checks against sources without waiting on a compile.
- *
- * The inputs need no `$TURBO_ROOT$` prefix (a root task already runs there)
- * and no package-glob subtraction: `toTurboGlobs` expands `*` and `.*` to
- * root-level file patterns rather than recursive ones, and the named
- * directories are the root's own.
- */
-const rootTypecheckTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasRootTypeScript,
-    key: rootTaskKey(taskNames.typecheckTs),
-    value: {
-      dependsOn: rootSourceDeps(flags),
-      inputs: [
-        'tsconfig.base.json',
-        ...typeCheckInclude.flatMap(toTurboGlobs),
-        'tsconfig.json', 'tsconfig.*.json',
-      ],
-      outputs: [],
-    },
-  },
-];
-
-const deploySkillsTasks = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasSkills,
-    key: taskNames.deploySkills,
-    value: {
-      /*
-       * Same-package lint only (no `^`): skills are authored independently
-       * per package and don't depend on sibling packages' lint state.
-       * Lint dep is conditional on the workspace having ESLint at all —
-       * referencing `lint:eslint` when it isn't generated would dangle.
-       */
-      dependsOn: flags.hasEslint ? [taskNames.lintEslint] : [],
-      inputs: [`$TURBO_ROOT$/${skillsConfigFilename}`, 'skills/**'],
-      outputs: [],
-    },
-  },
-  /*
-   * The root's own copy. Its inputs need no `$TURBO_ROOT$` prefix (a root
-   * task already runs there) and no package-glob subtraction the way
-   * `//#lint:eslint` does — both globs are rooted, so neither can reach a
-   * package's `skills/`.
-   */
-  {
-    condition: flags.hasRootSkills,
-    key: rootTaskKey(taskNames.deploySkills),
-    value: {
-      dependsOn: flags.hasRootEslint ? [rootTaskKey(taskNames.lintEslint)] : [],
-      inputs: [skillsConfigFilename, 'skills/**'],
-      outputs: [],
-    },
-  },
-];
-
-/**
  * Generates turbo.json from workspace discovery.
  */
 export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
-  const flags = resolveToolFlags(discovery);
-  const entries = [
-    ...typecheckTasks(flags),
-    ...compileTasks(flags),
-    ...packTasks(flags),
-    ...pklTasks(flags),
-    ...lintTasks(flags),
-    ...rootLintTasks(flags, discovery.packageGlobs),
-    ...rootTypecheckTasks(flags),
-    ...testTasks(flags),
-    ...deploySkillsTasks(flags),
-    ...aggregateTasks(flags, discovery.isMonorepo),
-  ];
+  const graph = createTaskGraph(leaves, discovery);
+  const aggregates = collect(aggregateTasks(resolveToolFlags(discovery), discovery.isMonorepo));
   /*
    * Self-hosted workspaces vendor tool-config packages (eslint-config,
    * vitest-config) internally. Turbo hashes internal dependencies by their
@@ -489,7 +207,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
     $schema: 'https://turbo.build/schema.json',
     agentGuidance: false,
     ...(globalDependencies.length > 0 && { globalDependencies }),
-    tasks: collect(entries),
+    tasks: { ...Object.fromEntries(leafTasks(leaves, graph)), ...aggregates },
   };
 };
 

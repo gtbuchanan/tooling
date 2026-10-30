@@ -1,16 +1,17 @@
 import path from 'node:path';
+import { leaves } from '#src/codegen/leaves.js';
 import {
   Aggregate,
   type ConditionalEntry,
   type ToolFlags,
   collect,
   resolveToolFlags,
-  toPackageIgnore,
 } from '#src/codegen/turbo-config.js';
 import { rootNames } from '#src/core/command-names.js';
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { localeComparer } from '#src/core/sort.js';
+import { createTaskGraph } from '#src/tasks/graph.js';
 import { taskCommandName, taskNames } from '#src/tasks/names.js';
 
 /*
@@ -27,56 +28,14 @@ const taskCmd = (isSelfHosted: boolean, name: string): string =>
 const rootCmd = (isSelfHosted: boolean, name: string): string =>
   `${gtbPrefix(isSelfHosted)} ${name}`;
 
-const packageScriptEntries = (
+const packageScripts = (
   caps: PackageCapabilities,
   isSelfHosted: boolean,
-): readonly ConditionalEntry<string>[] => {
-  const cmd = (name: string): string => taskCmd(isSelfHosted, name);
-
-  return [
-    {
-      condition: caps.hasTypeScript,
-      key: taskNames.typecheckTs,
-      value: cmd(taskNames.typecheckTs),
-    },
-    { condition: caps.isPublished, key: taskNames.compileTs, value: cmd(taskNames.compileTs) },
-    {
-      condition: caps.isPublished && caps.hasSkills,
-      key: taskNames.compileSkills,
-      value: cmd(taskNames.compileSkills),
-    },
-    { condition: caps.isPublished, key: taskNames.packNpm, value: cmd(taskNames.packNpm) },
-    { condition: caps.hasPkl, key: taskNames.typecheckPkl, value: cmd(taskNames.typecheckPkl) },
-    { condition: caps.hasPklPackage, key: taskNames.packPkl, value: cmd(taskNames.packPkl) },
-    { condition: caps.hasEslint, key: taskNames.lintEslint, value: cmd(taskNames.lintEslint) },
-    {
-      condition: caps.hasVitestTests,
-      key: taskNames.testVitestFast,
-      value: cmd(taskNames.testVitestFast),
-    },
-    {
-      condition: caps.hasVitestTests,
-      key: taskNames.testVitestSlow,
-      value: cmd(taskNames.testVitestSlow),
-    },
-    {
-      condition: caps.hasVitestE2e,
-      key: taskNames.testVitestE2e,
-      value: cmd(taskNames.testVitestE2e),
-    },
-    {
-      condition: caps.hasVitestTests,
-      key: taskNames.coverageCodecovUpload,
-      value: cmd(taskNames.coverageCodecovUpload),
-    },
-    {
-      condition: caps.hasVitestTests,
-      key: taskNames.coverageVitestMerge,
-      value: cmd(taskNames.coverageVitestMerge),
-    },
-    { condition: caps.hasSkills, key: taskNames.deploySkills, value: cmd(taskNames.deploySkills) },
-  ];
-};
+): Record<string, string> => Object.fromEntries(
+  leaves
+    .filter(leaf => leaf.appliesTo(caps))
+    .map(leaf => [leaf.name, taskCmd(isSelfHosted, leaf.name)]),
+);
 
 /**
  * Generates the gtb shim script for self-hosted packages.
@@ -97,7 +56,7 @@ export const generatePackageScripts = (
   isSelfHosted: boolean,
   cliDir?: string,
 ): Record<string, string> => {
-  const scripts = collect(packageScriptEntries(caps, isSelfHosted));
+  const scripts = packageScripts(caps, isSelfHosted);
   if (isSelfHosted && cliDir !== undefined) {
     scripts['gtb'] = gtbShim(caps.dir, cliDir);
   }
@@ -110,34 +69,19 @@ export const generatePackageScripts = (
  * via `//#<task>`. Distinct from alias scripts (which delegate to turbo)
  * and from required scripts like `prepare`/`verify`. Generated at sync
  * time so workspace-shape inputs (package globs) are baked in.
- *
- * Patterns use double quotes for cross-platform shell compatibility:
- * cmd.exe treats single quotes as literal characters (Windows pnpm
- * default), while both shells respect double quotes for arg grouping.
  */
-const rootLeafScriptEntries = (
-  flags: ToolFlags,
-  isSelfHosted: boolean,
-  packageGlobs: readonly string[],
-): readonly ConditionalEntry<string>[] => {
-  const ignoreFlags = packageGlobs
-    .map(glob => `--ignore-pattern "${toPackageIgnore(glob)}"`)
-    .join(' ');
-  const lintCmd = `${taskCmd(isSelfHosted, taskNames.lintEslint)} . ${ignoreFlags}`;
+const rootLeafScripts = (discovery: WorkspaceDiscovery): Record<string, string> => {
+  const graph = createTaskGraph(leaves, discovery);
 
-  return [
-    { condition: flags.hasRootEslint, key: taskNames.lintEslint, value: lintCmd },
-    {
-      condition: flags.hasRootSkills,
-      key: taskNames.deploySkills,
-      value: taskCmd(isSelfHosted, taskNames.deploySkills),
-    },
-    {
-      condition: flags.hasRootTypeScript,
-      key: taskNames.typecheckTs,
-      value: taskCmd(isSelfHosted, taskNames.typecheckTs),
-    },
-  ];
+  return Object.fromEntries(
+    leaves
+      .filter(leaf => graph.appliesAtRoot(leaf.name))
+      .map(leaf => [
+        leaf.name,
+        [taskCmd(discovery.isSelfHosted, leaf.name), ...(leaf.root?.args?.(discovery) ?? [])]
+          .join(' '),
+      ]),
+  );
 };
 
 /**
@@ -145,13 +89,10 @@ const rootLeafScriptEntries = (
  */
 const requiredRootScripts = (
   discovery: WorkspaceDiscovery,
-  flags: ToolFlags,
 ): Readonly<Record<string, string>> => ({
   [rootNames.prepare]: rootCmd(discovery.isSelfHosted, rootNames.prepare),
   [rootNames.verify]: rootCmd(discovery.isSelfHosted, rootNames.verify),
-  ...collect(
-    rootLeafScriptEntries(flags, discovery.isSelfHosted, discovery.packageGlobs),
-  ),
+  ...rootLeafScripts(discovery),
 });
 
 /**
@@ -258,7 +199,7 @@ export const generateRootScripts = (
   const flags = resolveToolFlags(discovery);
   return {
     ...(discovery.isMonorepo && collect(aliasRootScriptEntries(flags, discovery.isSelfHosted))),
-    ...requiredRootScripts(discovery, flags),
+    ...requiredRootScripts(discovery),
   };
 };
 
@@ -267,4 +208,4 @@ export const generateRootScripts = (
  */
 export const generateRequiredRootScripts = (
   discovery: WorkspaceDiscovery,
-): Record<string, string> => ({ ...requiredRootScripts(discovery, resolveToolFlags(discovery)) });
+): Record<string, string> => ({ ...requiredRootScripts(discovery) });
