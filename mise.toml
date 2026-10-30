@@ -45,7 +45,7 @@ run_windows = "pnpm install --frozen-lockfile"
 [tools]
 hk = "2.8.1"
 jactionlint = "2.3.0"
-node = "24.22.1"
+node = "24.22.2"
 # Exempt transitive `@yarnpkg/libzip` from aube's no-downgrade policy — its
 # latest is a benign manual publish missing the provenance its CI releases had.
 "npm:renovate" = { trust_policy_excludes = [
