@@ -1,5 +1,29 @@
 # @gtbuchanan/cli
 
+## 2.0.0
+
+### Major Changes
+
+- f700da1: Chain the monorepo `generate` aggregate through `^generate`, so codegen in a transitive workspace dependency runs before the tasks that read it. `gtb verify` now requires each package configuration's `generate` task to keep that edge: add `"$TURBO_EXTENDS$"` as the first entry of its `dependsOn`.
+
+  The marker needs turbo 2.7 or later, which the cli now declares as an optional peer dependency. On older turbo, list `"^generate"` in that `dependsOn` instead.
+
+- 2c38610: Require `skills-npm` v4 as the optional peer dependency. `gtb prepare` and `deploy:skills` are now tested only against v4, so upgrade with `pnpm add -D skills-npm@^4`. v4 writes a `skills-npm-lock.json` at the workspace root on every install; add it to `.gitignore` alongside `skills-lock.json`.
+
+### Minor Changes
+
+- 980a8fa: Disable turbo's agent guidance in the generated `turbo.json`. When turbo detects an AI agent, it rewrites a managed block into the root `AGENTS.md`, which then shows up as an uncommitted change in every agent session.
+
+### Patch Changes
+
+- 6121cdb: Run the root's `//#lint:eslint` through the `lint` and `check` aggregates when only the monorepo root has an ESLint config. Previously the task was generated but no aggregate depended on it, so `check`, `build:ci` and `build` never linted the root.
+- fde72e2: Stop generating `compile:skills` and `test:vitest:e2e` turbo tasks that no package runs: `compile:skills` when skills and publishing sit on different packages, and `test:vitest:e2e` (with the `test:e2e` aggregate and alias) when only a monorepo root has an e2e config. Such a repo's `E2E Test` job now fails on the missing task instead of passing with no tests; set `run-e2e: false` on the reusable CI workflow if it has no e2e tests to run.
+- 68ab1e9: Order type-check, compile, lint, and test tasks, including the root's lint and type-check, after their workspace dependencies' codegen (`^generate`), and order the test tasks after their own package's codegen
+- 620e9fc: Drop `--experimental-strip-types` from the generated self-hosted `gtb` script. Node 24 strips types by default, so the flag did nothing. `gtb sync` keeps existing scripts, so an already-generated script keeps the flag until it's removed by hand or regenerated with `gtb sync --force`.
+- 34a0892: Point the self-hosted `gtb` shim at the workspace's `@gtbuchanan/cli` package wherever it lives, rather than assuming `packages/cli`.
+- 557f13d: Make the generated root `//#lint:eslint` and `//#typecheck:ts` tasks depend on `^transit`. Without that edge, an edit to a workspace package the root consumes, such as its ESLint config or a shared tsconfig, replayed the root task's cached pass.
+- c0fadc1: List the vendored CLI's sources in the generated `turbo.json`'s `globalDependencies` when self-hosted. Packages there run gtb from source by relative path, so no task edge reached the CLI, and some edits to it replayed stale cached results in every other package.
+
 ## 1.0.0
 
 ### Major Changes
