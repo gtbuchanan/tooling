@@ -1,8 +1,7 @@
 import { outDirGlob, skillsOutDirEntry } from '#src/core/dist-source.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
 import type { Leaf } from '#src/tasks/leaf.js';
-import { rootTaskKey } from '#src/tasks/turbo-task.js';
-import { lintEslintLeaf } from '#src/toolchains/eslint/leaves.js';
+import { isRootTaskKey } from '#src/tasks/turbo-task.js';
 import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
 
 /**
@@ -38,9 +37,7 @@ export const deploySkillsLeaf: Leaf = {
   root: {
     appliesTo: discovery => discovery.root.hasSkills,
     task: graph => ({
-      dependsOn: graph.appliesAtRoot(lintEslintLeaf.name)
-        ? [rootTaskKey(lintEslintLeaf.name)]
-        : [],
+      dependsOn: graph.membersOf(Aggregate.lint).filter(isRootTaskKey),
       inputs: [skillsConfigFilename, 'skills/**'],
       outputs: [],
     }),
@@ -48,11 +45,12 @@ export const deploySkillsLeaf: Leaf = {
   task: graph => ({
     /*
      * Same-package lint only (no `^`): skills are authored independently
-     * per package and don't depend on sibling packages' lint state.
-     * Lint dep is conditional on the workspace having ESLint at all —
-     * referencing `lint:eslint` when it isn't generated would dangle.
+     * per package and don't depend on sibling packages' lint state. The
+     * edges are the lint aggregate's members rather than a named linter, so
+     * they follow whichever lint leaves the workspace generates and never
+     * name one that isn't generated, which would dangle.
      */
-    dependsOn: graph.applies(lintEslintLeaf.name) ? [lintEslintLeaf.name] : [],
+    dependsOn: graph.membersOf(Aggregate.lint).filter(key => !isRootTaskKey(key)),
     inputs: [`$TURBO_ROOT$/${skillsConfigFilename}`, 'skills/**'],
     outputs: [],
   }),

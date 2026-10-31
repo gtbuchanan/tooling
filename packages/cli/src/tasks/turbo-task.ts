@@ -17,7 +17,14 @@ export interface TurboTask {
  */
 export const topo = (task: string): string => `^${task}`;
 
+const rootTaskPrefix = '//#';
+
 /**
  * Turbo task key for tasks dispatched at the workspace root.
  */
-export const rootTaskKey = (name: string): string => `//#${name}`;
+export const rootTaskKey = (name: string): string => `${rootTaskPrefix}${name}`;
+
+/**
+ * Whether a task key names a root task rather than a package task.
+ */
+export const isRootTaskKey = (key: string): boolean => key.startsWith(rootTaskPrefix);
