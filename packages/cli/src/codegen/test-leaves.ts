@@ -107,7 +107,7 @@ const coverageCodecovUpload: Leaf = {
 };
 
 /**
- * The test and coverage leaves, in registry order.
+ * The test and coverage leaves.
  */
 export const testLeaves: readonly Leaf[] = [
   testVitestFast,
