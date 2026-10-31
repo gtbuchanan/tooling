@@ -1,5 +1,15 @@
 # @gtbuchanan/eslint-config
 
+## 0.6.0
+
+### Minor Changes
+
+- 0a7447c: Update `eslint-plugin-unicorn` to v79. Its recommended preset now enables more rules, among them `prefer-combined-guards`, `prefer-ternary`, `prefer-early-return`, `no-unnecessary-parameters`, and a `consistent-boolean-name` that also checks functions returning a boolean, so expect new warnings on upgrade. Two of them are adjusted here: `no-asterisk-prefix-in-documentation-comments` is off, because it strips the asterisk gutter that `jsdoc/require-asterisk-prefix` requires, and `consistent-boolean-name` ignores `mock`-named test doubles.
+- 6b45ff3: Update `prettier-plugin-toml` to v4, which formats TOML with tombi instead of taplo. Expect new `format/prettier` warnings on upgrade; `--fix` resolves them:
+
+  - TOML strings and quoted keys are double-quoted, TOML's own convention, rather than following the shared `singleQuote` used for JavaScript and YAML. A single-quoted string that would need escapes as a double-quoted one is left as it is.
+  - TOML keys are no longer sorted. Tombi has no option that replaces taplo's `reorderKeys`, so key order is preserved as written.
+
 ## 0.5.2
 
 ### Patch Changes
