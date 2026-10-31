@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { run } from '#src/core/process.js';
+import { lintEslintLeaf } from '#src/toolchains/eslint/leaves.js';
 
 /**
  * Runs ESLint with caching and zero-warning threshold.
@@ -7,7 +8,7 @@ import { run } from '#src/core/process.js';
 export const lintEslint = defineCommand({
   meta: {
     description: 'Run ESLint with caching and --max-warnings=0',
-    name: 'lint:eslint',
+    name: lintEslintLeaf.name,
   },
   run: async ({ rawArgs }) => {
     await run('eslint', {

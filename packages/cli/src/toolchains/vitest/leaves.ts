@@ -1,8 +1,9 @@
-import { codegenDeps } from '#src/codegen/leaf-edges.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
+import { codegenDeps } from '#src/tasks/edges.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
-import { taskNames } from '#src/tasks/names.js';
 import { topo } from '#src/tasks/turbo-task.js';
+import { packNpmLeaf } from '#src/toolchains/npm/leaves.js';
+import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';
 
 /*
  * Unlike compile inputs, test inputs can't be resolved from vitest config —
@@ -21,15 +22,18 @@ const testInputs = [
  * compiles nothing.
  */
 const unitTestDeps = (graph: TaskGraph): readonly string[] => [
-  ...(graph.applies(taskNames.compileTs) ? [topo(Aggregate.compile)] : []),
+  ...(graph.applies(compileTsLeaf.name) ? [topo(Aggregate.compile)] : []),
   ...codegenDeps(graph),
   Aggregate.transit,
 ];
 
-const testVitestFast: Leaf = {
+/**
+ * Vitest over the source tests not tagged `slow`.
+ */
+export const testVitestFastLeaf: Leaf = {
   aggregate: Aggregate.check,
   appliesTo: pkg => pkg.hasVitestTests,
-  name: taskNames.testVitestFast,
+  name: 'test:vitest:fast',
   task: graph => ({
     dependsOn: unitTestDeps(graph),
     env: ['CI'],
@@ -38,10 +42,13 @@ const testVitestFast: Leaf = {
   }),
 };
 
-const testVitestSlow: Leaf = {
+/**
+ * Vitest over the source tests tagged `slow`.
+ */
+export const testVitestSlowLeaf: Leaf = {
   aggregate: Aggregate.testSlow,
   appliesTo: pkg => pkg.hasVitestTests,
-  name: taskNames.testVitestSlow,
+  name: 'test:vitest:slow',
   task: graph => ({
     dependsOn: unitTestDeps(graph),
     env: ['CI'],
@@ -50,18 +57,23 @@ const testVitestSlow: Leaf = {
   }),
 };
 
-const coverageVitestMerge: Leaf = {
+/**
+ * Merges the fast and slow coverage reports into one.
+ */
+export const coverageVitestMergeLeaf: Leaf = {
   aggregate: Aggregate.coverageMerge,
   appliesTo: pkg => pkg.hasVitestTests,
-  name: taskNames.coverageVitestMerge,
+  name: 'coverage:vitest:merge',
   task: () => ({
-    dependsOn: [taskNames.testVitestFast, taskNames.testVitestSlow],
+    dependsOn: [testVitestFastLeaf.name, testVitestSlowLeaf.name],
     inputs: ['dist/test-results/vitest/merge/blob-*.json'],
     outputs: ['dist/coverage/vitest/merged/**'],
   }),
 };
 
-/*
+/**
+ * Vitest over the end-to-end tests, against the packed tarballs.
+ *
  * E2E tests read packed tarballs, but their own sources import fixture
  * helpers from source-only workspace packages, so they need `transit` and
  * the codegen edges too: `^pack` orders no source-only dependency.
@@ -71,13 +83,13 @@ const coverageVitestMerge: Leaf = {
  * reaches direct dependencies only, and resolves to nothing at all when the
  * workspace packs nothing.
  */
-const testVitestE2e: Leaf = {
+export const testVitestE2eLeaf: Leaf = {
   aggregate: Aggregate.testE2e,
   appliesTo: pkg => pkg.hasVitestE2e,
-  name: taskNames.testVitestE2e,
+  name: 'test:vitest:e2e',
   task: graph => ({
     dependsOn: [
-      ...(graph.applies(taskNames.packNpm) ? [Aggregate.pack, topo(Aggregate.pack)] : []),
+      ...(graph.applies(packNpmLeaf.name) ? [Aggregate.pack, topo(Aggregate.pack)] : []),
       ...codegenDeps(graph),
       Aggregate.transit,
     ],
@@ -86,33 +98,3 @@ const testVitestE2e: Leaf = {
     outputs: ['dist/test-results/vitest/blob-e2e.json'],
   }),
 };
-
-/*
- * No dependsOn — CI downloads coverage artifacts before running.
- *
- * Uncached on purpose. Caching on lcov content skipped the upload for every
- * package whose coverage hadn't moved, which left Codecov with no report for
- * that commit and therefore no commit status — and a required status check
- * that never reports blocks a pull request permanently. Uploading every time
- * is what makes the Codecov statuses dependable enough to gate on; the cost
- * is one CLI invocation per package per run.
- */
-const coverageCodecovUpload: Leaf = {
-  appliesTo: pkg => pkg.hasVitestTests,
-  name: taskNames.coverageCodecovUpload,
-  task: () => ({
-    cache: false,
-    env: ['CI', 'CODECOV_TOKEN'],
-  }),
-};
-
-/**
- * The test and coverage leaves.
- */
-export const testLeaves: readonly Leaf[] = [
-  testVitestFast,
-  testVitestSlow,
-  coverageVitestMerge,
-  testVitestE2e,
-  coverageCodecovUpload,
-];

@@ -5,7 +5,7 @@ import { rootNames } from '#src/core/command-names.js';
 import { publish } from '#src/release/commands/publish.js';
 import { version } from '#src/release/commands/version.js';
 import { task } from '#src/task.js';
-import { taskCommandName } from '#src/tasks/names.js';
+import { taskCommandName } from '#src/tasks/leaf.js';
 import { hk } from '#src/toolchains/hk/commands/hk.js';
 import { prepare } from '#src/toolchains/skills/commands/prepare.js';
 import { turbo } from '#src/toolchains/turbo/commands/turbo.js';

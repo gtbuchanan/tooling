@@ -18,6 +18,7 @@ import {
   readParsedManifest,
   resolveWorkspace,
 } from '#src/core/workspace.js';
+import { packNpmLeaf } from '#src/toolchains/npm/leaves.js';
 
 const jsonIndent = 2;
 const npmignoreContent = '*.tsbuildinfo\n';
@@ -157,7 +158,7 @@ const prepareAndPack = (
 export const packNpm = defineCommand({
   meta: {
     description: 'Generate dist/source manifest and pack tarball to dist/packages/npm',
-    name: 'pack:npm',
+    name: packNpmLeaf.name,
   },
   run: () => {
     const pkgDir = process.cwd();

@@ -3,6 +3,7 @@ import { defineCommand } from 'citty';
 import { toPosixRelative } from '#src/core/paths.js';
 import { run } from '#src/core/process.js';
 import { resolveWorkspace } from '#src/core/workspace.js';
+import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
 import { loadConfiguredAgents } from '#src/toolchains/skills/skills-config.js';
 
 const require = createRequire(import.meta.url);
@@ -26,7 +27,7 @@ const detectAgents = async (): Promise<readonly string[]> => {
 export const deploySkills = defineCommand({
   meta: {
     description: 'Deploy the current package\'s skills to agent directories',
-    name: 'deploy:skills',
+    name: deploySkillsLeaf.name,
   },
   run: async () => {
     const { rootDir } = resolveWorkspace();

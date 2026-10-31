@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { run } from '#src/core/process.js';
+import { coverageVitestMergeLeaf } from '#src/toolchains/vitest/leaves.js';
 
 /**
  * Merges fast + slow coverage blobs into a unified report.
@@ -7,7 +8,7 @@ import { run } from '#src/core/process.js';
 export const coverageVitestMerge = defineCommand({
   meta: {
     description: 'Merge fast + slow coverage blobs into a unified report',
-    name: 'coverage:vitest:merge',
+    name: coverageVitestMergeLeaf.name,
   },
   run: async ({ rawArgs }) => {
     await run('vitest', {

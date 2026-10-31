@@ -5,6 +5,7 @@ import {
   buildOutDir, packNpmOutDirEntries, skillsOutDirEntry,
 } from '#src/core/dist-source.js';
 import { run } from '#src/core/process.js';
+import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';
 
 /*
  * Entries this task must leave in place. The `pack:npm` docs and manifest are
@@ -50,7 +51,7 @@ export const clearCompiledOutput = (pkgDir: string): void => {
 export const compileTs = defineCommand({
   meta: {
     description: 'Compile TypeScript via tsc using tsconfig.build.json',
-    name: 'compile:ts',
+    name: compileTsLeaf.name,
   },
   run: async ({ rawArgs }) => {
     clearCompiledOutput(process.cwd());

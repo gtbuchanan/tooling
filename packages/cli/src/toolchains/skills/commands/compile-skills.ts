@@ -2,6 +2,7 @@ import { cpSync, existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import { readParsedManifest } from '#src/core/workspace.js';
+import { compileSkillsLeaf } from '#src/toolchains/skills/leaves.js';
 
 /**
  * Copies authored skills from `skills/` into `dist/source/skills/` so
@@ -11,7 +12,7 @@ import { readParsedManifest } from '#src/core/workspace.js';
 export const compileSkills = defineCommand({
   meta: {
     description: 'Copy skills/ into dist/source/skills/ for packing',
-    name: 'compile:skills',
+    name: compileSkillsLeaf.name,
   },
   run: () => {
     const pkgDir = process.cwd();
