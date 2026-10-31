@@ -1,4 +1,5 @@
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { AggregateName } from '#src/tasks/aggregates.js';
 import type { TurboTask } from '#src/tasks/turbo-task.js';
 
 /**
@@ -19,6 +20,11 @@ export interface TaskGraph {
    * needs a monorepo: a single-package root is already the package.
    */
   readonly appliesAtRoot: (leaf: string) => boolean;
+  /**
+   * The task keys that are members of an aggregate, ready for its dependsOn:
+   * in registry order, each leaf's package task before its root task.
+   */
+  readonly membersOf: (aggregate: AggregateName) => readonly string[];
 }
 
 /**
@@ -34,7 +40,8 @@ export interface RootLeaf {
 }
 
 /**
- * One leaf: what it applies to and the turbo task that runs it.
+ * One leaf: what it applies to, the aggregate it belongs to, and the turbo task
+ * that runs it.
  *
  * A leaf applying to a package gets a script there and a package task; one
  * applying to the root gets a root script and a `//#` task. Turbo never folds
@@ -42,6 +49,11 @@ export interface RootLeaf {
  * rather than one more package.
  */
 export interface Leaf {
+  /**
+   * The aggregate that runs the leaf. A leaf belonging to none, such as an
+   * upload CI runs on its own, runs only when named.
+   */
+  readonly aggregate?: AggregateName;
   readonly appliesTo: (pkg: PackageCapabilities) => boolean;
   /**
    * The `gtb task` argument, the script name and the task name at once.

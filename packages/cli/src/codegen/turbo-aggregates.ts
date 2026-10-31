@@ -1,6 +1,12 @@
-import { Aggregate, type ConditionalEntry, type ToolFlags } from '#src/codegen/turbo-config.js';
-import { taskNames } from '#src/tasks/names.js';
-import { type TurboTask, rootTaskKey, topo } from '#src/tasks/turbo-task.js';
+import { workspaceGenerateScripts } from '#src/codegen/leaf-edges.js';
+import { Aggregate, type AggregateName } from '#src/tasks/aggregates.js';
+import type { TaskGraph } from '#src/tasks/leaf.js';
+import { type TurboTask, topo } from '#src/tasks/turbo-task.js';
+
+/**
+ * A turbo.json task entry: its key and its definition.
+ */
+export type TaskEntry = readonly [string, TurboTask];
 
 /*
  * `generate:*` scripts are author-owned codegen. Discovery finds the names,
@@ -28,32 +34,21 @@ import { type TurboTask, rootTaskKey, topo } from '#src/tasks/turbo-task.js';
  * Uncached codegen always runs, which is slower than a cache hit but never
  * silently absent.
  */
-const generateLeafTasks = (
-  flags: ToolFlags,
-  isMonorepo: boolean,
-): readonly ConditionalEntry<TurboTask>[] => {
-  if (isMonorepo) {
+
+const generateTasks = ({ discovery }: TaskGraph): readonly TaskEntry[] => {
+  const scripts = workspaceGenerateScripts(discovery);
+  if (scripts.length === 0) {
     return [];
   }
+  if (discovery.isMonorepo) {
+    return [[Aggregate.generate, { dependsOn: [topo(Aggregate.generate)] }]];
+  }
 
-  return flags.generateScripts.map(script => ({
-    condition: true,
-    key: script,
-    value: { cache: false },
-  }));
+  return [
+    [Aggregate.generate, { dependsOn: scripts }],
+    ...scripts.map((script): TaskEntry => [script, { cache: false }]),
+  ];
 };
-
-const generateAggregate = (
-  flags: ToolFlags,
-  isMonorepo: boolean,
-): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasGenerate,
-    key: Aggregate.generate,
-    value: { dependsOn: isMonorepo ? [topo(Aggregate.generate)] : [...flags.generateScripts] },
-  },
-  ...generateLeafTasks(flags, isMonorepo),
-];
 
 /*
  * Turbo folds a workspace dependency's sources into a consumer's hash only
@@ -74,146 +69,64 @@ const generateAggregate = (
  * Emitted only when something references it, so a workspace with none of
  * these tasks doesn't carry a dangling node.
  */
-const transitNode = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasE2e || flags.hasEslint || flags.hasTypeScript || flags.hasVitest ||
-      flags.hasRootEslint || flags.hasRootTypeScript,
-    key: Aggregate.transit,
-    value: { dependsOn: [topo(Aggregate.transit)] },
-  },
-];
 
-/*
- * Root tasks must be referenced explicitly — turbo does not roll them into
- * the bare task name when resolving deps (see `lintAggregate`).
- */
-const hasAnyTypecheck = (flags: ToolFlags): boolean =>
-  flags.hasTypeScript || flags.hasPkl || flags.hasRootTypeScript;
+const transitNode = (leafEntries: readonly TaskEntry[]): readonly TaskEntry[] => {
+  const references = new Set<string>([Aggregate.transit, topo(Aggregate.transit)]);
+  const isReferenced = leafEntries.some(([, task]) =>
+    task.dependsOn?.some(dep => references.has(dep)) ?? false);
 
-const typecheckAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: hasAnyTypecheck(flags),
-    key: Aggregate.typecheck,
-    value: {
-      dependsOn: [
-        ...(flags.hasTypeScript ? [taskNames.typecheckTs] : []),
-        ...(flags.hasRootTypeScript ? [rootTaskKey(taskNames.typecheckTs)] : []),
-        ...(flags.hasPkl ? [taskNames.typecheckPkl] : []),
-      ],
-    },
-  },
-];
-
-const compileAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasPublished,
-    key: Aggregate.compile,
-    value: {
-      dependsOn: [
-        taskNames.compileTs,
-        ...(flags.hasPublishedSkills ? [taskNames.compileSkills] : []),
-      ],
-    },
-  },
-];
-
-const packAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasPackable,
-    key: Aggregate.pack,
-    value: {
-      dependsOn: [
-        ...(flags.hasPublished ? [taskNames.packNpm] : []),
-        ...(flags.hasPklPackage ? [taskNames.packPkl] : []),
-      ],
-    },
-  },
-];
-
-const lintAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  /*
-   * Root tasks must be referenced explicitly — turbo does not roll them
-   * into the bare task name when resolving deps.
-   */
-  {
-    condition: flags.hasLint,
-    key: Aggregate.lint,
-    value: {
-      dependsOn: [
-        ...(flags.hasEslint ? [taskNames.lintEslint] : []),
-        ...(flags.hasRootEslint ? [rootTaskKey(taskNames.lintEslint)] : []),
-      ],
-    },
-  },
-];
-
-const checkAggregate = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => [
-  {
-    condition: flags.hasCheck,
-    key: Aggregate.check,
-    value: {
-      dependsOn: [
-        ...(hasAnyTypecheck(flags) ? [Aggregate.typecheck] : []),
-        ...(flags.hasLint ? [Aggregate.lint] : []),
-        ...(flags.hasVitest ? [taskNames.testVitestFast] : []),
-      ],
-    },
-  },
-];
-
-const buildAggregates = (flags: ToolFlags): readonly ConditionalEntry<TurboTask>[] => {
-  const testAggregates: readonly ConditionalEntry<TurboTask>[] = [
-    {
-      condition: flags.hasVitest,
-      key: Aggregate.testSlow,
-      value: { dependsOn: [taskNames.testVitestSlow] },
-    },
-    {
-      condition: flags.hasE2e,
-      key: Aggregate.testE2e,
-      value: { dependsOn: [taskNames.testVitestE2e] },
-    },
-    {
-      condition: flags.hasVitest,
-      key: Aggregate.coverageMerge,
-      value: { dependsOn: [taskNames.coverageVitestMerge] },
-    },
-  ];
-  const ciDeps = [
-    ...(flags.hasCheck ? [Aggregate.check] : []),
-    ...(flags.hasPublished ? [Aggregate.compile] : []),
-    ...(flags.hasPackable ? [Aggregate.pack] : []),
-  ];
-  const fullDeps = [
-    ...ciDeps,
-    ...(flags.hasVitest ? [Aggregate.testSlow] : []),
-    ...(flags.hasE2e ? [Aggregate.testE2e] : []),
-    ...(flags.hasSkills ? [taskNames.deploySkills] : []),
-    ...(flags.hasRootSkills ? [rootTaskKey(taskNames.deploySkills)] : []),
-  ];
-
-  return [
-    ...testAggregates,
-    { condition: ciDeps.length > 0, key: Aggregate.buildCi, value: { dependsOn: ciDeps } },
-    { condition: fullDeps.length > 0, key: Aggregate.build, value: { dependsOn: fullDeps } },
-  ];
+  return isReferenced ? [[Aggregate.transit, { dependsOn: [topo(Aggregate.transit)] }]] : [];
 };
 
+/*
+ * An aggregate is declared only where it has members, since a dependsOn
+ * naming a task the graph does not declare fails the run. Root tasks are
+ * members in their own right: turbo does not roll them into the bare task
+ * name when resolving deps.
+ */
+const aggregate = (name: string, members: readonly string[]): readonly TaskEntry[] =>
+  members.length > 0 ? [[name, { dependsOn: members }]] : [];
+
+const declared = (entries: readonly TaskEntry[], names: readonly string[]): readonly string[] =>
+  names.filter(name => entries.some(([key]) => key === name));
+
+const leafAggregates = (graph: TaskGraph, names: readonly AggregateName[]): readonly TaskEntry[] =>
+  names.flatMap(name => aggregate(name, graph.membersOf(name)));
+
 /**
- * Collects aggregate and standalone task entries from tool flags.
- * `isMonorepo` is passed separately: it describes the repo's shape rather
- * than a tool being present, and only the `generate` family reads it.
+ * The aggregate tasks, and the `generate` and `transit` nodes, for the
+ * leaf tasks the workspace declares.
  */
 export const aggregateTasks = (
-  flags: ToolFlags,
-  isMonorepo: boolean,
-): readonly ConditionalEntry<TurboTask>[] => [
-  ...generateAggregate(flags, isMonorepo),
-  ...transitNode(flags),
-  ...typecheckAggregate(flags),
-  ...compileAggregate(flags),
-  ...packAggregate(flags),
-  ...lintAggregate(flags),
-  ...checkAggregate(flags),
-  ...buildAggregates(flags),
-];
+  graph: TaskGraph,
+  leafEntries: readonly TaskEntry[],
+): readonly TaskEntry[] => {
+  const kinds = leafAggregates(graph, [
+    Aggregate.typecheck, Aggregate.compile, Aggregate.pack, Aggregate.lint,
+  ]);
+  const check = aggregate(Aggregate.check, [
+    ...declared(kinds, [Aggregate.typecheck, Aggregate.lint]),
+    ...graph.membersOf(Aggregate.check),
+  ]);
+  const tests = leafAggregates(graph, [
+    Aggregate.testSlow, Aggregate.testE2e, Aggregate.coverageMerge,
+  ]);
+  const ciDeps = declared(
+    [...check, ...kinds],
+    [Aggregate.check, Aggregate.compile, Aggregate.pack],
+  );
+
+  return [
+    ...generateTasks(graph),
+    ...transitNode(leafEntries),
+    ...kinds,
+    ...check,
+    ...tests,
+    ...aggregate(Aggregate.buildCi, ciDeps),
+    ...aggregate(Aggregate.build, [
+      ...ciDeps,
+      ...declared(tests, [Aggregate.testSlow, Aggregate.testE2e]),
+      ...graph.membersOf(Aggregate.build),
+    ]),
+  ];
+};

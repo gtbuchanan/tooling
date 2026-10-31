@@ -4,12 +4,14 @@ import type { Leaf } from '#src/tasks/leaf.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const pklLeaf: Leaf = {
+  aggregate: 'typecheck',
   appliesTo: pkg => pkg.hasPkl,
   name: 'check:pkl',
   task: () => ({ outputs: ['package'] }),
 };
 
 const eslintLeaf: Leaf = {
+  aggregate: 'lint',
   appliesTo: pkg => pkg.hasEslint,
   name: 'lint:eslint',
   root: {
@@ -19,7 +21,14 @@ const eslintLeaf: Leaf = {
   task: () => ({ outputs: ['package'] }),
 };
 
-const leaves = [pklLeaf, eslintLeaf];
+const skillsLeaf: Leaf = {
+  aggregate: 'lint',
+  appliesTo: pkg => pkg.hasSkills,
+  name: 'lint:skills',
+  task: () => ({}),
+};
+
+const leaves = [pklLeaf, eslintLeaf, skillsLeaf];
 
 describe.concurrent('createTaskGraph', () => {
   it('applies a leaf some package satisfies', ({ expect }) => {
@@ -61,6 +70,29 @@ describe.concurrent('createTaskGraph', () => {
 
     expect(() => graph.applies('lint:other')).toThrow('lint:other');
     expect(() => graph.appliesAtRoot('lint:other')).toThrow('lint:other');
+  });
+});
+
+describe.concurrent('createTaskGraph membersOf', () => {
+  it('lists each applying leaf in registry order, package task before root task', ({ expect }) => {
+    const discovery = makeDiscovery(
+      [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasSkills: true })],
+      { hasEslint: true, isMonorepo: true },
+    );
+
+    const graph = createTaskGraph(leaves, discovery);
+
+    expect(graph.membersOf('lint')).toStrictEqual(['lint:eslint', '//#lint:eslint', 'lint:skills']);
+  });
+
+  it('leaves out members that apply nowhere', ({ expect }) => {
+    const discovery = makeDiscovery([makeCapabilities({ hasSkills: true, hasPkl: true })]);
+
+    const graph = createTaskGraph(leaves, discovery);
+
+    expect(graph.membersOf('lint')).toStrictEqual(['lint:skills']);
+    expect(graph.membersOf('typecheck')).toStrictEqual(['check:pkl']);
+    expect(graph.membersOf('pack')).toStrictEqual([]);
   });
 });
 

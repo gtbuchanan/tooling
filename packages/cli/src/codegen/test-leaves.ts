@@ -1,5 +1,5 @@
 import { codegenDeps } from '#src/codegen/leaf-edges.js';
-import { Aggregate } from '#src/codegen/turbo-config.js';
+import { Aggregate } from '#src/tasks/aggregates.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { taskNames } from '#src/tasks/names.js';
 import { topo } from '#src/tasks/turbo-task.js';
@@ -27,6 +27,7 @@ const unitTestDeps = (graph: TaskGraph): readonly string[] => [
 ];
 
 const testVitestFast: Leaf = {
+  aggregate: Aggregate.check,
   appliesTo: pkg => pkg.hasVitestTests,
   name: taskNames.testVitestFast,
   task: graph => ({
@@ -38,6 +39,7 @@ const testVitestFast: Leaf = {
 };
 
 const testVitestSlow: Leaf = {
+  aggregate: Aggregate.testSlow,
   appliesTo: pkg => pkg.hasVitestTests,
   name: taskNames.testVitestSlow,
   task: graph => ({
@@ -49,6 +51,7 @@ const testVitestSlow: Leaf = {
 };
 
 const coverageVitestMerge: Leaf = {
+  aggregate: Aggregate.coverageMerge,
   appliesTo: pkg => pkg.hasVitestTests,
   name: taskNames.coverageVitestMerge,
   task: () => ({
@@ -69,6 +72,7 @@ const coverageVitestMerge: Leaf = {
  * workspace packs nothing.
  */
 const testVitestE2e: Leaf = {
+  aggregate: Aggregate.testE2e,
   appliesTo: pkg => pkg.hasVitestE2e,
   name: taskNames.testVitestE2e,
   task: graph => ({

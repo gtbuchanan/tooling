@@ -1,16 +1,11 @@
 import path from 'node:path';
 import { leaves } from '#src/codegen/leaves.js';
-import {
-  Aggregate,
-  type ConditionalEntry,
-  type ToolFlags,
-  collect,
-  resolveToolFlags,
-} from '#src/codegen/turbo-config.js';
+import { workspaceTasks } from '#src/codegen/turbo-config.js';
 import { rootNames } from '#src/core/command-names.js';
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { localeComparer } from '#src/core/sort.js';
+import { Aggregate } from '#src/tasks/aggregates.js';
 import { createTaskGraph } from '#src/tasks/graph.js';
 import { taskCommandName, taskNames } from '#src/tasks/names.js';
 
@@ -105,37 +100,21 @@ const requiredRootScripts = (
  * launcher) activates transparently. On every other platform `gtb turbo`
  * is a thin pass-through, so this does not change behavior.
  */
-const aliasRootScriptEntries = (
-  flags: ToolFlags,
-  isSelfHosted: boolean,
-): readonly ConditionalEntry<string>[] => {
+const aliasRootScripts = (discovery: WorkspaceDiscovery): Record<string, string> => {
   const cmd = (name: string): string =>
-    `${rootCmd(isSelfHosted, rootNames.turbo)} run ${name}`;
-
-  return [
-    { condition: flags.hasCheck, key: Aggregate.check, value: cmd(Aggregate.check) },
-    {
-      condition: flags.hasCheck || flags.hasPackable,
-      key: Aggregate.buildCi,
-      value: cmd(Aggregate.buildCi),
-    },
-    {
-      condition: flags.hasCheck || flags.hasPackable || flags.hasE2e,
-      key: Aggregate.build,
-      value: cmd(Aggregate.build),
-    },
-    {
-      condition: flags.hasVitest,
-      key: Aggregate.coverageMerge,
-      value: cmd(Aggregate.coverageMerge),
-    },
-    {
-      condition: flags.hasPackable,
-      key: Aggregate.pack,
-      value: cmd(Aggregate.pack),
-    },
-    { condition: flags.hasE2e, key: Aggregate.testE2e, value: cmd(Aggregate.testE2e) },
-    { condition: flags.hasVitest, key: Aggregate.testSlow, value: cmd(Aggregate.testSlow) },
+    `${rootCmd(discovery.isSelfHosted, rootNames.turbo)} run ${name}`;
+  const declared = new Set(workspaceTasks(discovery).map(([key]) => key));
+  const isDeclared = (name: string): boolean => declared.has(name);
+  const graph = createTaskGraph(leaves, discovery);
+  const aliases = [
+    ...[
+      Aggregate.check, Aggregate.buildCi, Aggregate.coverageMerge,
+      Aggregate.pack, Aggregate.testE2e, Aggregate.testSlow,
+    ].filter(isDeclared),
+    ...(isDeclared(Aggregate.check) || isDeclared(Aggregate.pack) ||
+      isDeclared(Aggregate.testE2e)
+      ? [Aggregate.build]
+      : []),
     /*
      * A root that authors skills of its own owns this script name: turbo
      * dispatches `//#deploy:skills` through it, so an alias here would
@@ -144,12 +123,12 @@ const aliasRootScriptEntries = (
      * root then reaches every package's copy through `build`, or through
      * `gtb turbo run deploy:skills` directly.
      */
-    {
-      condition: flags.hasSkills && !flags.hasRootSkills,
-      key: taskNames.deploySkills,
-      value: cmd(taskNames.deploySkills),
-    },
+    ...(graph.applies(taskNames.deploySkills) && !graph.appliesAtRoot(taskNames.deploySkills)
+      ? [taskNames.deploySkills]
+      : []),
   ];
+
+  return Object.fromEntries(aliases.map(name => [name, cmd(name)]));
 };
 
 /**
@@ -183,9 +162,8 @@ export const forbiddenRootScripts = (
     return [];
   }
   const aggregates = new Set<string>(Object.values(Aggregate));
-  const aliases = aliasRootScriptEntries(resolveToolFlags(discovery), discovery.isSelfHosted);
 
-  return Object.keys(collect(aliases))
+  return Object.keys(aliasRootScripts(discovery))
     .filter(name => aggregates.has(name))
     .toSorted(localeComparer);
 };
@@ -196,9 +174,8 @@ export const forbiddenRootScripts = (
 export const generateRootScripts = (
   discovery: WorkspaceDiscovery,
 ): Record<string, string> => {
-  const flags = resolveToolFlags(discovery);
   return {
-    ...(discovery.isMonorepo && collect(aliasRootScriptEntries(flags, discovery.isSelfHosted))),
+    ...(discovery.isMonorepo && aliasRootScripts(discovery)),
     ...requiredRootScripts(discovery),
   };
 };

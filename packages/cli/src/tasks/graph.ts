@@ -18,14 +18,20 @@ export const createTaskGraph = (
     return leaf;
   };
 
+  const isApplied = (leaf: Leaf): boolean => discovery.packages.some(pkg => leaf.appliesTo(pkg));
+  const isAppliedAtRoot = (leaf: Leaf): boolean =>
+    discovery.isMonorepo && (leaf.root?.appliesTo(discovery) ?? false);
+
   return {
     discovery,
-    applies: name => discovery.packages.some(pkg => leafNamed(name).appliesTo(pkg)),
-    appliesAtRoot: (name) => {
-      const { root } = leafNamed(name);
-
-      return discovery.isMonorepo && (root?.appliesTo(discovery) ?? false);
-    },
+    applies: name => isApplied(leafNamed(name)),
+    appliesAtRoot: name => isAppliedAtRoot(leafNamed(name)),
+    membersOf: aggregate => leaves.flatMap(leaf => (leaf.aggregate === aggregate
+      ? [
+          ...(isApplied(leaf) ? [leaf.name] : []),
+          ...(isAppliedAtRoot(leaf) ? [rootTaskKey(leaf.name)] : []),
+        ]
+      : [])),
   };
 };
 

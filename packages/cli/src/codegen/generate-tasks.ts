@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
-import { Aggregate } from '#src/codegen/turbo-config.js';
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
 import { readJsonFile } from '#src/core/file-writer.js';
 import { StringArray, UnknownRecord } from '#src/core/schemas.js';
+import { Aggregate } from '#src/tasks/aggregates.js';
 import { topo } from '#src/tasks/turbo-task.js';
 
 /**
