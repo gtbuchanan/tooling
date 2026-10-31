@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { leaves } from '#src/codegen/leaves.js';
 import { workspaceTasks } from '#src/codegen/turbo-config.js';
 import { rootNames } from '#src/core/command-names.js';
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
@@ -7,7 +6,9 @@ import { toPosixRelative } from '#src/core/paths.js';
 import { localeComparer } from '#src/core/sort.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
 import { createTaskGraph } from '#src/tasks/graph.js';
-import { taskCommandName, taskNames } from '#src/tasks/names.js';
+import { taskCommandName } from '#src/tasks/leaf.js';
+import { leaves } from '#src/toolchains/index.js';
+import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
 
 /*
  * Self-hosted repos define gtb as a package.json script (shim to source).
@@ -123,8 +124,8 @@ const aliasRootScripts = (discovery: WorkspaceDiscovery): Record<string, string>
      * root then reaches every package's copy through `build`, or through
      * `gtb turbo run deploy:skills` directly.
      */
-    ...(graph.applies(taskNames.deploySkills) && !graph.appliesAtRoot(taskNames.deploySkills)
-      ? [taskNames.deploySkills]
+    ...(graph.applies(deploySkillsLeaf.name) && !graph.appliesAtRoot(deploySkillsLeaf.name)
+      ? [deploySkillsLeaf.name]
       : []),
   ];
 

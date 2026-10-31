@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { leaves } from '#src/codegen/leaves.js';
 import { type TaskEntry, aggregateTasks } from '#src/codegen/turbo-aggregates.js';
 import { type WorkspaceDiscovery, vendoredCli } from '#src/core/discovery.js';
 import { toPosixRelative } from '#src/core/paths.js';
@@ -7,6 +6,7 @@ import { localeComparer } from '#src/core/sort.js';
 import { createTaskGraph, leafTasks } from '#src/tasks/graph.js';
 import { toTurboGlobs } from '#src/tasks/turbo-globs.js';
 import type { TurboTask } from '#src/tasks/turbo-task.js';
+import { leaves } from '#src/toolchains/index.js';
 
 /**
  * Generated turbo.json structure.

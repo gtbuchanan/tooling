@@ -3,6 +3,11 @@ import type { AggregateName } from '#src/tasks/aggregates.js';
 import type { TurboTask } from '#src/tasks/turbo-task.js';
 
 /**
+ * Name of the root `task` subcommand hub every leaf's script runs through.
+ */
+export const taskCommandName = 'task';
+
+/**
  * What a leaf's task may ask of the workspace, in place of a flag per leaf.
  *
  * Asked by leaf name, so a task depending on another leaf names that leaf

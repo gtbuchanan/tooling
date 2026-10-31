@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { run } from '#src/core/process.js';
+import { packPklLeaf } from '#src/toolchains/pkl/leaves.js';
 import { pklPackDestination } from '#src/toolchains/pkl/pkl-pack.js';
 
 /**
@@ -11,7 +12,7 @@ import { pklPackDestination } from '#src/toolchains/pkl/pkl-pack.js';
 export const packPkl = defineCommand({
   meta: {
     description: 'Package the Pkl project to dist/packages/pkl via `pkl project package`',
-    name: 'pack:pkl',
+    name: packPklLeaf.name,
   },
   run: async ({ rawArgs }) => {
     await run('pkl', {

@@ -6,6 +6,7 @@ import * as v from 'valibot';
 import { discoverPackage } from '#src/core/discovery.js';
 import { run } from '#src/core/process.js';
 import { codecovName } from '#src/toolchains/codecov/codecov-name.js';
+import { coverageCodecovUploadLeaf } from '#src/toolchains/codecov/leaves.js';
 
 const HeadSchema = v.object({
   sha: v.string(),
@@ -74,7 +75,7 @@ const resolveCommitSha = (): string | undefined => {
 export const coverageCodecovUpload = defineCommand({
   meta: {
     description: 'Upload merged coverage to Codecov (no-op outside CI)',
-    name: 'coverage:codecov:upload',
+    name: coverageCodecovUploadLeaf.name,
   },
   run: async ({ rawArgs }) => {
     if (!process.env['CI']) {

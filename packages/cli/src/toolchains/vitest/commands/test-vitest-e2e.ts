@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { run } from '#src/core/process.js';
+import { testVitestE2eLeaf } from '#src/toolchains/vitest/leaves.js';
 
 /**
  * Runs end-to-end tests via Vitest with the e2e config.
@@ -7,7 +8,7 @@ import { run } from '#src/core/process.js';
 export const testVitestE2e = defineCommand({
   meta: {
     description: 'Run end-to-end tests via Vitest (vitest.config.e2e.ts)',
-    name: 'test:vitest:e2e',
+    name: testVitestE2eLeaf.name,
   },
   run: async ({ rawArgs }) => {
     await run('vitest', {

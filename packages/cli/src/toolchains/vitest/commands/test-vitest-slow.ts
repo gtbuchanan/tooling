@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { run } from '#src/core/process.js';
+import { testVitestSlowLeaf } from '#src/toolchains/vitest/leaves.js';
 
 /**
  * Runs slow source tests via Vitest (only tests tagged `slow`).
@@ -7,7 +8,7 @@ import { run } from '#src/core/process.js';
 export const testVitestSlow = defineCommand({
   meta: {
     description: 'Run slow source tests via Vitest (only `slow` tag)',
-    name: 'test:vitest:slow',
+    name: testVitestSlowLeaf.name,
   },
   run: async ({ rawArgs }) => {
     await run('vitest', {

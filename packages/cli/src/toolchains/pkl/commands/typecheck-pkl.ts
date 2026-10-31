@@ -2,6 +2,7 @@ import { readdirSync } from 'node:fs';
 import { defineCommand } from 'citty';
 import { capture } from '#src/core/process.js';
 import { localeComparer } from '#src/core/sort.js';
+import { typecheckPklLeaf } from '#src/toolchains/pkl/leaves.js';
 
 /**
  * Lists hand-authored Pkl modules in a directory (sorted, excludes PklProject).
@@ -20,7 +21,7 @@ export const pklModules = (dir: string): readonly string[] =>
 export const typecheckPkl = defineCommand({
   meta: {
     description: 'Validate Pkl modules via `pkl eval`',
-    name: 'typecheck:pkl',
+    name: typecheckPklLeaf.name,
   },
   run: async ({ rawArgs }) => {
     const modules = pklModules(process.cwd());
