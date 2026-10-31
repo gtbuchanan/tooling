@@ -266,7 +266,8 @@ const deploySkills: Leaf = {
 };
 
 /**
- * Every leaf task gtb generates a script and a turbo task for.
+ * Every leaf task gtb generates a script and a turbo task for, in name order,
+ * which is the order each aggregate lists its members in.
  */
 export const leaves: readonly Leaf[] = [
   typecheckTs,
@@ -278,4 +279,4 @@ export const leaves: readonly Leaf[] = [
   lintEslint,
   ...testLeaves,
   deploySkills,
-];
+].toSorted((left, right) => localeComparer(left.name, right.name));

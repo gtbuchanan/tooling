@@ -26,12 +26,14 @@ export const createTaskGraph = (
     discovery,
     applies: name => isApplied(leafNamed(name)),
     appliesAtRoot: name => isAppliedAtRoot(leafNamed(name)),
-    membersOf: aggregate => leaves.flatMap(leaf => (leaf.aggregate === aggregate
-      ? [
-          ...(isApplied(leaf) ? [leaf.name] : []),
-          ...(isAppliedAtRoot(leaf) ? [rootTaskKey(leaf.name)] : []),
-        ]
-      : [])),
+    membersOf: (aggregate) => {
+      const members = leaves.filter(leaf => leaf.aggregate === aggregate);
+
+      return [
+        ...members.filter(isAppliedAtRoot).map(leaf => rootTaskKey(leaf.name)),
+        ...members.filter(isApplied).map(leaf => leaf.name),
+      ];
+    },
   };
 };
 
