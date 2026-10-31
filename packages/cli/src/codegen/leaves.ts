@@ -1,6 +1,4 @@
-import { codegenDeps, rootSourceDeps } from '#src/codegen/leaf-edges.js';
 import { testLeaves } from '#src/codegen/test-leaves.js';
-import { toTurboGlobs } from '#src/codegen/turbo-globs.js';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import {
   buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
@@ -8,8 +6,10 @@ import {
 import { typeCheckInclude } from '#src/core/layout.js';
 import { localeComparer } from '#src/core/sort.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
+import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { taskNames } from '#src/tasks/names.js';
+import { toTurboGlobs } from '#src/tasks/turbo-globs.js';
 import { rootTaskKey, topo } from '#src/tasks/turbo-task.js';
 import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
 

@@ -1,5 +1,5 @@
-import { workspaceGenerateScripts } from '#src/codegen/leaf-edges.js';
 import { Aggregate, type AggregateName } from '#src/tasks/aggregates.js';
+import { workspaceGenerateScripts } from '#src/tasks/edges.js';
 import type { TaskGraph } from '#src/tasks/leaf.js';
 import { type TurboTask, topo } from '#src/tasks/turbo-task.js';
 

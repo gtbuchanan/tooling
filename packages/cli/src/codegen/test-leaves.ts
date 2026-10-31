@@ -1,5 +1,5 @@
-import { codegenDeps } from '#src/codegen/leaf-edges.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
+import { codegenDeps } from '#src/tasks/edges.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { taskNames } from '#src/tasks/names.js';
 import { topo } from '#src/tasks/turbo-task.js';
