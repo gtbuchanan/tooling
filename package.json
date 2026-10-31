@@ -47,7 +47,7 @@
     "valibot": "catalog:",
     "vitest": "catalog:"
   },
-  "packageManager": "pnpm@12.16.0",
+  "packageManager": "pnpm@12.16.1",
   "engines": {
     "node": ">=24.0.0",
     "pnpm": ">=11.0.0"
