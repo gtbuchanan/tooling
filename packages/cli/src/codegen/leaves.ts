@@ -1,6 +1,5 @@
 import { codegenDeps, rootSourceDeps } from '#src/codegen/leaf-edges.js';
 import { testLeaves } from '#src/codegen/test-leaves.js';
-import { Aggregate } from '#src/codegen/turbo-config.js';
 import { toTurboGlobs } from '#src/codegen/turbo-globs.js';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import {
@@ -8,6 +7,7 @@ import {
 } from '#src/core/dist-source.js';
 import { typeCheckInclude } from '#src/core/layout.js';
 import { localeComparer } from '#src/core/sort.js';
+import { Aggregate } from '#src/tasks/aggregates.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { taskNames } from '#src/tasks/names.js';
 import { rootTaskKey, topo } from '#src/tasks/turbo-task.js';
@@ -21,6 +21,7 @@ import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
 const toPackageIgnore = (glob: string): string => `${glob}/**`;
 
 const typecheckTs: Leaf = {
+  aggregate: Aggregate.typecheck,
   appliesTo: pkg => pkg.hasTypeScript,
   name: taskNames.typecheckTs,
   /*
@@ -87,6 +88,7 @@ const compileTsOutputs = (graph: TaskGraph): readonly string[] => [
 ];
 
 const compileTs: Leaf = {
+  aggregate: Aggregate.compile,
   appliesTo: pkg => pkg.isPublished,
   name: taskNames.compileTs,
   task: graph => ({
@@ -104,6 +106,7 @@ const compileTs: Leaf = {
  * publishing on different packages leave the task with nothing to run.
  */
 const compileSkills: Leaf = {
+  aggregate: Aggregate.compile,
   appliesTo: pkg => pkg.isPublished && pkg.hasSkills,
   name: taskNames.compileSkills,
   task: () => ({
@@ -113,6 +116,7 @@ const compileSkills: Leaf = {
 };
 
 const packNpm: Leaf = {
+  aggregate: Aggregate.pack,
   appliesTo: pkg => pkg.isPublished,
   name: taskNames.packNpm,
   task: graph => ({
@@ -159,12 +163,14 @@ const packNpm: Leaf = {
 const pklInputs = ['*.pkl', 'PklProject'];
 
 const typecheckPkl: Leaf = {
+  aggregate: Aggregate.typecheck,
   appliesTo: pkg => pkg.hasPkl,
   name: taskNames.typecheckPkl,
   task: () => ({ inputs: pklInputs, outputs: [] }),
 };
 
 const packPkl: Leaf = {
+  aggregate: Aggregate.pack,
   appliesTo: pkg => pkg.hasPklPackage,
   name: taskNames.packPkl,
   task: () => ({
@@ -181,6 +187,7 @@ const packPkl: Leaf = {
  * make lint's cross-package invalidation silently conditional.
  */
 const lintEslint: Leaf = {
+  aggregate: Aggregate.lint,
   appliesTo: pkg => pkg.hasEslint,
   name: taskNames.lintEslint,
   /*
@@ -225,6 +232,7 @@ const lintEslint: Leaf = {
 };
 
 const deploySkills: Leaf = {
+  aggregate: Aggregate.build,
   appliesTo: pkg => pkg.hasSkills,
   name: taskNames.deploySkills,
   /*

@@ -1,10 +1,17 @@
-import { Aggregate } from '#src/codegen/turbo-config.js';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
+import { localeComparer } from '#src/core/sort.js';
+import { Aggregate } from '#src/tasks/aggregates.js';
 import type { TaskGraph } from '#src/tasks/leaf.js';
 import { topo } from '#src/tasks/turbo-task.js';
 
-const hasGenerate = ({ packages }: WorkspaceDiscovery): boolean =>
-  packages.some(pkg => pkg.generateScripts.length > 0);
+/**
+ * Every package's `generate:*` scripts, sorted.
+ */
+export const workspaceGenerateScripts = ({ packages }: WorkspaceDiscovery): readonly string[] =>
+  [...new Set(packages.flatMap(pkg => pkg.generateScripts))].toSorted(localeComparer);
+
+const hasGenerate = (discovery: WorkspaceDiscovery): boolean =>
+  workspaceGenerateScripts(discovery).length > 0;
 
 /**
  * Codegen edges for a task reading its own package's sources and its
