@@ -22,7 +22,7 @@ export interface TaskGraph {
   readonly appliesAtRoot: (leaf: string) => boolean;
   /**
    * The task keys that are members of an aggregate, ready for its dependsOn:
-   * in registry order, each leaf's package task before its root task.
+   * the root's first, as //# keys, then the packages', each in registry order.
    */
   readonly membersOf: (aggregate: AggregateName) => readonly string[];
 }

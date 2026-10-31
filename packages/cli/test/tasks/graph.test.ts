@@ -74,7 +74,7 @@ describe.concurrent('createTaskGraph', () => {
 });
 
 describe.concurrent('createTaskGraph membersOf', () => {
-  it('lists each applying leaf in registry order, package task before root task', ({ expect }) => {
+  it('lists root tasks first, then package tasks, each in registry order', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasSkills: true })],
       { hasEslint: true, isMonorepo: true },
@@ -82,7 +82,7 @@ describe.concurrent('createTaskGraph membersOf', () => {
 
     const graph = createTaskGraph(leaves, discovery);
 
-    expect(graph.membersOf('lint')).toStrictEqual(['lint:eslint', '//#lint:eslint', 'lint:skills']);
+    expect(graph.membersOf('lint')).toStrictEqual(['//#lint:eslint', 'lint:eslint', 'lint:skills']);
   });
 
   it('leaves out members that apply nowhere', ({ expect }) => {

@@ -80,8 +80,8 @@
     },
     "compile": {
       "dependsOn": [
-        "compile:ts",
-        "compile:skills"
+        "compile:skills",
+        "compile:ts"
       ]
     },
     "compile:skills": {
@@ -148,8 +148,8 @@
     },
     "lint": {
       "dependsOn": [
-        "lint:eslint",
-        "//#lint:eslint"
+        "//#lint:eslint",
+        "lint:eslint"
       ]
     },
     "lint:eslint": {
@@ -286,9 +286,9 @@
     },
     "typecheck": {
       "dependsOn": [
-        "typecheck:ts",
         "//#typecheck:ts",
-        "typecheck:pkl"
+        "typecheck:pkl",
+        "typecheck:ts"
       ]
     },
     "typecheck:pkl": {
