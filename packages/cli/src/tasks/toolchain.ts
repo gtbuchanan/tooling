@@ -1,4 +1,5 @@
 import type { SubCommandsDef } from 'citty';
+import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
 import type { Leaf } from '#src/tasks/leaf.js';
 
@@ -27,12 +28,32 @@ export interface CommandRegistration {
 export type Registration = CommandRegistration | LeafRegistration;
 
 /**
+ * What a toolchain's checks may read of the workspace.
+ */
+export interface CheckContext {
+  readonly discovery: WorkspaceDiscovery;
+}
+
+/**
  * One toolchain: everything the CLI knows about a tool, held in the tool's own
  * module so adding one edits nothing central.
  */
 export interface Toolchain {
+  /**
+   * What `gtb verify manifest` reports for the toolchain: one message per
+   * problem, empty where there is none.
+   */
+  readonly checks?: (context: CheckContext) => readonly string[];
   readonly registrations: readonly Registration[];
 }
+
+/**
+ * Every toolchain's check messages, in registry order.
+ */
+export const toolchainChecks = (
+  toolchains: readonly Toolchain[],
+  context: CheckContext,
+): readonly string[] => toolchains.flatMap(({ checks }) => checks?.(context) ?? []);
 
 const registrationsOf = (toolchains: readonly Toolchain[]): readonly Registration[] =>
   toolchains.flatMap(toolchain => toolchain.registrations);
