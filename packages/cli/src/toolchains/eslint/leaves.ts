@@ -1,6 +1,7 @@
 import { Aggregate } from '#src/tasks/aggregates.js';
 import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
 import type { Leaf } from '#src/tasks/leaf.js';
+import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { typecheckTsLeaf } from '#src/toolchains/typescript/leaves.js';
 
 /*
@@ -20,7 +21,7 @@ const toPackageIgnore = (glob: string): string => `${glob}/**`;
  */
 export const lintEslintLeaf: Leaf = {
   aggregate: Aggregate.lint,
-  appliesTo: pkg => pkg.hasEslint,
+  appliesTo: pkg => pkg.capabilities.has(eslint),
   name: 'lint:eslint',
   /*
    * Patterns use double quotes for cross-platform shell compatibility:
@@ -38,7 +39,7 @@ export const lintEslintLeaf: Leaf = {
       '.',
       ...packageGlobs.flatMap(glob => ['--ignore-pattern', `"${toPackageIgnore(glob)}"`]),
     ],
-    appliesTo: discovery => discovery.root.hasEslint,
+    appliesTo: discovery => discovery.root.capabilities.has(eslint),
     task: graph => ({
       dependsOn: rootSourceDeps(graph),
       inputs: [

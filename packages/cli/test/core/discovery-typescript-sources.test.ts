@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
 import { discoverPackage } from '#src/core/discovery.js';
+import { capabilities } from '#src/toolchains/index.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
 const writeFile = (dir: string, name: string): void => {
@@ -14,7 +15,7 @@ describe.concurrent('typescript source discovery', () => {
     writeJson(dir, 'package.json', {});
     writeFile(dir, 'eslint.config.ts');
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.hasTypeScriptSources).toBe(true);
   });
@@ -25,7 +26,7 @@ describe.concurrent('typescript source discovery', () => {
     mkdirSync(path.join(dir, 'src', 'lib'), { recursive: true });
     writeFile(dir, path.join('src', 'lib', 'index.ts'));
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.hasTypeScriptSources).toBe(true);
   });
@@ -41,7 +42,7 @@ describe.concurrent('typescript source discovery', () => {
     writeJson(dir, 'package.json', {});
     writeJson(dir, 'tsconfig.json', {});
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result).toMatchObject({ hasTypeScript: true, hasTypeScriptSources: false });
   });
@@ -52,7 +53,7 @@ describe.concurrent('typescript source discovery', () => {
     writeFile(dir, 'eslint.config.js');
     mkdirSync(path.join(dir, 'src'));
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.hasTypeScriptSources).toBe(false);
   });
@@ -63,7 +64,7 @@ describe.concurrent('typescript source discovery', () => {
     mkdirSync(path.join(dir, 'packages', 'app'), { recursive: true });
     writeFile(dir, path.join('packages', 'app', 'index.ts'));
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.hasTypeScriptSources).toBe(false);
   });
@@ -79,7 +80,7 @@ describe.concurrent('typescript source discovery', () => {
     writeJson(dir, 'package.json', {});
     mkdirSync(path.join(dir, 'types.ts'));
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.hasTypeScriptSources).toBe(false);
   });
@@ -89,7 +90,7 @@ describe.concurrent('typescript source discovery', () => {
     writeJson(dir, 'package.json', {});
     mkdirSync(path.join(dir, 'src', 'types.ts'), { recursive: true });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.hasTypeScriptSources).toBe(false);
   });
@@ -107,7 +108,7 @@ describe.concurrent('typescript source discovery', () => {
       mkdirSync(path.join(dir, 'src', excluded, 'dep'), { recursive: true });
       writeFile(dir, path.join('src', excluded, 'dep', 'index.ts'));
 
-      const result = discoverPackage(dir);
+      const result = discoverPackage(dir, capabilities);
 
       expect(result.hasTypeScriptSources).toBe(false);
     },

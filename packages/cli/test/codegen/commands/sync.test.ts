@@ -14,6 +14,7 @@ import { discoverWorkspace } from '#src/core/discovery.js';
 import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/core/file-writer.js';
 import { createLogger } from '#src/core/logger.js';
 import { ManifestSchema } from '#src/core/manifest.js';
+import { capabilities } from '#src/toolchains/index.js';
 import { captureLogger, createTempDir, writeJson } from '#test/helpers.js';
 
 const silentSink = new Writable({
@@ -105,7 +106,7 @@ const createConsumerProject = (): ConsumerProject => {
 describe.concurrent('sync helpers', () => {
   it('generates turbo.json with correct tasks for consumer project', ({ expect }) => {
     const { root } = createConsumerProject();
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
 
     const turboJson = generateTurboJson(discovery);
 
@@ -119,7 +120,7 @@ describe.concurrent('sync helpers', () => {
 
   it('generates per-package scripts with gtb task commands', ({ expect }) => {
     const { app, root } = createConsumerProject();
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
     const appPkg = discovery.packages.find(pkg => pkg.dir === app.dir);
 
     const scripts = generatePackageScripts(appPkg!, discovery.isSelfHosted);
@@ -135,7 +136,7 @@ describe.concurrent('sync helpers', () => {
 
   it('generates fewer scripts for private package without tests', ({ expect }) => {
     const { lib, root } = createConsumerProject();
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
     const libPkg = discovery.packages.find(pkg => pkg.dir === lib.dir);
 
     const scripts = generatePackageScripts(libPkg!, discovery.isSelfHosted);
@@ -148,7 +149,7 @@ describe.concurrent('sync helpers', () => {
 
   it('generates root convenience scripts', ({ expect }) => {
     const { root } = createConsumerProject();
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
 
     const scripts = generateRootScripts(discovery);
 
@@ -164,7 +165,7 @@ describe.concurrent('sync helpers', () => {
 
   it('writes turbo.json and merges scripts end-to-end', ({ expect }) => {
     const { root } = createConsumerProject();
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
 
     const turboPath = path.join(root, 'turbo.json');
     writeJsonFile(turboPath, generateTurboJson(discovery));
@@ -179,7 +180,7 @@ describe.concurrent('sync helpers', () => {
 
   it('merges scripts without overwriting existing', ({ expect }) => {
     const { root } = createConsumerProject();
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
     const rootScripts = generateRootScripts(discovery);
 
     const result = mergePackageScripts(
@@ -196,7 +197,7 @@ describe.concurrent('sync helpers', () => {
       devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
     });
 
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
 
     expect(discovery.isSelfHosted).toBe(true);
   });

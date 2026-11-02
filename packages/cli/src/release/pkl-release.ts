@@ -7,6 +7,7 @@ import {
   publishReleases,
   releaseTag,
 } from '#src/release/github-release.js';
+import { capabilities } from '#src/toolchains/index.js';
 import { pklPackDestination } from '#src/toolchains/pkl/pkl-pack.js';
 
 /**
@@ -54,7 +55,7 @@ export const planPklRelease = (
  * produced the assets.
  */
 export const executePublishPkl = async (deps: GithubReleaseDeps): Promise<void> => {
-  const discovery = discoverWorkspace({ cwd: deps.cwd });
+  const discovery = discoverWorkspace({ capabilities, cwd: deps.cwd });
   const packages = discovery.packages.filter(pkg => pkg.hasPklPackage);
   if (packages.length === 0) {
     deps.logger.info('no Pkl packages to publish');

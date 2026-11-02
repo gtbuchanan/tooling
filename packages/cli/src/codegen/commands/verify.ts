@@ -7,6 +7,7 @@ import {
 import { rootNames } from '#src/core/command-names.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
+import { capabilities } from '#src/toolchains/index.js';
 
 /**
  * Parses `--ignore <name>` flags from raw CLI args.
@@ -46,7 +47,7 @@ export interface RunVerifyOptions {
 export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
   const scopes = options.scopes ?? new Set(syncScopes);
   const context: VerifyContext = {
-    discovery: discoverWorkspace({ cwd: options.cwd ?? process.cwd() }),
+    discovery: discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() }),
     ignored: options.ignored ?? new Set<string>(),
   };
 

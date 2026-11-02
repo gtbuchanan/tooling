@@ -4,6 +4,7 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { checkManifests, generateManifests } from '#src/codegen/manifest-sync.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
+import { capabilities } from '#src/toolchains/index.js';
 import { createPklWorkspace, createTempDir, pklProjectSource, writeJson } from '#test/helpers.js';
 
 /**
@@ -31,7 +32,8 @@ describe.concurrent(generateManifests, () => {
       version: ws.version,
     });
 
-    const [manifest, ...rest] = generateManifests(discoverWorkspace({ cwd: ws.root }));
+    const [manifest, ...rest] =
+      generateManifests(discoverWorkspace({ capabilities, cwd: ws.root }));
 
     expect(rest).toHaveLength(0);
     expect(manifest?.filePath).toBe(path.join(ws.pkgDir, 'PklProject'));
@@ -48,7 +50,7 @@ describe.concurrent(generateManifests, () => {
       name,
     );
 
-    const [manifest] = generateManifests(discoverWorkspace({ cwd: root }));
+    const [manifest] = generateManifests(discoverWorkspace({ capabilities, cwd: root }));
     const repoPath = homepage.replace(/^https?:\/\//v, '');
 
     expect(manifest?.content).toContain(
@@ -61,7 +63,7 @@ describe.concurrent(generateManifests, () => {
     const name = build.packageName();
     writePublishablePkg(root, { homepage: build.gitHubRepoUrl(), name: `@scope/${name}` }, name);
 
-    expect(() => generateManifests(discoverWorkspace({ cwd: root })))
+    expect(() => generateManifests(discoverWorkspace({ capabilities, cwd: root })))
       .toThrow(/missing "version"/v);
   });
 
@@ -70,7 +72,7 @@ describe.concurrent(generateManifests, () => {
     const name = build.packageName();
     writePublishablePkg(root, { name: `@scope/${name}`, version: build.semverVersion() }, name);
 
-    expect(() => generateManifests(discoverWorkspace({ cwd: root })))
+    expect(() => generateManifests(discoverWorkspace({ capabilities, cwd: root })))
       .toThrow(/homepage or repository\.url/v);
   });
 
@@ -83,7 +85,7 @@ describe.concurrent(generateManifests, () => {
       version: build.semverVersion(),
     }, name);
 
-    const [manifest] = generateManifests(discoverWorkspace({ cwd: root }));
+    const [manifest] = generateManifests(discoverWorkspace({ capabilities, cwd: root }));
 
     expect(manifest?.content).toContain(String.raw`baseUri = "package://github.com/o/r/\(name)"`);
   });
@@ -96,13 +98,13 @@ describe.concurrent(generateManifests, () => {
     mkdirSync(pkgDir, { recursive: true });
     writeJson(pkgDir, 'package.json', { name: build.scopedPackageName() });
 
-    expect(generateManifests(discoverWorkspace({ cwd: root }))).toHaveLength(0);
+    expect(generateManifests(discoverWorkspace({ capabilities, cwd: root }))).toHaveLength(0);
   });
 
   it('ignores a Pkl project without a package block', ({ expect }) => {
     const ws = createPklWorkspace({ publishable: false });
 
-    expect(generateManifests(discoverWorkspace({ cwd: ws.root }))).toHaveLength(0);
+    expect(generateManifests(discoverWorkspace({ capabilities, cwd: ws.root }))).toHaveLength(0);
   });
 });
 
@@ -110,7 +112,7 @@ describe.concurrent(checkManifests, () => {
   it('passes when the on-disk PklProject matches', ({ expect }) => {
     const ws = createPklWorkspace();
 
-    expect(checkManifests(discoverWorkspace({ cwd: ws.root }))).toStrictEqual([]);
+    expect(checkManifests(discoverWorkspace({ capabilities, cwd: ws.root }))).toStrictEqual([]);
   });
 
   it('reports drift when a sync-owned field is stale', ({ expect }) => {
@@ -120,7 +122,7 @@ describe.concurrent(checkManifests, () => {
       'amends "pkl:Project"\n\npackage {\n  name = "x"\n  version = "0.0.0-stale"\n}\n',
     );
 
-    expect(checkManifests(discoverWorkspace({ cwd: ws.root }))).toStrictEqual([
+    expect(checkManifests(discoverWorkspace({ capabilities, cwd: ws.root }))).toStrictEqual([
       `${path.join(ws.pkgDir, 'PklProject')}: out of date (run gtb sync manifest)`,
     ]);
   });

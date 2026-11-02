@@ -1,5 +1,6 @@
 import { type Dirent, existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import type { Capability } from '#src/core/capability.js';
 import {
   buildInclude, generateTaskPrefix, resolveBuildIncludes, typeCheckInclude,
 } from '#src/core/layout.js';
@@ -20,6 +21,10 @@ export interface PackageCapabilities {
    * Resolved `include` directories from tsconfig.build.json (published packages only).
    */
   readonly buildIncludes: readonly string[];
+  /**
+   * The capabilities its toolchains declared that hold in the package.
+   */
+  readonly capabilities: ReadonlySet<Capability>;
   /**
    * Package directory path.
    */
@@ -56,10 +61,6 @@ export interface PackageCapabilities {
    * Names of `generate:*` scripts found in package.json.
    */
   readonly generateScripts: readonly string[];
-  /**
-   * Has ESLint config or `@gtbuchanan/eslint-config` dependency.
-   */
-  readonly hasEslint: boolean;
   /**
    * Has a `scripts/` directory.
    */
@@ -352,6 +353,7 @@ const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
 const buildCapabilities = (
   dir: string,
   manifest: Manifest,
+  capabilities: readonly Capability[],
 ): PackageCapabilities => {
   const deps = mergeDeps(manifest);
   const files = listFiles(dir);
@@ -365,11 +367,12 @@ const buildCapabilities = (
 
   return {
     buildIncludes: isPublished ? resolveBuildIncludes(dir) : buildInclude,
+    capabilities: new Set(capabilities.filter(capability =>
+      capability.detect({ dir, entries: files, manifest }))),
     dir,
     generateScripts,
     hasBin: hasDir(dir, 'bin'),
     hasE2e: hasDir(dir, 'e2e'),
-    hasEslint: hasDep(deps, '@gtbuchanan/eslint-config') || hasFilePrefix(files, 'eslint.config'),
     hasGenerate: generateScripts.length > 0,
     hasPkl,
     hasPklPackage,
@@ -389,16 +392,29 @@ const buildCapabilities = (
 };
 
 /**
- * Discovers capabilities for a single package directory.
+ * Discovers a single package directory, detecting `capabilities` in it.
  */
-export const discoverPackage = (dir: string): PackageCapabilities =>
-  buildCapabilities(dir, parseManifest(dir));
+export const discoverPackage = (
+  dir: string,
+  capabilities: readonly Capability[],
+): PackageCapabilities => buildCapabilities(dir, parseManifest(dir), capabilities);
 
 /**
- * Discovers capabilities for an entire workspace.
+ * Options for {@link discoverWorkspace}.
+ */
+export interface DiscoverWorkspaceOptions extends ResolveWorkspaceOptions {
+  /**
+   * What to look for, which is every toolchain's. Required, so a caller
+   * cannot discover a workspace in which nothing ever holds.
+   */
+  readonly capabilities: readonly Capability[];
+}
+
+/**
+ * Discovers every package of a workspace, and its root.
  */
 export const discoverWorkspace = (
-  options?: ResolveWorkspaceOptions,
+  { capabilities, ...options }: DiscoverWorkspaceOptions,
 ): WorkspaceDiscovery => {
   const ctx = resolveWorkspace(options);
   const isMonorepo = ctx.packageDirs.length > 1 ||
@@ -411,9 +427,9 @@ export const discoverWorkspace = (
     hasMise: existsSync(path.join(ctx.rootDir, 'mise.toml')),
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
-    packages: ctx.packageDirs.map(dir => buildCapabilities(dir, parseManifest(dir))),
+    packages: ctx.packageDirs.map(dir => buildCapabilities(dir, parseManifest(dir), capabilities)),
     packageGlobs: ctx.packageGlobs,
-    root: buildCapabilities(ctx.rootDir, rootManifest),
+    root: buildCapabilities(ctx.rootDir, rootManifest, capabilities),
     rootDir: ctx.rootDir,
   };
 };

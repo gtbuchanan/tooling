@@ -1,5 +1,8 @@
+import type { Capability } from '#src/core/capability.js';
 import type { Leaf } from '#src/tasks/leaf.js';
-import { type Toolchain, toolchainLeaves } from '#src/tasks/toolchain.js';
+import {
+  type Toolchain, toolchainCapabilities, toolchainLeaves,
+} from '#src/tasks/toolchain.js';
 import { codecovToolchain } from '#src/toolchains/codecov/index.js';
 import { eslintToolchain } from '#src/toolchains/eslint/index.js';
 import { npmToolchain } from '#src/toolchains/npm/index.js';
@@ -28,3 +31,8 @@ export const toolchains: readonly Toolchain[] = [
  * which is the order each aggregate lists its members in.
  */
 export const leaves: readonly Leaf[] = toolchainLeaves(toolchains);
+
+/**
+ * Every capability the toolchains declare, which is what discovery detects.
+ */
+export const capabilities: readonly Capability[] = toolchainCapabilities(toolchains);

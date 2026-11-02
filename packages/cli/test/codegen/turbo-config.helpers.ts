@@ -1,3 +1,4 @@
+import type { Capability } from '#src/core/capability.js';
 import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
 import { buildInclude } from '#src/core/layout.js';
 
@@ -6,11 +7,11 @@ export const makeCapabilities = (
 ): PackageCapabilities => {
   const merged = {
     buildIncludes: [...buildInclude] as readonly string[],
+    capabilities: new Set<Capability>(),
     dir: '/fake/pkg',
     generateScripts: [] as readonly string[],
     hasBin: false,
     hasE2e: false,
-    hasEslint: false,
     hasGenerate: false,
     hasPkl: false,
     hasPklPackage: false,

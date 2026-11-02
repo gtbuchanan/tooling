@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { createTaskGraph, leafTasks } from '#src/tasks/graph.js';
 import type { Leaf } from '#src/tasks/leaf.js';
+import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const pklLeaf: Leaf = {
@@ -12,10 +13,10 @@ const pklLeaf: Leaf = {
 
 const eslintLeaf: Leaf = {
   aggregate: 'lint',
-  appliesTo: pkg => pkg.hasEslint,
+  appliesTo: pkg => pkg.capabilities.has(eslint),
   name: 'lint:eslint',
   root: {
-    appliesTo: discovery => discovery.root.hasEslint,
+    appliesTo: discovery => discovery.root.capabilities.has(eslint),
     task: () => ({ outputs: ['root'] }),
   },
   task: () => ({ outputs: ['package'] }),
@@ -41,7 +42,10 @@ describe.concurrent('createTaskGraph', () => {
   });
 
   it('applies a leaf at a monorepo root its root variant satisfies', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()], { hasEslint: true, isMonorepo: true });
+    const discovery = makeDiscovery(
+      [makeCapabilities()],
+      { capabilities: new Set([eslint]), isMonorepo: true },
+    );
 
     const graph = createTaskGraph(leaves, discovery);
 
@@ -50,7 +54,10 @@ describe.concurrent('createTaskGraph', () => {
   });
 
   it('applies no leaf at a single-package root', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasEslint: true })], { hasEslint: true });
+    const discovery = makeDiscovery(
+      [makeCapabilities({ capabilities: new Set([eslint]) })],
+      { capabilities: new Set([eslint]) },
+    );
 
     const graph = createTaskGraph(leaves, discovery);
 
@@ -76,8 +83,11 @@ describe.concurrent('createTaskGraph', () => {
 describe.concurrent('createTaskGraph membersOf', () => {
   it('lists root tasks first, then package tasks, each in registry order', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasSkills: true })],
-      { hasEslint: true, isMonorepo: true },
+      [
+        makeCapabilities({ capabilities: new Set([eslint]) }),
+        makeCapabilities({ hasSkills: true }),
+      ],
+      { capabilities: new Set([eslint]), isMonorepo: true },
     );
 
     const graph = createTaskGraph(leaves, discovery);
@@ -99,8 +109,8 @@ describe.concurrent('createTaskGraph membersOf', () => {
 describe.concurrent('leafTasks', () => {
   it('keys package tasks by name and root tasks by their root key', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasEslint: true })],
-      { hasEslint: true, isMonorepo: true },
+      [makeCapabilities({ capabilities: new Set([eslint]) })],
+      { capabilities: new Set([eslint]), isMonorepo: true },
     );
 
     const tasks = leafTasks(leaves, createTaskGraph(leaves, discovery));

@@ -1,14 +1,17 @@
 import { defineCommand } from 'citty';
 import { describe, it } from 'vitest';
+import type { Capability } from '#src/core/capability.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import type { Leaf } from '#src/tasks/leaf.js';
 import {
   type CheckContext,
   type Toolchain,
   taskSubCommands,
+  toolchainCapabilities,
   toolchainChecks,
   toolchainLeaves,
 } from '#src/tasks/toolchain.js';
+import { capabilities } from '#src/toolchains/index.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
 const makeLeaf = (name: string): Leaf => ({
@@ -95,7 +98,7 @@ describe.concurrent(taskSubCommands, () => {
 const makeContext = (): CheckContext => {
   const root = createTempDir();
   writeJson(root, 'package.json', { name: 'root' });
-  return { discovery: discoverWorkspace({ cwd: root }) };
+  return { discovery: discoverWorkspace({ capabilities, cwd: root }) };
 };
 
 describe.concurrent(toolchainChecks, () => {
@@ -112,5 +115,22 @@ describe.concurrent(toolchainChecks, () => {
       'eslint: first',
       'eslint: second',
     ]);
+  });
+});
+
+const makeCapability = (name: string): Capability => ({ detect: () => true, name });
+
+describe.concurrent(toolchainCapabilities, () => {
+  it('collects every toolchain\'s capabilities, in registry order', ({ expect }) => {
+    const first = makeCapability('first');
+    const second = makeCapability('second');
+    const third = makeCapability('third');
+    const toolchains: readonly Toolchain[] = [
+      { detects: [first, second], registrations: [] },
+      { registrations: [] },
+      { detects: [third], registrations: [] },
+    ];
+
+    expect(toolchainCapabilities(toolchains)).toStrictEqual([first, second, third]);
   });
 });

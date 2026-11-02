@@ -17,6 +17,7 @@ import { type Logger, createLogger } from '#src/core/logger.js';
 import { ManifestSchema, unscopedName } from '#src/core/manifest.js';
 import { UnknownRecord } from '#src/core/schemas.js';
 import type { GithubReleaseDeps } from '#src/release/github-release.js';
+import { capabilities } from '#src/toolchains/index.js';
 
 /**
  * Creates an isolated temp directory for test fixtures.
@@ -325,7 +326,7 @@ export const readScripts = (pkgDir: string): Record<string, string> => {
  * Initializes a fully valid project state (turbo.json, tsconfigs, scripts).
  */
 export const initProject = (root: string): void => {
-  const discovery = discoverWorkspace({ cwd: root });
+  const discovery = discoverWorkspace({ capabilities, cwd: root });
   writeJsonFile(path.join(root, 'turbo.json'), generateTurboJson(discovery));
   writeTsconfigs(root, discovery.packages);
   mergePackageScripts(path.join(root, 'package.json'), generateRootScripts(discovery), true);

@@ -93,9 +93,10 @@ export const coverageCodecovUpload = defineCommand({
     /*
      * Must match the flag `gtb sync` writes into codecov.yml for this
      * package, so both go through codecovName — otherwise the upload
-     * lands under a flag the config never declared.
+     * lands under a flag the config never declared. The name is all it
+     * reads, so no capability needs detecting.
      */
-    const flag = codecovName(discoverPackage(process.cwd()));
+    const flag = codecovName(discoverPackage(process.cwd(), []));
 
     await run('codecov', {
       args: [

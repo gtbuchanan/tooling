@@ -1,4 +1,5 @@
 import type { SubCommandsDef } from 'citty';
+import type { Capability } from '#src/core/capability.js';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
 import type { Leaf } from '#src/tasks/leaf.js';
@@ -44,8 +45,21 @@ export interface Toolchain {
    * problem, empty where there is none.
    */
   readonly checks?: (context: CheckContext) => readonly string[];
+  /**
+   * What discovery looks for on the toolchain's behalf. Registered as the
+   * whole of its `capabilities.ts` module, so a capability defined there
+   * cannot be left out and silently never hold.
+   */
+  readonly detects?: readonly Capability[];
   readonly registrations: readonly Registration[];
 }
+
+/**
+ * Every capability the toolchains declare, which is what discovery looks for.
+ */
+export const toolchainCapabilities = (
+  toolchains: readonly Toolchain[],
+): readonly Capability[] => toolchains.flatMap(({ detects }) => detects ?? []);
 
 /**
  * Every toolchain's check messages, in registry order.

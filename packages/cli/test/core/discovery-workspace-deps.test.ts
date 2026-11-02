@@ -2,6 +2,7 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverPackage } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
+import { capabilities } from '#src/toolchains/index.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
 describe.concurrent('workspace dependency discovery', () => {
@@ -10,7 +11,7 @@ describe.concurrent('workspace dependency discovery', () => {
     const dep = build.scopedPackageName();
     writeJson(dir, 'package.json', { dependencies: { [dep]: 'workspace:*' } });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([dep]);
   });
@@ -24,7 +25,7 @@ describe.concurrent('workspace dependency discovery', () => {
       peerDependencies: { [peer]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies)
       .toStrictEqual([optional, peer].toSorted(localeComparer));
@@ -38,7 +39,7 @@ describe.concurrent('workspace dependency discovery', () => {
       peerDependencies: { [dep]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([dep]);
   });
@@ -49,7 +50,7 @@ describe.concurrent('workspace dependency discovery', () => {
       devDependencies: { [build.scopedPackageName()]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([]);
   });
@@ -63,7 +64,7 @@ describe.concurrent('workspace dependency discovery', () => {
       dependencies: { [bundled]: 'workspace:*', [external]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([external]);
   });
@@ -76,7 +77,7 @@ describe.concurrent('workspace dependency discovery', () => {
       peerDependencies: { [dep]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([]);
   });
@@ -88,7 +89,7 @@ describe.concurrent('workspace dependency discovery', () => {
       dependencies: { [build.scopedPackageName()]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([]);
   });
@@ -107,7 +108,7 @@ describe.concurrent('workspace dependency discovery', () => {
       peerDependencies: { [peer]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([peer]);
   });
@@ -120,7 +121,7 @@ describe.concurrent('workspace dependency discovery', () => {
       optionalDependencies: { [optional]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([optional]);
   });
@@ -133,7 +134,7 @@ describe.concurrent('workspace dependency discovery', () => {
       dependencies: { [dep]: 'workspace:*' },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([]);
   });
@@ -144,7 +145,7 @@ describe.concurrent('workspace dependency discovery', () => {
       dependencies: { [build.scopedPackageName()]: build.semverRange() },
     });
 
-    const result = discoverPackage(dir);
+    const result = discoverPackage(dir, capabilities);
 
     expect(result.workspaceDependencies).toStrictEqual([]);
   });
