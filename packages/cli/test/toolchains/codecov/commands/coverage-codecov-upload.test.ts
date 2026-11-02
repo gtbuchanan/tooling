@@ -44,9 +44,8 @@ const capabilities = (name: string): PackageCapabilities => ({
   hasSkills: false,
   hasSrc: false,
   hasTest: false,
-  isPublished: false,
+  manifest: {},
   name,
-  workspaceDependencies: [],
 });
 
 /*

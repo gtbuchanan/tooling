@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
@@ -18,9 +19,8 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
   it.for(sourceReaders)('%s waits on its dependencies\' generate', (task, { expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests]),
+        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests, published]),
         generateScripts: ['generate:test'],
-        isPublished: true,
       }),
     ]);
 
@@ -66,8 +66,7 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
   it.for(sourceReaders)('%s has no generate deps without generate scripts', (task, { expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests]),
-        isPublished: true,
+        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests, published]),
       }),
     ]);
 

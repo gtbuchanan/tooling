@@ -2,6 +2,7 @@ import { outDirGlob, skillsOutDirEntry } from '#src/core/dist-source.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
 import type { Leaf } from '#src/tasks/leaf.js';
 import { isRootTaskKey } from '#src/tasks/turbo-task.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
 
 /**
@@ -12,7 +13,7 @@ import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
  */
 export const compileSkillsLeaf: Leaf = {
   aggregate: Aggregate.compile,
-  appliesTo: pkg => pkg.isPublished && pkg.hasSkills,
+  appliesTo: pkg => pkg.capabilities.has(published) && pkg.hasSkills,
   name: 'compile:skills',
   task: () => ({
     inputs: ['skills/**'],

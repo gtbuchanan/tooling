@@ -3,9 +3,10 @@ import { describe, it } from 'vitest';
 import { discoverPackage } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
 import { capabilities } from '#src/toolchains/index.js';
+import { workspaceDependenciesOf } from '#src/toolchains/npm/manifest.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
-describe.concurrent('workspace dependency discovery', () => {
+describe.concurrent(workspaceDependenciesOf, () => {
   it('collects runtime workspace dependency names', ({ expect }) => {
     const dir = createTempDir();
     const dep = build.scopedPackageName();
@@ -13,7 +14,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([dep]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([dep]);
   });
 
   it('collects workspace peer and optional dependencies', ({ expect }) => {
@@ -27,7 +28,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies)
+    expect(workspaceDependenciesOf(result))
       .toStrictEqual([optional, peer].toSorted(localeComparer));
   });
 
@@ -41,7 +42,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([dep]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([dep]);
   });
 
   it('excludes devDependencies from workspace dependencies', ({ expect }) => {
@@ -52,7 +53,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([]);
   });
 
   it('excludes a workspace dependency the tarball bundles', ({ expect }) => {
@@ -66,7 +67,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([external]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([external]);
   });
 
   it('excludes a bundled workspace peer named explicitly', ({ expect }) => {
@@ -79,7 +80,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([]);
   });
 
   it('excludes the dependencies field when bundleDependencies is true', ({ expect }) => {
@@ -91,7 +92,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([]);
   });
 
   /*
@@ -110,7 +111,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([peer]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([peer]);
   });
 
   it('does not exempt an optional dependency when bundleDependencies is true', ({ expect }) => {
@@ -123,7 +124,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([optional]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([optional]);
   });
 
   it('honors the bundledDependencies alias', ({ expect }) => {
@@ -136,7 +137,7 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([]);
   });
 
   it('excludes registry-versioned runtime dependencies', ({ expect }) => {
@@ -147,6 +148,6 @@ describe.concurrent('workspace dependency discovery', () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.workspaceDependencies).toStrictEqual([]);
+    expect(workspaceDependenciesOf(result)).toStrictEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 import { outDirGlob, packNpmOutDirEntries } from '#src/core/dist-source.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
 import type { Leaf } from '#src/tasks/leaf.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { compileSkillsLeaf } from '#src/toolchains/skills/leaves.js';
 import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';
 
@@ -9,7 +10,7 @@ import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';
  */
 export const packNpmLeaf: Leaf = {
   aggregate: Aggregate.pack,
-  appliesTo: pkg => pkg.isPublished,
+  appliesTo: pkg => pkg.capabilities.has(published),
   name: 'pack:npm',
   task: graph => ({
     dependsOn: [

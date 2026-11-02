@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
@@ -91,7 +92,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('compile:ts depends on generate when generate exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ generateScripts: ['generate:test'], isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]), generateScripts: ['generate:test'] }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -142,7 +143,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes compile:ts when any package is published', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -188,7 +189,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits test:vitest:e2e when only a monorepo root has e2e config', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ isPublished: true })],
+      [makeCapabilities({ capabilities: new Set([published]) })],
       { capabilities: new Set([vitestE2e]), isMonorepo: true },
     );
 
@@ -202,7 +203,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes pack:npm when any package is published', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -213,7 +214,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits compile:skills from pack:npm dependsOn when no package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -224,7 +225,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes compile:skills in pack:npm dependsOn when any package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasSkills: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]), hasSkills: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -237,7 +238,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits compile:skills when no published package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ dir: '/fake/published', isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]), dir: '/fake/published' }),
       makeCapabilities({ dir: '/fake/skilled', hasSkills: true }),
     ]);
 
@@ -321,9 +322,8 @@ describe.concurrent(generateTurboJson, () => {
   it('generates build:ci with compile + check + pack', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript, vitestTests]),
+        capabilities: new Set([eslint, typescript, vitestTests, published]),
         hasTest: true,
-        isPublished: true,
       }),
     ]);
 
@@ -345,8 +345,8 @@ describe.concurrent(generateTurboJson, () => {
   it('compile:ts inputs derive from resolved buildIncludes', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
+        capabilities: new Set([published]),
         buildIncludes: ['bin', 'src', 'generated', '*.proto.ts'],
-        isPublished: true,
       }),
     ]);
 

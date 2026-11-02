@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
@@ -157,7 +158,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('test:vitest tasks gate on the compile aggregate, not the ts leaf', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests, published]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -184,7 +185,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
    */
   it('test:vitest:e2e depends on transit alongside its pack edges', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestE2e]), isPublished: true }),
+      makeCapabilities({ capabilities: new Set([vitestE2e, published]) }),
     ]);
 
     const result = generateTurboJson(discovery);

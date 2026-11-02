@@ -77,29 +77,6 @@ describe.concurrent(discoverPackage, () => {
     expect(result.hasE2e).toBe(true);
   });
 
-  it('detects published package', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      publishConfig: { directory: build.publishDirectory() },
-    });
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.isPublished).toBe(true);
-  });
-
-  it('private package is not published', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      private: true,
-      publishConfig: { directory: build.publishDirectory() },
-    });
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.isPublished).toBe(false);
-  });
-
   it('detects bin directory', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {});
@@ -188,7 +165,6 @@ describe.concurrent(discoverPackage, () => {
       hasScripts: false,
       hasSrc: false,
       hasTest: false,
-      isPublished: false,
     });
   });
 });

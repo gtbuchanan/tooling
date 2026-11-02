@@ -6,6 +6,7 @@ import { readJsonFile } from '#src/core/file-writer.js';
 import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { UnknownRecord } from '#src/core/schemas.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
 
 /**
@@ -235,7 +236,7 @@ const planPackageTsconfigs = (
     path: path.join(pkg.dir, 'tsconfig.build.json'),
   };
 
-  return pkg.isPublished ? [typeCheck, buildConfig] : [typeCheck];
+  return pkg.capabilities.has(published) ? [typeCheck, buildConfig] : [typeCheck];
 };
 
 /**

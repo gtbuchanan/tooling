@@ -17,9 +17,8 @@ export const makeCapabilities = (
     hasSkills: false,
     hasSrc: false,
     hasTest: false,
-    isPublished: false,
+    manifest: {},
     name: 'pkg',
-    workspaceDependencies: [] as readonly string[],
     ...overrides,
   };
   return {

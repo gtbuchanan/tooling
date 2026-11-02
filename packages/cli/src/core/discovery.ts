@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import type { Capability } from '#src/core/capability.js';
 import {
-  buildInclude, generateTaskPrefix, resolveBuildIncludes,
+  generateTaskPrefix, resolveBuildIncludes,
 } from '#src/core/layout.js';
 import type { Manifest } from '#src/core/manifest.js';
 import { localeComparer } from '#src/core/sort.js';
@@ -17,7 +17,8 @@ import {
  */
 export interface PackageCapabilities {
   /**
-   * Resolved `include` directories from tsconfig.build.json (published packages only).
+   * Resolved `include` directories from tsconfig.build.json, or the default
+   * build include when there is none. Only a published package compiles them.
    */
   readonly buildIncludes: readonly string[];
   /**
@@ -61,9 +62,10 @@ export interface PackageCapabilities {
    */
   readonly hasTest: boolean;
   /**
-   * Published package (not private, has publishConfig.directory).
+   * The package's `package.json`, or `{}` when it has none. A toolchain reads
+   * what it needs of it in a function beside the capabilities it declares.
    */
-  readonly isPublished: boolean;
+  readonly manifest: Manifest;
   /**
    * Manifest `name` (scoped, as declared), falling back to the directory
    * basename when the manifest declares none. Prefer this over the basename
@@ -72,21 +74,6 @@ export interface PackageCapabilities {
    * manifest name is stable across every checkout.
    */
   readonly name: string;
-  /**
-   * Names of workspace packages this package depends on *at install time*:
-   * every `workspace:` specifier in `dependencies`, `peerDependencies`, or
-   * `optionalDependencies` that the tarball doesn't ship itself. Sorted and
-   * deduplicated.
-   *
-   * All three fields survive publish and get pnpm's `workspace:` → concrete
-   * version rewrite at pack time, so each one can point a consumer at a
-   * version that was never published. `devDependencies` is excluded because
-   * publishing strips it — a build-time-only workspace package (one a bundler
-   * inlines, say) belongs there and is correctly invisible here. So is
-   * anything `bundleDependencies` actually bundles; see {@link
-   * bundledPredicate} for why that isn't the whole field.
-   */
-  readonly workspaceDependencies: readonly string[];
 }
 
 /**
@@ -161,64 +148,6 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
   ...manifest.devDependencies,
 });
 
-/**
- * Manifest fields a published tarball carries into a consumer's install.
- */
-const runtimeDependencyFields = [
-  'dependencies',
-  'optionalDependencies',
-  'peerDependencies',
-] as const;
-
-type RuntimeDependencyField = typeof runtimeDependencyFields[number];
-
-/**
- * The one field `bundleDependencies: true` covers.
- */
-const bundleAllField: RuntimeDependencyField = 'dependencies';
-
-/**
- * Builds the "does the tarball ship this itself?" predicate from
- * `bundleDependencies` (or its `bundledDependencies` alias). A bundled package
- * never resolves from the registry, so its specifier can't 404.
- *
- * The two forms bundle different things, measured against `pnpm pack`:
- * an explicit name list bundles that package out of whichever field declares
- * it, while `true` covers `dependencies` alone — a workspace peer or optional
- * dependency keeps its rewritten specifier but is left out of the tarball, so
- * treating `true` as "everything" would hide the exact breakage this feeds.
- *
- * (pnpm honors `bundleDependencies` only under `nodeLinker: hoisted`; it
- * hard-errors on the default isolated linker.)
- */
-const bundledPredicate = (
-  manifest: Manifest,
-): ((field: RuntimeDependencyField, name: string) => boolean) => {
-  const bundled = manifest.bundleDependencies ?? manifest.bundledDependencies;
-  if (bundled === undefined || bundled === false) {
-    return () => false;
-  }
-
-  if (bundled === true) {
-    return field => field === bundleAllField;
-  }
-
-  const names = new Set(bundled);
-
-  return (_field, name) => names.has(name);
-};
-
-const collectWorkspaceDependencies = (manifest: Manifest): readonly string[] => {
-  const isBundled = bundledPredicate(manifest);
-  const names = runtimeDependencyFields.flatMap(field =>
-    Object.entries(manifest[field] ?? {})
-      .filter(([name, spec]) => spec.startsWith('workspace:') && !isBundled(field, name))
-      .map(([name]) => name),
-  );
-
-  return [...new Set(names)].toSorted(localeComparer);
-};
-
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
     .filter(name => name.startsWith(generateTaskPrefix))
@@ -231,10 +160,9 @@ const buildCapabilities = (
 ): PackageCapabilities => {
   const files = listFiles(dir);
   const generateScripts = collectGenerateScripts(manifest);
-  const isPublished = manifest.private !== true && manifest.publishConfig?.directory !== undefined;
 
   return {
-    buildIncludes: isPublished ? resolveBuildIncludes(dir) : buildInclude,
+    buildIncludes: resolveBuildIncludes(dir),
     capabilities: new Set(capabilities.filter(capability =>
       capability.detect({ dir, entries: files, manifest }))),
     dir,
@@ -246,9 +174,8 @@ const buildCapabilities = (
     hasSkills: hasDir(dir, 'skills'),
     hasSrc: hasDir(dir, 'src'),
     hasTest: hasDir(dir, 'test'),
-    isPublished,
+    manifest,
     name: manifest.name ?? path.basename(dir),
-    workspaceDependencies: collectWorkspaceDependencies(manifest),
   };
 };
 

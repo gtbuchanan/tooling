@@ -9,6 +9,7 @@ import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { toTurboGlobs } from '#src/tasks/turbo-globs.js';
 import { topo } from '#src/tasks/turbo-task.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 
@@ -65,7 +66,7 @@ export const typecheckTsLeaf: Leaf = {
  * packages.
  */
 const compileIncludes = ({ packages }: WorkspaceDiscovery): readonly string[] =>
-  [...new Set(packages.flatMap(pkg => (pkg.isPublished ? pkg.buildIncludes : [])))]
+  [...new Set(packages.flatMap(pkg => (pkg.capabilities.has(published) ? pkg.buildIncludes : [])))]
     .toSorted(localeComparer);
 
 /*
@@ -86,7 +87,7 @@ const compileTsOutputs = (graph: TaskGraph): readonly string[] => [
  */
 export const compileTsLeaf: Leaf = {
   aggregate: Aggregate.compile,
-  appliesTo: pkg => pkg.isPublished,
+  appliesTo: pkg => pkg.capabilities.has(published),
   name: 'compile:ts',
   task: graph => ({
     dependsOn: [topo(compileTsLeaf.name), ...codegenDeps(graph)],

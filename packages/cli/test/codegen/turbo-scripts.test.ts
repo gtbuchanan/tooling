@@ -7,6 +7,7 @@ import {
 } from '#src/codegen/turbo-config.js';
 import type { PackageCapabilities } from '#src/core/discovery.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
@@ -32,7 +33,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates compile:ts for published packages', ({ expect }) => {
-    const caps = makeCapabilities({ isPublished: true });
+    const caps = makeCapabilities({ capabilities: new Set([published]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -123,9 +124,8 @@ describe.concurrent(generatePackageScripts, () => {
 describe.concurrent(generateRootScripts, () => {
   it('includes aliases and required scripts', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
-      capabilities: new Set([eslint, typescript, vitestTests]),
+      capabilities: new Set([eslint, typescript, vitestTests, published]),
       hasTest: true,
-      isPublished: true,
     }));
 
     const result = generateRootScripts(discovery);
@@ -138,7 +138,7 @@ describe.concurrent(generateRootScripts, () => {
 
   it('routes aliases through pnpm run gtb in self-hosted repos', ({ expect }) => {
     const discovery = makeDiscovery(
-      monorepoOf({ capabilities: new Set([eslint, typescript]), isPublished: true }),
+      monorepoOf({ capabilities: new Set([eslint, typescript, published]) }),
       { isSelfHosted: true },
     );
 
@@ -149,7 +149,7 @@ describe.concurrent(generateRootScripts, () => {
   });
 
   it('generates pack alias when published packages exist', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ isPublished: true }));
+    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([published]) }));
 
     const result = generateRootScripts(discovery);
 
@@ -196,10 +196,11 @@ describe.concurrent(generateRootScripts, () => {
   it('omits every turbo alias in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests, pklSource, pklPackage]),
+        capabilities: new Set([
+          eslint, pklPackage, pklSource, published, typescript, vitestE2e, vitestTests,
+        ]),
         hasSkills: true,
         hasTest: true,
-        isPublished: true,
       }),
     ]);
 
@@ -213,9 +214,8 @@ describe.concurrent(forbiddenRootScripts, () => {
   it('lists the aggregates a single-package repo must not shadow', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript, vitestTests]),
+        capabilities: new Set([eslint, typescript, vitestTests, published]),
         hasTest: true,
-        isPublished: true,
       }),
     ]);
 
@@ -237,9 +237,8 @@ describe.concurrent(forbiddenRootScripts, () => {
 
   it('lists nothing for monorepos, where the aliases are legitimate', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
-      capabilities: new Set([eslint, typescript, vitestTests]),
+      capabilities: new Set([eslint, typescript, vitestTests, published]),
       hasTest: true,
-      isPublished: true,
     }));
 
     expect(forbiddenRootScripts(discovery)).toStrictEqual([]);
@@ -250,8 +249,7 @@ describe.concurrent(generateRequiredRootScripts, () => {
   it('returns only prepare and verify in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript]),
-        isPublished: true,
+        capabilities: new Set([eslint, typescript, published]),
       }),
     ]);
 

@@ -1,5 +1,6 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 /*
@@ -10,7 +11,7 @@ import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.help
 describe.concurrent('generateTurboJson (dist/source ownership)', () => {
   it('hashes no path under the output directory in pack:npm inputs', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasSkills: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]), hasSkills: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -22,7 +23,7 @@ describe.concurrent('generateTurboJson (dist/source ownership)', () => {
 
   it('claims every file it writes as a pack:npm output', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -37,7 +38,7 @@ describe.concurrent('generateTurboJson (dist/source ownership)', () => {
 
   it('excludes the pack:npm-owned files from compile:ts outputs', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -53,7 +54,7 @@ describe.concurrent('generateTurboJson (dist/source ownership)', () => {
 
   it('excludes the compile:skills subtree from compile:ts outputs', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasSkills: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([published]), hasSkills: true }),
     ]);
 
     const result = generateTurboJson(discovery);

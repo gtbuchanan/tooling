@@ -1,4 +1,9 @@
+import type { PackageCapabilities } from '#src/core/discovery.js';
 import type { CheckContext } from '#src/tasks/toolchain.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
+import { workspaceDependenciesOf } from '#src/toolchains/npm/manifest.js';
+
+const isPublished = (pkg: PackageCapabilities): boolean => pkg.capabilities.has(published);
 
 /**
  * Flags a published package that declares a *private* workspace package among
@@ -22,12 +27,17 @@ export const checkPublishableDependencies = (
      resolve to it. It isn't in `packages` in a monorepo, so index it
      separately; in a single-package repo it *is* `packages[0]` and dedupes. */
   const byName = new Map([root, ...packages].map(pkg => [pkg.name, pkg]));
+  const isPrivateWorkspacePackage = (name: string): boolean => {
+    const pkg = byName.get(name);
+
+    return pkg !== undefined && !isPublished(pkg);
+  };
 
   return packages
-    .filter(pkg => pkg.isPublished)
+    .filter(isPublished)
     .flatMap(pkg =>
-      pkg.workspaceDependencies
-        .filter(dep => byName.get(dep)?.isPublished === false)
+      workspaceDependenciesOf(pkg)
+        .filter(isPrivateWorkspacePackage)
         .map(dep =>
           `${pkg.dir}: dependency '${dep}' is a private workspace package — ` +
           'publish it, or move it to devDependencies if it is bundled at build time'));
