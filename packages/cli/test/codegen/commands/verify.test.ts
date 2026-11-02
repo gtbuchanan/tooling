@@ -10,6 +10,7 @@ import {
 } from '#src/codegen/turbo-config.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import { writeJsonFile } from '#src/core/file-writer.js';
+import { capabilities } from '#src/toolchains/index.js';
 import {
   captureLogger, createTempDir, initProject, readScripts, readTurboTasks, writeJson,
 } from '#test/helpers.js';
@@ -71,7 +72,7 @@ describe.concurrent('verify drift detection', () => {
     const { root } = createConsumerProject();
     initProject(root);
 
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
     const expected = generateTurboJson(discovery);
     const actual = readTurboTasks(root);
 
@@ -88,7 +89,7 @@ describe.concurrent('verify drift detection', () => {
     delete tasks['typecheck:ts'];
     writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
 
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
     const expected = generateTurboJson(discovery);
     const actual = readTurboTasks(root);
     const missing = Object.keys(expected.tasks).filter(name => !Object.hasOwn(actual, name));
@@ -104,7 +105,7 @@ describe.concurrent('verify drift detection', () => {
     delete scripts['typecheck:ts'];
     writeJson(app.dir, 'package.json', { name: app.name, scripts });
 
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
     const pkg = discovery.packages[0]!;
     const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
     const actual = readScripts(app.dir);
@@ -121,7 +122,7 @@ describe.concurrent('verify drift detection', () => {
     scripts['typecheck:ts'] = faker.lorem.words({ min: 1, max: 3 });
     writeJson(app.dir, 'package.json', { name: app.name, scripts });
 
-    const discovery = discoverWorkspace({ cwd: root });
+    const discovery = discoverWorkspace({ capabilities, cwd: root });
     const pkg = discovery.packages[0]!;
     const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
     const actual = readScripts(app.dir);

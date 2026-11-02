@@ -1,6 +1,7 @@
 import { discoverWorkspace } from '#src/core/discovery.js';
 import { readParsedManifest } from '#src/core/workspace.js';
 import { type GithubReleaseDeps, publishReleases } from '#src/release/github-release.js';
+import { capabilities } from '#src/toolchains/index.js';
 
 /**
  * Creates a GitHub release for every published npm package's current version,
@@ -13,7 +14,7 @@ import { type GithubReleaseDeps, publishReleases } from '#src/release/github-rel
  * npm registry hosts the artifact; the release is the tag + notes.
  */
 export const executePublishNpmReleases = async (deps: GithubReleaseDeps): Promise<void> => {
-  const discovery = discoverWorkspace({ cwd: deps.cwd });
+  const discovery = discoverWorkspace({ capabilities, cwd: deps.cwd });
   const packages = discovery.packages.filter(pkg => pkg.isPublished);
   if (packages.length === 0) {
     deps.logger.info('no published npm packages to release');

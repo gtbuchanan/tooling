@@ -1,5 +1,6 @@
 import { describe, it } from 'vitest';
 import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
+import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent(generateTurboJson, () => {
@@ -98,7 +99,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('lint:eslint depends on generate when generate exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ generateScripts: ['generate:test'], hasEslint: true }),
+      makeCapabilities({ generateScripts: ['generate:test'], capabilities: new Set([eslint]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -148,9 +149,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('includes lint:eslint when any package has ESLint', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true }),
-    ]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -158,9 +157,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('lint:eslint includes root config in inputs', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true }),
-    ]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
     const task = result.tasks['lint:eslint'];
@@ -169,9 +166,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('lint:eslint includes eslint cache in outputs', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true }),
-    ]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
     const task = result.tasks['lint:eslint'];
@@ -273,7 +268,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes lint:eslint in deploy:skills dependsOn when ESLint exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true, hasSkills: true }),
+      makeCapabilities({ capabilities: new Set([eslint]), hasSkills: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -282,9 +277,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('prunes typecheck:ts from lint dependsOn when no TypeScript', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true }),
-    ]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
     const lintEslint = result.tasks['lint:eslint'];
@@ -294,7 +287,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes typecheck:ts in lint dependsOn when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true, hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([eslint]), hasTypeScript: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -306,7 +299,7 @@ describe.concurrent(generateTurboJson, () => {
   it('generates check aggregate with discovered leaf tasks', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        hasEslint: true,
+        capabilities: new Set([eslint]),
         hasTest: true,
         hasTypeScript: true,
         hasVitest: true,
@@ -320,9 +313,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('generates lint aggregate from discovered linters', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true }),
-    ]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -340,7 +331,7 @@ describe.concurrent(generateTurboJson, () => {
   it('generates build:ci with compile + check + pack', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        hasEslint: true,
+        capabilities: new Set([eslint]),
         hasTest: true,
         hasTypeScript: true,
         hasVitest: true,

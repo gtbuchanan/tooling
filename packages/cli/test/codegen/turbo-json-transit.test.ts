@@ -1,5 +1,6 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson (transit)', () => {
@@ -24,7 +25,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   });
 
   it('includes the transit node when ESLint exists alone', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasEslint: true })]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -46,8 +47,11 @@ describe.concurrent('generateTurboJson (transit)', () => {
    */
   it('//#lint:eslint depends on the root\'s workspace dependencies', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasEslint: true }), makeCapabilities({ hasEslint: true })],
-      { hasEslint: true },
+      [
+        makeCapabilities({ capabilities: new Set([eslint]) }),
+        makeCapabilities({ capabilities: new Set([eslint]) }),
+      ],
+      { capabilities: new Set([eslint]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -69,7 +73,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   it('includes the transit node when only the root lints', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ hasPkl: true }), makeCapabilities({ hasPkl: true })],
-      { hasEslint: true },
+      { capabilities: new Set([eslint]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -112,7 +116,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
    * and one that isn't generated at all without TypeScript.
    */
   it('lint:eslint depends on transit with no typecheck:ts to inherit from', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasEslint: true })]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -121,7 +125,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('lint:eslint keeps both edges when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasEslint: true, hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([eslint]), hasTypeScript: true }),
     ]);
 
     const result = generateTurboJson(discovery);

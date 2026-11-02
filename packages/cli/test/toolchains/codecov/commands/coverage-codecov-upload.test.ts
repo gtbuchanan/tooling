@@ -34,11 +34,11 @@ vi.mock(import('#src/core/process.js'), async (importOriginal) => {
  */
 const capabilities = (name: string): PackageCapabilities => ({
   buildIncludes: [],
+  capabilities: new Set(),
   dir: faker.system.directoryPath(),
   generateScripts: [],
   hasBin: false,
   hasE2e: false,
-  hasEslint: false,
   hasGenerate: false,
   hasPkl: false,
   hasPklPackage: false,
@@ -168,7 +168,7 @@ describe('coverage:codecov:upload', () => {
 
     await invoke([]);
 
-    expect(mockDiscoverPackage).toHaveBeenCalledWith(process.cwd());
+    expect(mockDiscoverPackage).toHaveBeenCalledWith(process.cwd(), []);
   });
 
   it('passes network root from GITHUB_WORKSPACE', async ({ expect }) => {

@@ -7,6 +7,7 @@ import {
 import { rootNames } from '#src/core/command-names.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
+import { capabilities } from '#src/toolchains/index.js';
 
 /**
  * Options for {@link runSync}.
@@ -33,7 +34,7 @@ export interface RunSyncOptions {
 export const runSync = (options: RunSyncOptions = {}): void => {
   const scopes = options.scopes ?? new Set(syncScopes);
   const context: SyncContext = {
-    discovery: discoverWorkspace({ cwd: options.cwd ?? process.cwd() }),
+    discovery: discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() }),
     force: options.force ?? false,
     logger: options.logger ?? createLogger(),
   };

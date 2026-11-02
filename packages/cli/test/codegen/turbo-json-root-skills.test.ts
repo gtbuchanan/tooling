@@ -1,5 +1,6 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const monorepoWithRootSkills = (): ReturnType<typeof makeDiscovery> =>
@@ -53,8 +54,8 @@ describe.concurrent('generateTurboJson — root skills', () => {
 
   it('//#deploy:skills depends on //#lint:eslint when the root lints', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasEslint: true }), makeCapabilities()],
-      { hasEslint: true, hasSkills: true },
+      [makeCapabilities({ capabilities: new Set([eslint]) }), makeCapabilities()],
+      { capabilities: new Set([eslint]), hasSkills: true },
     );
 
     const result = generateTurboJson(discovery);
@@ -64,7 +65,7 @@ describe.concurrent('generateTurboJson — root skills', () => {
 
   it('//#deploy:skills has no lint dep when the root has no ESLint', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasEslint: true }), makeCapabilities()],
+      [makeCapabilities({ capabilities: new Set([eslint]) }), makeCapabilities()],
       { hasSkills: true },
     );
 
