@@ -9,6 +9,7 @@ import type { PackageCapabilities } from '#src/core/discovery.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
+import { skills } from '#src/toolchains/skills/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
@@ -174,7 +175,7 @@ describe.concurrent(generateRootScripts, () => {
   });
 
   it('generates the deploy:skills alias for monorepos with skills', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ hasSkills: true }));
+    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([skills]) }));
 
     const result = generateRootScripts(discovery);
 
@@ -186,7 +187,10 @@ describe.concurrent(generateRootScripts, () => {
    * so the root can't also carry the alias — it would re-enter turbo.
    */
   it('omits the deploy:skills alias when the root owns the leaf', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ hasSkills: true }), { hasSkills: true });
+    const discovery = makeDiscovery(
+      monorepoOf({ capabilities: new Set([skills]) }),
+      { capabilities: new Set([skills]) },
+    );
 
     const result = generateRootScripts(discovery);
 
@@ -197,9 +201,8 @@ describe.concurrent(generateRootScripts, () => {
     const discovery = makeDiscovery([
       makeCapabilities({
         capabilities: new Set([
-          eslint, pklPackage, pklSource, published, typescript, vitestE2e, vitestTests,
+          eslint, pklPackage, pklSource, published, skills, typescript, vitestE2e, vitestTests,
         ]),
-        hasSkills: true,
         hasTest: true,
       }),
     ]);
@@ -230,7 +233,7 @@ describe.concurrent(forbiddenRootScripts, () => {
    * contradict each other.
    */
   it('excludes deploy:skills, which the root legitimately owns', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasSkills: true })]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([skills]) })]);
 
     expect(forbiddenRootScripts(discovery)).toStrictEqual([]);
   });
@@ -278,7 +281,7 @@ describe.concurrent(generateRequiredRootScripts, () => {
   });
 
   it('adds root deploy:skills when monorepo root has skills', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf(), { hasSkills: true });
+    const discovery = makeDiscovery(monorepoOf(), { capabilities: new Set([skills]) });
 
     const result = generateRequiredRootScripts(discovery);
 
@@ -286,7 +289,7 @@ describe.concurrent(generateRequiredRootScripts, () => {
   });
 
   it('omits root deploy:skills when only packages have skills', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ hasSkills: true }));
+    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([skills]) }));
 
     const result = generateRequiredRootScripts(discovery);
 

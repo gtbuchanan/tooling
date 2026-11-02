@@ -3,6 +3,7 @@ import { createTaskGraph, leafTasks } from '#src/tasks/graph.js';
 import type { Leaf } from '#src/tasks/leaf.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { pklSource } from '#src/toolchains/pkl/capabilities.js';
+import { skills } from '#src/toolchains/skills/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const pklLeaf: Leaf = {
@@ -25,7 +26,7 @@ const eslintLeaf: Leaf = {
 
 const skillsLeaf: Leaf = {
   aggregate: 'lint',
-  appliesTo: pkg => pkg.hasSkills,
+  appliesTo: pkg => pkg.capabilities.has(skills),
   name: 'lint:skills',
   task: () => ({}),
 };
@@ -92,7 +93,7 @@ describe.concurrent('createTaskGraph membersOf', () => {
     const discovery = makeDiscovery(
       [
         makeCapabilities({ capabilities: new Set([eslint]) }),
-        makeCapabilities({ hasSkills: true }),
+        makeCapabilities({ capabilities: new Set([skills]) }),
       ],
       { capabilities: new Set([eslint]), isMonorepo: true },
     );
@@ -104,7 +105,7 @@ describe.concurrent('createTaskGraph membersOf', () => {
 
   it('leaves out members that apply nowhere', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([pklSource]), hasSkills: true }),
+      makeCapabilities({ capabilities: new Set([pklSource, skills]) }),
     ]);
 
     const graph = createTaskGraph(leaves, discovery);

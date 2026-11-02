@@ -14,7 +14,6 @@ export const makeCapabilities = (
     hasE2e: false,
     hasGenerate: false,
     hasScripts: false,
-    hasSkills: false,
     hasSrc: false,
     hasTest: false,
     manifest: {},

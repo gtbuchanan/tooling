@@ -50,10 +50,6 @@ export interface PackageCapabilities {
    */
   readonly hasScripts: boolean;
   /**
-   * Has a `skills/` directory containing authored Agent Skills.
-   */
-  readonly hasSkills: boolean;
-  /**
    * Has a `src/` directory.
    */
   readonly hasSrc: boolean;
@@ -171,7 +167,6 @@ const buildCapabilities = (
     hasE2e: hasDir(dir, 'e2e'),
     hasGenerate: generateScripts.length > 0,
     hasScripts: hasDir(dir, 'scripts'),
-    hasSkills: hasDir(dir, 'skills'),
     hasSrc: hasDir(dir, 'src'),
     hasTest: hasDir(dir, 'test'),
     manifest,

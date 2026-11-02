@@ -1,12 +1,13 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { skills } from '#src/toolchains/skills/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const monorepoWithRootSkills = (): ReturnType<typeof makeDiscovery> =>
   makeDiscovery(
     [makeCapabilities(), makeCapabilities()],
-    { hasSkills: true },
+    { capabilities: new Set([skills]) },
   );
 
 describe.concurrent('generateTurboJson — root skills', () => {
@@ -18,8 +19,8 @@ describe.concurrent('generateTurboJson — root skills', () => {
 
   it('omits //#deploy:skills in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasSkills: true })],
-      { hasSkills: true },
+      [makeCapabilities({ capabilities: new Set([skills]) })],
+      { capabilities: new Set([skills]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -30,7 +31,7 @@ describe.concurrent('generateTurboJson — root skills', () => {
 
   it('omits //#deploy:skills when monorepo root has no skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasSkills: true }),
+      makeCapabilities({ capabilities: new Set([skills]) }),
       makeCapabilities(),
     ]);
 
@@ -55,7 +56,7 @@ describe.concurrent('generateTurboJson — root skills', () => {
   it('//#deploy:skills depends on //#lint:eslint when the root lints', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ capabilities: new Set([eslint]) }), makeCapabilities()],
-      { capabilities: new Set([eslint]), hasSkills: true },
+      { capabilities: new Set([eslint, skills]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -66,7 +67,7 @@ describe.concurrent('generateTurboJson — root skills', () => {
   it('//#deploy:skills has no lint dep when the root has no ESLint', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ capabilities: new Set([eslint]) }), makeCapabilities()],
-      { hasSkills: true },
+      { capabilities: new Set([skills]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -82,8 +83,8 @@ describe.concurrent('generateTurboJson — root skills', () => {
 
   it('build depends on both copies when root and packages have skills', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasSkills: true }), makeCapabilities()],
-      { hasSkills: true },
+      [makeCapabilities({ capabilities: new Set([skills]) }), makeCapabilities()],
+      { capabilities: new Set([skills]) },
     );
 
     const result = generateTurboJson(discovery);

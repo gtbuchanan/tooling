@@ -2,6 +2,7 @@ import { describe, it } from 'vitest';
 import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
+import { skills } from '#src/toolchains/skills/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
@@ -225,7 +226,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes compile:skills in pack:npm dependsOn when any package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]), hasSkills: true }),
+      makeCapabilities({ capabilities: new Set([published, skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -239,7 +240,7 @@ describe.concurrent(generateTurboJson, () => {
   it('omits compile:skills when no published package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({ capabilities: new Set([published]), dir: '/fake/published' }),
-      makeCapabilities({ dir: '/fake/skilled', hasSkills: true }),
+      makeCapabilities({ capabilities: new Set([skills]), dir: '/fake/skilled' }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -251,7 +252,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits lint:eslint from deploy:skills dependsOn when no package has ESLint', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasSkills: true }),
+      makeCapabilities({ capabilities: new Set([skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -261,7 +262,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes lint:eslint in deploy:skills dependsOn when ESLint exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([eslint]), hasSkills: true }),
+      makeCapabilities({ capabilities: new Set([eslint, skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);

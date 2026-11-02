@@ -3,6 +3,7 @@ import { Aggregate } from '#src/tasks/aggregates.js';
 import type { Leaf } from '#src/tasks/leaf.js';
 import { isRootTaskKey } from '#src/tasks/turbo-task.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
+import { skills } from '#src/toolchains/skills/capabilities.js';
 import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
 
 /**
@@ -13,7 +14,7 @@ import { skillsConfigFilename } from '#src/toolchains/skills/skills-config.js';
  */
 export const compileSkillsLeaf: Leaf = {
   aggregate: Aggregate.compile,
-  appliesTo: pkg => pkg.capabilities.has(published) && pkg.hasSkills,
+  appliesTo: pkg => pkg.capabilities.has(published) && pkg.capabilities.has(skills),
   name: 'compile:skills',
   task: () => ({
     inputs: ['skills/**'],
@@ -26,7 +27,7 @@ export const compileSkillsLeaf: Leaf = {
  */
 export const deploySkillsLeaf: Leaf = {
   aggregate: Aggregate.build,
-  appliesTo: pkg => pkg.hasSkills,
+  appliesTo: pkg => pkg.capabilities.has(skills),
   name: 'deploy:skills',
   /*
    * The root's own copy, for skills that can't move into a package: consumers
@@ -36,7 +37,7 @@ export const deploySkillsLeaf: Leaf = {
    * rooted, so neither can reach a package's `skills/`.
    */
   root: {
-    appliesTo: discovery => discovery.root.hasSkills,
+    appliesTo: discovery => discovery.root.capabilities.has(skills),
     task: graph => ({
       dependsOn: graph.membersOf(Aggregate.lint).filter(isRootTaskKey),
       inputs: [skillsConfigFilename, 'skills/**'],
