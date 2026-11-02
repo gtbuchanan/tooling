@@ -1,7 +1,15 @@
 import { defineCommand } from 'citty';
 import { describe, it } from 'vitest';
+import { discoverWorkspace } from '#src/core/discovery.js';
 import type { Leaf } from '#src/tasks/leaf.js';
-import { type Toolchain, taskSubCommands, toolchainLeaves } from '#src/tasks/toolchain.js';
+import {
+  type CheckContext,
+  type Toolchain,
+  taskSubCommands,
+  toolchainChecks,
+  toolchainLeaves,
+} from '#src/tasks/toolchain.js';
+import { createTempDir, writeJson } from '#test/helpers.js';
 
 const makeLeaf = (name: string): Leaf => ({
   appliesTo: () => true,
@@ -81,5 +89,28 @@ describe.concurrent(taskSubCommands, () => {
     ];
 
     expect(() => taskSubCommands(toolchains)).toThrow(/lint:eslint/v);
+  });
+});
+
+const makeContext = (): CheckContext => {
+  const root = createTempDir();
+  writeJson(root, 'package.json', { name: 'root' });
+  return { discovery: discoverWorkspace({ cwd: root }) };
+};
+
+describe.concurrent(toolchainChecks, () => {
+  it('reports every toolchain\'s messages, in registry order', ({ expect }) => {
+    const context = makeContext();
+    const toolchains: readonly Toolchain[] = [
+      { checks: ({ discovery }) => [`npm: ${discovery.rootDir}`], registrations: [] },
+      { registrations: [] },
+      { checks: () => ['eslint: first', 'eslint: second'], registrations: [] },
+    ];
+
+    expect(toolchainChecks(toolchains, context)).toStrictEqual([
+      `npm: ${context.discovery.rootDir}`,
+      'eslint: first',
+      'eslint: second',
+    ]);
   });
 });
