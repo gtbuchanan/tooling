@@ -1,38 +1,12 @@
-import { existsSync, statSync } from 'node:fs';
-import path from 'node:path';
 import { defineCommand } from 'citty';
-import * as v from 'valibot';
-import { checkGenerateConfigs } from '#src/codegen/generate-tasks.js';
-import { checkManifests } from '#src/codegen/manifest-sync.js';
-import { checkMiseTasksInclude } from '#src/codegen/mise-tasks.js';
+import type { VerifyContext } from '#src/codegen/generator.js';
+import { generators } from '#src/codegen/generators/index.js';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '#src/codegen/sync-scopes.js';
-import {
-  type GeneratedTsconfig,
-  planTsconfigs,
-  readUserCompilerOptions,
-  tsconfigBaseFileName,
-} from '#src/codegen/tsconfig-gen.js';
-import {
-  type TurboJson,
-  forbiddenRootScripts,
-  generatePackageScripts,
-  generateRequiredRootScripts,
-  generateTurboJson,
-} from '#src/codegen/turbo-config.js';
 import { rootNames } from '#src/core/command-names.js';
-import { type WorkspaceDiscovery, discoverWorkspace, vendoredCli } from '#src/core/discovery.js';
-import { readJsonFile } from '#src/core/file-writer.js';
+import { discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
-import { StringArray, UnknownRecord } from '#src/core/schemas.js';
-import { readParsedManifest } from '#src/core/workspace.js';
-import { toolchainChecks } from '#src/tasks/toolchain.js';
-import { toolchains } from '#src/toolchains/index.js';
-
-const TurboJsonSchema = v.looseObject({
-  tasks: v.optional(UnknownRecord),
-});
 
 /**
  * Parses `--ignore <name>` flags from raw CLI args.
@@ -52,160 +26,6 @@ export const parseIgnoreArgs = (args: readonly string[]): ReadonlySet<string> =>
   return ignored;
 };
 
-const checkTurboTasks = (
-  rootDir: string,
-  expected: TurboJson,
-  ignored: ReadonlySet<string>,
-): readonly string[] => {
-  const filePath = path.join(rootDir, 'turbo.json');
-  if (!existsSync(filePath)) {
-    return ['turbo.json is missing (run gtb sync)'];
-  }
-
-  const raw = readJsonFile(filePath);
-  const result = v.safeParse(TurboJsonSchema, raw);
-  if (!result.success) {
-    return ['turbo.json: failed to parse'];
-  }
-
-  const { tasks } = result.output;
-
-  return Object.keys(expected.tasks)
-    .filter(name => !ignored.has(name))
-    .filter(name => tasks === undefined || !Object.hasOwn(tasks, name))
-    .map(name => `turbo.json: missing task '${name}'`);
-};
-
-const tryReadScripts = (dir: string): Record<string, string> | undefined => {
-  try {
-    return readParsedManifest(dir).scripts;
-  } catch {
-    return undefined;
-  }
-};
-
-const checkScripts = (
-  dir: string,
-  expected: Record<string, string>,
-  ignored: ReadonlySet<string>,
-): readonly string[] => {
-  const scripts = tryReadScripts(dir);
-
-  return Object.keys(expected)
-    .filter(name => !ignored.has(name))
-    .filter(name => scripts === undefined || !Object.hasOwn(scripts, name))
-    .map(name => `${dir}: missing script '${name}'`);
-};
-
-const TsconfigCheckSchema = v.looseObject({
-  compilerOptions: v.optional(UnknownRecord),
-  extends: v.optional(v.string()),
-  include: v.optional(StringArray),
-});
-
-const checkOwnedCompilerOptions = (
-  filePath: string,
-  actual: Record<string, unknown> | undefined,
-  expected: GeneratedTsconfig,
-  ownedKeys: Readonly<Record<string, unknown>>,
-): readonly string[] =>
-  Object.keys(ownedKeys)
-    .filter(key => actual?.[key] !== expected.compilerOptions[key])
-    .map((key) => {
-      const want = String(expected.compilerOptions[key]);
-      return `${filePath}: compilerOptions.${key} should be ${want}`;
-    });
-
-const checkTsconfigStructure = (
-  filePath: string,
-  expected: GeneratedTsconfig,
-  ownedKeys: Readonly<Record<string, unknown>>,
-): readonly string[] => {
-  const result = v.safeParse(TsconfigCheckSchema, readJsonFile(filePath));
-  if (!result.success) {
-    return [`${filePath}: failed to parse`];
-  }
-
-  const actual = result.output;
-
-  return [
-    ...(actual.extends === expected.extends
-      ? []
-      : [`${filePath}: extends should be '${expected.extends}'`]),
-    ...(expected.include === undefined ||
-      JSON.stringify(actual.include) === JSON.stringify(expected.include)
-      ? []
-      : [`${filePath}: include should be ${JSON.stringify(expected.include)}`]),
-    ...checkOwnedCompilerOptions(filePath, actual.compilerOptions, expected, ownedKeys),
-  ];
-};
-
-const checkTsconfigFile = (
-  filePath: string,
-  expected: GeneratedTsconfig,
-  ownedKeys: Readonly<Record<string, unknown>>,
-): readonly string[] =>
-  existsSync(filePath)
-    ? checkTsconfigStructure(filePath, expected, ownedKeys)
-    : [`${filePath}: missing (run gtb sync)`];
-
-/*
- * The base tsconfig is hand-authored (the consumer's variant choice), so only
- * that a file exists is verified — its contents are theirs to own. A missing or
- * non-file path silently breaks every generated config's `extends`, which is
- * the gap this catches.
- */
-const checkTsconfigBase = (rootDir: string): readonly string[] => {
-  const filePath = path.join(rootDir, tsconfigBaseFileName);
-  const stats = statSync(filePath, { throwIfNoEntry: false });
-  if (stats === undefined) {
-    return [`${filePath}: missing (run gtb sync)`];
-  }
-
-  return stats.isFile() ? [] : [`${filePath}: must be a file (run gtb sync)`];
-};
-
-const checkTsconfigs = (
-  { rootDir, packages }: WorkspaceDiscovery,
-): readonly string[] => [
-  ...checkTsconfigBase(rootDir),
-  ...planTsconfigs(rootDir, packages).flatMap(({ path: filePath, generate, ownedKeys }) =>
-    checkTsconfigFile(filePath, generate(readUserCompilerOptions(filePath)), ownedKeys),
-  ),
-];
-
-/**
- * Flags root scripts that shadow a turbo aggregate. Only single-package repos
- * can hit this — see `forbiddenRootScripts`. Unlike every other check here the
- * drift is a script's *presence*, so the fix is deletion, not `gtb sync`.
- */
-const checkShadowedAggregates = (
-  discovery: WorkspaceDiscovery,
-  ignored: ReadonlySet<string>,
-): readonly string[] => {
-  const scripts = tryReadScripts(discovery.rootDir);
-
-  return forbiddenRootScripts(discovery)
-    .filter(name => !ignored.has(name))
-    .filter(name => scripts !== undefined && Object.hasOwn(scripts, name))
-    .map(name =>
-      `${discovery.rootDir}: script '${name}' shadows the turbo task of the ` +
-      `same name — delete it and run 'gtb turbo run ${name}' instead`);
-};
-
-const checkAllScripts = (
-  discovery: WorkspaceDiscovery,
-  ignored: ReadonlySet<string>,
-): readonly string[] => [
-  ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
-  ...checkShadowedAggregates(discovery, ignored),
-  ...discovery.packages.flatMap(pkg => checkScripts(
-    pkg.dir,
-    generatePackageScripts(pkg, discovery.isSelfHosted, vendoredCli(discovery)?.dir),
-    ignored,
-  )),
-];
-
 /**
  * Options for {@link runVerify}.
  */
@@ -224,28 +44,13 @@ export interface RunVerifyOptions {
  * self-skips when the repo lacks that tool.
  */
 export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
-  const cwd = options.cwd ?? process.cwd();
-  const ignored = options.ignored ?? new Set<string>();
   const scopes = options.scopes ?? new Set(syncScopes);
-  const discovery = discoverWorkspace({ cwd });
-
-  const checks: Record<SyncScope, () => readonly string[]> = {
-    manifest: () => [
-      ...checkManifests(discovery),
-      /* Toolchain checks are workspace rules over the manifests rather than
-         generated config, so they ride the manifest scope. */
-      ...toolchainChecks(toolchains, { discovery }),
-    ],
-    mise: () => (discovery.hasMise ? checkMiseTasksInclude(discovery.rootDir) : []),
-    scripts: () => checkAllScripts(discovery, ignored),
-    tsconfig: () => checkTsconfigs(discovery),
-    turbo: () => [
-      ...checkTurboTasks(discovery.rootDir, generateTurboJson(discovery), ignored),
-      ...checkGenerateConfigs(discovery, ignored),
-    ],
+  const context: VerifyContext = {
+    discovery: discoverWorkspace({ cwd: options.cwd ?? process.cwd() }),
+    ignored: options.ignored ?? new Set<string>(),
   };
 
-  return syncScopes.flatMap(scope => (scopes.has(scope) ? checks[scope]() : []));
+  return syncScopes.flatMap(scope => (scopes.has(scope) ? generators[scope].verify(context) : []));
 };
 
 /**

@@ -1,138 +1,12 @@
-import { statSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
 import { defineCommand } from 'citty';
-import { generateManifests } from '#src/codegen/manifest-sync.js';
-import { generateMiseTasks, miseTasksFileName } from '#src/codegen/mise-tasks.js';
+import type { SyncContext } from '#src/codegen/generator.js';
+import { generators } from '#src/codegen/generators/index.js';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '#src/codegen/sync-scopes.js';
-import {
-  generateTsconfigBase,
-  planTsconfigs,
-  readUserCompilerOptions,
-  tsconfigBaseFileName,
-} from '#src/codegen/tsconfig-gen.js';
-import {
-  generatePackageScripts,
-  generateRootScripts,
-  generateTurboJson,
-} from '#src/codegen/turbo-config.js';
 import { rootNames } from '#src/core/command-names.js';
-import {
-  type PackageCapabilities, type WorkspaceDiscovery, discoverWorkspace, vendoredCli,
-} from '#src/core/discovery.js';
-import {
-  type MergeResult, mergePackageScripts, sortKeysDeep, writeJsonFile,
-} from '#src/core/file-writer.js';
+import { discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
-
-const logMergeResult = (logger: Logger, label: string, result: MergeResult): void => {
-  if (result.added.length > 0) {
-    logger.info(`${label}: added ${result.added.join(', ')}`);
-  }
-  if (result.skipped.length > 0) {
-    logger.info(`${label}: skipped ${result.skipped.join(', ')}`);
-  }
-};
-
-const writeSortedAndLog = (logger: Logger, filePath: string, data: object): void => {
-  writeJsonFile(filePath, sortKeysDeep(data));
-  logger.info(`wrote ${filePath}`);
-};
-
-const writeRootScripts = (
-  logger: Logger, discovery: WorkspaceDiscovery, shouldForce: boolean,
-): void => {
-  const rootPkgPath = path.join(discovery.rootDir, 'package.json');
-  logMergeResult(
-    logger,
-    'root',
-    mergePackageScripts(rootPkgPath, generateRootScripts(discovery), shouldForce),
-  );
-};
-
-const writePackageScripts = (
-  logger: Logger,
-  pkg: PackageCapabilities,
-  discovery: WorkspaceDiscovery,
-  shouldForce: boolean,
-): void => {
-  const scripts = generatePackageScripts(
-    pkg, discovery.isSelfHosted, vendoredCli(discovery)?.dir,
-  );
-  if (Object.keys(scripts).length === 0) {
-    return;
-  }
-  logMergeResult(
-    logger,
-    pkg.dir,
-    mergePackageScripts(path.join(pkg.dir, 'package.json'), scripts, shouldForce),
-  );
-};
-
-/*
- * The hk task wiring is only useful in repos that pin tools with mise, so
- * gate generation on a mise.toml at the root. The `[task_config] includes`
- * line that loads this file stays a manual, one-time edit (verify checks
- * it) so sync never round-trips the hand-authored mise.toml.
- */
-const writeMiseTasks = (logger: Logger, discovery: WorkspaceDiscovery): void => {
-  if (!discovery.hasMise) {
-    return;
-  }
-  const filePath = path.join(discovery.rootDir, miseTasksFileName);
-  writeFileSync(filePath, generateMiseTasks(discovery));
-  logger.info(`wrote ${filePath}`);
-};
-
-const writeManifests = (logger: Logger, discovery: WorkspaceDiscovery): void => {
-  for (const { content, filePath } of generateManifests(discovery)) {
-    writeFileSync(filePath, content);
-    logger.info(`wrote ${filePath}`);
-  }
-};
-
-const writeTurboJson = (logger: Logger, discovery: WorkspaceDiscovery): void => {
-  writeSortedAndLog(
-    logger, path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery),
-  );
-};
-
-/*
- * Scaffold the base tsconfig the generated configs extend. It's the consumer's
- * one hand-authored tsconfig (their choice of shared variant), so leave an
- * existing file untouched — never clobber an edited variant on a re-sync. A
- * non-file at the path (e.g. a directory) can't back an `extends`, so fail
- * loudly rather than silently skip and leave the generated configs broken.
- */
-const writeTsconfigBase = (logger: Logger, rootDir: string): void => {
-  const filePath = path.join(rootDir, tsconfigBaseFileName);
-  const stats = statSync(filePath, { throwIfNoEntry: false });
-  if (stats?.isFile()) {
-    return;
-  }
-  if (stats !== undefined) {
-    throw new Error(`${filePath} exists but is not a file — remove it so gtb sync can scaffold it`);
-  }
-  writeSortedAndLog(logger, filePath, generateTsconfigBase());
-};
-
-const writeTsconfigFiles = (logger: Logger, discovery: WorkspaceDiscovery): void => {
-  writeTsconfigBase(logger, discovery.rootDir);
-  for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
-    const userOpts = readUserCompilerOptions(descriptor.path);
-    writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));
-  }
-};
-
-const writeAllScripts = (
-  logger: Logger, discovery: WorkspaceDiscovery, shouldForce: boolean,
-): void => {
-  for (const pkg of discovery.packages) {
-    writePackageScripts(logger, pkg, discovery, shouldForce);
-  }
-  writeRootScripts(logger, discovery, shouldForce);
-};
 
 /**
  * Options for {@link runSync}.
@@ -157,23 +31,16 @@ export interface RunSyncOptions {
  * they're overwritten.
  */
 export const runSync = (options: RunSyncOptions = {}): void => {
-  const cwd = options.cwd ?? process.cwd();
-  const shouldForce = options.force ?? false;
-  const logger = options.logger ?? createLogger();
   const scopes = options.scopes ?? new Set(syncScopes);
-  const discovery = discoverWorkspace({ cwd });
-
-  const writers: Record<SyncScope, () => void> = {
-    manifest: () => { writeManifests(logger, discovery); },
-    mise: () => { writeMiseTasks(logger, discovery); },
-    scripts: () => { writeAllScripts(logger, discovery, shouldForce); },
-    tsconfig: () => { writeTsconfigFiles(logger, discovery); },
-    turbo: () => { writeTurboJson(logger, discovery); },
+  const context: SyncContext = {
+    discovery: discoverWorkspace({ cwd: options.cwd ?? process.cwd() }),
+    force: options.force ?? false,
+    logger: options.logger ?? createLogger(),
   };
 
   for (const scope of syncScopes) {
     if (scopes.has(scope)) {
-      writers[scope]();
+      generators[scope].sync?.(context);
     }
   }
 };
