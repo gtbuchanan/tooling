@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent(generateTurboJson, () => {
@@ -69,7 +70,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('typecheck:ts depends on generate when generate exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ generateScripts: ['generate:test'], hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), generateScripts: ['generate:test'] }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -79,7 +80,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('typecheck:ts has no generate dep without generate scripts', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -109,7 +110,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes typecheck:ts when any package has TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -119,7 +120,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('typecheck:ts inputs include root-level script files', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -287,7 +288,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes typecheck:ts in lint dependsOn when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([eslint]), hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([eslint, typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -299,9 +300,8 @@ describe.concurrent(generateTurboJson, () => {
   it('generates check aggregate with discovered leaf tasks', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint]),
+        capabilities: new Set([eslint, typescript]),
         hasTest: true,
-        hasTypeScript: true,
         hasVitest: true,
       }),
     ]);
@@ -321,7 +321,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('omits lint aggregate when no linters', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasTypeScript: true })]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([typescript]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -331,9 +331,8 @@ describe.concurrent(generateTurboJson, () => {
   it('generates build:ci with compile + check + pack', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint]),
+        capabilities: new Set([eslint, typescript]),
         hasTest: true,
-        hasTypeScript: true,
         hasVitest: true,
         isPublished: true,
       }),
@@ -347,7 +346,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('has $schema field', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasTypeScript: true })]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([typescript]) })]);
 
     const result = generateTurboJson(discovery);
 

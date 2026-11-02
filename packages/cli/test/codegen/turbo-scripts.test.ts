@@ -7,6 +7,7 @@ import {
 } from '#src/codegen/turbo-config.js';
 import type { PackageCapabilities } from '#src/core/discovery.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 /**
@@ -21,7 +22,7 @@ const monorepoOf = (
 
 describe.concurrent(generatePackageScripts, () => {
   it('generates typecheck:ts for TypeScript packages', ({ expect }) => {
-    const caps = makeCapabilities({ hasTypeScript: true });
+    const caps = makeCapabilities({ capabilities: new Set([typescript]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -80,7 +81,9 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates gtb shim for self-hosted packages', ({ expect }) => {
-    const caps = makeCapabilities({ dir: '/root/packages/app', hasTypeScript: true });
+    const caps = makeCapabilities({
+      capabilities: new Set([typescript]), dir: '/root/packages/app',
+    });
 
     const result = generatePackageScripts(caps, true, '/root/packages/cli');
 
@@ -118,9 +121,8 @@ describe.concurrent(generatePackageScripts, () => {
 describe.concurrent(generateRootScripts, () => {
   it('includes aliases and required scripts', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
-      capabilities: new Set([eslint]),
+      capabilities: new Set([eslint, typescript]),
       hasTest: true,
-      hasTypeScript: true,
       hasVitest: true,
       isPublished: true,
     }));
@@ -135,7 +137,7 @@ describe.concurrent(generateRootScripts, () => {
 
   it('routes aliases through pnpm run gtb in self-hosted repos', ({ expect }) => {
     const discovery = makeDiscovery(
-      monorepoOf({ capabilities: new Set([eslint]), hasTypeScript: true, isPublished: true }),
+      monorepoOf({ capabilities: new Set([eslint, typescript]), isPublished: true }),
       { isSelfHosted: true },
     );
 
@@ -193,11 +195,10 @@ describe.concurrent(generateRootScripts, () => {
   it('omits every turbo alias in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint]),
+        capabilities: new Set([eslint, typescript]),
         hasPkl: true,
         hasSkills: true,
         hasTest: true,
-        hasTypeScript: true,
         hasVitest: true,
         hasVitestE2e: true,
         isPublished: true,
@@ -214,9 +215,8 @@ describe.concurrent(forbiddenRootScripts, () => {
   it('lists the aggregates a single-package repo must not shadow', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint]),
+        capabilities: new Set([eslint, typescript]),
         hasTest: true,
-        hasTypeScript: true,
         hasVitest: true,
         isPublished: true,
       }),
@@ -240,9 +240,8 @@ describe.concurrent(forbiddenRootScripts, () => {
 
   it('lists nothing for monorepos, where the aliases are legitimate', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
-      capabilities: new Set([eslint]),
+      capabilities: new Set([eslint, typescript]),
       hasTest: true,
-      hasTypeScript: true,
       hasVitest: true,
       isPublished: true,
     }));
@@ -255,8 +254,7 @@ describe.concurrent(generateRequiredRootScripts, () => {
   it('returns only prepare and verify in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint]),
-        hasTypeScript: true,
+        capabilities: new Set([eslint, typescript]),
         hasVitest: true,
         isPublished: true,
       }),
@@ -304,8 +302,7 @@ describe.concurrent(generateRequiredRootScripts, () => {
 
   it('adds root typecheck:ts when the monorepo root has TypeScript sources', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf(), {
-      hasTypeScript: true,
-      hasTypeScriptSources: true,
+      capabilities: new Set([typescript, typescriptSources]),
     });
 
     const result = generateRequiredRootScripts(discovery);
@@ -314,8 +311,8 @@ describe.concurrent(generateRequiredRootScripts, () => {
   });
 
   it('omits root typecheck:ts when the root tsconfig has no sources', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ hasTypeScript: true }), {
-      hasTypeScript: true,
+    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([typescript]) }), {
+      capabilities: new Set([typescript]),
     });
 
     const result = generateRequiredRootScripts(discovery);

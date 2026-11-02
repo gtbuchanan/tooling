@@ -1,12 +1,15 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson — aggregate member order', () => {
   it('lists root members first, then package members by name', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasPkl: true, hasSkills: true, hasTypeScript: true, isPublished: true })],
-      { hasSkills: true, hasTypeScriptSources: true, isMonorepo: true },
+      [makeCapabilities({
+        capabilities: new Set([typescript]), hasPkl: true, hasSkills: true, isPublished: true,
+      })],
+      { capabilities: new Set([typescriptSources]), hasSkills: true, isMonorepo: true },
     );
 
     const { tasks } = generateTurboJson(discovery);

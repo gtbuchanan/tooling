@@ -6,6 +6,7 @@ import { readJsonFile } from '#src/core/file-writer.js';
 import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { UnknownRecord } from '#src/core/schemas.js';
+import { typescript } from '#src/toolchains/typescript/capabilities.js';
 
 /**
  * File name of the single hand-authored tsconfig every generated config
@@ -217,7 +218,7 @@ const planPackageTsconfigs = (
   rootDir: string,
   pkg: PackageCapabilities,
 ): readonly TsconfigDescriptor[] => {
-  if (!pkg.hasTypeScript) {
+  if (!pkg.capabilities.has(typescript)) {
     return [];
   }
 

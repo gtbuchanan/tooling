@@ -1,11 +1,12 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const monorepoWithRootTypeScript = (): ReturnType<typeof makeDiscovery> =>
   makeDiscovery(
-    [makeCapabilities({ hasTypeScript: true }), makeCapabilities()],
-    { hasTypeScript: true, hasTypeScriptSources: true },
+    [makeCapabilities({ capabilities: new Set([typescript]) }), makeCapabilities()],
+    { capabilities: new Set([typescript, typescriptSources]) },
   );
 
 describe.concurrent('generateTurboJson — root typecheck', () => {
@@ -17,8 +18,8 @@ describe.concurrent('generateTurboJson — root typecheck', () => {
 
   it('omits //#typecheck:ts in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasTypeScript: true, hasTypeScriptSources: true })],
-      { hasTypeScript: true, hasTypeScriptSources: true },
+      [makeCapabilities({ capabilities: new Set([typescript, typescriptSources]) })],
+      { capabilities: new Set([typescript, typescriptSources]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -28,14 +29,14 @@ describe.concurrent('generateTurboJson — root typecheck', () => {
   });
 
   /*
-   * `gtb sync` writes a root tsconfig.json unconditionally, so `hasTypeScript`
-   * is true at every synced root. Gating on it would emit the task for a root
+   * `gtb sync` writes a root tsconfig.json unconditionally, so `typescript`
+   * holds at every synced root. Gating on it would emit the task for a root
    * with nothing to check, where tsc fails outright (TS18003).
    */
   it('omits //#typecheck:ts when the root tsconfig has no sources', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasTypeScript: true }), makeCapabilities()],
-      { hasTypeScript: true },
+      [makeCapabilities({ capabilities: new Set([typescript]) }), makeCapabilities()],
+      { capabilities: new Set([typescript]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -72,7 +73,7 @@ describe.concurrent('generateTurboJson — root typecheck', () => {
   it('emits the typecheck aggregate for a root-only TypeScript workspace', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities(), makeCapabilities()],
-      { hasTypeScript: true, hasTypeScriptSources: true },
+      { capabilities: new Set([typescript, typescriptSources]) },
     );
 
     const result = generateTurboJson(discovery);

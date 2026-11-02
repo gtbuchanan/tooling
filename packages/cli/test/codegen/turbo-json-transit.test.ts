@@ -1,12 +1,13 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson (transit)', () => {
   it('includes a self-topological transit node when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -61,8 +62,8 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('//#typecheck:ts depends on the root\'s workspace dependencies', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasTypeScript: true }), makeCapabilities()],
-      { hasTypeScript: true, hasTypeScriptSources: true },
+      [makeCapabilities({ capabilities: new Set([typescript]) }), makeCapabilities()],
+      { capabilities: new Set([typescript, typescriptSources]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -84,7 +85,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   it('includes the transit node when only the root type-checks', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ hasPkl: true }), makeCapabilities({ hasPkl: true })],
-      { hasTypeScriptSources: true },
+      { capabilities: new Set([typescriptSources]) },
     );
 
     const result = generateTurboJson(discovery);
@@ -102,7 +103,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('typecheck:ts depends on transit so dependency sources reach its hash', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -125,7 +126,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('lint:eslint keeps both edges when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([eslint]), hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([eslint, typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);

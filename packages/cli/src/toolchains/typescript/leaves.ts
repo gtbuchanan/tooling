@@ -10,13 +10,14 @@ import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { toTurboGlobs } from '#src/tasks/turbo-globs.js';
 import { topo } from '#src/tasks/turbo-task.js';
 import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
+import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 
 /**
  * `tsc --noEmit` over the package's `include`.
  */
 export const typecheckTsLeaf: Leaf = {
   aggregate: Aggregate.typecheck,
-  appliesTo: pkg => pkg.hasTypeScript,
+  appliesTo: pkg => pkg.capabilities.has(typescript),
   name: 'typecheck:ts',
   /*
    * The root's own type check. Like `//#lint:eslint` it depends on `^transit`
@@ -31,14 +32,13 @@ export const typecheckTsLeaf: Leaf = {
    * root-level file patterns rather than recursive ones, and the named
    * directories are the root's own.
    *
-   * Gated on the root's `hasTypeScriptSources` rather than its
-   * `hasTypeScript`: `gtb sync` writes a root `tsconfig.json`
-   * unconditionally, so the latter is true at every synced root, and a task
-   * gated on it would run tsc over a root with nothing to check — TS18003, an
-   * error rather than a no-op.
+   * Gated on the root's `typescriptSources` rather than its `typescript`:
+   * `gtb sync` writes a root `tsconfig.json` unconditionally, so the latter
+   * holds at every synced root, and a task gated on it would run tsc over a
+   * root with nothing to check — TS18003, an error rather than a no-op.
    */
   root: {
-    appliesTo: discovery => discovery.root.hasTypeScriptSources,
+    appliesTo: discovery => discovery.root.capabilities.has(typescriptSources),
     task: graph => ({
       dependsOn: rootSourceDeps(graph),
       inputs: [

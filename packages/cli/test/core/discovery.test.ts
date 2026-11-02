@@ -8,6 +8,7 @@ import { discoverPackage, discoverWorkspace } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { capabilities } from '#src/toolchains/index.js';
+import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
 const writeFile = (dir: string, name: string, content = ''): void => {
@@ -149,27 +150,6 @@ describe.concurrent(discoverPackage, () => {
     expect(result.hasVitest).toBe(true);
   });
 
-  it('detects typescript via dependency', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/tsconfig': build.semverRange() },
-    });
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasTypeScript).toBe(true);
-  });
-
-  it('detects typescript via tsconfig.json', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeJson(dir, 'tsconfig.json', {});
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasTypeScript).toBe(true);
-  });
-
   it('detects published package', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
@@ -291,7 +271,6 @@ describe.concurrent(discoverPackage, () => {
       hasScripts: false,
       hasSrc: false,
       hasTest: false,
-      hasTypeScript: false,
       hasVitest: false,
       hasVitestE2e: false,
       isPublished: false,
@@ -332,7 +311,7 @@ describe.concurrent(discoverWorkspace, () => {
 
     expect(result.isMonorepo).toBe(false);
     expect(result.packages).toHaveLength(1);
-    expect(result.packages[0]!.hasTypeScript).toBe(true);
+    expect(result.packages[0]!.capabilities.has(typescript)).toBe(true);
   });
 
   it('detects capabilities at each package and at the root', ({ expect }) => {

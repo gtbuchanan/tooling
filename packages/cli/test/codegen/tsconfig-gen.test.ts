@@ -8,6 +8,7 @@ import {
   planTsconfigs,
 } from '#src/codegen/tsconfig-gen.js';
 import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
+import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { makeCapabilities } from '#test/codegen/turbo-config.helpers.js';
 
 const descriptorAt = (
@@ -47,7 +48,7 @@ describe.concurrent(planTsconfigs, () => {
     const pkgDir = path.join(rootDir, 'packages', build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: pkgDir, hasTypeScript: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: pkgDir, isPublished: true }),
     ]);
 
     expect(generateAt(descriptors, path.join(pkgDir, 'tsconfig.json')))
@@ -61,7 +62,7 @@ describe.concurrent(planTsconfigs, () => {
     const pkgDir = path.join(rootDir, build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: pkgDir, hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: pkgDir }),
     ]);
 
     expect(generateAt(descriptors, path.join(pkgDir, 'tsconfig.json')))
@@ -73,7 +74,7 @@ describe.concurrent(planTsconfigs, () => {
     const pkgDir = path.join(rootDir, 'packages', build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: pkgDir, hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: pkgDir }),
     ]);
 
     expect(descriptorAt(descriptors, path.join(pkgDir, 'tsconfig.build.json')))
@@ -84,7 +85,7 @@ describe.concurrent(planTsconfigs, () => {
     const rootDir = path.resolve(build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: rootDir, hasTypeScript: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: rootDir, isPublished: true }),
     ]);
 
     expect(descriptors.map(descriptor => descriptor.path)).toStrictEqual([
@@ -97,7 +98,7 @@ describe.concurrent(planTsconfigs, () => {
     const rootDir = path.resolve(build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: rootDir, hasTypeScript: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: rootDir, isPublished: true }),
     ]);
 
     expect(generateAt(descriptors, path.join(rootDir, 'tsconfig.json'))).toStrictEqual({
@@ -111,7 +112,7 @@ describe.concurrent(planTsconfigs, () => {
     const rootDir = path.resolve(build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: rootDir, hasTypeScript: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: rootDir, isPublished: true }),
     ]);
 
     /*
@@ -132,7 +133,7 @@ describe.concurrent(planTsconfigs, () => {
     const rootDir = path.resolve(build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: rootDir, hasTypeScript: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: rootDir, isPublished: true }),
     ]);
     const descriptor = descriptorAt(descriptors, path.join(rootDir, 'tsconfig.build.json'));
 
@@ -146,7 +147,7 @@ describe.concurrent(planTsconfigs, () => {
     const rootDir = path.resolve(build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: rootDir, hasTypeScript: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: rootDir }),
     ]);
 
     expect(generateAt(descriptors, path.join(rootDir, 'tsconfig.build.json'))).toStrictEqual({
@@ -160,7 +161,7 @@ describe.concurrent(planTsconfigs, () => {
     const userKey = build.packageName();
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: rootDir, hasTypeScript: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: rootDir, isPublished: true }),
     ]);
     const generated = descriptorAt(descriptors, path.join(rootDir, 'tsconfig.build.json'))
       ?.generate({ [userKey]: true, outDir: 'stale' });
@@ -173,7 +174,7 @@ describe.concurrent(planTsconfigs, () => {
     const rootDir = path.resolve(build.packageName());
 
     const descriptors = planTsconfigs(rootDir, [
-      makeCapabilities({ dir: rootDir, hasTypeScript: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([typescript]), dir: rootDir, isPublished: true }),
     ]);
 
     /*
