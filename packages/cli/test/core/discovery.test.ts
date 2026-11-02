@@ -129,27 +129,6 @@ describe.concurrent(discoverPackage, () => {
     expect(result).toMatchObject({ hasPkl: true, hasPklPackage: false });
   });
 
-  it('detects vitest via dependency', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {
-      devDependencies: { '@gtbuchanan/vitest-config': build.semverRange() },
-    });
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasVitest).toBe(true);
-  });
-
-  it('detects vitest via config file', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'vitest.config.ts');
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasVitest).toBe(true);
-  });
-
   it('detects published package', ({ expect }) => {
     const dir = createTempDir();
     writeJson(dir, 'package.json', {
@@ -171,16 +150,6 @@ describe.concurrent(discoverPackage, () => {
     const result = discoverPackage(dir, capabilities);
 
     expect(result.isPublished).toBe(false);
-  });
-
-  it('detects vitest e2e config', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'vitest.config.e2e.ts');
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasVitestE2e).toBe(true);
   });
 
   it('detects bin directory', ({ expect }) => {
@@ -271,8 +240,6 @@ describe.concurrent(discoverPackage, () => {
       hasScripts: false,
       hasSrc: false,
       hasTest: false,
-      hasVitest: false,
-      hasVitestE2e: false,
       isPublished: false,
     });
   });

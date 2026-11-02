@@ -4,6 +4,7 @@ import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { topo } from '#src/tasks/turbo-task.js';
 import { packNpmLeaf } from '#src/toolchains/npm/leaves.js';
 import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';
+import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 
 /*
  * Unlike compile inputs, test inputs can't be resolved from vitest config —
@@ -32,7 +33,7 @@ const unitTestDeps = (graph: TaskGraph): readonly string[] => [
  */
 export const testVitestFastLeaf: Leaf = {
   aggregate: Aggregate.check,
-  appliesTo: pkg => pkg.hasVitestTests,
+  appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'test:vitest:fast',
   task: graph => ({
     dependsOn: unitTestDeps(graph),
@@ -47,7 +48,7 @@ export const testVitestFastLeaf: Leaf = {
  */
 export const testVitestSlowLeaf: Leaf = {
   aggregate: Aggregate.testSlow,
-  appliesTo: pkg => pkg.hasVitestTests,
+  appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'test:vitest:slow',
   task: graph => ({
     dependsOn: unitTestDeps(graph),
@@ -62,7 +63,7 @@ export const testVitestSlowLeaf: Leaf = {
  */
 export const coverageVitestMergeLeaf: Leaf = {
   aggregate: Aggregate.coverageMerge,
-  appliesTo: pkg => pkg.hasVitestTests,
+  appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'coverage:vitest:merge',
   task: () => ({
     dependsOn: [testVitestFastLeaf.name, testVitestSlowLeaf.name],
@@ -85,7 +86,7 @@ export const coverageVitestMergeLeaf: Leaf = {
  */
 export const testVitestE2eLeaf: Leaf = {
   aggregate: Aggregate.testE2e,
-  appliesTo: pkg => pkg.hasVitestE2e,
+  appliesTo: pkg => pkg.capabilities.has(vitestE2e),
   name: 'test:vitest:e2e',
   task: graph => ({
     dependsOn: [

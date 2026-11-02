@@ -2,6 +2,7 @@ import { describe, it } from 'vitest';
 import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
+import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent(generateTurboJson, () => {
@@ -177,7 +178,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes test:vitest:fast when any package has Vitest + test/', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTest: true, hasVitest: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -185,20 +186,10 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks).toHaveProperty('test:vitest:fast');
   });
 
-  it('excludes test:vitest:fast when Vitest exists but no test/', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makeCapabilities({ hasVitest: true }),
-    ]);
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.tasks).not.toHaveProperty('test:vitest:fast');
-  });
-
   it('omits test:vitest:e2e when only a monorepo root has e2e config', ({ expect }) => {
     const discovery = makeDiscovery(
       [makeCapabilities({ isPublished: true })],
-      { hasVitestE2e: true, isMonorepo: true },
+      { capabilities: new Set([vitestE2e]), isMonorepo: true },
     );
 
     const result = generateTurboJson(discovery);
@@ -300,9 +291,8 @@ describe.concurrent(generateTurboJson, () => {
   it('generates check aggregate with discovered leaf tasks', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript]),
+        capabilities: new Set([eslint, typescript, vitestTests]),
         hasTest: true,
-        hasVitest: true,
       }),
     ]);
 
@@ -331,9 +321,8 @@ describe.concurrent(generateTurboJson, () => {
   it('generates build:ci with compile + check + pack', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript]),
+        capabilities: new Set([eslint, typescript, vitestTests]),
         hasTest: true,
-        hasVitest: true,
         isPublished: true,
       }),
     ]);
@@ -373,7 +362,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest:fast inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTest: true, hasVitest: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -386,7 +375,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest:slow inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTest: true, hasVitest: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);

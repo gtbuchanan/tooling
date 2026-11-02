@@ -8,6 +8,7 @@ import {
 import type { PackageCapabilities } from '#src/core/discovery.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
+import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 /**
@@ -46,7 +47,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates test:vitest:fast for Vitest + test/ packages', ({ expect }) => {
-    const caps = makeCapabilities({ hasTest: true, hasVitest: true });
+    const caps = makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true });
 
     const result = generatePackageScripts(caps, false);
 
@@ -55,7 +56,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates test:vitest:e2e for packages with e2e vitest config', ({ expect }) => {
-    const caps = makeCapabilities({ hasVitestE2e: true });
+    const caps = makeCapabilities({ capabilities: new Set([vitestE2e]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -121,9 +122,8 @@ describe.concurrent(generatePackageScripts, () => {
 describe.concurrent(generateRootScripts, () => {
   it('includes aliases and required scripts', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
-      capabilities: new Set([eslint, typescript]),
+      capabilities: new Set([eslint, typescript, vitestTests]),
       hasTest: true,
-      hasVitest: true,
       isPublished: true,
     }));
 
@@ -195,12 +195,10 @@ describe.concurrent(generateRootScripts, () => {
   it('omits every turbo alias in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript]),
+        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests]),
         hasPkl: true,
         hasSkills: true,
         hasTest: true,
-        hasVitest: true,
-        hasVitestE2e: true,
         isPublished: true,
       }),
     ]);
@@ -215,9 +213,8 @@ describe.concurrent(forbiddenRootScripts, () => {
   it('lists the aggregates a single-package repo must not shadow', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript]),
+        capabilities: new Set([eslint, typescript, vitestTests]),
         hasTest: true,
-        hasVitest: true,
         isPublished: true,
       }),
     ]);
@@ -240,9 +237,8 @@ describe.concurrent(forbiddenRootScripts, () => {
 
   it('lists nothing for monorepos, where the aliases are legitimate', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
-      capabilities: new Set([eslint, typescript]),
+      capabilities: new Set([eslint, typescript, vitestTests]),
       hasTest: true,
-      hasVitest: true,
       isPublished: true,
     }));
 
@@ -255,7 +251,6 @@ describe.concurrent(generateRequiredRootScripts, () => {
     const discovery = makeDiscovery([
       makeCapabilities({
         capabilities: new Set([eslint, typescript]),
-        hasVitest: true,
         isPublished: true,
       }),
     ]);

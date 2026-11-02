@@ -19,9 +19,6 @@ export const makeCapabilities = (
     hasSkills: false,
     hasSrc: false,
     hasTest: false,
-    hasVitest: false,
-    hasVitestE2e: false,
-    hasVitestTests: false,
     isPublished: false,
     name: 'pkg',
     workspaceDependencies: [] as readonly string[],
@@ -33,7 +30,6 @@ export const makeCapabilities = (
     // A Pkl package is publishable by default in fixtures; override to false
     // for the internal (block-less PklProject) case.
     hasPklPackage: overrides.hasPklPackage ?? merged.hasPkl,
-    hasVitestTests: overrides.hasVitestTests ?? (merged.hasVitest && merged.hasTest),
   };
 };
 

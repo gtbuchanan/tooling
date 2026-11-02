@@ -78,18 +78,6 @@ export interface PackageCapabilities {
    */
   readonly hasTest: boolean;
   /**
-   * Has `@gtbuchanan/vitest-config` dependency or `vitest.config.*`.
-   */
-  readonly hasVitest: boolean;
-  /**
-   * Has Vitest config AND a `test/` directory.
-   */
-  readonly hasVitestTests: boolean;
-  /**
-   * Has `vitest.config.e2e.*` file.
-   */
-  readonly hasVitestE2e: boolean;
-  /**
    * Published package (not private, has publishConfig.directory).
    */
   readonly isPublished: boolean;
@@ -177,9 +165,6 @@ const listFiles = (dir: string): readonly string[] => {
   }
 };
 
-const hasFilePrefix = (files: readonly string[], prefix: string): boolean =>
-  files.some(file => file.startsWith(`${prefix}.`));
-
 /**
  * Reads a package's `PklProject` source, or `''` when absent.
  */
@@ -190,9 +175,6 @@ const readPklProject = (dir: string): string => {
     return '';
   }
 };
-
-const hasDep = (deps: Record<string, string>, name: string): boolean =>
-  Object.hasOwn(deps, name);
 
 const parseManifest = (dir: string): Manifest => {
   try {
@@ -275,11 +257,7 @@ const buildCapabilities = (
   manifest: Manifest,
   capabilities: readonly Capability[],
 ): PackageCapabilities => {
-  const deps = mergeDeps(manifest);
   const files = listFiles(dir);
-  const hasVitest = hasDep(deps, '@gtbuchanan/vitest-config') ||
-    hasFilePrefix(files, 'vitest.config');
-  const hasTest = hasDir(dir, 'test');
   const generateScripts = collectGenerateScripts(manifest);
   const isPublished = manifest.private !== true && manifest.publishConfig?.directory !== undefined;
   const hasPkl = files.some(file => file.endsWith('.pkl') && file !== 'hk.pkl');
@@ -299,10 +277,7 @@ const buildCapabilities = (
     hasScripts: hasDir(dir, 'scripts'),
     hasSkills: hasDir(dir, 'skills'),
     hasSrc: hasDir(dir, 'src'),
-    hasTest,
-    hasVitest,
-    hasVitestE2e: hasFilePrefix(files, 'vitest.config.e2e'),
-    hasVitestTests: hasVitest && hasTest,
+    hasTest: hasDir(dir, 'test'),
     isPublished,
     name: manifest.name ?? path.basename(dir),
     workspaceDependencies: collectWorkspaceDependencies(manifest),

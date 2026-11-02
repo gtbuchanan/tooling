@@ -2,6 +2,7 @@ import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
+import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson (transit)', () => {
@@ -17,7 +18,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('includes the transit node when Vitest exists without TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTest: true, hasVitest: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -34,7 +35,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   });
 
   it('includes the transit node for an e2e-only workspace', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasVitestE2e: true })]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([vitestE2e]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -136,7 +137,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('test:vitest tasks depend on transit', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTest: true, hasVitest: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -147,7 +148,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('test:vitest tasks gate on the compile aggregate, not the ts leaf', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTest: true, hasVitest: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true, isPublished: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -158,7 +159,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('omits the compile edge from test:vitest tasks when nothing is published', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasTest: true, hasVitest: true }),
+      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -174,7 +175,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
    */
   it('test:vitest:e2e depends on transit alongside its pack edges', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ hasVitestE2e: true, isPublished: true }),
+      makeCapabilities({ capabilities: new Set([vitestE2e]), isPublished: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -183,7 +184,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   });
 
   it('test:vitest:e2e depends on transit when nothing is published', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasVitestE2e: true })]);
+    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([vitestE2e]) })]);
 
     const result = generateTurboJson(discovery);
 

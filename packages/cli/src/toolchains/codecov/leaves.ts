@@ -1,4 +1,5 @@
 import type { Leaf } from '#src/tasks/leaf.js';
+import { vitestTests } from '#src/toolchains/vitest/capabilities.js';
 
 /**
  * Uploads a package's coverage report to Codecov.
@@ -13,7 +14,7 @@ import type { Leaf } from '#src/tasks/leaf.js';
  * is one CLI invocation per package per run.
  */
 export const coverageCodecovUploadLeaf: Leaf = {
-  appliesTo: pkg => pkg.hasVitestTests,
+  appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'coverage:codecov:upload',
   task: () => ({
     cache: false,
