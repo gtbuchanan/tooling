@@ -11,7 +11,7 @@ import {
 import {
   generatePackageScripts, generateRootScripts, generateTurboJson,
 } from '#src/codegen/turbo-config.js';
-import { type PackageCapabilities, discoverWorkspace } from '#src/core/discovery.js';
+import { type WorkspacePackage, discoverWorkspace } from '#src/core/discovery.js';
 import { mergePackageScripts, writeJsonFile } from '#src/core/file-writer.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
 import { ManifestSchema, unscopedName } from '#src/core/manifest.js';
@@ -152,7 +152,7 @@ export const stubGithubReleaseDeps = (
  */
 export const writeTsconfigs = (
   rootDir: string,
-  packages: readonly PackageCapabilities[],
+  packages: readonly WorkspacePackage[],
 ): void => {
   writeJsonFile(path.join(rootDir, tsconfigBaseFileName), generateTsconfigBase());
   for (const descriptor of planTsconfigs(rootDir, packages)) {

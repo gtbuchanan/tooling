@@ -5,28 +5,28 @@ import {
   generateRequiredRootScripts,
   generateRootScripts,
 } from '#src/codegen/turbo-config.js';
-import type { PackageCapabilities } from '#src/core/discovery.js';
+import type { WorkspacePackage } from '#src/core/discovery.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 /**
  * Two identical packages — the minimum `makeDiscovery` reads as a monorepo.
  */
 const monorepoOf = (
-  overrides: Partial<PackageCapabilities> = {},
-): readonly PackageCapabilities[] => [
-  makeCapabilities(overrides),
-  makeCapabilities(overrides),
+  overrides: Partial<WorkspacePackage> = {},
+): readonly WorkspacePackage[] => [
+  makePackage(overrides),
+  makePackage(overrides),
 ];
 
 describe.concurrent(generatePackageScripts, () => {
   it('generates typecheck:ts for TypeScript packages', ({ expect }) => {
-    const caps = makeCapabilities({ capabilities: new Set([typescript]) });
+    const caps = makePackage({ capabilities: new Set([typescript]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -34,7 +34,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates compile:ts for published packages', ({ expect }) => {
-    const caps = makeCapabilities({ capabilities: new Set([published]) });
+    const caps = makePackage({ capabilities: new Set([published]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -42,7 +42,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates lint:eslint for ESLint packages', ({ expect }) => {
-    const caps = makeCapabilities({ capabilities: new Set([eslint]) });
+    const caps = makePackage({ capabilities: new Set([eslint]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -50,7 +50,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates test:vitest:fast for Vitest + test/ packages', ({ expect }) => {
-    const caps = makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true });
+    const caps = makePackage({ capabilities: new Set([vitestTests]), hasTest: true });
 
     const result = generatePackageScripts(caps, false);
 
@@ -59,7 +59,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates test:vitest:e2e for packages with e2e vitest config', ({ expect }) => {
-    const caps = makeCapabilities({ capabilities: new Set([vitestE2e]) });
+    const caps = makePackage({ capabilities: new Set([vitestE2e]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -67,7 +67,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates pkl scripts for Pkl packages', ({ expect }) => {
-    const caps = makeCapabilities({ capabilities: new Set([pklSource, pklPackage]) });
+    const caps = makePackage({ capabilities: new Set([pklSource, pklPackage]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -76,7 +76,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('omits pack:pkl for an internal Pkl package (no package block)', ({ expect }) => {
-    const caps = makeCapabilities({ capabilities: new Set([pklSource]) });
+    const caps = makePackage({ capabilities: new Set([pklSource]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -85,7 +85,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates gtb shim for self-hosted packages', ({ expect }) => {
-    const caps = makeCapabilities({
+    const caps = makePackage({
       capabilities: new Set([typescript]), dir: '/root/packages/app',
     });
 
@@ -96,7 +96,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('points the gtb shim at the CLI wherever the workspace keeps it', ({ expect }) => {
-    const caps = makeCapabilities({ dir: '/root/packages/app' });
+    const caps = makePackage({ dir: '/root/packages/app' });
 
     const result = generatePackageScripts(caps, true, '/root/tools/gtb');
 
@@ -106,7 +106,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('points the CLI package\'s own gtb shim at its bin', ({ expect }) => {
-    const caps = makeCapabilities({ dir: '/root/tools/gtb' });
+    const caps = makePackage({ dir: '/root/tools/gtb' });
 
     const result = generatePackageScripts(caps, true, '/root/tools/gtb');
 
@@ -114,7 +114,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates nothing for empty capabilities', ({ expect }) => {
-    const caps = makeCapabilities();
+    const caps = makePackage();
 
     const result = generatePackageScripts(caps, false);
 
@@ -199,7 +199,7 @@ describe.concurrent(generateRootScripts, () => {
 
   it('omits every turbo alias in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([
           eslint, pklPackage, pklSource, published, skills, typescript, vitestE2e, vitestTests,
         ]),
@@ -216,7 +216,7 @@ describe.concurrent(generateRootScripts, () => {
 describe.concurrent(forbiddenRootScripts, () => {
   it('lists the aggregates a single-package repo must not shadow', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([eslint, typescript, vitestTests, published]),
         hasTest: true,
       }),
@@ -233,7 +233,7 @@ describe.concurrent(forbiddenRootScripts, () => {
    * contradict each other.
    */
   it('excludes deploy:skills, which the root legitimately owns', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([skills]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([skills]) })]);
 
     expect(forbiddenRootScripts(discovery)).toStrictEqual([]);
   });
@@ -251,7 +251,7 @@ describe.concurrent(forbiddenRootScripts, () => {
 describe.concurrent(generateRequiredRootScripts, () => {
   it('returns only prepare and verify in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([eslint, typescript, published]),
       }),
     ]);
@@ -267,8 +267,8 @@ describe.concurrent(generateRequiredRootScripts, () => {
   it('adds root lint:eslint when monorepo root has ESLint', ({ expect }) => {
     const discovery = makeDiscovery(
       [
-        makeCapabilities({ capabilities: new Set([eslint]) }),
-        makeCapabilities({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
       ],
       { capabilities: new Set([eslint]) },
     );
@@ -319,8 +319,8 @@ describe.concurrent(generateRequiredRootScripts, () => {
   it('omits root lint:eslint when root has no ESLint', ({ expect }) => {
     const discovery = makeDiscovery(
       [
-        makeCapabilities({ capabilities: new Set([eslint]) }),
-        makeCapabilities({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
       ],
     );
 

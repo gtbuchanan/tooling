@@ -5,12 +5,12 @@ import { published } from '#src/toolchains/npm/capabilities.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson (transit)', () => {
   it('includes a self-topological transit node when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([typescript]) }),
+      makePackage({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -20,7 +20,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('includes the transit node when Vitest exists without TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -29,7 +29,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   });
 
   it('includes the transit node when ESLint exists alone', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -37,7 +37,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   });
 
   it('includes the transit node for an e2e-only workspace', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([vitestE2e]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([vitestE2e]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -52,8 +52,8 @@ describe.concurrent('generateTurboJson (transit)', () => {
   it('//#lint:eslint depends on the root\'s workspace dependencies', ({ expect }) => {
     const discovery = makeDiscovery(
       [
-        makeCapabilities({ capabilities: new Set([eslint]) }),
-        makeCapabilities({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
       ],
       { capabilities: new Set([eslint]) },
     );
@@ -65,7 +65,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('//#typecheck:ts depends on the root\'s workspace dependencies', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ capabilities: new Set([typescript]) }), makeCapabilities()],
+      [makePackage({ capabilities: new Set([typescript]) }), makePackage()],
       { capabilities: new Set([typescript, typescriptSources]) },
     );
 
@@ -77,8 +77,8 @@ describe.concurrent('generateTurboJson (transit)', () => {
   it('includes the transit node when only the root lints', ({ expect }) => {
     const discovery = makeDiscovery(
       [
-        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
-        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+        makePackage({ capabilities: new Set([pklPackage, pklSource]) }),
+        makePackage({ capabilities: new Set([pklPackage, pklSource]) }),
       ],
       { capabilities: new Set([eslint]) },
     );
@@ -91,8 +91,8 @@ describe.concurrent('generateTurboJson (transit)', () => {
   it('includes the transit node when only the root type-checks', ({ expect }) => {
     const discovery = makeDiscovery(
       [
-        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
-        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+        makePackage({ capabilities: new Set([pklPackage, pklSource]) }),
+        makePackage({ capabilities: new Set([pklPackage, pklSource]) }),
       ],
       { capabilities: new Set([typescriptSources]) },
     );
@@ -104,7 +104,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('excludes the transit node when nothing depends on it', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+      makePackage({ capabilities: new Set([pklPackage, pklSource]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -114,7 +114,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('typecheck:ts depends on transit so dependency sources reach its hash', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([typescript]) }),
+      makePackage({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -128,7 +128,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
    * and one that isn't generated at all without TypeScript.
    */
   it('lint:eslint depends on transit with no typecheck:ts to inherit from', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -137,7 +137,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('lint:eslint keeps both edges when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([eslint, typescript]) }),
+      makePackage({ capabilities: new Set([eslint, typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -147,7 +147,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('test:vitest tasks depend on transit', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -158,7 +158,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('test:vitest tasks gate on the compile aggregate, not the ts leaf', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests, published]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests, published]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -169,7 +169,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('omits the compile edge from test:vitest tasks when nothing is published', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -185,7 +185,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
    */
   it('test:vitest:e2e depends on transit alongside its pack edges', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestE2e, published]) }),
+      makePackage({ capabilities: new Set([vitestE2e, published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -194,7 +194,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
   });
 
   it('test:vitest:e2e depends on transit when nothing is published', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([vitestE2e]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([vitestE2e]) })]);
 
     const result = generateTurboJson(discovery);
 

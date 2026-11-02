@@ -5,7 +5,7 @@ import { published } from '#src/toolchains/npm/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent(generateTurboJson, () => {
   /*
@@ -14,7 +14,7 @@ describe.concurrent(generateTurboJson, () => {
    */
   it('chains the monorepo generate aggregate through dependencies', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ generateScripts: ['generate:prisma'] })],
+      [makePackage({ generateScripts: ['generate:prisma'] })],
       { isMonorepo: true },
     );
 
@@ -26,8 +26,8 @@ describe.concurrent(generateTurboJson, () => {
   it('omits generate leaf tasks from a monorepo root', ({ expect }) => {
     const discovery = makeDiscovery(
       [
-        makeCapabilities({ generateScripts: ['generate:prisma'] }),
-        makeCapabilities({ generateScripts: ['generate:paraglide'] }),
+        makePackage({ generateScripts: ['generate:prisma'] }),
+        makePackage({ generateScripts: ['generate:paraglide'] }),
       ],
       { isMonorepo: true },
     );
@@ -40,7 +40,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('wires generate leaves into the aggregate for a single-package repo', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ generateScripts: ['generate:paraglide', 'generate:prisma'] })],
+      [makePackage({ generateScripts: ['generate:paraglide', 'generate:prisma'] })],
       { isMonorepo: false },
     );
 
@@ -54,7 +54,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('defines single-package generate leaves as uncached', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ generateScripts: ['generate:prisma'] })],
+      [makePackage({ generateScripts: ['generate:prisma'] })],
       { isMonorepo: false },
     );
 
@@ -64,7 +64,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('omits generate aggregate when no packages have generate scripts', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
+    const discovery = makeDiscovery([makePackage()]);
 
     const result = generateTurboJson(discovery);
 
@@ -73,7 +73,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('typecheck:ts depends on generate when generate exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([typescript]), generateScripts: ['generate:test'] }),
+      makePackage({ capabilities: new Set([typescript]), generateScripts: ['generate:test'] }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -83,7 +83,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('typecheck:ts has no generate dep without generate scripts', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([typescript]) }),
+      makePackage({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -93,7 +93,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('compile:ts depends on generate when generate exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]), generateScripts: ['generate:test'] }),
+      makePackage({ capabilities: new Set([published]), generateScripts: ['generate:test'] }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -103,7 +103,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('lint:eslint depends on generate when generate exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ generateScripts: ['generate:test'], capabilities: new Set([eslint]) }),
+      makePackage({ generateScripts: ['generate:test'], capabilities: new Set([eslint]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -113,7 +113,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes typecheck:ts when any package has TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([typescript]) }),
+      makePackage({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -123,7 +123,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('typecheck:ts inputs include root-level script files', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([typescript]) }),
+      makePackage({ capabilities: new Set([typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -135,7 +135,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('excludes typecheck:ts when no package has TypeScript', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
+    const discovery = makeDiscovery([makePackage()]);
 
     const result = generateTurboJson(discovery);
 
@@ -144,7 +144,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes compile:ts when any package is published', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]) }),
+      makePackage({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -153,7 +153,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('includes lint:eslint when any package has ESLint', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -161,7 +161,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('lint:eslint includes root config in inputs', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
     const task = result.tasks['lint:eslint'];
@@ -170,7 +170,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('lint:eslint includes eslint cache in outputs', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
     const task = result.tasks['lint:eslint'];
@@ -180,7 +180,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes test:vitest:fast when any package has Vitest + test/', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -190,7 +190,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits test:vitest:e2e when only a monorepo root has e2e config', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ capabilities: new Set([published]) })],
+      [makePackage({ capabilities: new Set([published]) })],
       { capabilities: new Set([vitestE2e]), isMonorepo: true },
     );
 
@@ -204,7 +204,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes pack:npm when any package is published', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]) }),
+      makePackage({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -215,7 +215,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits compile:skills from pack:npm dependsOn when no package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]) }),
+      makePackage({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -226,7 +226,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes compile:skills in pack:npm dependsOn when any package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published, skills]) }),
+      makePackage({ capabilities: new Set([published, skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -239,8 +239,8 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits compile:skills when no published package has skills', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]), dir: '/fake/published' }),
-      makeCapabilities({ capabilities: new Set([skills]), dir: '/fake/skilled' }),
+      makePackage({ capabilities: new Set([published]), dir: '/fake/published' }),
+      makePackage({ capabilities: new Set([skills]), dir: '/fake/skilled' }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -252,7 +252,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits lint:eslint from deploy:skills dependsOn when no package has ESLint', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([skills]) }),
+      makePackage({ capabilities: new Set([skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -262,7 +262,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes lint:eslint in deploy:skills dependsOn when ESLint exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([eslint, skills]) }),
+      makePackage({ capabilities: new Set([eslint, skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -271,7 +271,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('prunes typecheck:ts from lint dependsOn when no TypeScript', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
     const lintEslint = result.tasks['lint:eslint'];
@@ -281,7 +281,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('includes typecheck:ts in lint dependsOn when TypeScript exists', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([eslint, typescript]) }),
+      makePackage({ capabilities: new Set([eslint, typescript]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -292,7 +292,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('generates check aggregate with discovered leaf tasks', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([eslint, typescript, vitestTests]),
         hasTest: true,
       }),
@@ -305,7 +305,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('generates lint aggregate from discovered linters', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([eslint]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -313,7 +313,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('omits lint aggregate when no linters', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([typescript]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([typescript]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -322,7 +322,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('generates build:ci with compile + check + pack', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([eslint, typescript, vitestTests, published]),
         hasTest: true,
       }),
@@ -336,7 +336,7 @@ describe.concurrent(generateTurboJson, () => {
   });
 
   it('has $schema field', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ capabilities: new Set([typescript]) })]);
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([typescript]) })]);
 
     const result = generateTurboJson(discovery);
 
@@ -345,7 +345,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('compile:ts inputs derive from resolved buildIncludes', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([published]),
         buildIncludes: ['bin', 'src', 'generated', '*.proto.ts'],
       }),
@@ -363,7 +363,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest:fast inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -376,7 +376,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest:slow inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
     ]);
 
     const result = generateTurboJson(discovery);

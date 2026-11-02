@@ -1,6 +1,6 @@
 import path from 'node:path';
 import * as v from 'valibot';
-import type { PackageCapabilities } from '#src/core/discovery.js';
+import type { WorkspacePackage } from '#src/core/discovery.js';
 import { buildOutDir } from '#src/core/dist-source.js';
 import { readJsonFile } from '#src/core/file-writer.js';
 import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
@@ -217,7 +217,7 @@ const dedupeByPath = (
 
 const planPackageTsconfigs = (
   rootDir: string,
-  pkg: PackageCapabilities,
+  pkg: WorkspacePackage,
 ): readonly TsconfigDescriptor[] => {
   if (!pkg.capabilities.has(typescript)) {
     return [];
@@ -245,7 +245,7 @@ const planPackageTsconfigs = (
  */
 export const planTsconfigs = (
   rootDir: string,
-  packages: readonly PackageCapabilities[],
+  packages: readonly WorkspacePackage[],
 ): readonly TsconfigDescriptor[] =>
   dedupeByPath([
     {

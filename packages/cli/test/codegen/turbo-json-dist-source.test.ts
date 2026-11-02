@@ -2,7 +2,7 @@ import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 /*
  * Every task writing the published output directory must declare only what it
@@ -12,7 +12,7 @@ import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.help
 describe.concurrent('generateTurboJson (dist/source ownership)', () => {
   it('hashes no path under the output directory in pack:npm inputs', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published, skills]) }),
+      makePackage({ capabilities: new Set([published, skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -24,7 +24,7 @@ describe.concurrent('generateTurboJson (dist/source ownership)', () => {
 
   it('claims every file it writes as a pack:npm output', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]) }),
+      makePackage({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -39,7 +39,7 @@ describe.concurrent('generateTurboJson (dist/source ownership)', () => {
 
   it('excludes the pack:npm-owned files from compile:ts outputs', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published]) }),
+      makePackage({ capabilities: new Set([published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -55,7 +55,7 @@ describe.concurrent('generateTurboJson (dist/source ownership)', () => {
 
   it('excludes the compile:skills subtree from compile:ts outputs', ({ expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({ capabilities: new Set([published, skills]) }),
+      makePackage({ capabilities: new Set([published, skills]) }),
     ]);
 
     const result = generateTurboJson(discovery);

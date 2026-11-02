@@ -1,4 +1,4 @@
-import type { PackageCapabilities } from '#src/core/discovery.js';
+import type { WorkspacePackage } from '#src/core/discovery.js';
 import type { Manifest } from '#src/core/manifest.js';
 import { localeComparer } from '#src/core/sort.js';
 
@@ -64,7 +64,7 @@ const bundledPredicate = (
  * bundledPredicate} for why that isn't the whole field.
  */
 export const workspaceDependenciesOf = (
-  { manifest }: PackageCapabilities,
+  { manifest }: WorkspacePackage,
 ): readonly string[] => {
   const isBundled = bundledPredicate(manifest);
   const names = runtimeDependencyFields.flatMap(field =>

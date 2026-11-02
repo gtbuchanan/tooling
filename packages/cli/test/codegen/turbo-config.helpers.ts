@@ -1,10 +1,10 @@
 import type { Capability } from '#src/core/capability.js';
-import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
 import { buildInclude } from '#src/core/layout.js';
 
-export const makeCapabilities = (
-  overrides: Partial<PackageCapabilities> = {},
-): PackageCapabilities => {
+export const makePackage = (
+  overrides: Partial<WorkspacePackage> = {},
+): WorkspacePackage => {
   const merged = {
     buildIncludes: [...buildInclude] as readonly string[],
     capabilities: new Set<Capability>(),
@@ -26,7 +26,7 @@ export const makeCapabilities = (
   };
 };
 
-export interface MakeDiscoveryOverrides extends Partial<PackageCapabilities> {
+export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
   /**
    * Overrides {@link WorkspaceDiscovery.dependsOnCli} (defaults to `false`).
    */
@@ -48,7 +48,7 @@ export interface MakeDiscoveryOverrides extends Partial<PackageCapabilities> {
 }
 
 export const makeDiscovery = (
-  packages: readonly PackageCapabilities[],
+  packages: readonly WorkspacePackage[],
   overrides: MakeDiscoveryOverrides = {},
 ): WorkspaceDiscovery => {
   const {
@@ -65,7 +65,7 @@ export const makeDiscovery = (
     isSelfHosted,
     packages,
     packageGlobs: isMonorepo ? ['packages/*'] : [],
-    root: makeCapabilities(rootOverrides),
+    root: makePackage(rootOverrides),
     rootDir: '/fake/root',
   };
 };

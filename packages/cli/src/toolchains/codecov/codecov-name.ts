@@ -1,4 +1,4 @@
-import type { PackageCapabilities } from '#src/core/discovery.js';
+import type { WorkspacePackage } from '#src/core/discovery.js';
 import { unscopedName } from '#src/core/manifest.js';
 
 /**
@@ -11,4 +11,4 @@ import { unscopedName } from '#src/core/manifest.js';
  * checkout root itself. The scope is stripped because Codecov flag names
  * don't accept `@` or `/`.
  */
-export const codecovName = (pkg: PackageCapabilities): string => unscopedName(pkg.name);
+export const codecovName = (pkg: WorkspacePackage): string => unscopedName(pkg.name);

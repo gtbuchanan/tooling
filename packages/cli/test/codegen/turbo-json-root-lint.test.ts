@@ -1,13 +1,13 @@
 import { describe, it } from 'vitest';
 import { generateRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 const monorepoWithRootEslint = (): ReturnType<typeof makeDiscovery> =>
   makeDiscovery(
     [
-      makeCapabilities({ capabilities: new Set([eslint]) }),
-      makeCapabilities({ capabilities: new Set([eslint]) }),
+      makePackage({ capabilities: new Set([eslint]) }),
+      makePackage({ capabilities: new Set([eslint]) }),
     ],
     { capabilities: new Set([eslint]) },
   );
@@ -21,7 +21,7 @@ describe.concurrent('generateTurboJson — root lint', () => {
 
   it('omits //#lint:eslint in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ capabilities: new Set([eslint]) })],
+      [makePackage({ capabilities: new Set([eslint]) })],
       { capabilities: new Set([eslint]) },
     );
 
@@ -33,8 +33,8 @@ describe.concurrent('generateTurboJson — root lint', () => {
   it('omits //#lint:eslint when monorepo root has no ESLint', ({ expect }) => {
     const discovery = makeDiscovery(
       [
-        makeCapabilities({ capabilities: new Set([eslint]) }),
-        makeCapabilities({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
+        makePackage({ capabilities: new Set([eslint]) }),
       ],
     );
 
@@ -59,7 +59,7 @@ describe.concurrent('generateTurboJson — root lint', () => {
 
   it('checks //#lint:eslint when only the monorepo root has ESLint', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities(), makeCapabilities()],
+      [makePackage(), makePackage()],
       { capabilities: new Set([eslint]) },
     );
 

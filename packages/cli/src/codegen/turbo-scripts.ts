@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { workspaceTasks } from '#src/codegen/turbo-config.js';
 import { rootNames } from '#src/core/command-names.js';
-import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { localeComparer } from '#src/core/sort.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
@@ -25,7 +25,7 @@ const rootCmd = (isSelfHosted: boolean, name: string): string =>
   `${gtbPrefix(isSelfHosted)} ${name}`;
 
 const packageScripts = (
-  caps: PackageCapabilities,
+  caps: WorkspacePackage,
   isSelfHosted: boolean,
 ): Record<string, string> => Object.fromEntries(
   leaves
@@ -48,7 +48,7 @@ const gtbShim = (pkgDir: string, cliDir: string): string => {
  * `gtb` shim runs from source.
  */
 export const generatePackageScripts = (
-  caps: PackageCapabilities,
+  caps: WorkspacePackage,
   isSelfHosted: boolean,
   cliDir?: string,
 ): Record<string, string> => {

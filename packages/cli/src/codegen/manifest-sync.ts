@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import hostedGitInfo from 'hosted-git-info';
 import * as v from 'valibot';
-import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
 import { RootManifestSchema } from '#src/core/manifest.js';
 import { patchPackageBlock } from '#src/core/pkl-project.js';
 import { readManifest, readParsedManifest } from '#src/core/workspace.js';
@@ -50,7 +50,7 @@ export interface ManifestWriter {
   /**
    * True when this writer applies to the package.
    */
-  readonly detect: (pkg: PackageCapabilities) => boolean;
+  readonly detect: (pkg: WorkspacePackage) => boolean;
   /**
    * Discriminator for the kind (e.g. `pkl`).
    */
@@ -58,7 +58,7 @@ export interface ManifestWriter {
   /**
    * Produces the manifest file for the package.
    */
-  readonly render: (pkg: PackageCapabilities, ctx: ManifestContext) => ManifestFile;
+  readonly render: (pkg: WorkspacePackage, ctx: ManifestContext) => ManifestFile;
 }
 
 /**

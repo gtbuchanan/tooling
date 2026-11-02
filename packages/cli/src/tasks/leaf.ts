@@ -1,4 +1,4 @@
-import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
 import type { AggregateName } from '#src/tasks/aggregates.js';
 import type { TurboTask } from '#src/tasks/turbo-task.js';
 
@@ -59,7 +59,7 @@ export interface Leaf {
    * upload CI runs on its own, runs only when named.
    */
   readonly aggregate?: AggregateName;
-  readonly appliesTo: (pkg: PackageCapabilities) => boolean;
+  readonly appliesTo: (pkg: WorkspacePackage) => boolean;
   /**
    * The `gtb task` argument, the script name and the task name at once.
    */

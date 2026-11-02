@@ -13,9 +13,9 @@ import {
 } from '#src/core/workspace.js';
 
 /**
- * Capabilities detected for a single package.
+ * A workspace package (or the workspace root) as discovery found it.
  */
-export interface PackageCapabilities {
+export interface WorkspacePackage {
   /**
    * Resolved `include` directories from tsconfig.build.json, or the default
    * build include when there is none. Only a published package compiles them.
@@ -93,17 +93,17 @@ export interface WorkspaceDiscovery {
    */
   readonly isSelfHosted: boolean;
   /**
-   * Capabilities per workspace package.
+   * The packages matched by the workspace globs.
    */
-  readonly packages: readonly PackageCapabilities[];
+  readonly packages: readonly WorkspacePackage[];
   /**
    * Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode.
    */
   readonly packageGlobs: readonly string[];
   /**
-   * Root-level capabilities.
+   * The workspace root, discovered like any package.
    */
-  readonly root: PackageCapabilities;
+  readonly root: WorkspacePackage;
   /**
    * Workspace root directory.
    */
@@ -114,7 +114,7 @@ export interface WorkspaceDiscovery {
  * The workspace package that vendors `@gtbuchanan/cli`, wherever the
  * workspace keeps it. Undefined outside a self-hosted workspace.
  */
-export const vendoredCli = (discovery: WorkspaceDiscovery): PackageCapabilities | undefined =>
+export const vendoredCli = (discovery: WorkspaceDiscovery): WorkspacePackage | undefined =>
   discovery.packages.find(pkg => pkg.name === '@gtbuchanan/cli');
 
 const hasDir = (base: string, name: string): boolean =>
@@ -149,11 +149,11 @@ const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
     .filter(name => name.startsWith(generateTaskPrefix))
     .toSorted(localeComparer);
 
-const buildCapabilities = (
+const buildPackage = (
   dir: string,
   manifest: Manifest,
   capabilities: readonly Capability[],
-): PackageCapabilities => {
+): WorkspacePackage => {
   const files = listFiles(dir);
   const generateScripts = collectGenerateScripts(manifest);
 
@@ -180,7 +180,7 @@ const buildCapabilities = (
 export const discoverPackage = (
   dir: string,
   capabilities: readonly Capability[],
-): PackageCapabilities => buildCapabilities(dir, parseManifest(dir), capabilities);
+): WorkspacePackage => buildPackage(dir, parseManifest(dir), capabilities);
 
 /**
  * Options for {@link discoverWorkspace}.
@@ -210,9 +210,9 @@ export const discoverWorkspace = (
     hasMise: existsSync(path.join(ctx.rootDir, 'mise.toml')),
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
-    packages: ctx.packageDirs.map(dir => buildCapabilities(dir, parseManifest(dir), capabilities)),
+    packages: ctx.packageDirs.map(dir => buildPackage(dir, parseManifest(dir), capabilities)),
     packageGlobs: ctx.packageGlobs,
-    root: buildCapabilities(ctx.rootDir, rootManifest, capabilities),
+    root: buildPackage(ctx.rootDir, rootManifest, capabilities),
     rootDir: ctx.rootDir,
   };
 };

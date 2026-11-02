@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
-import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
 import { readJsonFile } from '#src/core/file-writer.js';
 import { StringArray, UnknownRecord } from '#src/core/schemas.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
@@ -122,7 +122,7 @@ const checkPackageConfig = (
 };
 
 const checkPackage = (
-  pkg: PackageCapabilities,
+  pkg: WorkspacePackage,
   ignored: ReadonlySet<string>,
 ): readonly string[] => {
   const scripts = pkg.generateScripts.filter(script => !ignored.has(script));

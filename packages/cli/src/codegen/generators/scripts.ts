@@ -7,7 +7,7 @@ import {
   generateRootScripts,
 } from '#src/codegen/turbo-config.js';
 import {
-  type PackageCapabilities, type WorkspaceDiscovery, vendoredCli,
+  type WorkspaceDiscovery, type WorkspacePackage, vendoredCli,
 } from '#src/core/discovery.js';
 import { type MergeResult, mergePackageScripts } from '#src/core/file-writer.js';
 import type { Logger } from '#src/core/logger.js';
@@ -35,7 +35,7 @@ const writeRootScripts = (
 
 const writePackageScripts = (
   logger: Logger,
-  pkg: PackageCapabilities,
+  pkg: WorkspacePackage,
   discovery: WorkspaceDiscovery,
   shouldForce: boolean,
 ): void => {

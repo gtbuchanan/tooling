@@ -1,10 +1,10 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson (globalDependencies)', () => {
   it('emits globalDependencies for mise files when the workspace has mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()], { hasMise: true });
+    const discovery = makeDiscovery([makePackage()], { hasMise: true });
 
     const result = generateTurboJson(discovery);
 
@@ -12,7 +12,7 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
   });
 
   it('omits globalDependencies when the workspace has no mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()]);
+    const discovery = makeDiscovery([makePackage()]);
 
     const result = generateTurboJson(discovery);
 
@@ -27,7 +27,7 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
    * per-package transitive closure already invalidates correctly.
    */
   it('emits the lockfile in globalDependencies when self-hosted', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()], { isSelfHosted: true });
+    const discovery = makeDiscovery([makePackage()], { isSelfHosted: true });
 
     const result = generateTurboJson(discovery);
 
@@ -40,12 +40,12 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
    * task explicitly.
    */
   it('emits the vendored CLI sources in globalDependencies when self-hosted', ({ expect }) => {
-    const cli = makeCapabilities({
+    const cli = makePackage({
       buildIncludes: ['bin', 'src'],
       dir: '/fake/root/tools/cli',
       name: '@gtbuchanan/cli',
     });
-    const discovery = makeDiscovery([cli, makeCapabilities()], { isSelfHosted: true });
+    const discovery = makeDiscovery([cli, makePackage()], { isSelfHosted: true });
 
     const result = generateTurboJson(discovery);
 
@@ -55,12 +55,12 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
   });
 
   it('normalizes dot-prefixed CLI build includes', ({ expect }) => {
-    const cli = makeCapabilities({
+    const cli = makePackage({
       buildIncludes: ['./src'],
       dir: '/fake/root/tools/cli',
       name: '@gtbuchanan/cli',
     });
-    const discovery = makeDiscovery([cli, makeCapabilities()], { isSelfHosted: true });
+    const discovery = makeDiscovery([cli, makePackage()], { isSelfHosted: true });
 
     const result = generateTurboJson(discovery);
 
@@ -68,7 +68,7 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
   });
 
   it('emits mise files and the lockfile when self-hosted with mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()], {
+    const discovery = makeDiscovery([makePackage()], {
       hasMise: true,
       isSelfHosted: true,
     });

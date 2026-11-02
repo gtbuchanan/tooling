@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { runCommand } from 'citty';
 import { describe, it, vi } from 'vitest';
-import type { PackageCapabilities } from '#src/core/discovery.js';
+import type { WorkspacePackage } from '#src/core/discovery.js';
 
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
@@ -32,7 +32,7 @@ vi.mock(import('#src/core/process.js'), async (importOriginal) => {
 /**
  * A discovered package with no capabilities beyond the given manifest name.
  */
-const capabilities = (name: string): PackageCapabilities => ({
+const capabilities = (name: string): WorkspacePackage => ({
   buildIncludes: [],
   capabilities: new Set(),
   dir: faker.system.directoryPath(),

@@ -4,12 +4,12 @@ import { published } from '#src/toolchains/npm/capabilities.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 describe.concurrent('generateTurboJson — aggregate member order', () => {
   it('lists root members first, then package members by name', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({
+      [makePackage({
         capabilities: new Set([pklPackage, pklSource, typescript, published, skills]),
       })],
       { capabilities: new Set([typescriptSources, skills]), isMonorepo: true },

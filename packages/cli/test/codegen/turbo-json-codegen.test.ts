@@ -4,7 +4,7 @@ import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 const sourceReaders = [
   'typecheck:ts', 'compile:ts', 'lint:eslint',
@@ -18,7 +18,7 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
    */
   it.for(sourceReaders)('%s waits on its dependencies\' generate', (task, { expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([eslint, typescript, vitestE2e, vitestTests, published]),
         generateScripts: ['generate:test'],
       }),
@@ -33,7 +33,7 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
     '%s waits on its own generate',
     (task, { expect }) => {
       const discovery = makeDiscovery([
-        makeCapabilities({
+        makePackage({
           capabilities: new Set([vitestE2e, vitestTests]), generateScripts: ['generate:test'],
         }),
       ]);
@@ -51,9 +51,9 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
   it.for(['//#lint:eslint', '//#typecheck:ts'])(
     '%s waits on the root\'s dependencies\' generate',
     (task, { expect }) => {
-      const generator = makeCapabilities({ generateScripts: ['generate:test'] });
+      const generator = makePackage({ generateScripts: ['generate:test'] });
       const discovery = makeDiscovery(
-        [generator, makeCapabilities()],
+        [generator, makePackage()],
         { capabilities: new Set([eslint, typescript, typescriptSources]) },
       );
 
@@ -65,7 +65,7 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
 
   it.for(sourceReaders)('%s has no generate deps without generate scripts', (task, { expect }) => {
     const discovery = makeDiscovery([
-      makeCapabilities({
+      makePackage({
         capabilities: new Set([eslint, typescript, vitestE2e, vitestTests, published]),
       }),
     ]);

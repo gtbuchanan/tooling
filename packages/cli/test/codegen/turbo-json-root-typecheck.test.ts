@@ -1,11 +1,11 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
-import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
 
 const monorepoWithRootTypeScript = (): ReturnType<typeof makeDiscovery> =>
   makeDiscovery(
-    [makeCapabilities({ capabilities: new Set([typescript]) }), makeCapabilities()],
+    [makePackage({ capabilities: new Set([typescript]) }), makePackage()],
     { capabilities: new Set([typescript, typescriptSources]) },
   );
 
@@ -18,7 +18,7 @@ describe.concurrent('generateTurboJson — root typecheck', () => {
 
   it('omits //#typecheck:ts in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ capabilities: new Set([typescript, typescriptSources]) })],
+      [makePackage({ capabilities: new Set([typescript, typescriptSources]) })],
       { capabilities: new Set([typescript, typescriptSources]) },
     );
 
@@ -35,7 +35,7 @@ describe.concurrent('generateTurboJson — root typecheck', () => {
    */
   it('omits //#typecheck:ts when the root tsconfig has no sources', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ capabilities: new Set([typescript]) }), makeCapabilities()],
+      [makePackage({ capabilities: new Set([typescript]) }), makePackage()],
       { capabilities: new Set([typescript]) },
     );
 
@@ -72,7 +72,7 @@ describe.concurrent('generateTurboJson — root typecheck', () => {
    */
   it('emits the typecheck aggregate for a root-only TypeScript workspace', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities(), makeCapabilities()],
+      [makePackage(), makePackage()],
       { capabilities: new Set([typescript, typescriptSources]) },
     );
 
