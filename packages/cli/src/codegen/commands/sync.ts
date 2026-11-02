@@ -40,7 +40,7 @@ export const runSync = (options: RunSyncOptions = {}): void => {
 
   for (const scope of syncScopes) {
     if (scopes.has(scope)) {
-      generators[scope].sync(context);
+      generators[scope].sync?.(context);
     }
   }
 };

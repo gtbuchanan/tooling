@@ -93,13 +93,13 @@ const createWorkspaceDepProject = (
   };
 };
 
-const manifestScope = new Set(['manifest'] as const);
+const toolchainsScope = new Set(['toolchains'] as const);
 
 describe.concurrent('published packages depending on private workspace packages', () => {
   it('reports drift when a published package depends on a private one', ({ expect }) => {
     const { consumer, dependency, root } = createWorkspaceDepProject();
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([expect.stringContaining(dependency.name)]);
     expect(drift[0]).toContain(consumer.dir);
@@ -110,7 +110,7 @@ describe.concurrent('published packages depending on private workspace packages'
       field: 'peerDependencies',
     });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([expect.stringContaining(dependency.name)]);
   });
@@ -120,7 +120,7 @@ describe.concurrent('published packages depending on private workspace packages'
       field: 'optionalDependencies',
     });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([expect.stringContaining(dependency.name)]);
   });
@@ -141,7 +141,7 @@ describe.concurrent('published packages depending on private workspace packages'
       publishConfig: { directory: build.publishDirectory() },
     });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([expect.stringContaining(rootName)]);
   });
@@ -149,7 +149,7 @@ describe.concurrent('published packages depending on private workspace packages'
   it('passes when the workspace dependency is published', ({ expect }) => {
     const { root } = createWorkspaceDepProject({ dependencyPublished: true });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([]);
   });
@@ -157,7 +157,7 @@ describe.concurrent('published packages depending on private workspace packages'
   it('passes when the private package is only a devDependency', ({ expect }) => {
     const { root } = createWorkspaceDepProject({ field: 'devDependencies' });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([]);
   });
@@ -165,7 +165,7 @@ describe.concurrent('published packages depending on private workspace packages'
   it('passes when the private workspace package is bundled', ({ expect }) => {
     const { root } = createWorkspaceDepProject({ bundled: true });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([]);
   });
@@ -173,7 +173,7 @@ describe.concurrent('published packages depending on private workspace packages'
   it('passes when the depending package is itself private', ({ expect }) => {
     const { root } = createWorkspaceDepProject({ consumerPublished: false });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([]);
   });
@@ -181,15 +181,19 @@ describe.concurrent('published packages depending on private workspace packages'
   it('passes when the private package is pinned to a registry range', ({ expect }) => {
     const { root } = createWorkspaceDepProject({ specifier: build.semverRange() });
 
-    const drift = runVerify({ cwd: root, scopes: manifestScope });
+    const drift = runVerify({ cwd: root, scopes: toolchainsScope });
 
     expect(drift).toStrictEqual([]);
   });
 
-  it('is not reported under an unrelated scope', ({ expect }) => {
+  /*
+   * A toolchain's rules are not generated config, so the scope that checks a
+   * manifest's generated fields leaves them out.
+   */
+  it('is not reported under the manifest scope', ({ expect }) => {
     const { root } = createWorkspaceDepProject();
 
-    const drift = runVerify({ cwd: root, scopes: new Set(['turbo']) });
+    const drift = runVerify({ cwd: root, scopes: new Set(['manifest']) });
 
     expect(drift.some(msg => msg.includes('private workspace'))).toBe(false);
   });

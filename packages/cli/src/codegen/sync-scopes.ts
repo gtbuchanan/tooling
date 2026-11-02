@@ -3,7 +3,9 @@
  * generated artifact. Passed as positional args (`gtb sync mise turbo`,
  * `gtb verify mise`); no args means all scopes.
  */
-export const syncScopes = ['manifest', 'mise', 'scripts', 'tsconfig', 'turbo'] as const;
+export const syncScopes = [
+  'manifest', 'mise', 'scripts', 'toolchains', 'tsconfig', 'turbo',
+] as const;
 
 /**
  * One {@link syncScopes} entry.

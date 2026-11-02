@@ -40,7 +40,7 @@ export interface CheckContext {
  */
 export interface Toolchain {
   /**
-   * What `gtb verify manifest` reports for the toolchain: one message per
+   * What `gtb verify toolchains` reports for the toolchain: one message per
    * problem, empty where there is none.
    */
   readonly checks?: (context: CheckContext) => readonly string[];
