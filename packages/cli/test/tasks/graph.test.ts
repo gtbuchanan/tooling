@@ -2,11 +2,12 @@ import { describe, it } from 'vitest';
 import { createTaskGraph, leafTasks } from '#src/tasks/graph.js';
 import type { Leaf } from '#src/tasks/leaf.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
 
 const pklLeaf: Leaf = {
   aggregate: 'typecheck',
-  appliesTo: pkg => pkg.hasPkl,
+  appliesTo: pkg => pkg.capabilities.has(pklSource),
   name: 'check:pkl',
   task: () => ({ outputs: ['package'] }),
 };
@@ -33,7 +34,10 @@ const leaves = [pklLeaf, eslintLeaf, skillsLeaf];
 
 describe.concurrent('createTaskGraph', () => {
   it('applies a leaf some package satisfies', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities(), makeCapabilities({ hasPkl: true })]);
+    const discovery = makeDiscovery([
+      makeCapabilities(),
+      makeCapabilities({ capabilities: new Set([pklSource]) }),
+    ]);
 
     const graph = createTaskGraph(leaves, discovery);
 
@@ -65,7 +69,10 @@ describe.concurrent('createTaskGraph', () => {
   });
 
   it('applies a leaf without a root variant at no root', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities()], { hasPkl: true, isMonorepo: true });
+    const discovery = makeDiscovery(
+      [makeCapabilities()],
+      { capabilities: new Set([pklSource]), isMonorepo: true },
+    );
 
     const graph = createTaskGraph(leaves, discovery);
 
@@ -96,7 +103,9 @@ describe.concurrent('createTaskGraph membersOf', () => {
   });
 
   it('leaves out members that apply nowhere', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasSkills: true, hasPkl: true })]);
+    const discovery = makeDiscovery([
+      makeCapabilities({ capabilities: new Set([pklSource]), hasSkills: true }),
+    ]);
 
     const graph = createTaskGraph(leaves, discovery);
 

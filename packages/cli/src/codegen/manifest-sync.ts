@@ -6,6 +6,7 @@ import type { PackageCapabilities, WorkspaceDiscovery } from '#src/core/discover
 import { RootManifestSchema } from '#src/core/manifest.js';
 import { patchPackageBlock } from '#src/core/pkl-project.js';
 import { readManifest, readParsedManifest } from '#src/core/workspace.js';
+import { pklPackage } from '#src/toolchains/pkl/capabilities.js';
 
 /**
  * A native package manifest derived from `package.json` — the generic seam
@@ -72,7 +73,7 @@ export interface ManifestWriter {
  * `package {}` block is an error — sync stamps, it does not author.
  */
 const pklWriter: ManifestWriter = {
-  detect: pkg => pkg.hasPklPackage,
+  detect: pkg => pkg.capabilities.has(pklPackage),
   kind: 'pkl',
   render: (pkg, ctx) => {
     const filePath = path.join(pkg.dir, 'PklProject');

@@ -1,11 +1,10 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import type { Capability } from '#src/core/capability.js';
 import {
   buildInclude, generateTaskPrefix, resolveBuildIncludes,
 } from '#src/core/layout.js';
 import type { Manifest } from '#src/core/manifest.js';
-import { hasPackageBlock } from '#src/core/pkl-project.js';
 import { localeComparer } from '#src/core/sort.js';
 import {
   type ResolveWorkspaceOptions,
@@ -41,22 +40,6 @@ export interface PackageCapabilities {
    * Has one or more `generate:*` scripts in package.json.
    */
   readonly hasGenerate: boolean;
-  /**
-   * Has hand-authored Pkl package source — a `*.pkl` file other than the hk
-   * config `hk.pkl`. Excluding `hk.pkl` keeps a single-package repo that
-   * merely *uses* hk (its root is the lone package) from being mistaken for a
-   * Pkl package. Drives `typecheck:pkl` (all Pkl source is validated), not
-   * publishing — see {@link hasPklPackage}.
-   */
-  readonly hasPkl: boolean;
-  /**
-   * Has a *publishable* Pkl package: {@link hasPkl} and its `PklProject`
-   * declares a `package {}` block. The block is Pkl's own definition of a
-   * distributable package (`pkl project package` needs it), so its presence is
-   * the publish signal — a deps-only or block-less Pkl project stays internal.
-   * Drives `PklProject` version-stamping, `pack:pkl`, and `gtb publish`.
-   */
-  readonly hasPklPackage: boolean;
   /**
    * Names of `generate:*` scripts found in package.json.
    */
@@ -165,17 +148,6 @@ const listFiles = (dir: string): readonly string[] => {
   }
 };
 
-/**
- * Reads a package's `PklProject` source, or `''` when absent.
- */
-const readPklProject = (dir: string): string => {
-  try {
-    return readFileSync(path.join(dir, 'PklProject'), 'utf8');
-  } catch {
-    return '';
-  }
-};
-
 const parseManifest = (dir: string): Manifest => {
   try {
     return readParsedManifest(dir);
@@ -260,8 +232,6 @@ const buildCapabilities = (
   const files = listFiles(dir);
   const generateScripts = collectGenerateScripts(manifest);
   const isPublished = manifest.private !== true && manifest.publishConfig?.directory !== undefined;
-  const hasPkl = files.some(file => file.endsWith('.pkl') && file !== 'hk.pkl');
-  const hasPklPackage = hasPkl && hasPackageBlock(readPklProject(dir));
 
   return {
     buildIncludes: isPublished ? resolveBuildIncludes(dir) : buildInclude,
@@ -272,8 +242,6 @@ const buildCapabilities = (
     hasBin: hasDir(dir, 'bin'),
     hasE2e: hasDir(dir, 'e2e'),
     hasGenerate: generateScripts.length > 0,
-    hasPkl,
-    hasPklPackage,
     hasScripts: hasDir(dir, 'scripts'),
     hasSkills: hasDir(dir, 'skills'),
     hasSrc: hasDir(dir, 'src'),

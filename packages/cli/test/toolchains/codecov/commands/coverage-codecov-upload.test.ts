@@ -40,8 +40,6 @@ const capabilities = (name: string): PackageCapabilities => ({
   hasBin: false,
   hasE2e: false,
   hasGenerate: false,
-  hasPkl: false,
-  hasPklPackage: false,
   hasScripts: false,
   hasSkills: false,
   hasSrc: false,

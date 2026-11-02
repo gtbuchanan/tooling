@@ -11,8 +11,8 @@ import { capabilities } from '#src/toolchains/index.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
-const writeFile = (dir: string, name: string, content = ''): void => {
-  writeFileSync(path.join(dir, name), content);
+const writeMarker = (dir: string): void => {
+  writeFileSync(path.join(dir, 'marker'), '');
 };
 
 /**
@@ -75,58 +75,6 @@ describe.concurrent(discoverPackage, () => {
     const result = discoverPackage(dir, capabilities);
 
     expect(result.hasE2e).toBe(true);
-  });
-
-  it('detects a Pkl package via a .pkl source file', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasPkl).toBe(true);
-  });
-
-  it('does not treat an hk.pkl config as a Pkl package', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'hk.pkl', 'amends "..."\n');
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasPkl).toBe(false);
-  });
-
-  it('treats a Pkl package with a package block as publishable', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
-    writeFile(dir, 'PklProject', 'amends "pkl:Project"\n\npackage {\n  name = "x"\n}\n');
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result).toMatchObject({ hasPkl: true, hasPklPackage: true });
-  });
-
-  it('treats a Pkl project without a package block as internal (not publishable)', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
-    writeFile(dir, 'PklProject', 'amends "pkl:Project"\n\ndependencies {}\n');
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result).toMatchObject({ hasPkl: true, hasPklPackage: false });
-  });
-
-  it('treats Pkl source with no PklProject as internal (not publishable)', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    writeFile(dir, 'Defaults.pkl', 'module Defaults\n');
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result).toMatchObject({ hasPkl: true, hasPklPackage: false });
   });
 
   it('detects published package', ({ expect }) => {
@@ -286,12 +234,12 @@ describe.concurrent(discoverWorkspace, () => {
     writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
     const rootName = build.scopedPackageName();
     writeJson(root, 'package.json', { name: rootName });
-    writeFile(root, 'marker');
+    writeMarker(root);
     const pkgName = build.scopedPackageName();
     const pkgDir = path.join(root, 'packages', build.packageName());
     mkdirSync(pkgDir, { recursive: true });
     writeJson(pkgDir, 'package.json', { name: pkgName });
-    writeFile(pkgDir, 'marker');
+    writeMarker(pkgDir);
     const [atRoot, atPackage] = [markedAs(rootName), markedAs(pkgName)];
 
     const result = discoverWorkspace({ capabilities: [atRoot, atPackage], cwd: root });

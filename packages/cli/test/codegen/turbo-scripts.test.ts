@@ -7,6 +7,7 @@ import {
 } from '#src/codegen/turbo-config.js';
 import type { PackageCapabilities } from '#src/core/discovery.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
@@ -64,7 +65,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('generates pkl scripts for Pkl packages', ({ expect }) => {
-    const caps = makeCapabilities({ hasPkl: true });
+    const caps = makeCapabilities({ capabilities: new Set([pklSource, pklPackage]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -73,7 +74,7 @@ describe.concurrent(generatePackageScripts, () => {
   });
 
   it('omits pack:pkl for an internal Pkl package (no package block)', ({ expect }) => {
-    const caps = makeCapabilities({ hasPkl: true, hasPklPackage: false });
+    const caps = makeCapabilities({ capabilities: new Set([pklSource]) });
 
     const result = generatePackageScripts(caps, false);
 
@@ -164,7 +165,7 @@ describe.concurrent(generateRootScripts, () => {
   });
 
   it('generates pack and build aliases for a Pkl-only package', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ hasPkl: true }));
+    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([pklSource, pklPackage]) }));
 
     const result = generateRootScripts(discovery);
 
@@ -195,8 +196,7 @@ describe.concurrent(generateRootScripts, () => {
   it('omits every turbo alias in single-package repos', ({ expect }) => {
     const discovery = makeDiscovery([
       makeCapabilities({
-        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests]),
-        hasPkl: true,
+        capabilities: new Set([eslint, typescript, vitestE2e, vitestTests, pklSource, pklPackage]),
         hasSkills: true,
         hasTest: true,
         isPublished: true,

@@ -1,5 +1,6 @@
 import { Aggregate } from '#src/tasks/aggregates.js';
 import type { Leaf } from '#src/tasks/leaf.js';
+import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 
 /*
  * Pkl package tasks. `typecheck:pkl` evaluates the modules to validate them
@@ -16,7 +17,7 @@ const pklInputs = ['*.pkl', 'PklProject'];
  */
 export const typecheckPklLeaf: Leaf = {
   aggregate: Aggregate.typecheck,
-  appliesTo: pkg => pkg.hasPkl,
+  appliesTo: pkg => pkg.capabilities.has(pklSource),
   name: 'typecheck:pkl',
   task: () => ({ inputs: pklInputs, outputs: [] }),
 };
@@ -26,7 +27,7 @@ export const typecheckPklLeaf: Leaf = {
  */
 export const packPklLeaf: Leaf = {
   aggregate: Aggregate.pack,
-  appliesTo: pkg => pkg.hasPklPackage,
+  appliesTo: pkg => pkg.capabilities.has(pklPackage),
   name: 'pack:pkl',
   task: () => ({
     dependsOn: [typecheckPklLeaf.name],

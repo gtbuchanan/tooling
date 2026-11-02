@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeCapabilities, makeDiscovery } from '#test/codegen/turbo-config.helpers.js';
@@ -74,7 +75,10 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('includes the transit node when only the root lints', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasPkl: true }), makeCapabilities({ hasPkl: true })],
+      [
+        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+      ],
       { capabilities: new Set([eslint]) },
     );
 
@@ -85,7 +89,10 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('includes the transit node when only the root type-checks', ({ expect }) => {
     const discovery = makeDiscovery(
-      [makeCapabilities({ hasPkl: true }), makeCapabilities({ hasPkl: true })],
+      [
+        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+        makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+      ],
       { capabilities: new Set([typescriptSources]) },
     );
 
@@ -95,7 +102,9 @@ describe.concurrent('generateTurboJson (transit)', () => {
   });
 
   it('excludes the transit node when nothing depends on it', ({ expect }) => {
-    const discovery = makeDiscovery([makeCapabilities({ hasPkl: true })]);
+    const discovery = makeDiscovery([
+      makeCapabilities({ capabilities: new Set([pklPackage, pklSource]) }),
+    ]);
 
     const result = generateTurboJson(discovery);
 
