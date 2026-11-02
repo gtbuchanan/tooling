@@ -191,10 +191,10 @@ describe.concurrent('published packages depending on private workspace packages'
    * manifest's generated fields leaves them out.
    */
   it('is not reported under the manifest scope', ({ expect }) => {
-    const { root } = createWorkspaceDepProject();
+    const { dependency, root } = createWorkspaceDepProject();
 
     const drift = runVerify({ cwd: root, scopes: new Set(['manifest']) });
 
-    expect(drift.some(msg => msg.includes('private workspace'))).toBe(false);
+    expect(drift.some(msg => msg.includes(dependency.name))).toBe(false);
   });
 });
