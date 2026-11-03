@@ -116,6 +116,42 @@ describe.concurrent('createTaskGraph membersOf', () => {
   });
 });
 
+describe.concurrent('createTaskGraph withSuperseding', () => {
+  const supersedingLeaf: Leaf = {
+    appliesTo: pkg => pkg.capabilities.has(skills),
+    name: 'check:skills',
+    supersedes: [pklLeaf.name],
+    task: () => ({}),
+  };
+  const supersession = [pklLeaf, eslintLeaf, supersedingLeaf];
+
+  it('lists the leaf and its superseder where both apply', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makePackage({ capabilities: new Set([pklSource]) }),
+      makePackage({ capabilities: new Set([skills]) }),
+    ]);
+
+    const graph = createTaskGraph(supersession, discovery);
+
+    expect(graph.withSuperseding(pklLeaf.name)).toStrictEqual(['check:pkl', 'check:skills']);
+  });
+
+  it('leaves out whichever applies nowhere', ({ expect }) => {
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([skills]) })]);
+
+    const graph = createTaskGraph(supersession, discovery);
+
+    expect(graph.withSuperseding(pklLeaf.name)).toStrictEqual(['check:skills']);
+    expect(graph.withSuperseding(eslintLeaf.name)).toStrictEqual([]);
+  });
+
+  it('rejects a name no leaf is registered as', ({ expect }) => {
+    const graph = createTaskGraph(supersession, makeDiscovery([makePackage()]));
+
+    expect(() => graph.withSuperseding('check:other')).toThrow('check:other');
+  });
+});
+
 describe.concurrent('leafTasks', () => {
   it('keys package tasks by name and root tasks by their root key', ({ expect }) => {
     const discovery = makeDiscovery(

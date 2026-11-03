@@ -2,7 +2,12 @@ import { describe, it } from 'vitest';
 import {
   generatePackageScripts, generateRequiredRootScripts, generateRootScripts, generateTurboJson,
 } from '#src/codegen/turbo-config.js';
+import type { Capability } from '#src/core/capability.js';
+import { createTaskGraph } from '#src/tasks/graph.js';
+import type { Leaf } from '#src/tasks/leaf.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { lintEslintLeaf } from '#src/toolchains/eslint/leaves.js';
+import { leaves } from '#src/toolchains/index.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { makeDiscovery, makePackage } from '#test/helpers.js';
 
@@ -171,6 +176,31 @@ describe.concurrent(generateTurboJson, () => {
     const result = generateTurboJson(discovery);
 
     expect(result.tasks['lint:eslint']?.dependsOn).toStrictEqual(['typecheck:ts', 'transit']);
+  });
+});
+
+describe.concurrent('lint:eslint under a superseded typecheck:ts', () => {
+  const vue: Capability = { detect: () => true, name: 'vue' };
+  const typecheckVueLeaf: Leaf = {
+    appliesTo: pkg => pkg.capabilities.has(vue),
+    name: 'typecheck:vue',
+    supersedes: ['typecheck:ts'],
+    task: () => ({}),
+  };
+
+  /*
+   * Where another checker takes over from tsc, lint must still wait on a type
+   * check, without the ESLint toolchain naming whichever checker that is.
+   */
+  it('waits on whatever supersedes typecheck:ts', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makePackage({ capabilities: new Set([eslint, typescript]) }),
+      makePackage({ capabilities: new Set([eslint, typescript, vue]) }),
+    ]);
+    const graph = createTaskGraph([...leaves, typecheckVueLeaf], discovery);
+
+    expect(lintEslintLeaf.task(graph).dependsOn)
+      .toStrictEqual(['typecheck:ts', 'typecheck:vue', 'transit']);
   });
 });
 

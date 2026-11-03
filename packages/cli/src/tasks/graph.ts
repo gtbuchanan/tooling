@@ -34,6 +34,15 @@ export const createTaskGraph = (
         ...members.filter(isApplied).map(leaf => leaf.name),
       ];
     },
+    withSuperseding: (name) => {
+      const leaf = leafNamed(name);
+
+      return leaves
+        .filter(candidate =>
+          candidate === leaf || (candidate.supersedes?.includes(leaf.name) ?? false))
+        .filter(isApplied)
+        .map(candidate => candidate.name);
+    },
   };
 };
 

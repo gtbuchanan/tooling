@@ -75,14 +75,66 @@ const registrationsOf = (toolchains: readonly Toolchain[]): readonly Registratio
 const registrationName = (registration: Registration): string =>
   'leaf' in registration ? registration.leaf.name : registration.name;
 
+/*
+ * Every leaf name reachable from `names` by following `supersedes`. A leaf
+ * reaching its own name is in a cycle, and narrowing would withdraw each leaf
+ * in it wherever they all apply.
+ */
+const supersededThrough = (
+  leaves: readonly Leaf[],
+  names: readonly string[],
+  seen: ReadonlySet<string>,
+): ReadonlySet<string> => {
+  const unseen = names.filter(name => !seen.has(name));
+  return unseen.length === 0
+    ? seen
+    : supersededThrough(
+        leaves,
+        unseen.flatMap(name => leaves.find(leaf => leaf.name === name)?.supersedes ?? []),
+        new Set([...seen, ...unseen]),
+      );
+};
+
+/*
+ * Narrows each superseded leaf to the packages none of its superseders apply
+ * to. Done here rather than in the superseded leaf's own `appliesTo`, which
+ * would have to import every toolchain that replaces it.
+ */
+const withdrawSuperseded = (leaves: readonly Leaf[]): readonly Leaf[] => {
+  const unknown = leaves
+    .flatMap(leaf => leaf.supersedes ?? [])
+    .filter(name => leaves.every(leaf => leaf.name !== name));
+  if (unknown.length > 0) {
+    throw new Error(`No leaf to supersede is registered as '${unknown.join('\', \'')}'`);
+  }
+  const cyclic = leaves
+    .filter(leaf => supersededThrough(leaves, leaf.supersedes ?? [], new Set()).has(leaf.name))
+    .map(leaf => leaf.name);
+  if (cyclic.length > 0) {
+    throw new Error(`Leaves supersede themselves through a cycle: '${cyclic.join('\', \'')}'`);
+  }
+
+  return leaves.map((leaf): Leaf => {
+    const superseders = leaves.filter(other => other.supersedes?.includes(leaf.name) ?? false);
+
+    return superseders.length === 0
+      ? leaf
+      : {
+          ...leaf,
+          appliesTo: pkg =>
+            leaf.appliesTo(pkg) && superseders.every(superseder => !superseder.appliesTo(pkg)),
+        };
+  });
+};
+
 /**
  * Every leaf the toolchains register, in name order, which is the order each
  * aggregate lists its members in. Toolchain order would serve none of them:
  * one toolchain's leaves belong to different aggregates.
  */
 export const toolchainLeaves = (toolchains: readonly Toolchain[]): readonly Leaf[] =>
-  registrationsOf(toolchains)
-    .flatMap(registration => ('leaf' in registration ? [registration.leaf] : []))
+  withdrawSuperseded(registrationsOf(toolchains)
+    .flatMap(registration => ('leaf' in registration ? [registration.leaf] : [])))
     .toSorted((left, right) => localeComparer(left.name, right.name));
 
 /**

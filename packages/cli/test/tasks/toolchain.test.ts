@@ -12,7 +12,7 @@ import {
   toolchainLeaves,
 } from '#src/tasks/toolchain.js';
 import { capabilities } from '#src/toolchains/index.js';
-import { createTempDir, writeJson } from '#test/helpers.js';
+import { createTempDir, makePackage, writeJson } from '#test/helpers.js';
 
 const makeLeaf = (name: string): Leaf => ({
   appliesTo: () => true,
@@ -52,6 +52,84 @@ describe.concurrent(toolchainLeaves, () => {
 
     expect(toolchainLeaves(toolchains).map(leaf => leaf.name))
       .toStrictEqual(['test:vitest:fast']);
+  });
+
+  it('withdraws a superseded leaf from the packages its superseder applies to', ({ expect }) => {
+    const typescript = makeCapability('typescript');
+    const tsdown = makeCapability('tsdown');
+    const toolchains: readonly Toolchain[] = [
+      {
+        registrations: [{
+          command: makeCommand('compile:ts'),
+          leaf: { ...makeLeaf('compile:ts'), appliesTo: pkg => pkg.capabilities.has(typescript) },
+        }],
+      },
+      {
+        registrations: [{
+          command: makeCommand('compile:tsdown'),
+          leaf: {
+            ...makeLeaf('compile:tsdown'),
+            appliesTo: pkg => pkg.capabilities.has(tsdown),
+            supersedes: ['compile:ts'],
+          },
+        }],
+      },
+    ];
+    const plain = makePackage({ capabilities: new Set([typescript]) });
+    const bundled = makePackage({ capabilities: new Set([tsdown, typescript]) });
+
+    const compileTs = toolchainLeaves(toolchains).find(leaf => leaf.name === 'compile:ts');
+
+    expect([plain, bundled].map(pkg => compileTs?.appliesTo(pkg))).toStrictEqual([true, false]);
+  });
+
+  /*
+   * A misspelt name would otherwise supersede nothing, and the superseded leaf
+   * would run beside its replacement.
+   */
+  it('rejects superseding a leaf no toolchain registers', ({ expect }) => {
+    const toolchains: readonly Toolchain[] = [{
+      registrations: [{
+        command: makeCommand('compile:tsdown'),
+        leaf: { ...makeLeaf('compile:tsdown'), supersedes: ['compile:tsc'] },
+      }],
+    }];
+
+    expect(() => toolchainLeaves(toolchains)).toThrow(/compile:tsc/v);
+  });
+
+  // Narrowed against itself, the leaf would silently apply nowhere.
+  it('rejects a leaf superseding itself', ({ expect }) => {
+    const toolchains: readonly Toolchain[] = [{
+      registrations: [{
+        command: makeCommand('compile:tsdown'),
+        leaf: { ...makeLeaf('compile:tsdown'), supersedes: ['compile:tsdown'] },
+      }],
+    }];
+
+    expect(() => toolchainLeaves(toolchains)).toThrow(/compile:tsdown/v);
+  });
+
+  // Each leaf in the cycle would be withdrawn wherever they all apply.
+  it('rejects leaves superseding each other in a cycle', ({ expect }) => {
+    const toolchains: readonly Toolchain[] = [{
+      registrations: [
+        {
+          command: makeCommand('compile:a'),
+          leaf: { ...makeLeaf('compile:a'), supersedes: ['compile:b'] },
+        },
+        {
+          command: makeCommand('compile:b'),
+          leaf: { ...makeLeaf('compile:b'), supersedes: ['compile:c'] },
+        },
+        {
+          command: makeCommand('compile:c'),
+          leaf: { ...makeLeaf('compile:c'), supersedes: ['compile:a'] },
+        },
+      ],
+    }];
+
+    expect(() => toolchainLeaves(toolchains)).toThrow(/compile:a.*compile:b.*compile:c/v);
   });
 });
 
