@@ -4,9 +4,9 @@ import hostedGitInfo from 'hosted-git-info';
 import * as v from 'valibot';
 import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
 import { RootManifestSchema } from '#src/core/manifest.js';
-import { patchPackageBlock } from '#src/core/pkl-project.js';
 import { readManifest, readParsedManifest } from '#src/core/workspace.js';
 import { pklPackage } from '#src/toolchains/pkl/capabilities.js';
+import { patchPackageBlock } from '#src/toolchains/pkl/pkl-project.js';
 
 /**
  * A native package manifest derived from `package.json` — the generic seam

@@ -4,7 +4,7 @@ import {
   patchPackageBlock,
   readPackageName,
   readPackageVersion,
-} from '#src/core/pkl-project.js';
+} from '#src/toolchains/pkl/pkl-project.js';
 
 const opts = { isMonorepo: true, repoPath: 'github.com/o/r', version: '1.0.0' } as const;
 

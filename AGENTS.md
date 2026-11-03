@@ -156,7 +156,7 @@ coverage, setupFiles, and mock reset.
   byte-stable, so a version bump changes only the `version` line. This is the
   generic non-npm-manifest seam (`codegen/manifest-sync.ts`, a kind-keyed writer
   registry; the source-text helper — brace-match + line patch, no Pkl parser —
-  is `core/pkl-project.ts`); a future .NET `.csproj` writer patches the same way.
+  is `toolchains/pkl/pkl-project.ts`); a future .NET `.csproj` writer patches the same way.
   `gtb verify manifest` asserts no drift on the owned fields.
   **Publishability is the presence of a `package {}` block** — Pkl's own
   definition of a distributable package — so a deps-only or block-less

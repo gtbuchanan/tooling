@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Capability, CapabilitySource } from '#src/core/capability.js';
-import { hasPackageBlock } from '#src/core/pkl-project.js';
+import { hasPackageBlock } from '#src/toolchains/pkl/pkl-project.js';
 
 const isPklSource = ({ entries }: CapabilitySource): boolean =>
   entries.some(entry => entry.endsWith('.pkl') && entry !== 'hk.pkl');
