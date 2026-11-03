@@ -97,6 +97,40 @@ describe.concurrent(toolchainLeaves, () => {
 
     expect(() => toolchainLeaves(toolchains)).toThrow(/compile:tsc/v);
   });
+
+  // Narrowed against itself, the leaf would silently apply nowhere.
+  it('rejects a leaf superseding itself', ({ expect }) => {
+    const toolchains: readonly Toolchain[] = [{
+      registrations: [{
+        command: makeCommand('compile:tsdown'),
+        leaf: { ...makeLeaf('compile:tsdown'), supersedes: ['compile:tsdown'] },
+      }],
+    }];
+
+    expect(() => toolchainLeaves(toolchains)).toThrow(/compile:tsdown/v);
+  });
+
+  // Each leaf in the cycle would be withdrawn wherever they all apply.
+  it('rejects leaves superseding each other in a cycle', ({ expect }) => {
+    const toolchains: readonly Toolchain[] = [{
+      registrations: [
+        {
+          command: makeCommand('compile:a'),
+          leaf: { ...makeLeaf('compile:a'), supersedes: ['compile:b'] },
+        },
+        {
+          command: makeCommand('compile:b'),
+          leaf: { ...makeLeaf('compile:b'), supersedes: ['compile:c'] },
+        },
+        {
+          command: makeCommand('compile:c'),
+          leaf: { ...makeLeaf('compile:c'), supersedes: ['compile:a'] },
+        },
+      ],
+    }];
+
+    expect(() => toolchainLeaves(toolchains)).toThrow(/compile:a.*compile:b.*compile:c/v);
+  });
 });
 
 describe.concurrent(taskSubCommands, () => {
