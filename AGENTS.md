@@ -337,7 +337,10 @@ through `package.json` scripts backed by `gtb` leaf commands.
     blank continuation lines of a multi-paragraph summary, and
     `changeset version` formats the CHANGELOGs only when it finds a
     root-installed formatter, which a consumer may lack. Without the fix the
-    release PR fails its own `Pre-Commit` check.
+    release PR fails its own `Pre-Commit` check. `.changeset/config.json`
+    sets `"format": false` so hk is the only formatter: changesets' `auto`
+    would otherwise find the root `prettier` and format the CHANGELOGs
+    first, without eslint-config's options.
   - **`gtb publish`** runs `changeset publish` (npm, honoring the ambient
     OIDC + `NPM_CONFIG_PROVENANCE` env), then creates a GitHub release per
     published npm package, and then dispatches every non-npm channel (the
