@@ -30,6 +30,12 @@ export interface TaskGraph {
    * the root's first, as //# keys, then the packages', each in registry order.
    */
   readonly membersOf: (aggregate: AggregateName) => readonly string[];
+  /**
+   * The leaf and every leaf superseding it, those applying to some package, in
+   * registry order: what a task waiting on the leaf waits on, so the waiting
+   * toolchain need not know which toolchain took over.
+   */
+  readonly withSuperseding: (leaf: string) => readonly string[];
 }
 
 /**

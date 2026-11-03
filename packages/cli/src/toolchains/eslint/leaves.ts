@@ -52,7 +52,7 @@ export const lintEslintLeaf: Leaf = {
   task: graph => ({
     dependsOn: [
       ...codegenDeps(graph),
-      ...(graph.applies(typecheckTsLeaf.name) ? [typecheckTsLeaf.name] : []),
+      ...graph.withSuperseding(typecheckTsLeaf.name),
       Aggregate.transit,
     ],
     inputs: [
