@@ -65,5 +65,13 @@ export interface Leaf {
    */
   readonly name: string;
   readonly root?: RootLeaf;
+  /**
+   * Names of other toolchains' leaves this one replaces in the packages it
+   * applies to, as tsdown replaces `compile:ts`. The registry narrows each
+   * superseded leaf to the packages nothing supersedes it in, so the
+   * dependency runs from the superseding toolchain to the superseded one and
+   * never back. A root variant is not narrowed.
+   */
+  readonly supersedes?: readonly string[];
   readonly task: (graph: TaskGraph) => TurboTask;
 }

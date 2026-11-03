@@ -75,14 +75,40 @@ const registrationsOf = (toolchains: readonly Toolchain[]): readonly Registratio
 const registrationName = (registration: Registration): string =>
   'leaf' in registration ? registration.leaf.name : registration.name;
 
+/*
+ * Narrows each superseded leaf to the packages none of its superseders apply
+ * to. Done here rather than in the superseded leaf's own `appliesTo`, which
+ * would have to import every toolchain that replaces it.
+ */
+const withdrawSuperseded = (leaves: readonly Leaf[]): readonly Leaf[] => {
+  const unknown = leaves
+    .flatMap(leaf => leaf.supersedes ?? [])
+    .filter(name => leaves.every(leaf => leaf.name !== name));
+  if (unknown.length > 0) {
+    throw new Error(`No leaf to supersede is registered as '${unknown.join('\', \'')}'`);
+  }
+
+  return leaves.map((leaf): Leaf => {
+    const superseders = leaves.filter(other => other.supersedes?.includes(leaf.name) ?? false);
+
+    return superseders.length === 0
+      ? leaf
+      : {
+          ...leaf,
+          appliesTo: pkg =>
+            leaf.appliesTo(pkg) && superseders.every(superseder => !superseder.appliesTo(pkg)),
+        };
+  });
+};
+
 /**
  * Every leaf the toolchains register, in name order, which is the order each
  * aggregate lists its members in. Toolchain order would serve none of them:
  * one toolchain's leaves belong to different aggregates.
  */
 export const toolchainLeaves = (toolchains: readonly Toolchain[]): readonly Leaf[] =>
-  registrationsOf(toolchains)
-    .flatMap(registration => ('leaf' in registration ? [registration.leaf] : []))
+  withdrawSuperseded(registrationsOf(toolchains)
+    .flatMap(registration => ('leaf' in registration ? [registration.leaf] : [])))
     .toSorted((left, right) => localeComparer(left.name, right.name));
 
 /**
