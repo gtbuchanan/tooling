@@ -1,15 +1,17 @@
 import { defineCommand } from 'citty';
-import { describe, it } from 'vitest';
+import { describe, it, vi } from 'vitest';
 import type { Capability } from '#src/core/capability.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
-import type { Leaf } from '#src/tasks/leaf.js';
+import type { Leaf, PublishingLeaf, Report } from '#src/tasks/leaf.js';
 import {
   type CheckContext,
+  type PublishingRegistration,
   type Toolchain,
   taskSubCommands,
   toolchainCapabilities,
   toolchainChecks,
   toolchainLeaves,
+  toolchainReports,
 } from '#src/tasks/toolchain.js';
 import { capabilities } from '#src/toolchains/index.js';
 import { createTempDir, makePackage, writeJson } from '#test/helpers.js';
@@ -130,6 +132,111 @@ describe.concurrent(toolchainLeaves, () => {
     }];
 
     expect(() => toolchainLeaves(toolchains)).toThrow(/compile:a.*compile:b.*compile:c/v);
+  });
+});
+
+const fastCoverage: Report = { format: 'lcov', kind: 'coverage', path: 'coverage/fast/lcov.info' };
+const slowCoverage: Report = { format: 'lcov', kind: 'coverage', path: 'coverage/slow/lcov.info' };
+const slowResults: Report = { format: 'junit', kind: 'test-results', path: 'results/slow.xml' };
+
+const reportingToolchains = (
+  tests: Capability,
+  commandFor: PublishingRegistration['commandFor'],
+): readonly Toolchain[] => [
+  {
+    registrations: [
+      {
+        command: makeCommand('test:slow'),
+        leaf: {
+          ...makeLeaf('test:slow'),
+          appliesTo: pkg => pkg.capabilities.has(tests),
+          reports: [slowCoverage, slowResults],
+        },
+      },
+      {
+        command: makeCommand('test:fast'),
+        leaf: {
+          ...makeLeaf('test:fast'),
+          appliesTo: pkg => pkg.capabilities.has(tests),
+          reports: [fastCoverage],
+        },
+      },
+      { command: makeCommand('lint:eslint'), leaf: makeLeaf('lint:eslint') },
+    ],
+  },
+  {
+    registrations: [{
+      commandFor,
+      leaf: { name: 'coverage:upload', publishes: 'coverage', task: () => ({}) },
+    }],
+  },
+];
+
+// The registry derives a publisher from other leaves' reports, never its own.
+export const publisherWithReports: PublishingLeaf = {
+  name: 'coverage:upload',
+  publishes: 'coverage',
+  // @ts-expect-error -- a publishing leaf declares no reports of its own
+  reports: [fastCoverage],
+  task: () => ({}),
+};
+
+describe.concurrent('publishing leaves', () => {
+  it('applies a publishing leaf wherever a leaf declaring its kind applies', ({ expect }) => {
+    const tests = makeCapability('tests');
+    const tested = makePackage({ capabilities: new Set([tests]) });
+    const untested = makePackage();
+
+    const upload = toolchainLeaves(reportingToolchains(tests, () => makeCommand('upload')))
+      .find(leaf => leaf.name === 'coverage:upload');
+
+    expect([tested, untested].map(pkg => upload?.appliesTo(pkg))).toStrictEqual([true, false]);
+  });
+
+  it('withdraws a publishing leaf where its only source is superseded', ({ expect }) => {
+    const tests = makeCapability('tests');
+    const other = makeCapability('other');
+    const toolchains: readonly Toolchain[] = [
+      ...reportingToolchains(tests, () => makeCommand('upload')),
+      {
+        registrations: [{
+          command: makeCommand('test:other'),
+          leaf: {
+            ...makeLeaf('test:other'),
+            appliesTo: pkg => pkg.capabilities.has(other),
+            supersedes: ['test:fast', 'test:slow'],
+          },
+        }],
+      },
+    ];
+    const tested = makePackage({ capabilities: new Set([tests]) });
+    const replaced = makePackage({ capabilities: new Set([other, tests]) });
+
+    const upload = toolchainLeaves(toolchains).find(leaf => leaf.name === 'coverage:upload');
+
+    expect([tested, replaced].map(pkg => upload?.appliesTo(pkg))).toStrictEqual([true, false]);
+  });
+
+  it('lists the reports of a kind in leaf name order', ({ expect }) => {
+    const toolchains = reportingToolchains(makeCapability('tests'), () => makeCommand('upload'));
+
+    expect(toolchainReports(toolchains, 'coverage')).toStrictEqual([fastCoverage, slowCoverage]);
+  });
+
+  it('leaves out the reports of another kind', ({ expect }) => {
+    const toolchains = reportingToolchains(makeCapability('tests'), () => makeCommand('upload'));
+
+    expect(toolchainReports(toolchains, 'test-results')).toStrictEqual([slowResults]);
+  });
+
+  it('builds a publishing command from the reports of its kind', ({ expect }) => {
+    const upload = makeCommand('upload');
+    const commandFor = vi.fn<PublishingRegistration['commandFor']>(() => upload);
+
+    const commands = taskSubCommands(reportingToolchains(makeCapability('tests'), commandFor));
+
+    expect(commandFor).toHaveBeenCalledWith([fastCoverage, slowCoverage]);
+    expect(commands).toHaveProperty(['coverage:upload'], upload);
   });
 });
 

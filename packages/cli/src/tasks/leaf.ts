@@ -51,6 +51,19 @@ export interface RootLeaf {
 }
 
 /**
+ * A report a leaf writes, for another toolchain's leaf to publish without
+ * knowing which tool wrote it. The path is relative to the package.
+ */
+export type Report =
+  | { readonly format: 'junit'; readonly kind: 'test-results'; readonly path: string }
+  | { readonly format: 'lcov'; readonly kind: 'coverage'; readonly path: string };
+
+/**
+ * What a publishing leaf publishes.
+ */
+export type ReportKind = Report['kind'];
+
+/**
  * One leaf: what it applies to, the aggregate it belongs to, and the turbo task
  * that runs it.
  *
@@ -70,6 +83,10 @@ export interface Leaf {
    * The `gtb task` argument, the script name and the task name at once.
    */
   readonly name: string;
+  /**
+   * The reports the leaf writes, which a leaf publishing their kind uploads.
+   */
+  readonly reports?: readonly Report[];
   readonly root?: RootLeaf;
   /**
    * Names of other toolchains' leaves this one replaces in the packages it
@@ -81,3 +98,15 @@ export interface Leaf {
   readonly supersedes?: readonly string[];
   readonly task: (graph: TaskGraph) => TurboTask;
 }
+
+/**
+ * A leaf publishing every report of one kind, which the registry applies
+ * wherever a leaf declaring such a report applies. It names the kind in place
+ * of `appliesTo`, so the publishing toolchain never imports the declaring one.
+ * It declares no reports itself, since the registry reads reports from the
+ * declaring leaves alone, and supersedes nothing: supersession reaches it
+ * through the declaring leaves it follows.
+ */
+export type PublishingLeaf = Omit<Leaf, 'appliesTo' | 'reports' | 'supersedes'> & {
+  readonly publishes: ReportKind;
+};

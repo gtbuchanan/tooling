@@ -2,7 +2,9 @@ import type { SubCommandsDef } from 'citty';
 import type { Capability } from '#src/core/capability.js';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
-import type { Leaf } from '#src/tasks/leaf.js';
+import type {
+  Leaf, PublishingLeaf, Report, ReportKind,
+} from '#src/tasks/leaf.js';
 
 type TaskCommand = SubCommandsDef[string];
 
@@ -24,9 +26,18 @@ export interface CommandRegistration {
 }
 
 /**
+ * A publishing leaf, and the `gtb task` subcommand its script runs, built from
+ * every report of the kind it publishes.
+ */
+export interface PublishingRegistration {
+  readonly commandFor: (reports: readonly Report[]) => TaskCommand;
+  readonly leaf: PublishingLeaf;
+}
+
+/**
  * One `gtb task` subcommand a toolchain contributes.
  */
-export type Registration = CommandRegistration | LeafRegistration;
+export type Registration = CommandRegistration | LeafRegistration | PublishingRegistration;
 
 /**
  * What a toolchain's checks may read of the workspace.
@@ -127,15 +138,53 @@ const withdrawSuperseded = (leaves: readonly Leaf[]): readonly Leaf[] => {
   });
 };
 
+/*
+ * The leaves registered with a command of their own, in name order: every leaf
+ * but the publishing ones, which are derived from these.
+ */
+const declaringLeaves = (toolchains: readonly Toolchain[]): readonly Leaf[] =>
+  registrationsOf(toolchains)
+    .flatMap(registration =>
+      ('commandFor' in registration || !('leaf' in registration) ? [] : [registration.leaf]))
+    .toSorted((left, right) => localeComparer(left.name, right.name));
+
+const reportsOf = (leaves: readonly Leaf[], kind: ReportKind): readonly Report[] =>
+  leaves.flatMap(leaf => (leaf.reports ?? []).filter(report => report.kind === kind));
+
+const publishingLeaf = (
+  { publishes, ...leaf }: PublishingLeaf,
+  declaring: readonly Leaf[],
+): Leaf => {
+  const sources = declaring.filter(candidate => reportsOf([candidate], publishes).length > 0);
+
+  return { ...leaf, appliesTo: pkg => sources.some(source => source.appliesTo(pkg)) };
+};
+
 /**
  * Every leaf the toolchains register, in name order, which is the order each
  * aggregate lists its members in. Toolchain order would serve none of them:
  * one toolchain's leaves belong to different aggregates.
  */
-export const toolchainLeaves = (toolchains: readonly Toolchain[]): readonly Leaf[] =>
-  withdrawSuperseded(registrationsOf(toolchains)
-    .flatMap(registration => ('leaf' in registration ? [registration.leaf] : [])))
+export const toolchainLeaves = (toolchains: readonly Toolchain[]): readonly Leaf[] => {
+  /*
+   * Narrowed before the publishers are derived from them, so a publisher
+   * withdraws wherever every leaf declaring its kind has been superseded.
+   */
+  const declaring = withdrawSuperseded(declaringLeaves(toolchains));
+  const publishing = registrationsOf(toolchains).flatMap(registration =>
+    ('commandFor' in registration ? [publishingLeaf(registration.leaf, declaring)] : []));
+
+  return [...declaring, ...publishing]
     .toSorted((left, right) => localeComparer(left.name, right.name));
+};
+
+/**
+ * Every report of one kind the toolchains' leaves declare, in leaf name order.
+ */
+export const toolchainReports = (
+  toolchains: readonly Toolchain[],
+  kind: ReportKind,
+): readonly Report[] => reportsOf(declaringLeaves(toolchains), kind);
 
 /**
  * The `gtb task` subcommands the toolchains register, keyed by name in name
@@ -149,9 +198,14 @@ export const taskSubCommands = (toolchains: readonly Toolchain[]): SubCommandsDe
   if (duplicates.length > 0) {
     throw new Error(`More than one task is registered as '${duplicates.join('\', \'')}'`);
   }
+  const declaring = declaringLeaves(toolchains);
 
   return Object.fromEntries(registrationsOf(toolchains)
-    .map((registration): readonly [string, TaskCommand] =>
-      [registrationName(registration), registration.command])
+    .map((registration): readonly [string, TaskCommand] => [
+      registrationName(registration),
+      'commandFor' in registration
+        ? registration.commandFor(reportsOf(declaring, registration.leaf.publishes))
+        : registration.command,
+    ])
     .toSorted(([left], [right]) => localeComparer(left, right)));
 };
