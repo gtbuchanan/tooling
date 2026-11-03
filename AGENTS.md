@@ -23,7 +23,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
   dependency-review-config.yml — License allowlist for dependency-review.yml
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
-    cd.yml                 — Reusable: gtb version (changesets + manifest sync) then gtb publish (npm via OIDC + non-npm channels)
+    cd.yml                 — Reusable: gtb version (changesets + manifest sync + hk fix) then gtb publish (npm via OIDC + non-npm channels)
     changeset-check.yml    — Reusable: verify a changeset exists
     ci.yml                 — Reusable: build + slow + e2e + coverage
     dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
@@ -332,7 +332,12 @@ through `package.json` scripts backed by `gtb` leaf commands.
     `gtb verify manifest` drift-free). The chaining lives inside `gtb`
     because changesets/action splits its `version-script` input on
     whitespace and execs it without a shell, so a `&&` chain would be passed
-    to changesets as bogus args.
+    to changesets as bogus args. It ends with `hk fix --unstaged` over the
+    files those two steps wrote: the changesets changelog generator indents
+    blank continuation lines of a multi-paragraph summary, and
+    `changeset version` formats the CHANGELOGs only when it finds a
+    root-installed formatter, which a consumer may lack. Without the fix the
+    release PR fails its own `Pre-Commit` check.
   - **`gtb publish`** runs `changeset publish` (npm, honoring the ambient
     OIDC + `NPM_CONFIG_PROVENANCE` env), then creates a GitHub release per
     published npm package, and then dispatches every non-npm channel (the

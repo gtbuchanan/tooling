@@ -9,14 +9,12 @@ interface RunCall {
 describe.concurrent(executeVersion, () => {
   it('awaits changeset version before the manifest-scoped sync', async ({ expect }) => {
     const order: string[] = [];
-    const runCalls: RunCall[] = [];
     let syncScopes: readonly string[] = [];
     let hasRunFinished = false;
 
     await executeVersion({
-      run: async (command, options) => {
+      run: async () => {
         order.push('run:start');
-        runCalls.push({ args: options?.args ?? [], command });
         await Promise.resolve();
         hasRunFinished = true;
         order.push('run:end');
@@ -30,10 +28,27 @@ describe.concurrent(executeVersion, () => {
       },
     });
 
-    expect(runCalls).toStrictEqual([
-      { args: ['exec', 'changeset', 'version'], command: 'pnpm' },
-    ]);
     expect(syncScopes).toStrictEqual(['manifest']);
-    expect(order).toStrictEqual(['run:start', 'run:end', 'sync']);
+    expect(order.slice(0, 3)).toStrictEqual(['run:start', 'run:end', 'sync']);
+  });
+
+  it('fixes the unstaged files with hk after the sync', async ({ expect }) => {
+    const calls: (RunCall | 'sync')[] = [];
+
+    await executeVersion({
+      run: async (command, options) => {
+        await Promise.resolve();
+        calls.push({ args: options?.args ?? [], command });
+      },
+      sync: () => {
+        calls.push('sync');
+      },
+    });
+
+    expect(calls).toStrictEqual([
+      { args: ['exec', 'changeset', 'version'], command: 'pnpm' },
+      'sync',
+      { args: ['fix', '--unstaged'], command: 'hk' },
+    ]);
   });
 });

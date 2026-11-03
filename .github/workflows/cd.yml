@@ -63,7 +63,9 @@ jobs:
 
       # `gtb version` runs `changeset version` then a `manifest`-scoped sync in
       # one process so regenerated native manifests land in the same version
-      # commit/PR (the sync no-ops for plain-npm repos). It can't be a `&&`
+      # commit/PR (the sync no-ops for plain-npm repos), then `hk fix` over the
+      # files both wrote, so the release PR passes its own `Pre-Commit` check
+      # (and `HK=0` below skips only hk's git hook, not this). It can't be a `&&`
       # chain in this input: changesets/action splits `version-script` on
       # whitespace and execs it without a shell, so `&&` (and everything after)
       # would be passed to changesets as bogus positional args ("Too many

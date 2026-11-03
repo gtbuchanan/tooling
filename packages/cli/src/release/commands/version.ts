@@ -20,6 +20,14 @@ export interface VersionDeps {
  * chain in the workflow gets passed to changesets as bogus positional args
  * ("Too many arguments passed to changesets"), so the chaining has to live
  * here.
+ *
+ * Finally runs `hk fix` over the unstaged files, which are exactly what the
+ * first two steps wrote. The changesets changelog generator indents every
+ * continuation line of a summary, blank ones included, and `changeset version`
+ * formats the result only when it detects a root-installed formatter, so
+ * without this a multi-paragraph changeset fails the release PR's own
+ * pre-commit check. An unfixable finding fails here instead, in the run that
+ * caused it.
  */
 export const executeVersion = async ({
   run: runCommand,
@@ -27,17 +35,19 @@ export const executeVersion = async ({
 }: VersionDeps): Promise<void> => {
   await runCommand('pnpm', { args: ['exec', 'changeset', 'version'] });
   sync({ scopes: new Set(['manifest']) });
+  await runCommand('hk', { args: ['fix', '--unstaged'] });
 };
 
 /**
  * `gtb version` — CD's changesets version command: `changeset version`
  * followed by a `manifest`-scoped sync so any regenerated native manifests
- * land in the same version commit/PR. The manifest sync is a no-op for
- * plain-npm workspaces, so CD runs this unconditionally.
+ * land in the same version commit/PR, then `hk fix` over what both wrote. The
+ * manifest sync is a no-op for plain-npm workspaces, so CD runs this
+ * unconditionally.
  */
 export const version = defineCommand({
   meta: {
-    description: 'Apply changesets version, then sync native manifests',
+    description: 'Apply changesets version, sync native manifests, then hk fix',
     name: rootNames.version,
   },
   run: () => executeVersion({ run, sync: runSync }),
