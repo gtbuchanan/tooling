@@ -110,12 +110,8 @@ const aliasRootScripts = (discovery: WorkspaceDiscovery): Record<string, string>
   const aliases = [
     ...[
       Aggregate.check, Aggregate.buildCi, Aggregate.coverageMerge,
-      Aggregate.pack, Aggregate.testE2e, Aggregate.testSlow,
+      Aggregate.pack, Aggregate.testE2e, Aggregate.testSlow, Aggregate.build,
     ].filter(isDeclared),
-    ...(isDeclared(Aggregate.check) || isDeclared(Aggregate.pack) ||
-      isDeclared(Aggregate.testE2e)
-      ? [Aggregate.build]
-      : []),
     /*
      * A root that authors skills of its own owns this script name: turbo
      * dispatches `//#deploy:skills` through it, so an alias here would

@@ -112,6 +112,14 @@ describe.concurrent(generateRootScripts, () => {
     expect(result).toHaveProperty('deploy:skills', 'gtb turbo run deploy:skills');
   });
 
+  it('generates the build alias when only deploy:skills builds', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([skills]) }));
+
+    const result = generateRootScripts(discovery);
+
+    expect(result).toHaveProperty('build', 'gtb turbo run build');
+  });
+
   /*
    * Turbo dispatches `//#deploy:skills` through the root script of that name,
    * so the root can't also carry the alias — it would re-enter turbo.
@@ -165,7 +173,7 @@ describe.concurrent(forbiddenRootScripts, () => {
   it('excludes deploy:skills, which the root legitimately owns', ({ expect }) => {
     const discovery = makeDiscovery([makePackage({ capabilities: new Set([skills]) })]);
 
-    expect(forbiddenRootScripts(discovery)).toStrictEqual([]);
+    expect(forbiddenRootScripts(discovery)).toStrictEqual(['build']);
   });
 
   it('lists nothing for monorepos, where the aliases are legitimate', ({ expect }) => {
