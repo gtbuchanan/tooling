@@ -5,6 +5,9 @@ import { topo } from '#src/tasks/turbo-task.js';
 import { packNpmLeaf } from '#src/toolchains/npm/leaves.js';
 import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
+import {
+  blobFile, coverageDir, lcovReport, mergeBlobDir,
+} from '#src/toolchains/vitest/paths.js';
 
 /*
  * Unlike compile inputs, test inputs can't be resolved from vitest config —
@@ -35,12 +38,12 @@ export const testVitestFastLeaf: Leaf = {
   aggregate: Aggregate.check,
   appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'test:vitest:fast',
-  reports: [{ format: 'lcov', kind: 'coverage', path: 'dist/coverage/vitest/fast/lcov.info' }],
+  reports: [lcovReport(coverageDir.fast)],
   task: graph => ({
     dependsOn: unitTestDeps(graph),
     env: ['CI'],
     inputs: testInputs,
-    outputs: ['dist/coverage/vitest/fast/**', 'dist/test-results/vitest/merge/blob-fast.json'],
+    outputs: [`${coverageDir.fast}/**`, blobFile.fast],
   }),
 };
 
@@ -51,12 +54,12 @@ export const testVitestSlowLeaf: Leaf = {
   aggregate: Aggregate.testSlow,
   appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'test:vitest:slow',
-  reports: [{ format: 'lcov', kind: 'coverage', path: 'dist/coverage/vitest/slow/lcov.info' }],
+  reports: [lcovReport(coverageDir.slow)],
   task: graph => ({
     dependsOn: unitTestDeps(graph),
     env: ['CI'],
     inputs: testInputs,
-    outputs: ['dist/coverage/vitest/slow/**', 'dist/test-results/vitest/merge/blob-slow.json'],
+    outputs: [`${coverageDir.slow}/**`, blobFile.slow],
   }),
 };
 
@@ -67,11 +70,11 @@ export const coverageVitestMergeLeaf: Leaf = {
   aggregate: Aggregate.coverageMerge,
   appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'coverage:vitest:merge',
-  reports: [{ format: 'lcov', kind: 'coverage', path: 'dist/coverage/vitest/merged/lcov.info' }],
+  reports: [lcovReport(coverageDir.merged)],
   task: () => ({
     dependsOn: [testVitestFastLeaf.name, testVitestSlowLeaf.name],
-    inputs: ['dist/test-results/vitest/merge/blob-*.json'],
-    outputs: ['dist/coverage/vitest/merged/**'],
+    inputs: [`${mergeBlobDir}/blob-*.json`],
+    outputs: [`${coverageDir.merged}/**`],
   }),
 };
 
@@ -99,6 +102,6 @@ export const testVitestE2eLeaf: Leaf = {
     ],
     env: ['CI'],
     inputs: ['e2e/**', 'vitest.config.e2e.*'],
-    outputs: ['dist/test-results/vitest/blob-e2e.json'],
+    outputs: [blobFile.e2e],
   }),
 };

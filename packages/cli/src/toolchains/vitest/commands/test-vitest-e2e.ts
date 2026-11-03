@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import { run } from '#src/core/process.js';
 import { testVitestE2eLeaf } from '#src/toolchains/vitest/leaves.js';
+import { blobFile } from '#src/toolchains/vitest/paths.js';
 
 /**
  * Runs end-to-end tests via Vitest with the e2e config.
@@ -14,7 +15,7 @@ export const testVitestE2e = defineCommand({
     await run('vitest', {
       args: [
         'run', '--config', 'vitest.config.e2e.ts',
-        '--outputFile.blob=dist/test-results/vitest/blob-e2e.json',
+        `--outputFile.blob=${blobFile.e2e}`,
         ...rawArgs,
       ],
     });

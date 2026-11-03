@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import { run } from '#src/core/process.js';
 import { testVitestFastLeaf } from '#src/toolchains/vitest/leaves.js';
+import { blobFile, coverageDir } from '#src/toolchains/vitest/paths.js';
 
 /**
  * Runs fast source tests via Vitest (excludes tests tagged `slow`).
@@ -14,8 +15,8 @@ export const testVitestFast = defineCommand({
     await run('vitest', {
       args: [
         'run', '--tags-filter=!slow',
-        '--outputFile.blob=dist/test-results/vitest/merge/blob-fast.json',
-        '--coverage.reportsDirectory=dist/coverage/vitest/fast',
+        `--outputFile.blob=${blobFile.fast}`,
+        `--coverage.reportsDirectory=${coverageDir.fast}`,
         ...rawArgs,
       ],
     });
