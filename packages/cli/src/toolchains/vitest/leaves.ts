@@ -35,6 +35,7 @@ export const testVitestFastLeaf: Leaf = {
   aggregate: Aggregate.check,
   appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'test:vitest:fast',
+  reports: [{ format: 'lcov', kind: 'coverage', path: 'dist/coverage/vitest/fast/lcov.info' }],
   task: graph => ({
     dependsOn: unitTestDeps(graph),
     env: ['CI'],
@@ -50,6 +51,7 @@ export const testVitestSlowLeaf: Leaf = {
   aggregate: Aggregate.testSlow,
   appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'test:vitest:slow',
+  reports: [{ format: 'lcov', kind: 'coverage', path: 'dist/coverage/vitest/slow/lcov.info' }],
   task: graph => ({
     dependsOn: unitTestDeps(graph),
     env: ['CI'],
@@ -65,6 +67,7 @@ export const coverageVitestMergeLeaf: Leaf = {
   aggregate: Aggregate.coverageMerge,
   appliesTo: pkg => pkg.capabilities.has(vitestTests),
   name: 'coverage:vitest:merge',
+  reports: [{ format: 'lcov', kind: 'coverage', path: 'dist/coverage/vitest/merged/lcov.info' }],
   task: () => ({
     dependsOn: [testVitestFastLeaf.name, testVitestSlowLeaf.name],
     inputs: ['dist/test-results/vitest/merge/blob-*.json'],

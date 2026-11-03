@@ -1,8 +1,8 @@
-import type { Leaf } from '#src/tasks/leaf.js';
-import { vitestTests } from '#src/toolchains/vitest/capabilities.js';
+import type { PublishingLeaf } from '#src/tasks/leaf.js';
 
 /**
- * Uploads a package's coverage report to Codecov.
+ * Uploads a package's coverage reports to Codecov, wherever a leaf declares
+ * one.
  *
  * No dependsOn — CI downloads coverage artifacts before running.
  *
@@ -13,9 +13,9 @@ import { vitestTests } from '#src/toolchains/vitest/capabilities.js';
  * is what makes the Codecov statuses dependable enough to gate on; the cost
  * is one CLI invocation per package per run.
  */
-export const coverageCodecovUploadLeaf: Leaf = {
-  appliesTo: pkg => pkg.capabilities.has(vitestTests),
+export const coverageCodecovUploadLeaf: PublishingLeaf = {
   name: 'coverage:codecov:upload',
+  publishes: 'coverage',
   task: () => ({
     cache: false,
     env: ['CI', 'CODECOV_TOKEN'],

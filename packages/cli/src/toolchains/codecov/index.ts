@@ -7,6 +7,6 @@ import { coverageCodecovUploadLeaf } from '#src/toolchains/codecov/leaves.js';
  */
 export const codecovToolchain: Toolchain = {
   registrations: [
-    { command: coverageCodecovUpload, leaf: coverageCodecovUploadLeaf },
+    { commandFor: coverageCodecovUpload, leaf: coverageCodecovUploadLeaf },
   ],
 };

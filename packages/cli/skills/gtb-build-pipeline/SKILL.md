@@ -87,7 +87,7 @@ Leaf tasks, per-package, run via `gtb task <name>`:
 - `test:vitest:e2e` — e2e tests against packed tarballs, no coverage
 - `test:vitest` — fast + slow (coverage merged)
 - `coverage:vitest:merge` — merge fast + slow coverage blobs
-- `coverage:codecov:upload` — upload merged coverage (CI only)
+- `coverage:codecov:upload` — upload the coverage reports (CI only)
 - `deploy:skills` — symlink authored Agent Skills to agent directories
 
 Test tasks hash `CI` into their cache key (`env: ["CI"]` in `turbo.json`) so local and CI caches don't collide — Vitest uses different reporters and coverage settings under CI.

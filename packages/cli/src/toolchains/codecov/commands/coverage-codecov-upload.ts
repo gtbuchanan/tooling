@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { defineCommand } from 'citty';
+import { type CommandDef, defineCommand } from 'citty';
 import { findUpSync } from 'find-up-simple';
 import * as v from 'valibot';
 import { discoverPackage } from '#src/core/discovery.js';
 import { run } from '#src/core/process.js';
+import type { Report } from '#src/tasks/leaf.js';
 import { codecovName } from '#src/toolchains/codecov/codecov-name.js';
 import { coverageCodecovUploadLeaf } from '#src/toolchains/codecov/leaves.js';
 
@@ -18,24 +19,12 @@ const PullRequestEventSchema = v.object({
   }),
 });
 
-const mergedLcov = 'dist/coverage/vitest/merged/lcov.info';
-const fastLcov = 'dist/coverage/vitest/fast/lcov.info';
 const resolveNetworkRoot = (): string => {
   const cwd = process.cwd();
   const gitPath = findUpSync('.git', { cwd });
   return process.env['GITHUB_WORKSPACE'] ??
     (gitPath === undefined ? undefined : path.dirname(gitPath)) ??
     cwd;
-};
-
-const resolveLcov = (): string | undefined => {
-  if (existsSync(mergedLcov)) {
-    return mergedLcov;
-  }
-  if (existsSync(fastLcov)) {
-    return fastLcov;
-  }
-  return undefined;
 };
 
 /*
@@ -70,11 +59,13 @@ const resolveCommitSha = (): string | undefined => {
 };
 
 /**
- * Uploads coverage to Codecov. No-ops outside CI.
+ * Uploads the declared coverage reports to Codecov. No-ops outside CI.
  */
-export const coverageCodecovUpload = defineCommand({
+export const coverageCodecovUpload = (
+  reports: readonly Report[],
+): CommandDef => defineCommand({
   meta: {
-    description: 'Upload merged coverage to Codecov (no-op outside CI)',
+    description: 'Upload the declared coverage reports to Codecov (no-op outside CI)',
     name: coverageCodecovUploadLeaf.name,
   },
   run: async ({ rawArgs }) => {
@@ -83,8 +74,8 @@ export const coverageCodecovUpload = defineCommand({
       return;
     }
 
-    const file = resolveLcov();
-    if (file === undefined) {
+    const files = reports.map(report => report.path).filter(file => existsSync(file));
+    if (files.length === 0) {
       console.log('No coverage files found, skipping Codecov upload');
       return;
     }
@@ -111,7 +102,7 @@ export const coverageCodecovUpload = defineCommand({
         '--disable-search',
         '--network-root-folder', resolveNetworkRoot(),
         ...(sha === undefined ? [] : ['-C', sha]),
-        '-f', file,
+        ...files.flatMap(file => ['-f', file]),
         '-F', flag,
         ...rawArgs,
       ],

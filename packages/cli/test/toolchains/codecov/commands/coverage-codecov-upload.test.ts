@@ -65,9 +65,14 @@ vi.mock(import('#src/core/discovery.js'), async (importOriginal) => {
 const { existsSync, readFileSync } = await import('node:fs');
 const { discoverPackage } = await import('#src/core/discovery.js');
 const { run } = await import('#src/core/process.js');
+const { toolchainReports } = await import('#src/tasks/toolchain.js');
+const { toolchains } = await import('#src/toolchains/index.js');
 const { coverageCodecovUpload } = await import(
   '#src/toolchains/codecov/commands/coverage-codecov-upload.js',
 );
+
+// Built from what the registered toolchains declare, as `gtb task` builds it.
+const command = coverageCodecovUpload(toolchainReports(toolchains, 'coverage'));
 
 const mockExistsSync = vi.mocked(existsSync);
 const mockReadFileSync = vi.mocked(readFileSync);
@@ -80,7 +85,7 @@ const getRunArgs = (): readonly string[] => {
 };
 
 const invoke = async (rawArgs: readonly string[]): Promise<void> => {
-  await runCommand(coverageCodecovUpload, { rawArgs: [...rawArgs] });
+  await runCommand(command, { rawArgs: [...rawArgs] });
 };
 
 describe('coverage:codecov:upload', () => {
@@ -104,16 +109,28 @@ describe('coverage:codecov:upload', () => {
     expect(mockRun).not.toHaveBeenCalled();
   });
 
-  it('prefers merged lcov over fast', async ({ expect }) => {
+  /*
+   * CI restores either the merged report or the fast one. Where both exist,
+   * Codecov combines the uploads, and merged already covers what fast does.
+   */
+  it('uploads each declared report that exists', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
     mockExistsSync.mockReturnValue(true);
 
     await invoke([]);
 
-    expect(getRunArgs()).toContain('dist/coverage/vitest/merged/lcov.info');
+    // The CLI takes one file per `-f`, so each must follow its own flag.
+    const args = getRunArgs();
+    const uploaded = args.filter((_arg, index) => args[index - 1] === '-f');
+
+    expect(uploaded).toStrictEqual([
+      'dist/coverage/vitest/merged/lcov.info',
+      'dist/coverage/vitest/fast/lcov.info',
+      'dist/coverage/vitest/slow/lcov.info',
+    ]);
   });
 
-  it('falls back to fast lcov when merged is absent', async ({ expect }) => {
+  it('uploads only the reports on disk', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
     mockExistsSync.mockImplementation(
       path => String(path).includes('fast'),
@@ -122,6 +139,7 @@ describe('coverage:codecov:upload', () => {
     await invoke([]);
 
     expect(getRunArgs()).toContain('dist/coverage/vitest/fast/lcov.info');
+    expect(getRunArgs()).not.toContain('dist/coverage/vitest/merged/lcov.info');
   });
 
   it('disables telemetry ahead of the subcommand', async ({ expect }) => {
