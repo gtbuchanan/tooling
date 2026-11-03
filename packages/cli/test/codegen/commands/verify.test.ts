@@ -14,6 +14,7 @@ import { capabilities } from '#src/toolchains/index.js';
 import {
   captureLogger, createTempDir, initProject, readScripts, readTurboTasks, writeJson,
 } from '#test/helpers.js';
+import { createWorkspaceDepProject } from '#test/toolchains/npm/fixtures.js';
 
 interface ConsumerProject {
   readonly app: { basename: string; dir: string; name: string };
@@ -215,6 +216,26 @@ describe.concurrent(runVerify, () => {
     expect(runVerify({ cwd: root, scopes: new Set(['mise']) })).toStrictEqual([
       expect.stringContaining('[task_config] includes'),
     ]);
+  });
+
+  it('scoped to toolchains reports what the toolchains check', ({ expect }) => {
+    const { dependency, root } = createWorkspaceDepProject();
+
+    expect(runVerify({ cwd: root, scopes: new Set(['toolchains']) })).toStrictEqual([
+      expect.stringContaining(dependency.name),
+    ]);
+  });
+
+  /*
+   * A toolchain's rules are not generated config, so the scope that checks a
+   * manifest's generated fields leaves them out.
+   */
+  it('scoped to manifest leaves out what the toolchains check', ({ expect }) => {
+    const { dependency, root } = createWorkspaceDepProject();
+
+    const drift = runVerify({ cwd: root, scopes: new Set(['manifest']) });
+
+    expect(drift.some(msg => msg.includes(dependency.name))).toBe(false);
   });
 });
 
