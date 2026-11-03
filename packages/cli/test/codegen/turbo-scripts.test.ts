@@ -5,85 +5,15 @@ import {
   generateRequiredRootScripts,
   generateRootScripts,
 } from '#src/codegen/turbo-config.js';
-import type { WorkspacePackage } from '#src/core/discovery.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
-import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
+import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
-import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
-
-/**
- * Two identical packages — the minimum `makeDiscovery` reads as a monorepo.
- */
-const monorepoOf = (
-  overrides: Partial<WorkspacePackage> = {},
-): readonly WorkspacePackage[] => [
-  makePackage(overrides),
-  makePackage(overrides),
-];
+import { makeDiscovery, makePackage, monorepoOf } from '#test/helpers.js';
 
 describe.concurrent(generatePackageScripts, () => {
-  it('generates typecheck:ts for TypeScript packages', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([typescript]) });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('typecheck:ts', 'gtb task typecheck:ts');
-  });
-
-  it('generates compile:ts for published packages', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([published]) });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('compile:ts', 'gtb task compile:ts');
-  });
-
-  it('generates lint:eslint for ESLint packages', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([eslint]) });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('lint:eslint', 'gtb task lint:eslint');
-  });
-
-  it('generates test:vitest:fast for Vitest + test/ packages', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([vitestTests]), hasTest: true });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('test:vitest:fast', 'gtb task test:vitest:fast');
-    expect(result).toHaveProperty('test:vitest:slow', 'gtb task test:vitest:slow');
-  });
-
-  it('generates test:vitest:e2e for packages with e2e vitest config', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([vitestE2e]) });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('test:vitest:e2e', 'gtb task test:vitest:e2e');
-  });
-
-  it('generates pkl scripts for Pkl packages', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([pklSource, pklPackage]) });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
-    expect(result).toHaveProperty('pack:pkl', 'gtb task pack:pkl');
-  });
-
-  it('omits pack:pkl for an internal Pkl package (no package block)', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([pklSource]) });
-
-    const result = generatePackageScripts(caps, false);
-
-    expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
-    expect(result).not.toHaveProperty('pack:pkl');
-  });
-
   it('generates gtb shim for self-hosted packages', ({ expect }) => {
     const caps = makePackage({
       capabilities: new Set([typescript]), dir: '/root/packages/app',
@@ -262,70 +192,5 @@ describe.concurrent(generateRequiredRootScripts, () => {
       prepare: 'gtb prepare',
       verify: 'gtb verify',
     });
-  });
-
-  it('adds root lint:eslint when monorepo root has ESLint', ({ expect }) => {
-    const discovery = makeDiscovery(
-      [
-        makePackage({ capabilities: new Set([eslint]) }),
-        makePackage({ capabilities: new Set([eslint]) }),
-      ],
-      { capabilities: new Set([eslint]) },
-    );
-
-    const result = generateRequiredRootScripts(discovery);
-
-    expect(result['lint:eslint']).toBe(
-      'gtb task lint:eslint . --ignore-pattern "packages/*/**"',
-    );
-  });
-
-  it('adds root deploy:skills when monorepo root has skills', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf(), { capabilities: new Set([skills]) });
-
-    const result = generateRequiredRootScripts(discovery);
-
-    expect(result).toHaveProperty('deploy:skills', 'gtb task deploy:skills');
-  });
-
-  it('omits root deploy:skills when only packages have skills', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([skills]) }));
-
-    const result = generateRequiredRootScripts(discovery);
-
-    expect(result).not.toHaveProperty('deploy:skills');
-  });
-
-  it('adds root typecheck:ts when the monorepo root has TypeScript sources', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf(), {
-      capabilities: new Set([typescript, typescriptSources]),
-    });
-
-    const result = generateRequiredRootScripts(discovery);
-
-    expect(result).toHaveProperty('typecheck:ts', 'gtb task typecheck:ts');
-  });
-
-  it('omits root typecheck:ts when the root tsconfig has no sources', ({ expect }) => {
-    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([typescript]) }), {
-      capabilities: new Set([typescript]),
-    });
-
-    const result = generateRequiredRootScripts(discovery);
-
-    expect(result).not.toHaveProperty('typecheck:ts');
-  });
-
-  it('omits root lint:eslint when root has no ESLint', ({ expect }) => {
-    const discovery = makeDiscovery(
-      [
-        makePackage({ capabilities: new Set([eslint]) }),
-        makePackage({ capabilities: new Set([eslint]) }),
-      ],
-    );
-
-    const result = generateRequiredRootScripts(discovery);
-
-    expect(result).not.toHaveProperty('lint:eslint');
   });
 });

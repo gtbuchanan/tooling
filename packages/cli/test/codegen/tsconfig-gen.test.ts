@@ -10,7 +10,7 @@ import {
 import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
-import { makePackage } from '#test/codegen/turbo-config.helpers.js';
+import { makePackage } from '#test/helpers.js';
 
 const descriptorAt = (
   descriptors: readonly TsconfigDescriptor[],

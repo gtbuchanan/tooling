@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
-import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { generatePackageScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { pklPackage, pklSource } from '#src/toolchains/pkl/capabilities.js';
-import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/helpers.js';
 
 describe.concurrent('generateTurboJson (pkl)', () => {
   it('emits pkl leaves folded into the typecheck and pack aggregates', ({ expect }) => {
@@ -40,5 +40,25 @@ describe.concurrent('generateTurboJson (pkl)', () => {
     expect(result.tasks).not.toHaveProperty('pack:pkl');
     expect(result.tasks['typecheck']?.dependsOn).toContain('typecheck:pkl');
     expect(result.tasks).not.toHaveProperty('pack');
+  });
+});
+
+describe.concurrent(generatePackageScripts, () => {
+  it('generates pkl scripts for Pkl packages', ({ expect }) => {
+    const caps = makePackage({ capabilities: new Set([pklSource, pklPackage]) });
+
+    const result = generatePackageScripts(caps, false);
+
+    expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
+    expect(result).toHaveProperty('pack:pkl', 'gtb task pack:pkl');
+  });
+
+  it('omits pack:pkl for an internal Pkl package (no package block)', ({ expect }) => {
+    const caps = makePackage({ capabilities: new Set([pklSource]) });
+
+    const result = generatePackageScripts(caps, false);
+
+    expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
+    expect(result).not.toHaveProperty('pack:pkl');
   });
 });

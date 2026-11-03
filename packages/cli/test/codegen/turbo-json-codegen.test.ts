@@ -4,7 +4,7 @@ import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
-import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/helpers.js';
 
 const sourceReaders = [
   'typecheck:ts', 'compile:ts', 'lint:eslint',

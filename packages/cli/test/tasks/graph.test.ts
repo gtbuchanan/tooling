@@ -4,7 +4,7 @@ import type { Leaf } from '#src/tasks/leaf.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { pklSource } from '#src/toolchains/pkl/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
-import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/helpers.js';
 
 const pklLeaf: Leaf = {
   aggregate: 'typecheck',

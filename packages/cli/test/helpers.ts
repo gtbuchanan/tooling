@@ -11,8 +11,12 @@ import {
 import {
   generatePackageScripts, generateRootScripts, generateTurboJson,
 } from '#src/codegen/turbo-config.js';
-import { type WorkspacePackage, discoverWorkspace } from '#src/core/discovery.js';
+import type { Capability } from '#src/core/capability.js';
+import {
+  type WorkspaceDiscovery, type WorkspacePackage, discoverWorkspace,
+} from '#src/core/discovery.js';
 import { mergePackageScripts, writeJsonFile } from '#src/core/file-writer.js';
+import { buildInclude } from '#src/core/layout.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
 import { ManifestSchema, unscopedName } from '#src/core/manifest.js';
 import { UnknownRecord } from '#src/core/schemas.js';
@@ -341,3 +345,81 @@ export const initProject = (root: string): void => {
     });
   }
 };
+
+export const makePackage = (
+  overrides: Partial<WorkspacePackage> = {},
+): WorkspacePackage => {
+  const merged = {
+    buildIncludes: [...buildInclude] as readonly string[],
+    capabilities: new Set<Capability>(),
+    dir: '/fake/pkg',
+    generateScripts: [] as readonly string[],
+    hasBin: false,
+    hasE2e: false,
+    hasGenerate: false,
+    hasScripts: false,
+    hasSrc: false,
+    hasTest: false,
+    manifest: {},
+    name: 'pkg',
+    ...overrides,
+  };
+  return {
+    ...merged,
+    hasGenerate: overrides.hasGenerate ?? merged.generateScripts.length > 0,
+  };
+};
+
+export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
+  /**
+   * Overrides {@link WorkspaceDiscovery.dependsOnCli} (defaults to `false`).
+   */
+  readonly dependsOnCli?: boolean;
+  /**
+   * Overrides {@link WorkspaceDiscovery.hasMise} (defaults to `false`).
+   */
+  readonly hasMise?: boolean;
+  /**
+   * Overrides {@link WorkspaceDiscovery.isMonorepo} (defaults to more than
+   * one package). Real discovery also reports a monorepo for a single
+   * package under a `packages/*` glob, which no package count can express.
+   */
+  readonly isMonorepo?: boolean;
+  /**
+   * Overrides {@link WorkspaceDiscovery.isSelfHosted} (defaults to `false`).
+   */
+  readonly isSelfHosted?: boolean;
+}
+
+export const makeDiscovery = (
+  packages: readonly WorkspacePackage[],
+  overrides: MakeDiscoveryOverrides = {},
+): WorkspaceDiscovery => {
+  const {
+    dependsOnCli: hasCliDependency = false,
+    hasMise = false,
+    isMonorepo = packages.length > 1,
+    isSelfHosted = false,
+    ...rootOverrides
+  } = overrides;
+  return {
+    dependsOnCli: hasCliDependency,
+    hasMise,
+    isMonorepo,
+    isSelfHosted,
+    packages,
+    packageGlobs: isMonorepo ? ['packages/*'] : [],
+    root: makePackage(rootOverrides),
+    rootDir: '/fake/root',
+  };
+};
+
+/**
+ * Two identical packages — the minimum `makeDiscovery` reads as a monorepo.
+ */
+export const monorepoOf = (
+  overrides: Partial<WorkspacePackage> = {},
+): readonly WorkspacePackage[] => [
+  makePackage(overrides),
+  makePackage(overrides),
+];

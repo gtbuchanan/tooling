@@ -1,8 +1,9 @@
 import { describe, it } from 'vitest';
-import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import { generateRequiredRootScripts, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
-import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage, monorepoOf } from '#test/helpers.js';
 
 const monorepoWithRootSkills = (): ReturnType<typeof makeDiscovery> =>
   makeDiscovery(
@@ -91,5 +92,58 @@ describe.concurrent('generateTurboJson — root skills', () => {
 
     expect(result.tasks['build']?.dependsOn)
       .toStrictEqual(expect.arrayContaining(['deploy:skills', '//#deploy:skills']));
+  });
+});
+
+describe.concurrent(generateTurboJson, () => {
+  it('omits compile:skills when no published package has skills', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makePackage({ capabilities: new Set([published]), dir: '/fake/published' }),
+      makePackage({ capabilities: new Set([skills]), dir: '/fake/skilled' }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks).not.toHaveProperty('compile:skills');
+    expect(result.tasks['pack:npm']?.dependsOn).toStrictEqual(['compile:ts']);
+    expect(result.tasks['compile']?.dependsOn).toStrictEqual(['compile:ts']);
+  });
+
+  it('omits lint:eslint from deploy:skills dependsOn when no package has ESLint', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makePackage({ capabilities: new Set([skills]) }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['deploy:skills']?.dependsOn).toStrictEqual([]);
+  });
+
+  it('includes lint:eslint in deploy:skills dependsOn when ESLint exists', ({ expect }) => {
+    const discovery = makeDiscovery([
+      makePackage({ capabilities: new Set([eslint, skills]) }),
+    ]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['deploy:skills']?.dependsOn).toStrictEqual(['lint:eslint']);
+  });
+});
+
+describe.concurrent(generateRequiredRootScripts, () => {
+  it('adds root deploy:skills when monorepo root has skills', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf(), { capabilities: new Set([skills]) });
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result).toHaveProperty('deploy:skills', 'gtb task deploy:skills');
+  });
+
+  it('omits root deploy:skills when only packages have skills', ({ expect }) => {
+    const discovery = makeDiscovery(monorepoOf({ capabilities: new Set([skills]) }));
+
+    const result = generateRequiredRootScripts(discovery);
+
+    expect(result).not.toHaveProperty('deploy:skills');
   });
 });

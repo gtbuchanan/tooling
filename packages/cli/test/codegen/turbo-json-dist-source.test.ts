@@ -2,7 +2,7 @@ import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { skills } from '#src/toolchains/skills/capabilities.js';
-import { makeDiscovery, makePackage } from '#test/codegen/turbo-config.helpers.js';
+import { makeDiscovery, makePackage } from '#test/helpers.js';
 
 /*
  * Every task writing the published output directory must declare only what it
