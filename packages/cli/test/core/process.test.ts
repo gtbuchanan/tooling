@@ -1,6 +1,8 @@
+import { realpathSync } from 'node:fs';
 import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
 import { capture, execute, resolveExitCode } from '#src/core/process.js';
+import { createTempDir } from '#test/helpers.js';
 
 /*
  * Spawn the running Node binary so the tests stay cross-platform and don't
@@ -25,6 +27,84 @@ describe.concurrent(capture, () => {
 });
 
 describe.concurrent(execute, () => {
+  /*
+   * Output past one pipe chunk arrives in pieces that can split a multi-byte
+   * character, which decoding each piece on its own would corrupt.
+   */
+  it('decodes multi-byte output that spans chunks', async ({ expect }) => {
+    const count = 256 * 1024;
+    const text = '€'.repeat(count);
+    const script = `process.stdout.write('€'.repeat(${String(count)}))`;
+
+    await expect(execute(process.execPath, ['-e', script]))
+      .resolves.toHaveProperty('stdout', text);
+  });
+
+  /*
+   * Output that is not UTF-8, sliced by the byte counts git reports, has to
+   * keep one character per byte: UTF-8 decoding replaces each invalid byte
+   * with a three-byte character and shifts every offset after it.
+   */
+  it('keeps one character per byte under latin1', async ({ expect }) => {
+    const bytes = [0xFF, 0x00, 0xC3, 0x28, 0x80];
+    const script = `process.stdout.write(Buffer.from(${JSON.stringify(bytes)}))`;
+
+    const { stdout } = await execute(process.execPath, ['-e', script], {
+      encoding: 'latin1',
+      trim: false,
+    });
+
+    expect([...Buffer.from(stdout, 'latin1')]).toStrictEqual(bytes);
+  });
+
+  /*
+   * stderr carries the child's diagnostics, which are text whatever stdout
+   * holds, so they stay readable when stdout is decoded byte for byte.
+   */
+  it('decodes stderr as UTF-8 under a latin1 stdout', async ({ expect }) => {
+    const message = `€ ${faker.lorem.word()}`;
+    const script = `process.stderr.write(${JSON.stringify(message)})`;
+
+    await expect(execute(process.execPath, ['-e', script], { encoding: 'latin1' }))
+      .resolves.toHaveProperty('stderr', message);
+  });
+
+  it('keeps the streams as written when trimming is off', async ({ expect }) => {
+    const script = 'process.stdout.write("  out\\n");process.stderr.write("  err\\n")';
+
+    await expect(execute(process.execPath, ['-e', script], { trim: false }))
+      .resolves.toStrictEqual({ exitCode: 0, stderr: '  err\n', stdout: '  out\n' });
+  });
+
+  /*
+   * A child that exits without draining its stdin breaks the pipe under the
+   * write. That is the child's outcome to report, not a crash of the caller.
+   */
+  it('resolves when the child exits before reading its input', async ({ expect }) => {
+    const input = 'x'.repeat(4 * 1024 * 1024);
+
+    await expect(execute(process.execPath, ['-e', 'process.exit(3)'], { input }))
+      .resolves.toHaveProperty('exitCode', 3);
+  });
+
+  it('runs the child in the given directory', async ({ expect }) => {
+    const cwd = createTempDir();
+
+    const script = 'process.stdout.write(process.cwd())';
+
+    const { stdout } = await execute(process.execPath, ['-e', script], { cwd });
+
+    expect(realpathSync(stdout)).toBe(realpathSync(cwd));
+  });
+
+  it('writes the input to the child\'s stdin', async ({ expect }) => {
+    const input = faker.lorem.sentence();
+
+    await expect(
+      execute(process.execPath, ['-e', 'process.stdin.pipe(process.stdout)'], { input }),
+    ).resolves.toHaveProperty('stdout', input);
+  });
+
   it('resolves the trimmed streams on success', async ({ expect }) => {
     const script = 'process.stdout.write("  out  ");process.stderr.write("  err  ")';
 
@@ -47,6 +127,15 @@ describe.concurrent(execute, () => {
 
   it('rejects when the command cannot be spawned', async ({ expect }) => {
     await expect(execute('gtb-no-such-binary-xyz', [])).rejects.toThrow(/./v);
+  });
+
+  /*
+   * The input is written as soon as the child is spawned, so a spawn that
+   * fails also fails the write, and only the spawn error says why.
+   */
+  it('rejects with the spawn error when given input', async ({ expect }) => {
+    await expect(execute('gtb-no-such-binary-xyz', [], { input: faker.lorem.word() }))
+      .rejects.toHaveProperty('code', 'ENOENT');
   });
 
   /*

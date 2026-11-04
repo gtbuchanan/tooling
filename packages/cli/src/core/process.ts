@@ -68,6 +68,33 @@ export interface ExecResult {
   readonly stdout: string;
 }
 
+/**
+ * Options for {@link execute}.
+ */
+export interface ExecuteOptions {
+  /**
+   * The child's working directory. The parent's when omitted.
+   */
+  readonly cwd?: string;
+  /**
+   * How stdout is decoded. UTF-8 by default; `latin1` maps each byte to one
+   * character, for output sliced by byte count or holding content that may
+   * not be text. `Buffer.from(text, 'latin1')` gives the bytes back. stderr
+   * is always UTF-8, since it carries the child's diagnostics.
+   */
+  readonly encoding?: 'latin1' | 'utf8';
+  /**
+   * Written to the child's stdin, which is closed afterwards. Without it the
+   * child gets no stdin at all.
+   */
+  readonly input?: string;
+  /**
+   * Trims both captured streams. On by default; turn it off where the output
+   * is file content, whose trailing newline is part of it.
+   */
+  readonly trim?: boolean;
+}
+
 /*
  * Reported when a child ends without either a code or a signal — a shape Node
  * documents as impossible. Non-zero regardless, since it is not a success.
@@ -101,6 +128,21 @@ export const resolveExitCode = (
   return signalExitCodeOffset + constants.signals[signal];
 };
 
+const finishStream = (
+  chunks: readonly Buffer[],
+  encoding: BufferEncoding,
+  { trim = true }: ExecuteOptions,
+): string => {
+  const text = Buffer.concat(chunks).toString(encoding);
+
+  return trim ? text.trim() : text;
+};
+
+const brokenPipeCodes = new Set(['EOF', 'EPIPE']);
+
+const isBrokenPipe = ({ code }: NodeJS.ErrnoException): boolean =>
+  code !== undefined && brokenPipeCodes.has(code);
+
 /**
  * Spawns a command and resolves its outcome instead of throwing on failure,
  * so the caller can branch on *why* it failed rather than only that it did.
@@ -108,30 +150,54 @@ export const resolveExitCode = (
  * answer (e.g. "no such release") that must be told apart from a genuine
  * error: `capture` collapses every failure into the same generic rejection,
  * which turns a transient outage into a false negative. Rejects only when the
- * command cannot be spawned at all.
+ * command cannot be spawned at all, or its input cannot be written for a
+ * reason other than the child having exited.
  */
 export const execute = async (
   command: string,
   args: readonly string[],
+  options: ExecuteOptions = {},
 ): Promise<ExecResult> =>
   new Promise((resolve, reject) => {
     const child = crossSpawn(command, [...args], {
-      stdio: ['ignore', 'pipe', 'pipe'],
+      ...(options.cwd !== undefined && { cwd: options.cwd }),
+      stdio: [options.input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
     });
-    let stdout = '';
-    let stderr = '';
+    /*
+     * A child that exits before draining its input breaks the pipe under the
+     * write (EPIPE, or EOF on Windows). Unhandled, that error crashes the
+     * caller; the child's own exit already reports how it ended. Any other
+     * write error rejects: thrown from this listener, it would escape the
+     * promise as an uncaught exception. The child is killed with it, since a
+     * caller told the command failed must not have it go on to act.
+     */
+    child.stdin?.on('error', (error: NodeJS.ErrnoException) => {
+      if (isBrokenPipe(error)) {
+        return;
+      }
+
+      child.kill();
+      reject(error);
+    });
+    child.stdin?.end(options.input);
+    /*
+     * Chunks are kept as bytes and decoded once, because a chunk boundary can
+     * fall inside a multi-byte character that decoding each piece would split.
+     */
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
     child.stdout?.on('data', (chunk: Buffer) => {
-      stdout += chunk.toString('utf8');
+      stdout.push(chunk);
     });
     child.stderr?.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8');
+      stderr.push(chunk);
     });
     child.on('error', reject);
     child.on('close', (code, signal) => {
       resolve({
         exitCode: resolveExitCode(code ?? undefined, signal ?? undefined),
-        stderr: stderr.trim(),
-        stdout: stdout.trim(),
+        stderr: finishStream(stderr, 'utf8', options),
+        stdout: finishStream(stdout, options.encoding ?? 'utf8', options),
       });
     });
   });
