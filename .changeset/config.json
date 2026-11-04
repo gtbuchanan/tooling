@@ -6,8 +6,11 @@
     "**",
     "!e2e/**",
     "!eslint.config.ts",
+    "!renovate.json",
     "!test/**",
-    "!vitest.config*.ts"
+    "!vitest.config*.ts",
+    "!workflows/pr.yml",
+    "!workflows/release.yml"
   ],
   "changelog": "@changesets/cli/changelog",
   "commit": false,

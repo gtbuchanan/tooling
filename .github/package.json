@@ -1,0 +1,9 @@
+{
+  "name": "@gtbuchanan/github-workflows",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Reusable GitHub workflows and composite actions, released by tag rather than to a registry",
+  "scripts": {
+    "gtb": "node ../packages/cli/bin/gtb.ts"
+  }
+}

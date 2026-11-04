@@ -21,6 +21,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
     pnpm-tasks/          — Composite action: cache pnpm store, install deps
     turbo-run/           — Composite action: run turbo task, skip install on cache hit
   dependency-review-config.yml — License allowlist for dependency-review.yml
+  package.json                 — @gtbuchanan/github-workflows (private; changesets versions the reusables + actions)
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
     cd.yml                 — Reusable: gtb version (changesets + manifest sync + hk fix) then gtb publish (npm via OIDC + non-npm channels)
@@ -745,6 +746,17 @@ For PRs that don't affect published packages, create an empty changeset
 
 Update CI workflow
 ```
+
+### Changesets versioning of the reusable workflows
+
+`.github/` is itself a private workspace package,
+`@gtbuchanan/github-workflows`, so an edit to a reusable workflow, a composite
+action or `dependency-review-config.yml` is a package change like any other.
+GitHub reads workflows only from `.github/workflows/`, which is why the package
+root is `.github/` rather than a directory under `packages/`. `renovate.json`,
+`pr.yml` and `release.yml` are excluded in `changedFilePatterns`: they configure
+this repository, and consumers reach none of them by ref. The package has no
+ESLint config of its own, so the root `lint:eslint` covers it.
 
 ### Changesets private-package versioning
 

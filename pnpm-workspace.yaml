@@ -68,6 +68,7 @@ minimumReleaseAgeExclude:
   - '@gtbuchanan/*'
 
 packages:
+  - '.github'
   - 'packages/*'
 
 peerDependencyRules:
