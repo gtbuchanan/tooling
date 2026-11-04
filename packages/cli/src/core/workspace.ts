@@ -8,14 +8,29 @@ import { type Manifest, ManifestSchema } from '#src/core/manifest.js';
 import { StringArray } from '#src/core/schemas.js';
 
 /**
+ * One `packages` glob from pnpm-workspace.yaml and the package directories it
+ * resolved to.
+ */
+export interface PackageGlob {
+  /**
+   * Absolute directories of the packages the glob matched.
+   */
+  readonly dirs: readonly string[];
+  /**
+   * The glob as written in pnpm-workspace.yaml.
+   */
+  readonly pattern: string;
+}
+
+/**
  * Resolved workspace context for pack operations.
  */
 export interface WorkspaceContext {
   readonly packageDirs: readonly string[];
   /**
-   * Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode.
+   * The `packages` globs from pnpm-workspace.yaml. Empty in single-package mode.
    */
-  readonly packageGlobs: readonly string[];
+  readonly packageGlobs: readonly PackageGlob[];
   readonly rootDir: string;
 }
 
@@ -41,10 +56,11 @@ export const resolveWorkspace = (
   const workspaceFile = findUpSync('pnpm-workspace.yaml', { cwd });
   if (workspaceFile !== undefined) {
     const rootDir = path.dirname(workspaceFile);
-    const packageGlobs = parsePackageGlobs(workspaceFile);
-    const packageDirs = packageGlobs.flatMap(pattern =>
-      globSync(`${pattern}/`, { cwd: rootDir }).map(dir => path.resolve(rootDir, dir)),
-    );
+    const packageGlobs = parsePackageGlobs(workspaceFile).map(pattern => ({
+      dirs: globSync(`${pattern}/`, { cwd: rootDir }).map(dir => path.resolve(rootDir, dir)),
+      pattern,
+    }));
+    const packageDirs = packageGlobs.flatMap(({ dirs }) => dirs);
     if (packageDirs.length > 0) {
       return { packageDirs, packageGlobs, rootDir };
     }

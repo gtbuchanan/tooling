@@ -408,7 +408,9 @@ export const makeDiscovery = (
     isMonorepo,
     isSelfHosted,
     packages,
-    packageGlobs: isMonorepo ? ['packages/*'] : [],
+    packageGlobs: isMonorepo
+      ? [{ dirs: packages.map(({ dir }) => dir), pattern: 'packages/*' }]
+      : [],
     root: makePackage(rootOverrides),
     rootDir: '/fake/root',
   };

@@ -7,6 +7,7 @@ import {
 import type { Manifest } from '#src/core/manifest.js';
 import { localeComparer } from '#src/core/sort.js';
 import {
+  type PackageGlob,
   type ResolveWorkspaceOptions,
   readParsedManifest,
   resolveWorkspace,
@@ -97,9 +98,10 @@ export interface WorkspaceDiscovery {
    */
   readonly packages: readonly WorkspacePackage[];
   /**
-   * Raw `packages` globs from pnpm-workspace.yaml. Empty in single-package mode.
+   * The `packages` globs from pnpm-workspace.yaml, each with the package
+   * directories it matched. Empty in single-package mode.
    */
-  readonly packageGlobs: readonly string[];
+  readonly packageGlobs: readonly PackageGlob[];
   /**
    * The workspace root, discovered like any package.
    */

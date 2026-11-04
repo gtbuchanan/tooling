@@ -37,14 +37,16 @@ export const lintEslintLeaf: Leaf = {
   root: {
     args: ({ packageGlobs }) => [
       '.',
-      ...packageGlobs.flatMap(glob => ['--ignore-pattern', `"${toPackageIgnore(glob)}"`]),
+      ...packageGlobs.flatMap(({ pattern }) => [
+        '--ignore-pattern', `"${toPackageIgnore(pattern)}"`,
+      ]),
     ],
     appliesTo: discovery => discovery.root.capabilities.has(eslint),
     task: graph => ({
       dependsOn: rootSourceDeps(graph),
       inputs: [
         '$TURBO_DEFAULT$',
-        ...graph.discovery.packageGlobs.map(glob => `!${toPackageIgnore(glob)}`),
+        ...graph.discovery.packageGlobs.map(({ pattern }) => `!${toPackageIgnore(pattern)}`),
       ],
       outputs: ['dist/.eslintcache'],
     }),
