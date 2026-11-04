@@ -1,10 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import hostedGitInfo from 'hosted-git-info';
-import * as v from 'valibot';
 import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
-import { RootManifestSchema } from '#src/core/manifest.js';
-import { readManifest, readParsedManifest } from '#src/core/workspace.js';
+import { resolveHostedRepository } from '#src/core/repository.js';
+import { readParsedManifest } from '#src/core/workspace.js';
 import { pklPackage } from '#src/toolchains/pkl/capabilities.js';
 import { patchPackageBlock } from '#src/toolchains/pkl/pkl-project.js';
 
@@ -99,21 +97,13 @@ const pklWriter: ManifestWriter = {
 const manifestWriters: readonly ManifestWriter[] = [pklWriter];
 
 /**
- * Resolves the scheme-less repo path (`host/owner/repo`) from the root
- * manifest, parsing the URL with `hosted-git-info` so every Git URL form
- * (`https`, `git+ssh`, scp-style `git@`, …) normalizes the same way.
+ * The scheme-less repo path (`host/owner/repo`) of the root manifest's
+ * repository.
  */
 const resolveRepoPath = (rootDir: string): string => {
-  const root = v.parse(RootManifestSchema, readManifest(rootDir));
-  const info = hostedGitInfo.fromUrl(root.homepage ?? '') ??
-    hostedGitInfo.fromUrl(root.repository?.url ?? '');
-  if (info === undefined) {
-    throw new Error(
-      `${path.join(rootDir, 'package.json')}: set homepage or repository.url for manifest sync`,
-    );
-  }
+  const { domain, owner, project } = resolveHostedRepository(rootDir);
 
-  return `${info.domain}/${info.user}/${info.project}`;
+  return `${domain}/${owner}/${project}`;
 };
 
 /**
