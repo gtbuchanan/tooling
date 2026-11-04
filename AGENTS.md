@@ -384,7 +384,10 @@ through `package.json` scripts backed by `gtb` leaf commands.
   don't need a version bump), then a catalog gate for what `status`
   structurally cannot see, since a catalog bump edits only the workspace root.
   One command so both resolve the same base ref; see the `gtb-build-pipeline`
-  skill. The job installs — gtb needs `node_modules` either way, and it shells
+  skill. That base is `HEAD^1`, the first parent of the `pull_request`
+  event's merge commit, which a `fetch-depth: 2` checkout already holds; a
+  guard fails the job on any other checkout, so callers must run it from
+  `pull_request`. The job installs — gtb needs `node_modules` either way, and it shells
   out to the installed `changeset` bin. The caller must depend on
   `@gtbuchanan/cli`; the `gtb-from-source` input (default `false`) selects
   workspace-source execution (`pnpm run gtb`) over the installed bin

@@ -8,9 +8,30 @@ jobs:
     name: Changeset Check
     runs-on: ubuntu-latest
     steps:
+      # The base is the merge commit's first parent: the base tip GitHub merged
+      # this PR into, so the diff is exactly the PR's changes as merged. Depth
+      # 2 fetches that parent, and because it is an ancestor of HEAD,
+      # `changeset status`'s `git merge-base HEAD^1 HEAD` resolves without
+      # the full history a branch-tip base would need.
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          fetch-depth: 2
+
+      # `HEAD^1` is the base only when HEAD is a `pull_request` event's
+      # `refs/pull/N/merge`. A `ref:` override checking out the PR head makes
+      # it the PR's previous commit, so the gate would judge only the last
+      # commit; `pull_request_target` checks out the base tip, and `push` /
+      # `workflow_dispatch` carry no PR at all. Fail rather than answer for
+      # the wrong range — the empty-SHA test matters, since a single-parent
+      # HEAD's missing `HEAD^2` also prints nothing and would match.
+      - env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        name: Verify HEAD is the PR merge commit
+        run: |
+          if [ -z "$PR_HEAD_SHA" ] || [ "$(git rev-parse --verify --quiet 'HEAD^2')" != "$PR_HEAD_SHA" ]; then
+            echo "::error::Changeset Check needs a pull_request merge-commit checkout (PR head: ${PR_HEAD_SHA:-none})"
+            exit 1
+          fi
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -29,7 +50,7 @@ jobs:
       - name: Verify changesets cover this PR
         run: >-
           ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }}
-          changeset check --since=origin/main
+          changeset check --since=HEAD^1
 
 name: Changeset
 
