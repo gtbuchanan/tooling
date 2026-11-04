@@ -719,8 +719,11 @@ JSDoc on exports, two-plugin Markdown lint split) live in the
 
 ## Versioning
 
-Every PR requires a changeset — CI enforces this. Create a `.changeset/<name>.md`
-file with YAML frontmatter listing affected packages and bump types:
+A PR that changes a package requires a changeset — CI enforces this. Edits
+confined to a package's `test/`, `e2e/`, `eslint.config.ts` or
+`vitest.config*.ts` don't count, since none of them ship (`changedFilePatterns`
+in `.changeset/config.json`). Create a `.changeset/<name>.md` file with YAML
+frontmatter listing affected packages and bump types:
 
 ```markdown
 ---

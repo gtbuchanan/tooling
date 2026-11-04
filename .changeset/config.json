@@ -2,6 +2,13 @@
   "$schema": "https://unpkg.com/@changesets/config@4/schema.json",
   "access": "public",
   "baseBranch": "main",
+  "changedFilePatterns": [
+    "**",
+    "!e2e/**",
+    "!eslint.config.ts",
+    "!test/**",
+    "!vitest.config*.ts"
+  ],
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
