@@ -1,3 +1,4 @@
+import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import {
   generatePackageScripts, generateRequiredRootScripts, generateRootScripts, generateTurboJson,
@@ -57,6 +58,61 @@ describe.concurrent('generateTurboJson — root lint', () => {
 
     expect(inputs).toContain('$TURBO_DEFAULT$');
     expect(inputs).toContain('!packages/*/**');
+  });
+
+  /*
+   * A package without ESLint of its own has no per-package lint:eslint, so
+   * subtracting it from the root's lint would leave its files linted by
+   * nothing. The root config is what reaches them, so the root has to keep
+   * them in both its run and its cache inputs.
+   */
+  it('keeps a glob whose packages do not lint themselves', ({ expect }) => {
+    const unlintedGlob = build.packageName();
+    const lintedParent = build.packageName();
+    const lintedGlob = `${lintedParent}/*`;
+    const base = makeDiscovery([], { capabilities: new Set([eslint]) });
+    const unlintedDir = `${base.rootDir}/${unlintedGlob}`;
+    const lintedDirs = [build.packageName(), build.packageName()]
+      .map(name => `${base.rootDir}/${lintedParent}/${name}`);
+    const discovery = {
+      ...base,
+      isMonorepo: true,
+      packageGlobs: [
+        { dirs: [unlintedDir], pattern: unlintedGlob },
+        { dirs: lintedDirs, pattern: lintedGlob },
+      ],
+      packages: [
+        makePackage({ dir: unlintedDir }),
+        ...lintedDirs.map(dir => makePackage({ capabilities: new Set([eslint]), dir })),
+      ],
+    };
+
+    expect(generateTurboJson(discovery).tasks['//#lint:eslint']?.inputs)
+      .toStrictEqual(['$TURBO_DEFAULT$', `!${lintedGlob}/**`]);
+    expect(generateRequiredRootScripts(discovery)['lint:eslint'])
+      .toBe(`gtb task lint:eslint . --ignore-pattern "${lintedGlob}/**"`);
+  });
+
+  it('subtracts only the linting packages of a mixed glob', ({ expect }) => {
+    const parent = build.packageName();
+    const linted = `${parent}/${build.packageName()}`;
+    const base = makeDiscovery([], { capabilities: new Set([eslint]) });
+    const lintedDir = `${base.rootDir}/${linted}`;
+    const unlintedDir = `${base.rootDir}/${parent}/${build.packageName()}`;
+    const discovery = {
+      ...base,
+      isMonorepo: true,
+      packageGlobs: [{ dirs: [lintedDir, unlintedDir], pattern: `${parent}/*` }],
+      packages: [
+        makePackage({ capabilities: new Set([eslint]), dir: lintedDir }),
+        makePackage({ dir: unlintedDir }),
+      ],
+    };
+
+    expect(generateTurboJson(discovery).tasks['//#lint:eslint']?.inputs)
+      .toStrictEqual(['$TURBO_DEFAULT$', `!${linted}/**`]);
+    expect(generateRequiredRootScripts(discovery)['lint:eslint'])
+      .toBe(`gtb task lint:eslint . --ignore-pattern "${linted}/**"`);
   });
 
   it('lint aggregate depends on //#lint:eslint when root has ESLint', ({ expect }) => {

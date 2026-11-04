@@ -1,3 +1,5 @@
+import path from 'node:path';
+import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
 import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
 import type { Leaf } from '#src/tasks/leaf.js';
@@ -10,6 +12,32 @@ import { typecheckTsLeaf } from '#src/toolchains/typescript/leaves.js';
  * `packages/*` → `packages/*​/**` (descendants of any direct subdir).
  */
 const toPackageIgnore = (glob: string): string => `${glob}/**`;
+
+/*
+ * The package paths the root lint leaves to per-package lint:eslint, as
+ * workspace-relative globs. Only a package with ESLint of its own runs that
+ * task, so subtracting any other would leave its files linted by nothing; the
+ * root config is what reaches them. A glob whose packages all lint themselves
+ * stays a glob, so a new package under it needs no regenerated script; a
+ * glob with any exception is spelled out per linting package instead.
+ */
+const selfLintedGlobs = ({
+  packageGlobs,
+  packages,
+  rootDir,
+}: WorkspaceDiscovery): readonly string[] => {
+  const linting = new Set(
+    packages.filter(pkg => pkg.capabilities.has(eslint)).map(({ dir }) => dir),
+  );
+
+  return packageGlobs.flatMap(({ dirs, pattern }) =>
+    dirs.every(dir => linting.has(dir))
+      ? pattern
+      : dirs
+          .filter(dir => linting.has(dir))
+          .map(dir => path.relative(rootDir, dir).replaceAll(path.sep, '/')),
+  );
+};
 
 /**
  * ESLint over the package's sources.
@@ -35,10 +63,10 @@ export const lintEslintLeaf: Leaf = {
    * distinct from per-package caches that live in each package's dist/.
    */
   root: {
-    args: ({ packageGlobs }) => [
+    args: discovery => [
       '.',
-      ...packageGlobs.flatMap(({ pattern }) => [
-        '--ignore-pattern', `"${toPackageIgnore(pattern)}"`,
+      ...selfLintedGlobs(discovery).flatMap(glob => [
+        '--ignore-pattern', `"${toPackageIgnore(glob)}"`,
       ]),
     ],
     appliesTo: discovery => discovery.root.capabilities.has(eslint),
@@ -46,7 +74,7 @@ export const lintEslintLeaf: Leaf = {
       dependsOn: rootSourceDeps(graph),
       inputs: [
         '$TURBO_DEFAULT$',
-        ...graph.discovery.packageGlobs.map(({ pattern }) => `!${toPackageIgnore(pattern)}`),
+        ...selfLintedGlobs(graph.discovery).map(glob => `!${toPackageIgnore(glob)}`),
       ],
       outputs: ['dist/.eslintcache'],
     }),
