@@ -22,6 +22,7 @@ import { catalogDependenciesOf } from '#src/toolchains/npm/manifest.js';
 const workspaceFileName = 'pnpm-workspace.yaml';
 const changesetDirName = '.changeset';
 const defaultBaseRef = 'origin/main';
+const noMergeBaseExitCode = 1;
 
 const toCatalogConsumer = (pkg: WorkspacePackage): CatalogConsumer => ({
   catalogDependencies: catalogDependenciesOf(pkg),
@@ -34,8 +35,8 @@ const toCatalogConsumer = (pkg: WorkspacePackage): CatalogConsumer => ({
  */
 export interface CheckCatalogGateInputs {
   /**
-   * `pnpm-workspace.yaml` as of the base ref, or `''` when the base predates
-   * the file.
+   * `pnpm-workspace.yaml` as of HEAD's merge base with the base ref, or `''`
+   * when that commit predates the file.
    */
   readonly baseWorkspace: string;
   /**
@@ -140,7 +141,7 @@ export interface CatalogGateDeps {
 const defaultDeps: CatalogGateDeps = { execute, run };
 
 /**
- * Reads `pnpm-workspace.yaml` as of the base ref.
+ * Reads `pnpm-workspace.yaml` as of HEAD's merge base with the base ref.
  *
  * A base that genuinely predates the file resolves to `''` (every catalog
  * entry then reads as newly added), but any *other* git failure throws rather
@@ -169,6 +170,29 @@ export const readBaseWorkspace = async (
     );
   }
   /*
+   * Read the base where this branch forked from it, not at its tip:
+   * `changeset status` diffs from `git merge-base <base> HEAD`, and the two
+   * halves of the check must measure the same change. At the tip, anything
+   * that landed on the base after the fork reads as this branch undoing it.
+   */
+  const merged = await git(['merge-base', base, 'HEAD']);
+  /*
+   * Exit 1 is git's "no common ancestor", which a shallow clone produces.
+   * Anything else (an unborn HEAD, a missing object) is a different failure,
+   * and advice to fetch history would hide git's own diagnosis of it.
+   */
+  if (merged.exitCode === noMergeBaseExitCode) {
+    throw new Error(
+      `no merge base between '${base}' and HEAD — fetch enough history to connect them`,
+    );
+  }
+  if (merged.exitCode !== 0) {
+    throw new Error(`git merge-base ${base} HEAD failed: ${merged.stderr}`);
+  }
+  const forkPoint = merged.stdout;
+  // Names the ref the caller passed as well as the commit actually read.
+  const described = `${base} (${forkPoint})`;
+  /*
    * `ls-tree` rather than `cat-file -e`, because only it separates the two
    * outcomes: an absent path is exit 0 with empty stdout, while a corrupt or
    * unreadable object is non-zero. `cat-file -e` collapses both into the same
@@ -180,17 +204,16 @@ export const readBaseWorkspace = async (
    * `ls-tree` pathspecs are cwd-relative by default, and `<rev>:./<path>` is
    * the cwd-relative form for `git show`.
    */
-  const listed = await git(['ls-tree', '--name-only', base, '--', workspaceFileName]);
+  const listed = await git(['ls-tree', '--name-only', forkPoint, '--', workspaceFileName]);
   if (listed.exitCode !== 0) {
-    throw new Error(`git ls-tree ${base} failed: ${listed.stderr}`);
+    throw new Error(`git ls-tree ${described} failed: ${listed.stderr}`);
   }
   if (listed.stdout === '') {
     return '';
   }
-  const target = `${base}:./${workspaceFileName}`;
-  const shown = await git(['show', target]);
+  const shown = await git(['show', `${forkPoint}:./${workspaceFileName}`]);
   if (shown.exitCode !== 0) {
-    throw new Error(`git show ${target} failed: ${shown.stderr}`);
+    throw new Error(`git show ${described}:./${workspaceFileName} failed: ${shown.stderr}`);
   }
 
   return shown.stdout;

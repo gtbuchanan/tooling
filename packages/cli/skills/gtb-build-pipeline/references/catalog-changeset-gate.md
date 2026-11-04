@@ -5,7 +5,7 @@
 1. `changeset status`, delegated to changesets, which fails when a versionable package changed and no changeset exists at all. It runs first because its failure subsumes the second — with no changesets present, every catalog finding would be uncovered too.
 1. The **catalog gate**, which fails when a pnpm catalog change reaches a published package with no changeset releasing it. It exists because `changeset status` maps changed **files** to packages, and a catalog moves every dependency range to `pnpm-workspace.yaml` at the workspace root — which belongs to no package. The bump therefore reads as "no package changed", while pnpm rewrites `catalog:` to the concrete range at pack time, so every consumer's published manifest moves with no version bump behind it.
 
-- `gtb changeset check [--since <ref>] [--ignore <pkg>]` — the base ref defaults to `origin/main`. The catalog half diffs the `catalog:` / `catalogs:` blocks between that ref and HEAD, maps each changed entry to the published packages declaring it, and exits non-zero for any that no changeset covers.
+- `gtb changeset check [--since <ref>] [--ignore <pkg>]` — the base ref defaults to `origin/main`. The catalog half diffs the `catalog:` / `catalogs:` blocks between HEAD and its merge base with that ref (the same fork point `changeset status` diffs from, so catalog edits that landed on the base after the branch forked aren't counted as the branch's), maps each changed entry to the published packages declaring it, and exits non-zero for any that no changeset covers.
 
 Both halves share one command precisely so they cannot drift onto different base refs.
 

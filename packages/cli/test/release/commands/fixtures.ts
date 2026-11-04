@@ -1,7 +1,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { faker } from '@faker-js/faker';
+import { createGitEnv, runCommand } from '@gtbuchanan/test-utils';
 import * as build from '@gtbuchanan/test-utils/builders';
-import { type ExecResult, type RunOptions, execute } from '#src/core/process.js';
+import type { ExecResult, RunOptions } from '#src/core/process.js';
 import type { CatalogGateDeps } from '#src/release/commands/changeset.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
@@ -11,9 +13,10 @@ import { createTempDir, writeJson } from '#test/helpers.js';
 export const ok = (stdout: string): ExecResult => ({ exitCode: 0, stderr: '', stdout });
 
 /**
- * A failed command result carrying the given stderr.
+ * A failed command result carrying the given stderr and exit code.
  */
-export const fail = (stderr: string): ExecResult => ({ exitCode: 1, stderr, stdout: '' });
+export const fail = (stderr: string, exitCode = 1): ExecResult =>
+  ({ exitCode, stderr, stdout: '' });
 
 /**
  * A `pnpm-workspace.yaml` whose default catalog holds one entry.
@@ -53,29 +56,53 @@ export const depsFor = (
 export const depsShowing = (baseWorkspace: string): CatalogGateDeps =>
   depsFor({
     'ls-tree': ok('pnpm-workspace.yaml'),
+    'merge-base': ok('abc123'),
     'rev-parse': ok('abc123'),
     'show': ok(baseWorkspace),
   });
 
+/*
+ * Isolated from the user's and the system's git config: `commit.gpgsign` would
+ * sign every seeded commit (or fail for want of a key), `init.templateDir`
+ * would install hooks, and `init.defaultBranch` could alias a ref a test names.
+ * The identity comes along because the isolated config has none.
+ */
+const gitEnv = createGitEnv({ email: faker.internet.email(), name: faker.person.fullName() });
+
 const git = async (cwd: string, args: readonly string[]): Promise<string> => {
-  const result = await execute('git', ['-C', cwd, ...args]);
+  const result = await runCommand('git', ['-C', cwd, ...args], { env: gitEnv });
   if (result.exitCode !== 0) {
     throw new Error(`git ${args.join(' ')} failed: ${result.stderr}`);
   }
 
-  return result.stdout;
+  return result.stdout.trim();
 };
 
 /**
- * Initializes a git repository at `repo`, stages everything under it, and
- * returns the staged tree's id. A tree is a valid base for every read the gate
- * makes, and writing one needs no committer identity and runs no hooks.
+ * Initializes an empty git repository at `repo`.
  */
-export const stagedTree = async (repo: string): Promise<string> => {
+export const initRepo = async (repo: string): Promise<void> => {
   await git(repo, ['init', '--quiet']);
-  await git(repo, ['add', '--all']);
+};
 
-  return git(repo, ['write-tree']);
+/**
+ * Stages everything under `repo` and commits it onto `parent` (a root commit
+ * when omitted), returning the new commit's id. Plumbing rather than
+ * `git commit`, so it moves no ref.
+ */
+export const commitAll = async (repo: string, parent?: string): Promise<string> => {
+  await git(repo, ['add', '--all']);
+  const tree = await git(repo, ['write-tree']);
+  const parents = parent === undefined ? [] : ['-p', parent];
+
+  return git(repo, ['commit-tree', tree, '-m', 'commit', ...parents]);
+};
+
+/**
+ * Points `ref` (`HEAD` included) at `commit`.
+ */
+export const updateRef = async (repo: string, ref: string, commit: string): Promise<void> => {
+  await git(repo, ['update-ref', ref, commit]);
 };
 
 /**
