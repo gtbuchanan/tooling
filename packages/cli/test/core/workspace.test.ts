@@ -6,6 +6,15 @@ import { describe, it } from 'vitest';
 import { resolveWorkspace } from '#src/core/workspace.js';
 import { createTempDir } from '#test/helpers.js';
 
+/*
+ * A workspace project is a directory holding a package.json, so a fixture
+ * package needs one to be found at all.
+ */
+const makeProject = (dir: string): void => {
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, 'package.json'), '{}');
+};
+
 describe.concurrent(resolveWorkspace, () => {
   it('detects monorepo with packages glob', ({ expect }) => {
     const root = createTempDir();
@@ -15,8 +24,8 @@ describe.concurrent(resolveWorkspace, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n",
     );
-    mkdirSync(path.join(root, 'packages', alphaName), { recursive: true });
-    mkdirSync(path.join(root, 'packages', betaName), { recursive: true });
+    makeProject(path.join(root, 'packages', alphaName));
+    makeProject(path.join(root, 'packages', betaName));
 
     const result = resolveWorkspace({ cwd: root });
 
@@ -74,7 +83,7 @@ describe.concurrent(resolveWorkspace, () => {
     );
     mkdirSync(path.join(root, 'packages'), { recursive: true });
     writeFileSync(path.join(root, 'packages', faker.system.commonFileName('txt')), '');
-    mkdirSync(path.join(root, 'packages', pkgName), { recursive: true });
+    makeProject(path.join(root, 'packages', pkgName));
 
     const result = resolveWorkspace({ cwd: root });
 
@@ -91,7 +100,7 @@ describe.concurrent(resolveWorkspace, () => {
       "packages:\n  - 'packages/*'\n",
     );
     const subDir = path.join(root, 'packages', pkgName);
-    mkdirSync(subDir, { recursive: true });
+    makeProject(subDir);
 
     const result = resolveWorkspace({ cwd: subDir });
 
@@ -106,7 +115,7 @@ describe.concurrent(resolveWorkspace, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       'packages:\n  - "apps/*"\n',
     );
-    mkdirSync(path.join(root, 'apps', pkgName), { recursive: true });
+    makeProject(path.join(root, 'apps', pkgName));
 
     const result = resolveWorkspace({ cwd: root });
 
@@ -120,7 +129,7 @@ describe.concurrent(resolveWorkspace, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       'packages:\n  - packages/*\n',
     );
-    mkdirSync(path.join(root, 'packages', pkgName), { recursive: true });
+    makeProject(path.join(root, 'packages', pkgName));
 
     const result = resolveWorkspace({ cwd: root });
 
@@ -137,8 +146,8 @@ describe.concurrent(resolveWorkspace, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       "packages:\n  - 'packages/*'\n  - 'apps/*'\n",
     );
-    mkdirSync(path.join(root, 'packages', libName), { recursive: true });
-    mkdirSync(path.join(root, 'apps', webName), { recursive: true });
+    makeProject(path.join(root, 'packages', libName));
+    makeProject(path.join(root, 'apps', webName));
 
     const result = resolveWorkspace({ cwd: root });
 
@@ -158,11 +167,35 @@ describe.concurrent(resolveWorkspace, () => {
       path.join(root, 'pnpm-workspace.yaml'),
       `packages:\n  - '${pkgName}'\n`,
     );
-    mkdirSync(path.join(root, pkgName), { recursive: true });
+    makeProject(path.join(root, pkgName));
 
     const result = resolveWorkspace({ cwd: root });
 
     expect(result.packageDirs).toStrictEqual([path.join(root, pkgName)]);
+  });
+
+  /*
+   * Deleting a package or switching branches leaves its untracked
+   * node_modules/ and dist/ behind. pnpm counts only a directory holding a
+   * package.json as a project, so such a husk must not become a package
+   * whose absent capabilities change what gets generated.
+   */
+  it('skips a matched directory without a package.json', ({ expect }) => {
+    const root = createTempDir();
+    const pkgName = build.packageName();
+    const huskName = build.packageName();
+    writeFileSync(
+      path.join(root, 'pnpm-workspace.yaml'),
+      "packages:\n  - 'packages/*'\n",
+    );
+    const pkgDir = path.join(root, 'packages', pkgName);
+    makeProject(pkgDir);
+    mkdirSync(path.join(root, 'packages', huskName, 'node_modules'), { recursive: true });
+
+    const result = resolveWorkspace({ cwd: root });
+
+    expect(result.packageDirs).toStrictEqual([pkgDir]);
+    expect(result.packageGlobs).toStrictEqual([{ dirs: [pkgDir], pattern: 'packages/*' }]);
   });
 
   it('returns empty when glob directory does not exist', ({ expect }) => {

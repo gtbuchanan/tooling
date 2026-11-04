@@ -56,8 +56,15 @@ export const resolveWorkspace = (
   const workspaceFile = findUpSync('pnpm-workspace.yaml', { cwd });
   if (workspaceFile !== undefined) {
     const rootDir = path.dirname(workspaceFile);
+    /*
+     * Only a directory holding a package.json is a project, as pnpm counts
+     * them. A deleted package or a branch switch leaves its untracked
+     * node_modules/ and dist/ behind, and treating that husk as a package
+     * would make generated config depend on what a checkout has lying around.
+     */
     const packageGlobs = parsePackageGlobs(workspaceFile).map(pattern => ({
-      dirs: globSync(`${pattern}/`, { cwd: rootDir }).map(dir => path.resolve(rootDir, dir)),
+      dirs: globSync(`${pattern}/package.json`, { cwd: rootDir })
+        .map(manifest => path.resolve(rootDir, path.dirname(manifest))),
       pattern,
     }));
     const packageDirs = packageGlobs.flatMap(({ dirs }) => dirs);
