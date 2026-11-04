@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import { createGitEnv, runCommand } from '@gtbuchanan/test-utils';
@@ -85,17 +86,95 @@ export const initRepo = async (repo: string): Promise<void> => {
   await git(repo, ['init', '--quiet']);
 };
 
+/*
+ * fast-import commits only onto a ref, so it commits onto this one and
+ * deletes it again in the same stream.
+ */
+const scratchRef = 'refs/fixtures/scratch';
+
 /**
- * Stages everything under `repo` and commits it onto `parent` (a root commit
- * when omitted), returning the new commit's id. Plumbing rather than
- * `git commit`, so it moves no ref.
+ * Every file under `repo` but the git directory, as a forward-slash path.
+ */
+const listFiles = (repo: string): readonly string[] =>
+  readdirSync(repo, { recursive: true, withFileTypes: true })
+    .filter(entry => entry.isFile())
+    .map(entry => path.relative(repo, path.join(entry.parentPath, entry.name)))
+    .map(file => file.split(path.sep).join('/'))
+    .filter(file => file !== '.git' && !file.startsWith('.git/'));
+
+/**
+ * The fast-import commands for one commit holding exactly `repo`'s files.
+ */
+const commitCommands = (repo: string, parent?: string): readonly Buffer[] => {
+  const parts: Buffer[] = [];
+  const line = (text: string): void => {
+    parts.push(Buffer.from(`${text}\n`));
+  };
+  const data = (bytes: Buffer): void => {
+    line(`data ${String(bytes.length)}`);
+    parts.push(bytes, Buffer.from('\n'));
+  };
+  const name = gitEnv.GIT_COMMITTER_NAME ?? '';
+  const email = gitEnv.GIT_COMMITTER_EMAIL ?? '';
+  const seconds = Math.floor(Date.now() / 1000);
+  line(`commit ${scratchRef}`);
+  line('mark :1');
+  line(`committer ${name} <${email}> ${String(seconds)} +0000`);
+  data(Buffer.from('commit'));
+  if (parent !== undefined) {
+    line(`from ${parent}`);
+  }
+  line('deleteall');
+  for (const file of listFiles(repo)) {
+    line(`M 100644 inline ${file}`);
+    data(readFileSync(path.join(repo, file)));
+  }
+  line(`reset ${scratchRef}`);
+  line('');
+
+  return parts;
+};
+
+const fastImport = async (
+  repo: string,
+  commands: readonly Buffer[],
+  marks: string,
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const child = spawn('git', ['-C', repo, 'fast-import', '--quiet', `--export-marks=${marks}`], {
+      env: gitEnv,
+      stdio: ['pipe', 'ignore', 'pipe'],
+    });
+    const stderr: Buffer[] = [];
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr.push(chunk);
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`git fast-import failed: ${Buffer.concat(stderr).toString('utf8')}`));
+      }
+    });
+    for (const command of commands) {
+      child.stdin.write(command);
+    }
+    child.stdin.end();
+  });
+
+/**
+ * Commits every file under `repo` onto `parent` (a root commit when omitted),
+ * returning the new commit's id. One `git fast-import` rather than
+ * `add` + `write-tree` + `commit-tree`, because each git process is costly to
+ * start under a full parallel check; and like `commit-tree`, it moves no ref.
  */
 export const commitAll = async (repo: string, parent?: string): Promise<string> => {
-  await git(repo, ['add', '--all']);
-  const tree = await git(repo, ['write-tree']);
-  const parents = parent === undefined ? [] : ['-p', parent];
+  const marks = path.join(repo, '.git', 'fixture-marks');
+  await fastImport(repo, commitCommands(repo, parent), marks);
+  const [, commit = ''] = readFileSync(marks, 'utf8').trim().split(' ', 2);
 
-  return git(repo, ['commit-tree', tree, '-m', 'commit', ...parents]);
+  return commit;
 };
 
 /**
