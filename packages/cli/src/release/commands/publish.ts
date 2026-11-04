@@ -4,12 +4,17 @@ import { createLogger } from '#src/core/logger.js';
 import { type RunOptions, execute, run } from '#src/core/process.js';
 import { executePublishNpmReleases } from '#src/release/npm-release.js';
 import { executePublishPkl } from '#src/release/pkl-release.js';
+import { executePublishWorkflows } from '#src/release/workflow-release.js';
 
 /**
  * Injected side effects for {@link executePublish}.
  */
 export interface PublishDeps {
-  readonly publishNonNpm: () => Promise<void>;
+  /**
+   * Every channel releasing something other than an npm package, run in order
+   * after the npm releases.
+   */
+  readonly nonNpmChannels: readonly (() => Promise<void>)[];
   readonly releaseNpm: () => Promise<void>;
   readonly run: (command: string, options?: RunOptions) => Promise<void>;
 }
@@ -31,13 +36,13 @@ export interface PublishDeps {
  * the channels release, so nothing follows a failure there.
  */
 export const executePublish = async ({
-  publishNonNpm,
+  nonNpmChannels,
   releaseNpm,
   run: runCommand,
 }: PublishDeps): Promise<void> => {
   await runCommand('pnpm', { args: ['exec', 'changeset', 'publish'] });
   const failures: unknown[] = [];
-  for (const channel of [releaseNpm, publishNonNpm]) {
+  for (const channel of [releaseNpm, ...nonNpmChannels]) {
     try {
       await channel();
     } catch (error) {
@@ -52,9 +57,9 @@ export const executePublish = async ({
 /**
  * `gtb publish` — publishes all packages for the current release: npm via
  * changesets (plus per-package GitHub releases/tags), then every non-npm
- * channel. Channel dispatch for the latter lives in {@link executePublishPkl}
- * (today the Pkl GitHub-release channel; a future channel adds its own
- * `executePublish*`).
+ * channel: the Pkl packages ({@link executePublishPkl}) and the reusable
+ * workflows ({@link executePublishWorkflows}). A future channel adds its own
+ * `executePublish*` to the list.
  */
 export const publish = defineCommand({
   meta: {
@@ -65,7 +70,10 @@ export const publish = defineCommand({
     const deps = { cwd: process.cwd(), execute, logger: createLogger() };
 
     return executePublish({
-      publishNonNpm: () => executePublishPkl(deps),
+      nonNpmChannels: [
+        () => executePublishPkl(deps),
+        () => executePublishWorkflows(deps),
+      ],
       releaseNpm: () => executePublishNpmReleases(deps),
       run,
     });

@@ -2,18 +2,23 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
 import type { Logger } from '#src/core/logger.js';
-import type { ExecResult } from '#src/core/process.js';
+import type { ExecResult, ExecuteOptions } from '#src/core/process.js';
 
 /**
  * Side-effecting I/O the GitHub-release channels depend on. Injected so the
  * orchestration (discover packages, skip-if-exists, create) is unit-testable
  * without spawning gh; the citty wrapper wires the real implementations.
  * Commands go through `execute` rather than `run`/`capture` because every
- * decision here turns on *how* gh failed, not merely that it did.
+ * decision here turns on *how* gh failed, not merely that it did. gh runs in
+ * `cwd`, since it resolves the repository it releases in from there.
  */
 export interface GithubReleaseDeps {
   readonly cwd: string;
-  readonly execute: (command: string, args: readonly string[]) => Promise<ExecResult>;
+  readonly execute: (
+    command: string,
+    args: readonly string[],
+    options?: ExecuteOptions,
+  ) => Promise<ExecResult>;
   readonly logger: Logger;
 }
 
@@ -91,7 +96,7 @@ export const listReleaseTags = async (
 ): Promise<ReadonlySet<string>> => {
   const { exitCode, stderr, stdout } = await deps.execute('gh', [
     'release', 'list', '--limit', releaseListLimit, '--json', 'tagName',
-  ]);
+  ], { cwd: deps.cwd });
   if (exitCode !== 0) {
     throw new Error(`gh release list failed: ${stderr}`);
   }
@@ -105,10 +110,15 @@ export const listReleaseTags = async (
  * Passing it explicitly (`--target`) matters for reproducibility — without
  * it, gh targets the *remote default branch* HEAD, which is only coincidentally
  * right when publishing from a fresh CI checkout and silently wrong for a
- * local re-run on an older commit.
+ * local re-run on an older commit. Read in `deps.cwd`, the workspace being
+ * released.
  */
 export const resolveHeadSha = async (deps: GithubReleaseDeps): Promise<string> => {
-  const { exitCode, stderr, stdout } = await deps.execute('git', ['rev-parse', 'HEAD']);
+  const { exitCode, stderr, stdout } = await deps.execute(
+    'git',
+    ['rev-parse', 'HEAD'],
+    { cwd: deps.cwd },
+  );
   if (exitCode !== 0) {
     throw new Error(`git rev-parse HEAD failed: ${stderr}`);
   }
@@ -159,7 +169,7 @@ export const createGithubRelease = async (
     '--title', plan.tag,
     '--notes', plan.notes,
     ...(plan.assets ?? []),
-  ]);
+  ], { cwd: deps.cwd });
   if (exitCode === 0) {
     deps.logger.info(stdout);
 

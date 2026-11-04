@@ -4,7 +4,7 @@ jobs:
     name: CD
     needs: ci
     permissions:
-      contents: write
+      contents: read
       id-token: write
     secrets: inherit
     uses: ./.github/workflows/cd.yml

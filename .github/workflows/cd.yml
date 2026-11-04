@@ -9,8 +9,10 @@ jobs:
     if: needs.version.outputs.hasChangesets == 'false'
     name: Publish
     needs: version
+    # The job token only checks out and fetches: every release, tag and Git
+    # Data API write goes through the App token below.
     permissions:
-      contents: write
+      contents: read
       id-token: write
     runs-on: ubuntu-latest
     steps:
@@ -26,6 +28,26 @@ jobs:
       # skips install on a pack cache hit.
       - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
+      # Releases are cut as the GitHub App rather than with the job token, for
+      # two reasons. The workflows release commits a tree whose
+      # `.github/workflows/` differs from HEAD, which GitHub refuses without the
+      # `workflows` permission, and the job token cannot hold that permission.
+      # And a ruleset can name the App as the one actor allowed to create
+      # release tags, where it refuses the GitHub Actions integration as a
+      # bypass actor.
+      #
+      # The token is narrowed to what publishing writes: releases and tags
+      # (contents) and a release tree under `.github/workflows/` (workflows).
+      # Asking for `workflows` fails token creation where the App lacks it,
+      # so the App needs it even in a repository with no `.github` package.
+      - id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.APP_ID }}
+          permission-contents: write
+          permission-workflows: write
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       # `gtb publish` runs `changeset publish` (npm), creates the GitHub
       # releases that land each published package's release tag (changesets
       # only tags the local clone), then every non-npm channel. OIDC trusted
@@ -33,12 +55,14 @@ jobs:
       # `release` environment + `id-token: write` grant them); GH_TOKEN covers
       # the release creation.
       - env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_CONFIG_PROVENANCE: 'true'
         name: Publish packages
         run: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} publish
 
   version:
+    # For the App key, which lives in the environment (see the header).
+    environment: release
     name: Version
     outputs:
       hasChangesets: ${{ steps.changesets-action.outputs.has-changesets }}
@@ -56,6 +80,13 @@ jobs:
           # Input rename only — `client-id` replaces the deprecated `app-id`,
           # and the JWT `iss` claim it feeds accepts an App ID either way.
           client-id: ${{ vars.APP_ID }}
+          # Narrowed to what the release PR writes: its branch and commit
+          # (contents), the PR itself (pull-requests), and workflows, because
+          # resetting the release branch onto a main whose
+          # `.github/workflows/` moved is refused without it.
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       # `gtb version` needs node_modules (the local changeset bin + gtb itself).
@@ -96,8 +127,21 @@ name: CD
 # version + manifest sync; publish: changeset publish + non-npm channels), so
 # the caller must depend on `@gtbuchanan/cli`. The publish job's `release`
 # environment and OIDC token resolve in the caller's repo, so the caller must
-# grant `contents: write` + `id-token: write` and define a `release`
-# environment.
+# grant `id-token: write` and define a `release` environment. Every write to
+# the repository goes through the GitHub App token, so neither job needs
+# `contents: write` from the caller.
+#
+# Both jobs mint that token from the APP_ID variable and the APP_PRIVATE_KEY
+# secret, each narrowed to what its job writes. The App needs Contents, Pull
+# requests and Workflows write: both tokens ask for Workflows whether or not
+# the repository releases a `.github` package. Keep the key in the
+# `release` environment, with a deployment branch policy for the default
+# branch only: a repository secret reaches every workflow run, so any code in
+# a same-repository PR's CI could read a key that bypasses the release-tag
+# ruleset. A job in an environment reads that environment's secret over any
+# the caller passes, so the optional declaration below keeps an explicit or
+# inherited repository secret working without reaching around the
+# environment one.
 on:
   workflow_call:
     inputs:
@@ -113,9 +157,10 @@ on:
     secrets:
       APP_PRIVATE_KEY:
         description: >-
-          GitHub App private key for opening the changesets
-          release PR (paired with the APP_ID repository
-          variable).
+          GitHub App private key, paired with the APP_ID variable. Optional
+          here because it belongs in the `release` environment, which both
+          jobs run in; declared so a caller that passes it by name, rather
+          than through `secrets: inherit`, is still accepted.
         required: false
 
 permissions:

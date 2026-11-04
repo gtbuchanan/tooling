@@ -258,7 +258,7 @@ jobs:
     name: CD
     needs: ci
     permissions:
-      contents: write # changesets tags/PR
+      contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
     secrets: inherit
@@ -280,7 +280,11 @@ per-file workarounds. Keeping the triggers in the `pr.yml` /
 reusable is always reached via `workflow_call`, so `inputs` always
 populates. Permissions narrow down the call chain but never elevate, so
 the pipeline grants the superset its jobs need (`pull-requests: write`
-for Dependencies; `contents: write` + `id-token: write` for CD).
+for Dependencies; `contents: read` + `id-token: write` for CD, whose
+repository writes all go through the GitHub App token). A job-level
+`permissions` block sets every scope it omits to `none`, so CD's
+`contents: read` has to be listed: without it the called jobs ask for more
+than the caller grants, and the run is rejected before it starts.
 
 **Why the reusables reference actions by full path, not `./`.** Every
 `uses:` for an in-repo composite action is written
@@ -295,9 +299,11 @@ level deeper: a `./` ref _inside_ a composite action also resolves to
 `pnpm-resolve-pinned` / `pnpm-tasks` by full path too. The cost is that
 tooling's own PRs exercise the `@main` action, not the PR's edited copy
 — action changes aren't self-tested until merged. There is no clean
-dynamic alternative (`uses:` can't interpolate a ref; GitHub's
-same-SHA `$/` syntax isn't GA). Do **not** "simplify" these back to
-`./`.
+dynamic alternative: `uses:` can't interpolate a ref, and GitHub's
+same-SHA `$/` syntax, which shipped on github.com in July 2026, is
+rejected by the Forgejo runner these workflows also target. A release
+pins these refs to its own tag instead (see `gtb publish` below). Do
+**not** "simplify" these back to `./`.
 
 Every job that needs Node, pnpm, hk, or pkl prepends `mise-setup`, which
 installs the exact versions pinned in `mise.toml` / `mise.lock`. Tool
@@ -345,8 +351,9 @@ through `package.json` scripts backed by `gtb` leaf commands.
   - **`gtb publish`** runs `changeset publish` (npm, honoring the ambient
     OIDC + `NPM_CONFIG_PROVENANCE` env), then creates a GitHub release per
     published npm package, and then dispatches every non-npm channel (the
-    Pkl zip to a `hk-config@<ver>` GitHub release), using the assets the
-    `pack` step already built. The API-side releases are what land the
+    Pkl zip to a `hk-config@<ver>` GitHub release, and the `.github/`
+    package to a `v<ver>` release), using the assets the `pack` step
+    already built. The API-side releases are what land the
     release tags on GitHub — `changeset publish` only creates tags in the
     local clone, and changesets/action (which would push them) never runs
     the publish phase here. Creating releases instead of pushing tags keeps
@@ -355,6 +362,28 @@ through `package.json` scripts backed by `gtb` leaf commands.
     is idempotent and no-ops when the workspace ships no such package, so CD
     runs `gtb publish` unconditionally; a future `.NET` channel adds just
     another `executePublish*` with no workflow change.
+  - **The workflows release is cut off the default branch.** A caller
+    pinned to `v<ver>` must get the actions and config of that release, so
+    the tagged tree has every `gtbuchanan/tooling/.github/...@<ref>` pinned
+    to `@v<ver>`. That tree can't be committed to `main`: `main`'s own CI
+    would then reference a tag that doesn't exist until CD, which waits on
+    that CI, creates it. So `executePublishWorkflows` builds a child of
+    HEAD through the Git Data API (which signs it, where the runner has no
+    key) and tags it, and only the tag reaches it. A tag left by a dead or
+    concurrent run is released only if its parent is on the default branch
+    and holds the version being released, and the tag holds exactly the tree
+    the channel plans for that parent, since
+    anyone able to create the tag could otherwise get any commit released.
+    The check runs against the tag's own parent rather than HEAD, because the
+    branch can move before a retry, and against the branch as GitHub holds it
+    rather than the local HEAD, because a run that started before a newer push
+    is behind the commit the newer run tagged. With nothing to pin, the release is
+    HEAD itself, as in every other channel, and a tag already there must point
+    at HEAD, since `gh release create` would otherwise release whatever it tags.
+    The publish step runs as the GitHub App because the release commit
+    changes `.github/workflows/`, which needs the App's Workflows
+    permission, and because the `Release tags` ruleset lets only the App
+    and repository admins create, move or delete a tag.
   - **Publishing is failure-isolated at both levels**, because the units it
     releases are independent and a run that stops early leaves npm and
     GitHub out of sync until someone notices. One package's failed release

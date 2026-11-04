@@ -66,7 +66,7 @@ jobs:
     name: CD
     needs: ci
     permissions:
-      contents: write # changesets release tags/PR
+      contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
     secrets: inherit
@@ -226,10 +226,14 @@ Consumer customization:
 
 The `CD` job (`cd.yml`) requires:
 
-- `release` GitHub environment with npm trusted publishing (OIDC)
-- A GitHub App with `contents: write` and `pull-requests: write`
-  permissions installed on the repo (so changeset PRs trigger checks)
-- Repo variable `APP_ID` and repo secret `APP_PRIVATE_KEY` from the App
+- `release` GitHub environment with npm trusted publishing (OIDC),
+  limited to the default branch by a deployment branch policy
+- A GitHub App with `contents: write`, `pull-requests: write` and
+  `workflows: write` permissions installed on the repo (so changeset PRs
+  trigger checks). Each job's token is narrowed to the permissions that
+  job needs, and both ask for `workflows: write` in every repo
+- Repo variable `APP_ID`, and `APP_PRIVATE_KEY` from the App as a secret
+  of the `release` environment, so pull request runs can't read it
 - `@changesets/cli` as a devDependency
 
 ## Renovate preset

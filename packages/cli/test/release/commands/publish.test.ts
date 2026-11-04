@@ -13,14 +13,14 @@ describe.concurrent(executePublish, () => {
     let hasNpmFinished = false;
 
     await executePublish({
-      publishNonNpm: async () => {
+      nonNpmChannels: [async () => {
         // The npm channel (publish + releases) must have settled before this.
         expect(order).toContain('releases:end');
 
         order.push('non-npm:start');
         await Promise.resolve();
         order.push('non-npm:end');
-      },
+      }],
       releaseNpm: async () => {
         // npm publish must have fully settled before its releases are cut.
         expect(hasNpmFinished).toBe(true);
@@ -50,17 +50,36 @@ describe.concurrent(executePublish, () => {
     const order: string[] = [];
 
     await expect(executePublish({
-      publishNonNpm: () => {
+      nonNpmChannels: [() => {
         order.push('non-npm');
 
         return Promise.resolve();
-      },
+      }],
       releaseNpm: () => Promise.reject(new Error('npm releases exploded')),
       run: () => Promise.resolve(),
     })).rejects.toThrow(AggregateError);
 
     // The channels are independent: one failing must not strand the others.
     expect(order).toStrictEqual(['non-npm']);
+  });
+
+  it('runs every non-npm channel even when an earlier one fails', async ({ expect }) => {
+    const order: string[] = [];
+
+    await expect(executePublish({
+      nonNpmChannels: [
+        () => Promise.reject(new Error('pkl exploded')),
+        () => {
+          order.push('workflows');
+
+          return Promise.resolve();
+        },
+      ],
+      releaseNpm: () => Promise.resolve(),
+      run: () => Promise.resolve(),
+    })).rejects.toThrow(AggregateError);
+
+    expect(order).toStrictEqual(['workflows']);
   });
 
   it('skips every channel when the registry publish fails', async ({ expect }) => {
@@ -72,7 +91,7 @@ describe.concurrent(executePublish, () => {
     };
 
     await expect(executePublish({
-      publishNonNpm: channel('non-npm'),
+      nonNpmChannels: [channel('non-npm')],
       releaseNpm: channel('releases'),
       run: () => Promise.reject(new Error('changeset publish exploded')),
     })).rejects.toThrow('changeset publish exploded');
