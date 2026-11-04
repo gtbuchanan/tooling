@@ -1,5 +1,4 @@
 import type { SpawnOptions, SpawnSyncOptions } from 'node:child_process';
-import { devNull } from 'node:os';
 import crossSpawn from 'cross-spawn';
 
 /**
@@ -23,13 +22,20 @@ interface GitEnv extends NodeJS.ProcessEnv {
   readonly GIT_CONFIG_NOSYSTEM: string;
 }
 
+/*
+ * Literally `/dev/null`, not `os.devNull`: on Windows that is `\\.\nul`, which
+ * Git for Windows can't open as a config file, while it maps `/dev/null` to
+ * the null device itself.
+ */
+const gitNullConfig = '/dev/null';
+
 /**
  * Creates a Git environment isolated from user/system config (e.g. GPG signing, hooks).
  * Optionally includes a committer identity for commands that require one.
  */
 export const createGitEnv = (identity?: { email: string; name: string }): GitEnv => ({
   ...process.env,
-  GIT_CONFIG_GLOBAL: devNull,
+  GIT_CONFIG_GLOBAL: gitNullConfig,
   GIT_CONFIG_NOSYSTEM: '1',
   ...(identity && {
     GIT_AUTHOR_EMAIL: identity.email,

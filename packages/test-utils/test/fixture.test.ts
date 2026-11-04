@@ -220,11 +220,17 @@ describe.concurrent(matchTarball, () => {
 });
 
 describe.concurrent(createGitEnv, () => {
-  it('isolates from global git config', ({ expect }) => {
-    const env = createGitEnv();
+  /*
+   * Asserted through git itself, since what matters is that git can open the
+   * path as an empty config. Windows' `\\.\nul` reads as isolated to anything
+   * but git, which refuses it and fails every command run under the env.
+   */
+  it('isolates from global git config', async ({ expect }) => {
+    const result = await runCommand('git', ['config', '--global', '--list'], {
+      env: createGitEnv(),
+    });
 
-    expect(env.GIT_CONFIG_GLOBAL).toBeDefined();
-    expect(env.GIT_CONFIG_NOSYSTEM).toBe('1');
+    expect(result).toMatchObject({ exitCode: 0, stdout: '' });
   });
 
   it('does not include identity by default', ({ expect }) => {
