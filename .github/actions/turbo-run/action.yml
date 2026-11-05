@@ -12,7 +12,7 @@ outputs:
 runs:
   steps:
     - id: turbo-version
-      uses: gtbuchanan/tooling/.github/actions/pnpm-resolve-pinned@main
+      uses: gtbuchanan/tooling/.github/actions/pnpm-resolve-pinned@v1.0.0
       with:
         package: turbo
 
@@ -51,7 +51,7 @@ runs:
       shell: bash
 
     - if: steps.cache-check.outputs.hit != 'true'
-      uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@v1.0.0
 
     - env:
         TURBO_GLOBAL_WARNING_DISABLED: '1'

@@ -36,7 +36,7 @@ name: PR
 # the Checks-tab grouping; the required-check identifiers are the base
 # leaf jobs (Build, E2E Test, Dependency Review, ...). Consumers copy
 # this file, swapping `./` for
-# `gtbuchanan/tooling/.github/workflows/<name>@main`.
+# `gtbuchanan/tooling/.github/workflows/<name>@v1.0.0`.
 on:
   pull_request:
     branches: [main]

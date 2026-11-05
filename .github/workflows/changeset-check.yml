@@ -33,13 +33,13 @@ jobs:
             exit 1
           fi
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.0.0
 
       # `gtb changeset check` shells out to the installed `changeset` bin, and
       # gtb needs node_modules either way — for its own dependencies when
       # `gtb-from-source` runs it from workspace source, or for the bin itself
       # when it doesn't.
-      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@v1.0.0
 
       # Runs `changeset status` for the stock "a changeset exists" requirement,
       # then the catalog gate for what it structurally cannot see: a pnpm

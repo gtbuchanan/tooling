@@ -201,7 +201,7 @@ on:
           (always, never, on-failure).
         type: string
       config-file:
-        default: gtbuchanan/tooling/.github/dependency-review-config.yml@main
+        default: gtbuchanan/tooling/.github/dependency-review-config.yml@v1.0.0
         description: >-
           Dependency-review config file. Either a path in
           the calling repo or `<owner>/<repo>/<path>@<ref>`

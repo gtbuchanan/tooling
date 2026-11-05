@@ -9,9 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.0.0
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.0.0
         with:
           task: build:ci
 
@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.0.0
 
       # The coverage uploads glob both the root and the `packages/*` layout, so
       # the artifact is rooted at the least common ancestor of the two — the
@@ -76,7 +76,7 @@ jobs:
 
       - env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+        uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.0.0
         with:
           task: coverage:codecov:upload
 
@@ -86,9 +86,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.0.0
 
-      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@v1.0.0
 
       - name: Check config drift
         run: pnpm verify
@@ -101,9 +101,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.0.0
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.0.0
         with:
           task: coverage:merge
 
@@ -123,7 +123,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.0.0
 
       # Each e2e fixture runs its own `npm install` into a temp project, so
       # without a warm npm cache every fixture re-downloads the same
@@ -144,7 +144,7 @@ jobs:
           restore-keys: |
             npm-e2e-${{ runner.os }}-
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.0.0
         with:
           task: test:e2e
 
@@ -155,9 +155,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.0.0
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.0.0
         with:
           task: test:slow
 
