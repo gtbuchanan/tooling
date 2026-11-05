@@ -1,5 +1,35 @@
 # @gtbuchanan/hk-config
 
+## 0.6.0
+
+### Minor Changes
+
+- cd04e8a: Bump the hk package imports to v2.9.0
+
+  `Defaults.pkl` imports hk's `Config.pkl` and `Builtins.pkl` from a
+  version-pinned release URL, now v2.9.0 to match `mise.toml`.
+
+  Move your own `hk.pkl` `amends` URL to v2.9.0 in the same change. Pkl treats
+  the same class from two hk versions as unrelated types, so a config amending
+  one version while importing a preset built on another fails to evaluate.
+- 33ebdfb: Replace the actionlint step with jactionlint
+
+  rhysd/actionlint has stopped releasing, and its hardcoded runner labels turn
+  every new GitHub runner into a `runner-label` error. The step now wraps hk's
+  `Builtins.jactionlint` (jdx/jactionlint, the maintained fork), which also
+  lints composite actions and Dependabot config. It runs the `correctness`
+  profile, the checks actionlint made, and `--profile` overrides a repo's
+  `.github/jactionlint.yaml`, so amend the step's argv to run another.
+
+  Breaking:
+
+  - The step key in `recommended` and the export are renamed from `actionlint`
+    to `jactionlint`. Rename any amendment and any `-S actionlint` or
+    `--skip-step actionlint`.
+  - Swap the mise `actionlint` pin for `jactionlint` (`github:jdx/jactionlint`).
+  - Shellcheck now runs on Windows too, so run-script findings that only Linux
+    reported appear there as well.
+
 ## 0.5.0
 
 ### Minor Changes

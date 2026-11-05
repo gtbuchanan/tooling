@@ -1,5 +1,125 @@
 # @gtbuchanan/cli
 
+## 2.0.0
+
+### Major Changes
+
+- fde72e2: Stop generating turbo tasks no package runs
+
+  `compile:skills` is no longer generated when skills and publishing sit on
+  different packages, nor `test:vitest:e2e`, with its `test:e2e` aggregate and
+  alias, when only a monorepo root has an e2e config.
+
+  Such a repo's `E2E Test` job now fails on the missing task instead of passing
+  with no tests. Set `run-e2e: false` on the reusable CI workflow if the repo
+  has no e2e tests.
+- f700da1: Chain the monorepo `generate` aggregate through `^generate`
+
+  Codegen in a transitive workspace dependency now runs before the tasks that
+  read it. `gtb verify` requires each package configuration's `generate` task to
+  keep that edge: add `"$TURBO_EXTENDS$"` as the first entry of its `dependsOn`.
+
+  The marker needs turbo 2.7 or later, now an optional peer dependency. On older
+  turbo, list `"^generate"` in that `dependsOn` instead.
+- 2c38610: Require `skills-npm` v4 as the optional peer dependency
+
+  Upgrade with `pnpm add -D skills-npm@^4`. v4 writes a `skills-npm-lock.json`
+  at the workspace root on every install; add it to `.gitignore` beside
+  `skills-lock.json`.
+
+### Minor Changes
+
+- 81cedc8: Add `gtb changeset check`, a changeset gate that sees catalog bumps
+
+  `changeset status` maps changed files to packages, but a pnpm catalog bump
+  edits only `pnpm-workspace.yaml`, which belongs to no package. pnpm still
+  rewrites `catalog:` to the new range at pack time, so every consumer's
+  published manifest moves with no version bump behind it.
+
+  The command runs `changeset status`, then diffs the `catalog:` and `catalogs:`
+  blocks between HEAD and its merge base with `--since`. It fails when a changed
+  entry reaches a published package's runtime dependencies and no changeset
+  covers that package. Dev and bundled dependencies, private packages and the
+  changesets `ignore` list are excluded, and an empty changeset is not coverage.
+
+  `changeset-check.yml` now runs this command, so its caller must depend on
+  `@gtbuchanan/cli`.
+- b5e72d8: Add a `toolchains` scope to `gtb verify`
+
+  It runs the rules each toolchain checks for itself. The check that a published
+  package depends on no private workspace package moves there from the
+  `manifest` scope, so `gtb verify manifest` no longer reports it; a full
+  `gtb verify` still does.
+- 980a8fa: Disable turbo's agent guidance in the generated `turbo.json`
+
+  When turbo detects an AI agent, it rewrites a managed block into the root
+  `AGENTS.md`, which shows up as an uncommitted change in every agent session.
+- a5e4cd1: Release a workspace's `.github` package as a `v<version>` GitHub release
+
+  `gtb publish` tags a commit cut from HEAD in which every reference to the
+  repository's own `.github/` tree is pinned to that tag, so a caller pinned to
+  the release gets the actions and workflows it holds. The commit is built
+  through the Git Data API, so `GH_TOKEN` needs Workflows write.
+
+### Patch Changes
+
+- 4960137: Alias the root `build` script whenever `turbo.json` declares `build`
+
+  A monorepo whose only build step is `deploy:skills` now gets the alias, and
+  `gtb verify` expects one in a single-package repo of that shape.
+- 006add6: Order each aggregate's `dependsOn` members by a fixed rule
+
+  Root tasks come first, then package tasks, each sorted by name. The next
+  `gtb sync` reorders the affected `turbo.json` arrays without changing which
+  tasks run.
+- 6121cdb: Lint the monorepo root through the `lint` and `check` aggregates
+
+  When only the root has an ESLint config, `//#lint:eslint` was generated but no
+  aggregate depended on it, so `check`, `build:ci` and `build` never linted the
+  root.
+- 68ab1e9: Order the check and build tasks after their dependencies' codegen
+
+  Type-check, compile, lint and test tasks now depend on `^generate`, the root's
+  lint and type-check included, and test tasks also depend on their own
+  package's `generate`.
+- ba0f367: Upload every coverage report the test tasks declare
+
+  `gtb task coverage:codecov:upload` uploaded only the merged report. Where
+  several exist on disk, such as fast and merged coverage after a local run, it
+  now uploads each. Codecov combines them, so the reported coverage is
+  unchanged.
+- 620e9fc: Drop `--experimental-strip-types` from the self-hosted `gtb` script
+
+  Node 24 strips types by default, so the flag did nothing. `gtb sync` keeps an
+  existing script, so remove it by hand or run `gtb sync --force`.
+- 34a0892: Point the self-hosted `gtb` shim at `@gtbuchanan/cli` wherever it lives
+
+  It assumed `packages/cli`.
+- 9319fee: Run `hk fix --unstaged` at the end of `gtb version`
+
+  The CHANGELOGs `changeset version` writes then pass the release PR's
+  pre-commit check without a root-installed formatter.
+- aa2ee26: Keep packages without their own ESLint config in the root lint
+
+  The root `lint:eslint` subtracted every workspace glob, so such a package's
+  files were linted by nothing. It now subtracts only the packages that run
+  their own `lint:eslint`.
+- 557f13d: Make the root's lint and type-check tasks depend on `^transit`
+
+  Without that edge, an edit to a workspace package the root consumes, such as
+  its ESLint config or a shared tsconfig, replayed the root task's cached pass.
+- c0fadc1: Hash the vendored CLI's sources into every task when self-hosted
+
+  Packages run gtb from source by relative path, so no task edge reached the
+  CLI, and some edits to it replayed stale cached results. The generated
+  `turbo.json` now lists its sources in `globalDependencies`.
+- d7759de: Count only directories holding a `package.json` as workspace packages
+
+  That matches pnpm. A deleted package or a branch switch can leave a directory
+  holding only untracked `node_modules/` or `dist/`, which `gtb` discovered as a
+  package, so `gtb sync` could generate different config there than in a clean
+  checkout.
+
 ## 1.0.0
 
 ### Major Changes
