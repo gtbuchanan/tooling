@@ -2,4 +2,6 @@
 '@gtbuchanan/cli': patch
 ---
 
-Point the self-hosted `gtb` shim at the workspace's `@gtbuchanan/cli` package wherever it lives, rather than assuming `packages/cli`.
+Point the self-hosted `gtb` shim at `@gtbuchanan/cli` wherever it lives
+
+It assumed `packages/cli`.

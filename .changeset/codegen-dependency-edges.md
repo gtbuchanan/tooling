@@ -2,4 +2,8 @@
 '@gtbuchanan/cli': patch
 ---
 
-Order type-check, compile, lint, and test tasks, including the root's lint and type-check, after their workspace dependencies' codegen (`^generate`), and order the test tasks after their own package's codegen
+Order the check and build tasks after their dependencies' codegen
+
+Type-check, compile, lint and test tasks now depend on `^generate`, the root's
+lint and type-check included, and test tasks also depend on their own
+package's `generate`.

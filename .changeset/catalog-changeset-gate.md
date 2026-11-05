@@ -2,25 +2,18 @@
 '@gtbuchanan/cli': minor
 ---
 
-Add `gtb changeset check`, a catalog-aware changeset gate.
+Add `gtb changeset check`, a changeset gate that sees catalog bumps
 
-`changeset status` maps changed files to packages, but a pnpm catalog moves
-every dependency range to `pnpm-workspace.yaml` at the workspace root, which
-belongs to no package. A catalog bump therefore reads as "no package changed",
-while pnpm rewrites `catalog:` to the concrete range at pack time — so every
-consumer's published manifest moves with no version bump behind it, and the new
-range sits unreleased until some unrelated PR happens to bump the package.
+`changeset status` maps changed files to packages, but a pnpm catalog bump
+edits only `pnpm-workspace.yaml`, which belongs to no package. pnpm still
+rewrites `catalog:` to the new range at pack time, so every consumer's
+published manifest moves with no version bump behind it.
 
-The gate diffs the `catalog:` / `catalogs:` blocks between a base ref and HEAD,
-maps each changed entry to the published packages declaring it in a runtime
-dependency field, and fails when no changeset covers them. `devDependencies`,
-bundled dependencies, private packages, and anything in the changesets config's
-`ignore` are excluded, and an empty changeset does not count as coverage.
+The command runs `changeset status`, then diffs the `catalog:` and `catalogs:`
+blocks between HEAD and its merge base with `--since`. It fails when a changed
+entry reaches a published package's runtime dependencies and no changeset
+covers that package. Dev and bundled dependencies, private packages and the
+changesets `ignore` list are excluded, and an empty changeset is not coverage.
 
-The command runs `changeset status` first, so one invocation covers both the
-stock "a changeset exists" requirement and the catalog gate against a single
-base ref instead of specifying it twice. `changeset-check.yml` is now one step,
-behind the same `gtb-from-source` input `cd.yml` uses. The
-`pnpm-resolve-pinned` + `pnpm dlx` indirection is gone: it existed only to
-avoid an install the gtb bin needs anyway, and it already required
-`@changesets/cli` to be a root devDependency to resolve from the lockfile.
+`changeset-check.yml` now runs this command, so its caller must depend on
+`@gtbuchanan/cli`.
