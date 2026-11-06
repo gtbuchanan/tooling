@@ -11,9 +11,12 @@ import type { PluginFactory } from '../index.ts';
 export const defaultGitignoreOptions: FlatGitignoreOptions = {
   /*
    * Monorepos keep per-package .gitignore files alongside the root one,
-   * and the root config lints every package.
+   * and the root config lints every package. The walk doesn't apply the
+   * rules it loads, so skip what the toolchain writes by name: a concurrent
+   * build can delete those directories mid-walk, failing config loading
+   * with ENOENT.
    */
-  recursive: true,
+  recursive: { skipDirs: ['.turbo', 'coverage', 'dist'] },
   /*
    * Upstream throws when an ignore file is missing. This config is loaded
    * by repos it knows nothing about, so a missing .gitignore contributes

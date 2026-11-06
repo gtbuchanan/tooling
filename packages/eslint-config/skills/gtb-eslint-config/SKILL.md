@@ -80,10 +80,13 @@ single source of truth for them.
 Two defaults differ from upstream, and a caller-supplied options object is
 merged over them (unlike `ignores`, partial overrides keep the rest):
 
-- **`recursive: true`** — also picks up per-package `.gitignore` files, so
-  a workspace-root lint run honors the ones nested in each package.
-  Discovery is a directory walk; pass
-  `{ recursive: { skipDirs: [...] } }` to prune it in a large repo.
+- **`recursive: { skipDirs: ['.turbo', 'coverage', 'dist'] }`** — also
+  picks up per-package `.gitignore` files, so a workspace-root lint run
+  honors the ones nested in each package. Discovery is a directory walk
+  that doesn't apply the rules it loads, so it skips build output by name
+  (at any depth): a concurrent build deleting a directory mid-walk would
+  otherwise fail config loading with `ENOENT`. Overriding `skipDirs`
+  replaces the list, so repeat these names when adding your own.
 - **`strict: false`** — upstream throws when an ignore file is missing.
   A shared config is loaded by repos it knows nothing about, so a missing
   `.gitignore` contributes no patterns rather than failing the lint run.

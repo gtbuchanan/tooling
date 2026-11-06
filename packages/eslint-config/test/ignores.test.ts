@@ -147,6 +147,27 @@ describe.concurrent('gitignore', () => {
     ]);
   });
 
+  /*
+   * The walk lists every directory it descends into, so one a concurrent
+   * build deletes mid-walk fails config loading with ENOENT. A .gitignore
+   * planted in each stands in for "the walk went there".
+   */
+  it('skips build output when discovering nested .gitignore files', async ({ expect }) => {
+    const cwd = createGitignoreFixture({
+      '.': 'root-only/\n',
+      'packages/thing/.turbo': 'turbo-only/\n',
+      'packages/thing/coverage': 'coverage-only/\n',
+      'packages/thing/dist': 'dist-only/\n',
+    });
+
+    const configs = await configure({
+      gitignore: { cwd, root: true },
+      onlyWarn: false,
+    });
+
+    expect(findGitignore(configs)?.ignores).toStrictEqual(['**/root-only/']);
+  });
+
   it('stops discovering nested .gitignore files when recursive is false', async ({ expect }) => {
     const cwd = createGitignoreFixture({
       '.': 'root-only/\n',
