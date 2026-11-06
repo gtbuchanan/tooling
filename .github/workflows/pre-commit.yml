@@ -4,7 +4,6 @@ env:
   # and Node tools (eslint etc.) honor FORCE_COLOR. Actions renders the ANSI.
   CLICOLOR_FORCE: '1'
   FORCE_COLOR: '1'
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   run:
