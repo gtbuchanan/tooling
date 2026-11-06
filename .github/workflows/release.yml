@@ -1,4 +1,14 @@
 ---
+# Runs queue rather than cancel: cancelling CD partway through publishing
+# would leave npm and the GitHub releases out of step. A newer pending run
+# still replaces an older pending one, and its CD releases everything the
+# skipped commits carried. The `-caller` part keeps the group distinct from
+# any a reusable builds from `github.workflow`, which is this workflow's name
+# there too.
+concurrency:
+  cancel-in-progress: false
+  group: ${{ github.workflow }}-caller-${{ github.ref }}
+
 jobs:
   cd:
     name: CD

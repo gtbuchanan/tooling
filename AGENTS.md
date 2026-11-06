@@ -223,6 +223,9 @@ swapping `./` for `gtbuchanan/tooling/.github/workflows/<name>@main`:
 ```yaml
 # consumer/.github/workflows/pr.yml
 name: PR
+concurrency:
+  cancel-in-progress: true # a push supersedes the PR's earlier runs
+  group: ${{ github.workflow }}-caller-${{ github.event.pull_request.number }}
 on:
   pull_request:
     branches: [main]
@@ -250,6 +253,9 @@ jobs:
 ```yaml
 # consumer/.github/workflows/release.yml
 name: Release
+concurrency:
+  cancel-in-progress: false # queue; never cancel CD mid-publish
+  group: ${{ github.workflow }}-caller-${{ github.ref }}
 on:
   push:
     branches: [main]

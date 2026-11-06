@@ -1,4 +1,11 @@
 ---
+# A push supersedes the PR's earlier runs. The group needs its own `-caller`
+# part: inside a called workflow `github.workflow` is still this workflow's
+# name, so a group a reusable builds from it would otherwise match this one.
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-caller-${{ github.event.pull_request.number }}
+
 jobs:
   changeset:
     name: Changeset
