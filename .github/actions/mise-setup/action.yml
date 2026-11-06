@@ -13,24 +13,12 @@ runs:
     # (analogous to pnpm `--frozen-lockfile`). jdx/mise-action already
     # sets MISE_YES + MISE_TRUSTED_CONFIG_PATHS, so trust prompts and
     # interactive confirmations are handled by the action itself.
-    #
-    # MISE_GITHUB_TOKEN is set here rather than left to mise-action's
-    # own github_token input (which already defaults to github.token).
-    # The action exports that variable only *after* it has run
-    # `mise self-update`, so when a restored cache holds a different
-    # mise version than the pinned one below, self-update queries the
-    # GitHub releases API unauthenticated and 403s under rate limiting.
-    # Presetting wins because the action skips any variable already in
-    # the environment. See jdx/mise-action#292; drop this line once the
-    # action exports the token before it self-updates.
     - env:
         DATA_DIR: ${{ runner.temp }}/.mise
-        GH_TOKEN: ${{ github.token }}
       name: Configure mise environment
       run: |
         {
           echo "MISE_DATA_DIR=${DATA_DIR}"
-          echo "MISE_GITHUB_TOKEN=${GH_TOKEN}"
           echo "MISE_LOCKED=1"
         } >> "$GITHUB_ENV"
       shell: bash
@@ -48,6 +36,10 @@ runs:
     # into MISE_DATA_DIR. On Windows os.tmpdir() is on C: but MISE_DATA_DIR sits
     # on runner.temp (D:), and the cross-drive rename fails with EXDEV — so point
     # the process temp at the same volume as MISE_DATA_DIR for this step.
+    #
+    # github_token defaults to github.token, which on Forgejo and Gitea is the
+    # forge's own job token: GitHub rejects it with a 401. Pass it only on
+    # github.com and let mise call the GitHub API anonymously elsewhere.
     - env:
         TEMP: ${{ runner.temp }}
         TMP: ${{ runner.temp }}
@@ -55,6 +47,7 @@ runs:
       uses: jdx/mise-action@v5.2.6
       with:
         cache: false
+        github_token: ${{ github.server_url == 'https://github.com' && github.token || '' }}
         version: 2026.11.0
 
     # Prune unreferenced tool versions on inexact cache restore so the
