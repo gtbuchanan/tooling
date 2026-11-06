@@ -54,8 +54,9 @@ jobs:
       - env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_CONFIG_PROVENANCE: 'true'
+          PNPM_GTB_COMMAND: ${{ inputs.gtb-from-source && 'run' || 'exec' }}
         name: Publish packages
-        run: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} publish
+        run: pnpm "$PNPM_GTB_COMMAND" gtb publish
 
   version:
     # For the App key, which lives in the environment (see the header).

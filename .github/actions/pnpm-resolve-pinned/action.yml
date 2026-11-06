@@ -11,12 +11,14 @@ outputs:
     value: ${{ steps.resolve.outputs.version }}
 runs:
   steps:
-    - id: resolve
+    - env:
+        PACKAGE: ${{ inputs.package }}
+      id: resolve
       run: |
-        version=$(pnpm ls --lockfile-only -w --depth 0 "${{ inputs.package }}" --json \
-          | jq -r ".[0].devDependencies[\"${{ inputs.package }}\"].version")
+        version=$(pnpm ls --lockfile-only -w --depth 0 "$PACKAGE" --json \
+          | jq -r --arg package "$PACKAGE" '.[0].devDependencies[$package].version')
         if [ -z "$version" ] || [ "$version" = "null" ]; then
-          echo "::error::Failed to resolve version for ${{ inputs.package }}"
+          echo "::error::Failed to resolve version for $PACKAGE"
           exit 1
         fi
         echo "version=$version" >> "$GITHUB_OUTPUT"
