@@ -42,6 +42,11 @@ only inside the `renovate` npm package — add `npm:renovate` to your mise
 - `renovateConfig` — validates `.github/renovate.json` via
   `renovate-config-validator`. Amend its `glob` to target a different file
   (e.g. `default.json` for preset-authoring repos).
+- `gtbCliSteps(prefix)` — `gtb verify`, fixed by `gtb sync`, so a commit that
+  drifts from the generated config is repaired and re-staged. The argument
+  sets how `gtb` resolves: `null` for a mise `npm:@gtbuchanan/cli` tool,
+  `"pnpm exec"` for a workspace devDependency. Not in `recommended`, since it
+  fails wherever gtb isn't installed.
 - `defaultExclude` — the default exclude regex (lockfiles plus a root
   `vendor/`), exposed so you can wire the same exclude onto your own tool
   steps.

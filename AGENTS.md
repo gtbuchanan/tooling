@@ -120,6 +120,8 @@ coverage, setupFiles, and mock reset.
     `renovate-preset` retargets the glob to `default.json`.
     `check-illegal-windows-names` was dropped (no builtin; redundant on a
     Windows-primary repo)
+  - `gtb-verify` — `Defaults.gtbCliSteps("pnpm run")`: `gtb verify`, fixed
+    by `gtb sync`, run from source through the root `gtb` script
   - `eslint` — repo-specific, stays in `hk.pkl`. `no-commit-to-branch` is
     wired into `pre-commit` by `Defaults.hooksFor` (commit-time-only guard)
 - **`@gtbuchanan/hk-config` preset** (`packages/hk-config/Defaults.pkl`).
@@ -131,7 +133,9 @@ coverage, setupFiles, and mock reset.
   also exports the `shell` group (`shellcheck` + `shfmt`), the `recommended`
   step mapping (file hygiene + `forbid-submodules` + `renovate-config` +
   `jactionlint` + shell — every step glob/type-gated, so inapplicable ones are
-  inert) for one-line adoption, and `hooksFor(steps)` which builds the standard
+  inert) for one-line adoption, `gtbCliSteps(prefix)` (the `gtb-verify` step,
+  kept out of `recommended` because it fails wherever gtb isn't installed),
+  and `hooksFor(steps)` which builds the standard
   `pre-commit` / `check` / `fix` trio (pre-commit stashes via `patch-file` and
   adds the commit-time-only `no-commit-to-branch` guard). It's private to
   npm, published as a **GitHub release** so

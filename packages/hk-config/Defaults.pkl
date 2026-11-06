@@ -122,6 +122,70 @@ recommended: Mapping<String, Config.Step> = new {
   ...shell
 }
 
+/// `gtb verify`, with `gtb sync` as its fix, so a commit that drifts from the
+/// generated config gets it repaired and re-staged rather than reported.
+///
+/// The glob is a trigger, not a work list: the command takes no `{{files}}`
+/// and reads the whole workspace, because drift is a property of the files as
+/// a set. A new package with no tsconfig is drift that no changed file
+/// carries. So the glob names what decides the plan: manifests, tool configs,
+/// Pkl sources, the `test/`, `e2e/` and `skills/` trees that earn a package
+/// its tasks, and `pnpm-lock.yaml`, since upgrading the CLI can change the plan
+/// with nothing else moving. Lockfiles therefore stay in, and the step takes no
+/// `defaultExclude`. Source files are left out: a first `.ts` file earning a
+/// root typecheck task would fire the step on every commit, and CI's own
+/// `gtb verify` still catches it. `stage` lists what sync writes, because hk
+/// otherwise stages only the files the step was triggered by, and sync
+/// creates files no commit contained.
+local gtbVerify: Config.Step = new {
+  glob = List(
+    "**/*.pkl",
+    "**/PklProject",
+    "**/e2e/**",
+    "**/eslint.config.*",
+    "**/package.json",
+    "**/skills/**",
+    "**/test/**",
+    "**/tsconfig.*.json",
+    "**/tsconfig.json",
+    "**/turbo.json",
+    "**/vitest.config.*",
+    "mise.tasks.toml",
+    "mise.toml",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+  )
+  stage = List(
+    "**/PklProject",
+    "**/package.json",
+    "**/tsconfig.*.json",
+    "**/tsconfig.json",
+    "mise.tasks.toml",
+    "turbo.json",
+  )
+  check = "gtb verify"
+  fix = "gtb sync"
+}
+
+/// The steps backed by `@gtbuchanan/cli`, as a spreadable group, with the
+/// caller deciding how the `gtb` command resolves:
+///
+///     ...Defaults.gtbCliSteps(null)         // on PATH, e.g. mise `npm:@gtbuchanan/cli`
+///     ...Defaults.gtbCliSteps("pnpm exec")  // a workspace devDependency
+///     ...Defaults.gtbCliSteps("pnpm run")   // a repository vendoring the CLI
+///
+/// Kept out of `recommended`, where every step must be inert in a repo that
+/// doesn't need it: this one fails wherever gtb isn't installed. Needs
+/// `@gtbuchanan/cli` 2.0.1 or later in a repo that adopts only this preset,
+/// since earlier versions demand build config such a repo doesn't have.
+// Named `commandPrefix` rather than `prefix`: inside the amended body, a bare
+// `prefix` resolves to the property being assigned, which Pkl rejects as
+// circular.
+function gtbCliSteps(commandPrefix: String?): Mapping<String, Config.Step> =
+  new Mapping<String, Config.Step> {
+    ["gtb-verify"] = (gtbVerify) { prefix = commandPrefix }
+  }
+
 /// Build the standard `pre-commit` / `check` / `fix` hook trio from a step
 /// mapping, eliminating the per-repo hook boilerplate. `pre-commit` runs in fix
 /// mode and stashes unstaged changes (`patch-file` — faster than `git` and

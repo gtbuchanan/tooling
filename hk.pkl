@@ -12,6 +12,10 @@ local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
 local allSteps = new Mapping<String, Step> {
     ...Defaults.recommended
 
+    // `pnpm run`: this repository vendors the CLI, so the root `gtb` script
+    // runs it from source.
+    ...Defaults.gtbCliSteps("pnpm run")
+
     // Validates the shareable preset itself; the .github/renovate.json
     // validator (renovate-config) comes from recommended.
     ["renovate-preset"] = (Defaults.renovateConfig) { glob = "default.json" }
