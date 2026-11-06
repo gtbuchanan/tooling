@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type { Generator } from '#src/codegen/generator.js';
+import { type Generator, isGtbBuild } from '#src/codegen/generator.js';
 import {
   forbiddenRootScripts,
   generatePackageScripts,
@@ -98,18 +98,23 @@ const checkShadowedAggregates = (
  */
 export const scriptsGenerator: Generator = {
   sync: ({ discovery, force, logger }) => {
+    if (!isGtbBuild(discovery)) {
+      return;
+    }
     for (const pkg of discovery.packages) {
       writePackageScripts(logger, pkg, discovery, force);
     }
     writeRootScripts(logger, discovery, force);
   },
-  verify: ({ discovery, ignored }) => [
-    ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
-    ...checkShadowedAggregates(discovery, ignored),
-    ...discovery.packages.flatMap(pkg => checkScripts(
-      pkg.dir,
-      generatePackageScripts(pkg, discovery.isSelfHosted, vendoredCli(discovery)?.dir),
-      ignored,
-    )),
-  ],
+  verify: ({ discovery, ignored }) => (isGtbBuild(discovery)
+    ? [
+        ...checkScripts(discovery.rootDir, generateRequiredRootScripts(discovery), ignored),
+        ...checkShadowedAggregates(discovery, ignored),
+        ...discovery.packages.flatMap(pkg => checkScripts(
+          pkg.dir,
+          generatePackageScripts(pkg, discovery.isSelfHosted, vendoredCli(discovery)?.dir),
+          ignored,
+        )),
+      ]
+    : []),
 };

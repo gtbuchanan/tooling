@@ -45,6 +45,7 @@ describe.concurrent('generate tasks through turbo', () => {
     const packageName = build.packageName();
     const stamp = `${packageName}.txt`;
     writeJson(fixture.projectDir, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': build.semverRange() },
       name: packageName,
       packageManager: 'npm@11.0.0',
       scripts: { 'generate:stamp': stampScript(stamp) },
@@ -96,6 +97,7 @@ describe.concurrent('generate tasks through turbo', () => {
       "packages:\n  - 'packages/*'\n",
     );
     writeJson(workspace, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': build.semverRange() },
       name: build.packageName(),
       packageManager: 'npm@11.0.0',
       private: true,

@@ -46,7 +46,12 @@ const createGenerateProject = (options: GenerateProjectOptions): GenerateProject
   );
 
   if (options.singlePackage === true) {
-    writeJson(root, 'package.json', { name: build.packageName(), scripts, version: '0.0.0' });
+    writeJson(root, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': build.semverRange() },
+      name: build.packageName(),
+      scripts,
+      version: '0.0.0',
+    });
     /*
      * The root is the package here, and `initProject` writes a root
      * tsconfig.json — so seed one first, otherwise discovery gains a
@@ -58,7 +63,11 @@ const createGenerateProject = (options: GenerateProjectOptions): GenerateProject
   }
 
   writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
-  writeJson(root, 'package.json', { name: build.packageName(), private: true });
+  writeJson(root, 'package.json', {
+    devDependencies: { '@gtbuchanan/cli': build.semverRange() },
+    name: build.packageName(),
+    private: true,
+  });
 
   const pkgDir = path.join(root, 'packages', build.packageName());
   mkdirSync(pkgDir, { recursive: true });

@@ -17,7 +17,10 @@ const createProjectWithoutBase = (): string => {
   const root = createTempDir();
   mkdirSync(path.join(root, 'src'), { recursive: true });
   writeJson(root, 'package.json', {
-    devDependencies: { '@gtbuchanan/tsconfig': build.semverRange() },
+    devDependencies: {
+      '@gtbuchanan/cli': build.semverRange(),
+      '@gtbuchanan/tsconfig': build.semverRange(),
+    },
     name: build.scopedPackageName(),
     private: true,
     version: build.semverVersion(),

@@ -36,6 +36,14 @@ export interface Generator {
 }
 
 /**
+ * Whether gtb drives the workspace's build, which only a root depending on
+ * `@gtbuchanan/cli` does (a self-hosted root included). An hk-only adopter
+ * runs gtb from mise for its hooks and owns whatever build config it has, so
+ * the steps that generate turbo, scripts and tsconfigs leave it alone.
+ */
+export const isGtbBuild = ({ dependsOnCli }: WorkspaceDiscovery): boolean => dependsOnCli;
+
+/**
  * Writes `data` as key-sorted JSON and logs the path.
  */
 export const writeSortedAndLog = (logger: Logger, filePath: string, data: object): void => {

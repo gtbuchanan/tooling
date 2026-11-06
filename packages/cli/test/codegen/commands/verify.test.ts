@@ -12,7 +12,13 @@ import { discoverWorkspace } from '#src/core/discovery.js';
 import { writeJsonFile } from '#src/core/file-writer.js';
 import { capabilities } from '#src/toolchains/index.js';
 import {
-  captureLogger, createTempDir, initProject, readScripts, readTurboTasks, writeJson,
+  captureLogger,
+  createHkOnlyProject,
+  createTempDir,
+  initProject,
+  readScripts,
+  readTurboTasks,
+  writeJson,
 } from '#test/helpers.js';
 import { createWorkspaceDepProject } from '#test/toolchains/npm/fixtures.js';
 
@@ -37,6 +43,7 @@ const createConsumerProject = (): ConsumerProject => {
   );
   writeJson(root, 'package.json', {
     devDependencies: {
+      '@gtbuchanan/cli': build.semverRange(),
       '@gtbuchanan/eslint-config': build.semverRange(),
       '@gtbuchanan/tsconfig': build.semverRange(),
       '@gtbuchanan/vitest-config': build.semverRange(),
@@ -199,6 +206,12 @@ describe.concurrent(runVerify, () => {
     const drift = runVerify({ cwd: root });
 
     expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
+  });
+
+  it('passes an hk-only adopter that has none of the build config', ({ expect }) => {
+    const root = createHkOnlyProject();
+
+    expect(runVerify({ cwd: root })).toStrictEqual([]);
   });
 
   it('scoped to mise ignores turbo/script drift', ({ expect }) => {

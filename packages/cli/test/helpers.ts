@@ -172,6 +172,28 @@ export const writeJson = (dir: string, name: string, data: unknown): void => {
 };
 
 /**
+ * Scaffolds a repo that adopts only the hk preset: a TypeScript-flavoured root
+ * manifest with no `@gtbuchanan/cli` dependency, and a `mise.toml` already
+ * loading `mise.tasks.toml`. Returns the root.
+ */
+export const createHkOnlyProject = (): string => {
+  const root = createTempDir();
+  writeJson(root, 'package.json', {
+    devDependencies: {
+      '@gtbuchanan/tsconfig': build.semverRange(),
+      'typescript': build.semverRange(),
+    },
+    private: true,
+  });
+  writeFileSync(
+    path.join(root, 'mise.toml'),
+    '[task_config]\nincludes = ["mise.tasks.toml"]\n',
+  );
+
+  return root;
+};
+
+/**
  * A scaffolded temp monorepo containing one Pkl package.
  */
 export interface PklWorkspace {

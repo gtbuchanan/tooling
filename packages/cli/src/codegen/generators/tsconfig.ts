@@ -1,7 +1,9 @@
 import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
-import { type Generator, writeSortedAndLog } from '#src/codegen/generator.js';
+import {
+  type Generator, isGtbBuild, writeSortedAndLog,
+} from '#src/codegen/generator.js';
 import {
   type GeneratedTsconfig,
   generateTsconfigBase,
@@ -105,16 +107,22 @@ const checkTsconfigBase = (rootDir: string): readonly string[] => {
  */
 export const tsconfigGenerator: Generator = {
   sync: ({ discovery, logger }) => {
+    if (!isGtbBuild(discovery)) {
+      return;
+    }
     writeTsconfigBase(logger, discovery.rootDir);
     for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
       const userOpts = readUserCompilerOptions(descriptor.path);
       writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));
     }
   },
-  verify: ({ discovery: { packages, rootDir } }) => [
-    ...checkTsconfigBase(rootDir),
-    ...planTsconfigs(rootDir, packages).flatMap(({ path: filePath, generate, ownedKeys }) =>
-      checkTsconfigFile(filePath, generate(readUserCompilerOptions(filePath)), ownedKeys),
-    ),
-  ],
+  verify: ({ discovery }) => (isGtbBuild(discovery)
+    ? [
+        ...checkTsconfigBase(discovery.rootDir),
+        ...planTsconfigs(discovery.rootDir, discovery.packages)
+          .flatMap(({ path: filePath, generate, ownedKeys }) => checkTsconfigFile(
+            filePath, generate(readUserCompilerOptions(filePath)), ownedKeys,
+          )),
+      ]
+    : []),
 };

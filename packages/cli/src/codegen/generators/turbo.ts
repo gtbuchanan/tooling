@@ -2,7 +2,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
 import { checkGenerateConfigs } from '#src/codegen/generate-tasks.js';
-import { type Generator, writeSortedAndLog } from '#src/codegen/generator.js';
+import {
+  type Generator, isGtbBuild, writeSortedAndLog,
+} from '#src/codegen/generator.js';
 import { type TurboJson, generateTurboJson } from '#src/codegen/turbo-config.js';
 import { readJsonFile } from '#src/core/file-writer.js';
 import { UnknownRecord } from '#src/core/schemas.js';
@@ -40,12 +42,17 @@ const checkTurboTasks = (
  */
 export const turboGenerator: Generator = {
   sync: ({ discovery, logger }) => {
+    if (!isGtbBuild(discovery)) {
+      return;
+    }
     writeSortedAndLog(
       logger, path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery),
     );
   },
-  verify: ({ discovery, ignored }) => [
-    ...checkTurboTasks(discovery.rootDir, generateTurboJson(discovery), ignored),
-    ...checkGenerateConfigs(discovery, ignored),
-  ],
+  verify: ({ discovery, ignored }) => (isGtbBuild(discovery)
+    ? [
+        ...checkTurboTasks(discovery.rootDir, generateTurboJson(discovery), ignored),
+        ...checkGenerateConfigs(discovery, ignored),
+      ]
+    : []),
 };

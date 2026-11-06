@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { Writable } from 'node:stream';
 import * as build from '@gtbuchanan/test-utils/builders';
@@ -15,7 +15,9 @@ import { mergePackageScripts, readJsonFile, writeJsonFile } from '#src/core/file
 import { createLogger } from '#src/core/logger.js';
 import { ManifestSchema } from '#src/core/manifest.js';
 import { capabilities } from '#src/toolchains/index.js';
-import { captureLogger, createTempDir, writeJson } from '#test/helpers.js';
+import {
+  captureLogger, createHkOnlyProject, createTempDir, writeJson,
+} from '#test/helpers.js';
 
 const silentSink = new Writable({
   write: (_chunk, _enc, cb) => {
@@ -276,6 +278,22 @@ describe.concurrent(runSync, () => {
 
     expect(existsSync(tasksPath)).toBe(true);
     expect(readFileSync(tasksPath, 'utf8')).toContain('hk:all');
+  });
+
+  /*
+   * An hk-only adopter runs gtb from mise rather than a dependency, so its
+   * workspace builds without turbo and owns whatever tsconfig it has.
+   */
+  it('writes only mise.tasks.toml when the root does not depend on the CLI', ({ expect }) => {
+    const root = createHkOnlyProject();
+    const manifestBefore = readFileSync(path.join(root, 'package.json'), 'utf8');
+
+    runSync({ cwd: root, logger: silentLogger });
+
+    expect(new Set(readdirSync(root))).toStrictEqual(
+      new Set(['mise.tasks.toml', 'mise.toml', 'package.json']),
+    );
+    expect(readFileSync(path.join(root, 'package.json'), 'utf8')).toBe(manifestBefore);
   });
 
   it('scoped to mise writes only mise.tasks.toml, not turbo.json', ({ expect }) => {
