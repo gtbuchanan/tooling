@@ -332,6 +332,13 @@ through `package.json` scripts backed by `gtb` leaf commands.
   workspace. The `packages` upload uses `if-no-files-found: ignore` — a
   repo whose packages are all private packs nothing, and nothing consumes
   the tarballs downstream.
+  Each artifact step is a pair gated on `github.server_url`: upstream
+  `actions/*-artifact` on github.com, and ChristopherHX's GitHub-hosted
+  `gitea-*-artifact` forks, pinned by commit, everywhere else. Upstream
+  treats any other server as GHES and refuses to run. Edit both halves
+  together. The forks stay on v4: their newer branches fail against
+  Forgejo 17.0.1 (see the comment in `ci.yml`), so test on Forgejo
+  before moving them.
 - **`cd.yml`** — The deploy phase: `version` then `publish` (npm trusted
   publishing via OIDC, `release` environment), gated on
   `hasChangesets == 'false'`. Run by `release.yml` as its `CD` job after CI

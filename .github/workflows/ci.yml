@@ -15,10 +15,33 @@ jobs:
         with:
           task: build:ci
 
+      # Every artifact step in this workflow comes as a pair. The upstream
+      # actions refuse to run on any server_url other than github.com, which
+      # they take for GHES, so Forgejo and Gitea get ChristopherHX's forks,
+      # which drop that check. `uses:` can't be an expression, hence the `if:`
+      # on each half. The forks live on GitHub so a bare `owner/repo@ref`
+      # resolves on both forges; the `https://` ref Forgejo also accepts is not
+      # a GitHub action reference, and jactionlint rejects it.
+      #
+      # Both forks stay on v4 rather than the upstream majors. Forgejo 17.0.1
+      # rejects the `mime_type` field the v7 upload sends, and the v8 download
+      # reports success while leaving the artifact zipped. The forks publish
+      # branches rather than tags, and the branches move, so each is pinned to
+      # a commit.
+      #
       # A repo with no publishable package (all private) legitimately packs
       # nothing, and the tarballs aren't consumed downstream — this artifact is
       # for inspection — so an empty match is not a failure or a warning.
-      - uses: actions/upload-artifact@v7
+      - if: github.server_url == 'https://github.com'
+        uses: actions/upload-artifact@v7
+        with:
+          if-no-files-found: ignore
+          name: packages
+          path: |
+            dist/packages/npm/*.tgz
+            packages/*/dist/packages/npm/*.tgz
+      - if: github.server_url != 'https://github.com'
+        uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: ignore
           name: packages
@@ -28,8 +51,16 @@ jobs:
 
       # When slow tests are enabled, merged coverage comes from the coverage job.
       # Otherwise, fast-only coverage is the final artifact.
-      - if: inputs.run-slow-tests != true
+      - if: inputs.run-slow-tests != true && github.server_url == 'https://github.com'
         uses: actions/upload-artifact@v7
+        with:
+          if-no-files-found: error
+          name: coverage
+          path: |
+            dist/coverage/vitest/fast/
+            packages/*/dist/coverage/vitest/fast/
+      - if: inputs.run-slow-tests != true && github.server_url != 'https://github.com'
+        uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: error
           name: coverage
@@ -56,8 +87,14 @@ jobs:
       # the artifact is rooted at the least common ancestor of the two — the
       # workspace. Restoring it there puts each `dist/coverage/` back exactly
       # where its `coverage:codecov:upload` task looks for it, whatever the
-      # repo's shape.
-      - uses: actions/download-artifact@v8
+      # repo's shape. The step is paired for Forgejo; see the build job.
+      - if: github.server_url == 'https://github.com'
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage
+          path: .
+      - if: github.server_url != 'https://github.com'
+        uses: ChristopherHX/gitea-download-artifact@75635f32b4c1c41c4b3d64e8f85210112ed4c9c7 # v4
         with:
           name: coverage
           path: .
@@ -107,7 +144,17 @@ jobs:
         with:
           task: coverage:merge
 
-      - uses: actions/upload-artifact@v7
+      # Paired for Forgejo; see the build job.
+      - if: github.server_url == 'https://github.com'
+        uses: actions/upload-artifact@v7
+        with:
+          if-no-files-found: error
+          name: coverage
+          path: |
+            dist/coverage/vitest/merged/
+            packages/*/dist/coverage/vitest/merged/
+      - if: github.server_url != 'https://github.com'
+        uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: error
           name: coverage
@@ -161,7 +208,17 @@ jobs:
         with:
           task: test:slow
 
-      - uses: actions/upload-artifact@v7
+      # Paired for Forgejo; see the build job.
+      - if: github.server_url == 'https://github.com'
+        uses: actions/upload-artifact@v7
+        with:
+          if-no-files-found: error
+          name: test-results-slow
+          path: |
+            dist/test-results/
+            packages/*/dist/test-results/
+      - if: github.server_url != 'https://github.com'
+        uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: error
           name: test-results-slow
