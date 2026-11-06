@@ -166,8 +166,12 @@ export const exec = (command: string, args: readonly string[], options: SpawnSyn
  * spells it and buy a retry every genuine failure then pays for. npm reports
  * both codes for the same condition — `ETARGET` as the code and `notarget` on
  * each detail line — and has spelled the prefix `npm ERR!` in past majors.
+ * When another spec takes the missing version as a peer, npm reports an
+ * ERESOLVE instead, naming the package it could not place as `<name>@undefined`;
+ * a genuine peer conflict names the version it found.
  */
-const staleMetadataPattern = /^npm (?:error|ERR!) (?:code ETARGET\b|notarget\b)/mv;
+const staleMetadataPattern =
+  /^npm (?:error|ERR!) (?:code ETARGET\b|notarget\b|Found: \S+@undefined$)/mv;
 
 /**
  * Whether a failed install is npm resolving against a stale packument: it

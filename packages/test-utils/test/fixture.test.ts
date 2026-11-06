@@ -56,9 +56,39 @@ const staleMetadataOutput = [
   'npm error notarget No matching version found for eslint-plugin-unicorn@^74.0.0.',
 ].join('\n');
 
+/*
+ * The same stale packument, reported for a version another spec in the install
+ * takes as a peer: npm cannot place the package at all, and says so as a peer
+ * conflict instead of a missing version.
+ */
+const stalePeerMetadataOutput = [
+  'npm error code ERESOLVE',
+  'npm error ERESOLVE unable to resolve dependency tree',
+  'npm error',
+  'npm error While resolving: e2e-build-1woxqf@1.0.0',
+  'npm error Found: vitest@undefined',
+  'npm error node_modules/vitest',
+  'npm error   vitest@"5.1.0" from the root project',
+  'npm error',
+  'npm error Could not resolve dependency:',
+  'npm error peer vitest@"^4.0.0 || ^5.0.0" from @gtbuchanan/vitest-config@0.3.0',
+].join('\n');
+
 describe.concurrent(isStaleMetadataFailure, () => {
   it('recognizes npm resolving against a stale packument', ({ expect }) => {
     expect(isStaleMetadataFailure(staleMetadataOutput)).toBe(true);
+  });
+
+  it('recognizes a stale packument reported as a peer conflict', ({ expect }) => {
+    expect(isStaleMetadataFailure(stalePeerMetadataOutput)).toBe(true);
+  });
+
+  it('does not claim a genuine peer conflict', ({ expect }) => {
+    const peerConflict = stalePeerMetadataOutput
+      .replace('vitest@undefined', 'vitest@3.2.7')
+      .replace('vitest@"5.1.0"', 'vitest@"3.2.7"');
+
+    expect(isStaleMetadataFailure(peerConflict)).toBe(false);
   });
 
   it('does not claim an unrelated install failure', ({ expect }) => {
