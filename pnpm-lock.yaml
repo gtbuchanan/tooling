@@ -294,8 +294,8 @@ catalogs:
       specifier: ^4.0.0
       version: 4.1.0
     skills:
-      specifier: 1.7.4
-      version: 1.7.4
+      specifier: 1.7.6
+      version: 1.7.6
     skills-npm:
       specifier: 4.1.0
       version: 4.1.0
@@ -372,7 +372,7 @@ importers:
         version: 3.9.10
       skills:
         specifier: 'catalog:'
-        version: 1.7.4
+        version: 1.7.6
       skills-npm:
         specifier: 'catalog:'
         version: 4.1.0
@@ -413,7 +413,7 @@ importers:
         version: 10.1.1
       skills:
         specifier: ^1.5.1
-        version: 1.7.4
+        version: 1.7.6
       skills-npm:
         specifier: ^4.0.0
         version: 4.1.0
@@ -2890,8 +2890,8 @@ packages:
     engines: {node: '>=22.20.0'}
     hasBin: true
 
-  skills@1.7.4:
-    resolution: {integrity: sha512-lHZJksE8UImNAr+LL6unqq7jERjdFw5EJasm17srycwL7rXHGdCmgu1L1ttLxUO9i3rdH+QQig+px0icHqLmRw==}
+  skills@1.7.6:
+    resolution: {integrity: sha512-dAee29yRGin7ub6VHwmifLEfHrysGD41yq4RkY0gg7QQh0wyQKWfhiORGb/r6uNpKWc9A1GY8yowV07Lh+4rCg==}
     engines: {node: '>=22.20.0'}
     hasBin: true
 
@@ -5361,13 +5361,13 @@ snapshots:
       '@vercel/detect-agent': 1.2.7
       cac: 7.0.0
       picocolors: 1.1.1
-      skills: 1.7.4
+      skills: 1.7.6
       tinyglobby: 0.2.17
       unconfig: 7.5.0
       xdg-basedir: 5.1.0
       yaml: 2.9.1
 
-  skills@1.7.4:
+  skills@1.7.6:
     dependencies:
       tar: 7.5.22
       yaml: 2.9.1
