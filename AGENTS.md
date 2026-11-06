@@ -228,7 +228,6 @@ on:
     branches: [main]
 permissions:
   contents: read
-  pull-requests: write # Dependencies posts a PR comment
 jobs:
   ci:
     name: CI
@@ -239,6 +238,9 @@ jobs:
     uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@main
   dependencies:
     name: Dependencies
+    permissions:
+      contents: read
+      pull-requests: write # Dependency Review posts a PR comment
     uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
   pre-commit:
     name: Pre-Commit
@@ -283,12 +285,14 @@ per-file workarounds. Keeping the triggers in the `pr.yml` /
 `release.yml` pipelines and the logic in call-only reusables means every
 reusable is always reached via `workflow_call`, so `inputs` always
 populates. Permissions narrow down the call chain but never elevate, so
-the pipeline grants the superset its jobs need (`pull-requests: write`
-for Dependencies; `contents: read` + `id-token: write` for CD, whose
-repository writes all go through the GitHub App token). A job-level
-`permissions` block sets every scope it omits to `none`, so CD's
-`contents: read` has to be listed: without it the called jobs ask for more
-than the caller grants, and the run is rejected before it starts.
+the pipeline grants each calling job the superset its called jobs need,
+and only that job (`pull-requests: write` for Dependencies;
+`contents: read` + `id-token: write` for CD, whose repository writes all
+go through the GitHub App token). The workflow level grants only
+`contents: read`, so no other job gets a write scope. A job-level
+`permissions` block sets every scope it omits to `none`, so `contents:
+read` has to be listed in both job blocks: without it the called jobs ask
+for more than the caller grants, and the run is rejected before it starts.
 
 **Why the reusables reference actions by full path, not `./`.** Every
 `uses:` for an in-repo composite action is written
@@ -450,7 +454,8 @@ through `package.json` scripts backed by `gtb` leaf commands.
   nuget, rubygems, go, cargo) or GitHub Releases (Actions). The
   `config-file` input defaults to a remote ref pointing at this repo's
   shared license policy, so consumers inherit it. Posts a PR summary
-  comment on failure; caller must grant `pull-requests: write`. Both
+  comment on failure; the calling job must grant `contents: read` and
+  `pull-requests: write`. Both
   jobs require GitHub's Dependency Graph enabled; coverage is limited
   to ecosystems it indexes (npm + Actions here). mise's `npm:` tools
   are the exception: lockfile v3 commits each one's `package.json`

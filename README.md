@@ -32,7 +32,6 @@ on:
     branches: [main]
 permissions:
   contents: read
-  pull-requests: write # Dependencies posts a PR comment
 jobs:
   ci:
     name: CI
@@ -43,6 +42,9 @@ jobs:
     uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@main
   dependencies:
     name: Dependencies
+    permissions:
+      contents: read
+      pull-requests: write # Dependency Review posts a PR comment
     uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
   pre-commit:
     name: Pre-Commit
@@ -177,8 +179,9 @@ GitHub Actions. mise tools and `hk.pkl` steps aren't covered;
 Renovate's managers handle those independently on their normal
 cadence.
 
-A failure summary is posted as a PR comment, so the PR pipeline must
-grant `pull-requests: write` (shown in the setup above).
+A failure summary is posted as a PR comment, so the `Dependencies` job
+must grant `pull-requests: write`, along with `contents: read` (shown in
+the setup above).
 
 Override defaults — e.g. a repo-local license policy or a stricter
 severity threshold — via `with:` on the `Dependencies` job:
@@ -187,6 +190,9 @@ severity threshold — via `with:` on the `Dependencies` job:
 jobs:
   dependencies:
     name: Dependencies
+    permissions:
+      contents: read
+      pull-requests: write # Dependency Review posts a PR comment
     uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
     with:
       config-file: .github/dependency-review-config.yml

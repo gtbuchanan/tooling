@@ -15,6 +15,9 @@ jobs:
 
   dependencies:
     name: Dependencies
+    permissions:
+      contents: read
+      pull-requests: write # Dependency Review posts a PR comment
     uses: ./.github/workflows/dependency-review.yml
     # Test this PR's own copy of the license policy rather than the
     # remote @main default the base ships to consumers.
@@ -43,4 +46,3 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write

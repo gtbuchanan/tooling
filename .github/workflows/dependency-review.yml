@@ -2,6 +2,9 @@
 jobs:
   review:
     name: Dependency Review
+    permissions:
+      contents: read
+      pull-requests: write # comment-summary-in-pr posts the summary
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -224,6 +227,4 @@ on:
         required: false
         type: number
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
