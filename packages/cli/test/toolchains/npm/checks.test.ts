@@ -4,14 +4,26 @@ import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import { capabilities } from '#src/toolchains/index.js';
-import { checkPublishableDependencies } from '#src/toolchains/npm/checks.js';
+import { planPublishableDependencies } from '#src/toolchains/npm/checks.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 import { createWorkspaceDepProject } from '#test/toolchains/npm/fixtures.js';
 
-const check = (root: string): readonly string[] =>
-  checkPublishableDependencies({ discovery: discoverWorkspace({ capabilities, cwd: root }) });
+/*
+ * Every rule here is drift only a hand edit fixes, so the plan finds problems
+ * and never a write.
+ */
+const check = (root: string): readonly string[] => planPublishableDependencies({
+  discovery: discoverWorkspace({ capabilities, cwd: root }),
+  force: false,
+  ignored: new Set(),
+}).map((finding) => {
+  if (finding.kind === 'write') {
+    throw new Error(`planned a write to ${finding.path}`);
+  }
+  return finding.message;
+});
 
-describe.concurrent(checkPublishableDependencies, () => {
+describe.concurrent(planPublishableDependencies, () => {
   it('reports a published package that depends on a private one', ({ expect }) => {
     const { consumer, dependency, root } = createWorkspaceDepProject();
 

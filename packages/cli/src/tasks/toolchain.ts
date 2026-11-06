@@ -40,11 +40,34 @@ export interface PublishingRegistration {
 export type Registration = CommandRegistration | LeafRegistration | PublishingRegistration;
 
 /**
- * What a toolchain's checks may read of the workspace.
+ * What a toolchain's plan may read of the workspace and the run.
  */
-export interface CheckContext {
+export interface PlanContext {
   readonly discovery: WorkspaceDiscovery;
+  /**
+   * Overwrite what a plan would otherwise preserve, such as existing scripts.
+   */
+  readonly force: boolean;
+  /**
+   * Task and script names `--ignore` removes from planning.
+   */
+  readonly ignored: ReadonlySet<string>;
 }
+
+/**
+ * One thing a plan found out of date. A `write` is a file `gtb sync` would
+ * change, planned only where its content differs, with what the change does;
+ * its `path` is absolute, since sync can run against a workspace other than
+ * the current directory. A `problem` is drift only a hand edit fixes.
+ */
+export type Finding =
+  | {
+    readonly changes: readonly [string, ...string[]];
+    readonly content: string;
+    readonly kind: 'write';
+    readonly path: string;
+  }
+  | { readonly kind: 'problem'; readonly message: string };
 
 /**
  * One toolchain: everything the CLI knows about a tool, held in the tool's own
@@ -52,16 +75,16 @@ export interface CheckContext {
  */
 export interface Toolchain {
   /**
-   * What `gtb verify toolchains` reports for the toolchain: one message per
-   * problem, empty where there is none.
-   */
-  readonly checks?: (context: CheckContext) => readonly string[];
-  /**
    * What discovery looks for on the toolchain's behalf. Registered as the
    * whole of its `capabilities.ts` module, so a capability defined there
    * cannot be left out and silently never hold.
    */
   readonly detects?: readonly Capability[];
+  /**
+   * What the toolchain finds out of date in the workspace, empty where
+   * nothing is.
+   */
+  readonly plan?: (context: PlanContext) => readonly Finding[];
   readonly registrations: readonly Registration[];
 }
 
@@ -73,12 +96,12 @@ export const toolchainCapabilities = (
 ): readonly Capability[] => toolchains.flatMap(({ detects }) => detects ?? []);
 
 /**
- * Every toolchain's check messages, in registry order.
+ * Every toolchain's findings, in registry order.
  */
-export const toolchainChecks = (
+export const toolchainPlans = (
   toolchains: readonly Toolchain[],
-  context: CheckContext,
-): readonly string[] => toolchains.flatMap(({ checks }) => checks?.(context) ?? []);
+  context: PlanContext,
+): readonly Finding[] => toolchains.flatMap(({ plan }) => plan?.(context) ?? []);
 
 const registrationsOf = (toolchains: readonly Toolchain[]): readonly Registration[] =>
   toolchains.flatMap(toolchain => toolchain.registrations);

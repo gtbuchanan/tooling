@@ -1,16 +1,17 @@
+import path from 'node:path';
 import { defineCommand } from 'citty';
 import { describe, it, vi } from 'vitest';
 import type { Capability } from '#src/core/capability.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import type { Leaf, PublishingLeaf, Report } from '#src/tasks/leaf.js';
 import {
-  type CheckContext,
+  type PlanContext,
   type PublishingRegistration,
   type Toolchain,
   taskSubCommands,
   toolchainCapabilities,
-  toolchainChecks,
   toolchainLeaves,
+  toolchainPlans,
   toolchainReports,
 } from '#src/tasks/toolchain.js';
 import { capabilities } from '#src/toolchains/index.js';
@@ -280,26 +281,58 @@ describe.concurrent(taskSubCommands, () => {
   });
 });
 
-const makeContext = (): CheckContext => {
+const makeContext = (): PlanContext => {
   const root = createTempDir();
   writeJson(root, 'package.json', { name: 'root' });
-  return { discovery: discoverWorkspace({ capabilities, cwd: root }) };
+  return {
+    discovery: discoverWorkspace({ capabilities, cwd: root }),
+    force: false,
+    ignored: new Set(),
+  };
 };
 
-describe.concurrent(toolchainChecks, () => {
-  it('reports every toolchain\'s messages, in registry order', ({ expect }) => {
+describe.concurrent(toolchainPlans, () => {
+  it('collects every toolchain\'s findings, in registry order', ({ expect }) => {
     const context = makeContext();
+    const filePath = path.join(context.discovery.rootDir, 'first.json');
     const toolchains: readonly Toolchain[] = [
-      { checks: ({ discovery }) => [`npm: ${discovery.rootDir}`], registrations: [] },
+      {
+        plan: ({ discovery }) => [{ kind: 'problem', message: `npm: ${discovery.rootDir}` }],
+        registrations: [],
+      },
       { registrations: [] },
-      { checks: () => ['eslint: first', 'eslint: second'], registrations: [] },
+      {
+        plan: () => [
+          { changes: ['adds a'], content: 'a', kind: 'write', path: filePath },
+          { kind: 'problem', message: 'eslint: second' },
+        ],
+        registrations: [],
+      },
     ];
 
-    expect(toolchainChecks(toolchains, context)).toStrictEqual([
-      `npm: ${context.discovery.rootDir}`,
-      'eslint: first',
-      'eslint: second',
+    expect(toolchainPlans(toolchains, context)).toStrictEqual([
+      { kind: 'problem', message: `npm: ${context.discovery.rootDir}` },
+      { changes: ['adds a'], content: 'a', kind: 'write', path: filePath },
+      { kind: 'problem', message: 'eslint: second' },
     ]);
+  });
+
+  it('hands each plan the run\'s context', ({ expect }) => {
+    const context = { ...makeContext(), force: true, ignored: new Set(['lint:eslint']) };
+    const seen: PlanContext[] = [];
+    const toolchains: readonly Toolchain[] = [
+      {
+        plan: (given) => {
+          seen.push(given);
+          return [];
+        },
+        registrations: [],
+      },
+    ];
+
+    toolchainPlans(toolchains, context);
+
+    expect(seen).toStrictEqual([context]);
   });
 });
 

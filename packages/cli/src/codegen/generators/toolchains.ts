@@ -1,13 +1,22 @@
 import type { Generator } from '#src/codegen/generator.js';
-import { toolchainChecks } from '#src/tasks/toolchain.js';
-import { toolchains } from '#src/toolchains/index.js';
+import { reportFindings, syncPlans } from '#src/codegen/plans.js';
+import { discoverWorkspace } from '#src/core/discovery.js';
+import { toolchainPlans } from '#src/tasks/toolchain.js';
+import { capabilities, toolchains } from '#src/toolchains/index.js';
 
 /**
- * What each toolchain checks of the workspace for itself. Those checks are
- * rules over hand-authored files rather than generated config, so there is
- * nothing to sync, and the scope keeps them selectable apart from any one
- * artifact's drift.
+ * What each toolchain plans for the workspace: the files it owns, and the
+ * rules over hand-authored files only an edit can satisfy.
  */
 export const toolchainsGenerator: Generator = {
-  verify: ({ discovery }) => toolchainChecks(toolchains, { discovery }),
+  sync: ({ discovery, force, logger }) => {
+    syncPlans(toolchains, {
+      discover: () => discoverWorkspace({ capabilities, cwd: discovery.rootDir }),
+      discovery,
+      force,
+      logger,
+    });
+  },
+  verify: ({ discovery, ignored }) =>
+    reportFindings(toolchainPlans(toolchains, { discovery, force: false, ignored })),
 };

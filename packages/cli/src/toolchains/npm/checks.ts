@@ -1,5 +1,5 @@
 import type { WorkspacePackage } from '#src/core/discovery.js';
-import type { CheckContext } from '#src/tasks/toolchain.js';
+import type { Finding, PlanContext } from '#src/tasks/toolchain.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { workspaceDependenciesOf } from '#src/toolchains/npm/manifest.js';
 
@@ -20,9 +20,9 @@ const isPublished = (pkg: WorkspacePackage): boolean => pkg.capabilities.has(pub
  * A name matching no workspace package is left alone — pnpm's own install
  * fails on an unresolvable `workspace:` specifier, so verify adds nothing.
  */
-export const checkPublishableDependencies = (
-  { discovery: { packages, root } }: CheckContext,
-): readonly string[] => {
+export const planPublishableDependencies = (
+  { discovery: { packages, root } }: PlanContext,
+): readonly Finding[] => {
   /* The root is a workspace project too, so a `workspace:` specifier can
      resolve to it. It isn't in `packages` in a monorepo, so index it
      separately; in a single-package repo it *is* `packages[0]` and dedupes. */
@@ -38,7 +38,10 @@ export const checkPublishableDependencies = (
     .flatMap(pkg =>
       workspaceDependenciesOf(pkg)
         .filter(isPrivateWorkspacePackage)
-        .map(dep =>
-          `${pkg.dir}: dependency '${dep}' is a private workspace package — ` +
-          'publish it, or move it to devDependencies if it is bundled at build time'));
+        .map((dep): Finding => ({
+          kind: 'problem',
+          message:
+            `${pkg.dir}: dependency '${dep}' is a private workspace package — ` +
+            'publish it, or move it to devDependencies if it is bundled at build time',
+        })));
 };

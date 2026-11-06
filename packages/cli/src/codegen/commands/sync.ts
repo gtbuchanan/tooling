@@ -9,6 +9,17 @@ import { discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
 import { capabilities } from '#src/toolchains/index.js';
 
+/*
+ * Scripts and turbo tasks are built from what every other step leaves
+ * behind, so they run last and see those steps' writes.
+ */
+const builtFromTheRest: ReadonlySet<SyncScope> = new Set(['scripts', 'turbo']);
+
+const syncOrder: readonly SyncScope[] = [
+  ...syncScopes.filter(scope => !builtFromTheRest.has(scope)),
+  ...builtFromTheRest,
+];
+
 /**
  * Options for {@link runSync}.
  */
@@ -26,23 +37,31 @@ export interface RunSyncOptions {
  * Reconciles generated config with the current workspace state.
  *
  * Writes the artifacts selected by `scopes` (default all): `turbo.json`,
- * per-package tsconfigs, `package.json` scripts, and `mise.tasks.toml`
- * (when the root has a `mise.toml`). With `force: false`
+ * per-package tsconfigs, `package.json` scripts, `mise.tasks.toml` (when the
+ * root has a `mise.toml`), and whatever the toolchains plan. With `force: false`
  * (default), existing script values are preserved; with `force: true`,
  * they're overwritten.
  */
 export const runSync = (options: RunSyncOptions = {}): void => {
   const scopes = options.scopes ?? new Set(syncScopes);
-  const context: SyncContext = {
-    discovery: discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() }),
-    force: options.force ?? false,
-    logger: options.logger ?? createLogger(),
-  };
+  const cwd = options.cwd ?? process.cwd();
+  const isForce = options.force ?? false;
+  const logger = options.logger ?? createLogger();
 
-  for (const scope of syncScopes) {
-    if (scopes.has(scope)) {
-      generators[scope].sync?.(context);
+  /*
+   * Each step discovers afresh, because an earlier step's write can change
+   * what discovery finds: the root tsconfig gives a single-package root the
+   * typescript capability its scripts and turbo tasks follow from.
+   */
+  for (const scope of syncOrder) {
+    if (!scopes.has(scope)) {
+      continue;
     }
+
+    const context: SyncContext = {
+      discovery: discoverWorkspace({ capabilities, cwd }), force: isForce, logger,
+    };
+    generators[scope].sync?.(context);
   }
 };
 
