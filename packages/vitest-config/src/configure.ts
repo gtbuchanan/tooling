@@ -73,6 +73,13 @@ export interface VitestConfigureGlobalOptions extends VitestConfigureOptions {
 }
 
 /**
+ * Options for single-package Vitest configuration ({@link configure},
+ * {@link configurePackage}). The global options without `projects`, which a
+ * single package has no use for.
+ */
+export type VitestConfigurePackageOptions = Omit<VitestConfigureGlobalOptions, 'projects'>;
+
+/**
  * Default test exclude patterns, extending Vitest's built-in excludes.
  */
 export const excludeDefault = [
@@ -358,7 +365,7 @@ export const configureGlobal = (
 };
 
 const buildCombinedConfig = (
-  options: VitestConfigureOptions,
+  options: VitestConfigurePackageOptions,
   shouldIncludeTestPatterns: boolean,
 ): ViteUserConfig => {
   const project = configureProject();
@@ -382,7 +389,7 @@ const buildCombinedConfig = (
  * Omits `test.include` — single projects don't need explicit test patterns.
  */
 export const configure = (
-  options: VitestConfigureOptions = {},
+  options: VitestConfigurePackageOptions = {},
 ): ViteUserConfig => buildCombinedConfig(options, false);
 
 /**
@@ -391,5 +398,5 @@ export const configure = (
  * Each package runs its own vitest instance with full coverage.
  */
 export const configurePackage = (
-  options: VitestConfigureOptions = {},
+  options: VitestConfigurePackageOptions = {},
 ): ViteUserConfig => buildCombinedConfig(options, true);
