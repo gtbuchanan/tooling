@@ -4,7 +4,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -30,7 +30,7 @@ jobs:
       # nothing, and the tarballs aren't consumed downstream — this artifact is
       # for inspection — so an empty match is not a failure or a warning.
       - if: github.server_url == 'https://github.com'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: ignore
           name: packages
@@ -49,7 +49,7 @@ jobs:
       # When slow tests are enabled, merged coverage comes from the coverage job.
       # Otherwise, fast-only coverage is the final artifact.
       - if: inputs.run-slow-tests != true && github.server_url == 'https://github.com'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
           name: coverage
@@ -76,7 +76,7 @@ jobs:
     needs: [build, coverage]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -86,7 +86,7 @@ jobs:
       # where its `coverage:codecov:upload` task looks for it, whatever the
       # repo's shape. The step is paired for Forgejo; see the build job.
       - if: github.server_url == 'https://github.com'
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: coverage
           path: .
@@ -118,7 +118,7 @@ jobs:
     name: Config Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -133,7 +133,7 @@ jobs:
     needs: [build, slow-tests]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -143,7 +143,7 @@ jobs:
 
       # Paired for Forgejo; see the build job.
       - if: github.server_url == 'https://github.com'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
           name: coverage
@@ -165,7 +165,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -181,7 +181,7 @@ jobs:
       # workspace, so the lockfile is what decides which tarballs they ask
       # for. `restore-keys` still gives a partial hit after a bump, where only
       # the changed packages are fetched.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           key: npm-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           path: ~/.npm
@@ -197,7 +197,7 @@ jobs:
     name: Slow Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -207,7 +207,7 @@ jobs:
 
       # Paired for Forgejo; see the build job.
       - if: github.server_url == 'https://github.com'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
           name: test-results-slow
