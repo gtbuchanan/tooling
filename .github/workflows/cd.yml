@@ -13,7 +13,7 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -38,7 +38,7 @@ jobs:
       # Asking for `workflows` fails token creation where the App lacks it,
       # so the App needs it even in a repository with no `.github` package.
       - id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.APP_ID }}
           permission-contents: write
@@ -66,14 +66,14 @@ jobs:
       hasChangesets: ${{ steps.changesets-action.outputs.has-changesets }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
       - id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           # Input rename only — `client-id` replaces the deprecated `app-id`,
           # and the JWT `iss` claim it feeds accepts an App ID either way.
@@ -108,7 +108,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           HK: '0'
         id: changesets-action
-        uses: changesets/action@v2.1.2
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           # `push-with-git-cli` stays at its `false` default: pushing the

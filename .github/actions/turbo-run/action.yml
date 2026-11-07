@@ -16,7 +16,7 @@ runs:
       with:
         package: turbo
 
-    - uses: rharkor/caching-for-turbo@v2.5.2
+    - uses: rharkor/caching-for-turbo@760158c05c47e7a764f78e9a22ca3b5a6ed8c52e # v2.5.2
 
     - env:
         TURBO_GLOBAL_WARNING_DISABLED: '1'
