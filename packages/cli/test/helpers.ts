@@ -6,9 +6,6 @@ import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import {
-  generateTsconfigBase, planTsconfigs, tsconfigBaseFileName,
-} from '#src/codegen/tsconfig-gen.js';
-import {
   generatePackageScripts, generateRootScripts, generateTurboJson,
 } from '#src/codegen/turbo-config.js';
 import type { Capability } from '#src/core/capability.js';
@@ -22,6 +19,9 @@ import { ManifestSchema, unscopedName } from '#src/core/manifest.js';
 import { UnknownRecord } from '#src/core/schemas.js';
 import type { GithubReleaseDeps } from '#src/release/github-release.js';
 import { capabilities } from '#src/toolchains/index.js';
+import {
+  generateTsconfigBase, planTsconfigs, tsconfigBaseFileName,
+} from '#src/toolchains/typescript/tsconfig.js';
 
 /**
  * Creates an isolated temp directory for test fixtures.

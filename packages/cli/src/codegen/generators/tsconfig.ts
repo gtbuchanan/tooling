@@ -2,18 +2,19 @@ import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
 import {
-  type Generator, isGtbBuild, writeSortedAndLog,
+  type Generator, writeSortedAndLog,
 } from '#src/codegen/generator.js';
+import { isGtbBuild } from '#src/core/discovery.js';
+import { readJsonFile } from '#src/core/file-writer.js';
+import type { Logger } from '#src/core/logger.js';
+import { StringArray, UnknownRecord } from '#src/core/schemas.js';
 import {
   type GeneratedTsconfig,
   generateTsconfigBase,
   planTsconfigs,
   readUserCompilerOptions,
   tsconfigBaseFileName,
-} from '#src/codegen/tsconfig-gen.js';
-import { readJsonFile } from '#src/core/file-writer.js';
-import type { Logger } from '#src/core/logger.js';
-import { StringArray, UnknownRecord } from '#src/core/schemas.js';
+} from '#src/toolchains/typescript/tsconfig.js';
 
 /*
  * Scaffold the base tsconfig the generated configs extend. It's the consumer's

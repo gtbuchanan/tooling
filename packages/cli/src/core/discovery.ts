@@ -218,3 +218,11 @@ export const discoverWorkspace = (
     rootDir: ctx.rootDir,
   };
 };
+
+/**
+ * Whether gtb drives the workspace's build, which only a root depending on
+ * `@gtbuchanan/cli` does (a self-hosted root included). An hk-only adopter
+ * runs gtb from mise for its hooks and owns whatever build config it has, so
+ * the steps that generate turbo, scripts and tsconfigs leave it alone.
+ */
+export const isGtbBuild = ({ dependsOnCli }: WorkspaceDiscovery): boolean => dependsOnCli;

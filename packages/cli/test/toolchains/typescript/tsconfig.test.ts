@@ -1,15 +1,15 @@
 import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
-import type { GeneratedTsconfig, TsconfigDescriptor } from '#src/codegen/tsconfig-gen.js';
+import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
+import { published } from '#src/toolchains/npm/capabilities.js';
+import { typescript } from '#src/toolchains/typescript/capabilities.js';
 import {
   defaultTsconfigVariant,
   generateTsconfigBase,
   planTsconfigs,
-} from '#src/codegen/tsconfig-gen.js';
-import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
-import { published } from '#src/toolchains/npm/capabilities.js';
-import { typescript } from '#src/toolchains/typescript/capabilities.js';
+} from '#src/toolchains/typescript/tsconfig.js';
+import type { GeneratedTsconfig, TsconfigDescriptor } from '#src/toolchains/typescript/tsconfig.js';
 import { makePackage } from '#test/helpers.js';
 
 const descriptorAt = (

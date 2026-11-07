@@ -3,9 +3,10 @@ import path from 'node:path';
 import * as v from 'valibot';
 import { checkGenerateConfigs } from '#src/codegen/generate-tasks.js';
 import {
-  type Generator, isGtbBuild, writeSortedAndLog,
+  type Generator, writeSortedAndLog,
 } from '#src/codegen/generator.js';
 import { type TurboJson, generateTurboJson } from '#src/codegen/turbo-config.js';
+import { isGtbBuild } from '#src/core/discovery.js';
 import { readJsonFile } from '#src/core/file-writer.js';
 import { UnknownRecord } from '#src/core/schemas.js';
 

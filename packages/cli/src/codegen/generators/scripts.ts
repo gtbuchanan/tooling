@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { type Generator, isGtbBuild } from '#src/codegen/generator.js';
+import type { Generator } from '#src/codegen/generator.js';
 import {
   forbiddenRootScripts,
   generatePackageScripts,
@@ -7,7 +7,7 @@ import {
   generateRootScripts,
 } from '#src/codegen/turbo-config.js';
 import {
-  type WorkspaceDiscovery, type WorkspacePackage, vendoredCli,
+  type WorkspaceDiscovery, type WorkspacePackage, isGtbBuild, vendoredCli,
 } from '#src/core/discovery.js';
 import { type MergeResult, mergePackageScripts } from '#src/core/file-writer.js';
 import type { Logger } from '#src/core/logger.js';
