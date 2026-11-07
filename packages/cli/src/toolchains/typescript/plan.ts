@@ -1,10 +1,11 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
-import { isGtbBuild } from '#src/core/discovery.js';
+import { type WorkspaceDiscovery, isGtbBuild } from '#src/core/discovery.js';
 import { jsonContent, sortKeysDeep } from '#src/core/file-writer.js';
 import { UnknownRecord } from '#src/core/schemas.js';
 import type { Finding, PlanContext } from '#src/tasks/toolchain.js';
+import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import {
   type GeneratedTsconfig,
   type TsconfigDescriptor,
@@ -113,12 +114,21 @@ const planConfig = (
     : [writeOf(filePath, [first, ...rest], { ...actual, ...expected })];
 };
 
+/*
+ * A package configured for TypeScript, or a root holding TypeScript files: the
+ * root's own tsconfig is what gives it the typescript capability, so its
+ * sources are what call for one before it exists.
+ */
+const hasTypeScript = ({ packages, root }: WorkspaceDiscovery): boolean =>
+  root.capabilities.has(typescriptSources) ||
+  [root, ...packages].some(pkg => pkg.capabilities.has(typescript));
+
 /**
  * The base tsconfig, scaffolded once, and each package's generated tsconfigs,
- * where gtb drives the workspace's build.
+ * where gtb drives the build of a workspace holding TypeScript.
  */
 export const planTsconfigFiles = ({ discovery }: PlanContext): readonly Finding[] =>
-  (isGtbBuild(discovery)
+  (isGtbBuild(discovery) && hasTypeScript(discovery)
     ? [
         ...planBase(discovery.rootDir),
         ...planTsconfigs(discovery.rootDir, discovery.packages).flatMap(planConfig),

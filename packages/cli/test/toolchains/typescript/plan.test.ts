@@ -70,6 +70,27 @@ describe.concurrent(planTsconfigFiles, () => {
     expect(plan(root)).toStrictEqual([]);
   });
 
+  it('plans nothing for a workspace holding no TypeScript', ({ expect }) => {
+    const { pkgDir, root } = createProject();
+    writeJson(pkgDir, 'package.json', { name: build.scopedPackageName(), private: true });
+
+    expect(plan(root)).toStrictEqual([]);
+  });
+
+  /*
+   * A root's own tsconfig is what gives it the typescript capability, so a
+   * root holding TypeScript files without one has to be planned on its
+   * sources.
+   */
+  it('plans the root configs for TypeScript sources at the root alone', ({ expect }) => {
+    const { pkgDir, root } = createProject();
+    writeJson(pkgDir, 'package.json', { name: build.scopedPackageName(), private: true });
+    writeFileSync(path.join(root, 'eslint.config.ts'), '');
+
+    expect(writeOf(plan(root), path.join(root, 'tsconfig.json')))
+      .toMatchObject({ changes: ['missing'] });
+  });
+
   it('scaffolds a missing base extending the node variant', ({ expect }) => {
     const { root } = createProject();
     const basePath = path.join(root, 'tsconfig.base.json');
