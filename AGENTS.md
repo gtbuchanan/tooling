@@ -238,7 +238,8 @@ jobs:
   ci:
     name: CI
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   changeset:
     name: Changeset
     uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@<tag>
@@ -268,7 +269,8 @@ jobs:
   ci:
     name: CI
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   cd:
     name: CD
     needs: ci
@@ -276,7 +278,6 @@ jobs:
       contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@<tag>
-    secrets: inherit
 ```
 
 **Naming / required checks.** Branch protection keys on the **leaf job
