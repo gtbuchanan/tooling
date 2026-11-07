@@ -132,6 +132,27 @@ describe.concurrent(configure, () => {
       { name: 'slow', timeout: 300_000 },
     ]);
   });
+
+  it('accepts slow tag options', ({ expect }) => {
+    const priority = faker.number.int({ min: 1, max: 10 });
+
+    const config = configure({ slow: { priority } });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', priority, timeout: 300_000 },
+    ]);
+  });
+
+  it('accepts custom tags', ({ expect }) => {
+    const tag = { name: faker.lorem.word() };
+
+    const config = configure({ tags: [tag] });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', timeout: 300_000 },
+      tag,
+    ]);
+  });
 });
 
 describe.concurrent(configureGlobal, () => {
@@ -346,5 +367,26 @@ describe.concurrent(configurePackage, () => {
     const config = configurePackage();
 
     expect(config.test).not.toHaveProperty('testTimeout');
+  });
+
+  it('accepts slow tag options', ({ expect }) => {
+    const priority = faker.number.int({ min: 1, max: 10 });
+
+    const config = configurePackage({ slow: { priority } });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', priority, timeout: 300_000 },
+    ]);
+  });
+
+  it('accepts custom tags', ({ expect }) => {
+    const tag = { name: faker.lorem.word() };
+
+    const config = configurePackage({ tags: [tag] });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', timeout: 300_000 },
+      tag,
+    ]);
   });
 });
