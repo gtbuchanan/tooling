@@ -515,6 +515,15 @@ The repo ships a shareable Renovate config at `default.json` for
 consumer repos and uses it on itself via `.github/renovate.json`.
 Beyond `config:recommended`, the preset overrides these defaults:
 
+- `helpers:pinGitHubActionDigestsToSemver` — pins every action and
+  reusable-workflow ref to a commit with its version in a comment
+  (`owner/repo@<sha> # v1.2.3`). Renovate reads the version from the
+  comment, so its PRs still name the version and carry release notes. A
+  ref that names a branch can't be pinned to a version: Renovate pins
+  it as `<sha> # <branch>`. Tooling's
+  own `gtbuchanan/tooling/...@main` refs are exempted in
+  `.github/renovate.json` (see the `./` section above); consumers' refs
+  to tooling are pinned like any other.
 - `ignorePaths` — adds mise's lockfile sidecars (`.mise/locks/`,
   `.config/mise/locks/`) to `:ignoreModulesAndTests`'s list. Lockfile
   version 3 keeps each `npm:`/`pipx:` tool's dependency graph there as

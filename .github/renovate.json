@@ -26,6 +26,17 @@
       ]
     },
     {
+      "description": "Leave this repo's own gtbuchanan/tooling action refs unpinned: the reusables reference them at @main so an edit takes effect on merge, and each workflows release pins them to its own tag",
+      "matchDepTypes": [
+        "action",
+        "workflow"
+      ],
+      "matchPackageNames": [
+        "gtbuchanan/tooling"
+      ],
+      "pinDigests": false
+    },
+    {
       "description": "Hand ChristopherHX's gitea artifact forks to the git-refs customManager above, which can follow their v4 branch",
       "enabled": false,
       "matchDepNames": [

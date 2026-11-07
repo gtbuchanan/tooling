@@ -262,7 +262,8 @@ Extend it from a consuming repo's Renovate config
 ```
 
 This pulls in `config:recommended` plus a small set of repo-wide
-opinions: 3-day release-age quarantine, OSV vulnerability alerts,
+opinions: GitHub Actions pinned by commit with the version in a comment
+(`owner/repo@<sha> # v1.2.3`), 3-day release-age quarantine, OSV vulnerability alerts,
 `pnpm dedupe` after updates, verified-commit platform API, pre-commit
 manager enabled, and `America/Chicago` timezone for the weekly
 lockfile maintenance schedule.

@@ -37,7 +37,8 @@
     "Shared Renovate config for @gtbuchanan repositories"
   ],
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigestsToSemver"
   ],
   "ignorePaths": [
     "**/__fixtures__/**",
