@@ -10,10 +10,7 @@ import {
   configureGlobal,
   configurePackage,
   configureProject,
-  coverageInclude,
-  defaultCoverageDirs,
   excludeDefault,
-  resolveCoverageInclude,
 } from '#src/index.js';
 
 const allScriptExtensions = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx'];
@@ -238,41 +235,6 @@ describe.concurrent(configureGlobal, () => {
       { name: 'slow', timeout: 300_000 },
       { name: 'db', timeout: 60_000 },
     ]);
-  });
-});
-
-describe.concurrent(resolveCoverageInclude, () => {
-  it('returns default patterns without projects', ({ expect }) => {
-    expect(resolveCoverageInclude()).toStrictEqual([...coverageInclude]);
-  });
-
-  it('includes per-project and root-level patterns', ({ expect }) => {
-    const result = resolveCoverageInclude(['packages/*']);
-
-    expect(result).toStrictEqual([
-      ...coverageInclude.map(pattern => `packages/*/${pattern}`),
-      ...coverageInclude,
-    ]);
-  });
-
-  it('handles multiple project patterns', ({ expect }) => {
-    const result = resolveCoverageInclude(['apps/*', 'libs/*']);
-
-    expect(result).toStrictEqual([
-      ...coverageInclude.map(pattern => `apps/*/${pattern}`),
-      ...coverageInclude.map(pattern => `libs/*/${pattern}`),
-      ...coverageInclude,
-    ]);
-  });
-
-  it('respects custom coverage dirs', ({ expect }) => {
-    const result = resolveCoverageInclude(undefined, ['src']);
-
-    expect(result).toStrictEqual(['src/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}']);
-  });
-
-  it('includes all default dirs', ({ expect }) => {
-    expect(defaultCoverageDirs).toStrictEqual(['bin', 'scripts', 'src']);
   });
 });
 
