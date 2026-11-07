@@ -1,5 +1,29 @@
 # @gtbuchanan/cli
 
+## 2.1.0
+
+### Minor Changes
+
+- d09d34d: Remove the `manifest` sync scope
+
+  The Pkl toolchain now stamps each publishable `PklProject` under the `toolchains` scope, and `gtb version` runs a full sync after `changeset version`. `gtb sync manifest` and `gtb verify manifest` now fail with an unknown scope.
+- 33b8e17: Fail `gtb sync` on drift only a hand edit fixes
+
+  `gtb sync` now reports each such problem, such as a published package depending on a private workspace package, and exits 1, so an hk fix step running it fails on what its check step reports.
+- dd18661: Keep the tsconfig keys gtb doesn't write
+
+  The tsconfigs now come from the TypeScript toolchain, under the `toolchains` scope, and the `tsconfig` scope is gone. A rewrite keeps every key gtb doesn't own, such as `$schema`, `references`, `exclude` or a tool's own settings, where it used to drop them. A tsconfig that can't be parsed is reported for a hand fix instead of having its compiler options written away, and a base path that isn't a file fails `gtb sync` with a message instead of a stack trace.
+
+### Patch Changes
+
+- 049541c: `gtb sync` and `gtb verify` skip `turbo.json`, `package.json` scripts and tsconfigs when the workspace root doesn't depend on `@gtbuchanan/cli`. A repo that adopts only the hk preset and runs gtb from mise can now run plain `gtb sync` without getting build config it doesn't use.
+- b7c0e47: Toolchains now plan their workspace checks as findings that `gtb sync` can apply and `gtb verify` reports, so a toolchain can own the files it generates.
+
+  `gtb sync` now settles in one run where the root tsconfig it writes gives a single-package root the typescript capability. Previously, the root's scripts and turbo tasks only caught up on a second sync.
+- a48bb1f: Write tsconfigs only for a workspace holding TypeScript
+
+  `gtb sync` scaffolded `tsconfig.base.json` and the root tsconfigs in every workspace depending on the CLI, TypeScript or not. It now writes them only where a package is configured for TypeScript or the root holds TypeScript files. Files an earlier sync wrote are left in place.
+
 ## 2.0.0
 
 ### Major Changes
