@@ -218,7 +218,10 @@ as peer jobs, each calling a single-concern **reusable** workflow:
 The reusables (`workflow_call`-only): `ci.yml`, `cd.yml`,
 `changeset-check.yml`, `dependency-review.yml`, `pre-commit.yml`.
 Consumers copy `pr.yml` / `release.yml`,
-swapping `./` for `gtbuchanan/tooling/.github/workflows/<name>@main`:
+swapping `./` for `gtbuchanan/tooling/.github/workflows/<name>@<tag>`.
+`<tag>` is a workflows release tag (`v<version>`), not `main`: the Renovate preset pins
+it to a commit and bumps it once per release, where a `@main` ref would
+be bumped on every commit here:
 
 ```yaml
 # consumer/.github/workflows/pr.yml
@@ -234,20 +237,20 @@ permissions:
 jobs:
   ci:
     name: CI
-    uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
     secrets: inherit
   changeset:
     name: Changeset
-    uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@<tag>
   dependencies:
     name: Dependencies
     permissions:
       contents: read
       pull-requests: write # Dependency Review posts a PR comment
-    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@<tag>
   pre-commit:
     name: Pre-Commit
-    uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@<tag>
 ```
 
 ```yaml
@@ -264,7 +267,7 @@ permissions:
 jobs:
   ci:
     name: CI
-    uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
     secrets: inherit
   cd:
     name: CD
@@ -272,7 +275,7 @@ jobs:
     permissions:
       contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
-    uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/cd.yml@<tag>
     secrets: inherit
 ```
 
@@ -523,7 +526,8 @@ Beyond `config:recommended`, the preset overrides these defaults:
   it as `<sha> # <branch>`. Tooling's
   own `gtbuchanan/tooling/...@main` refs are exempted in
   `.github/renovate.json` (see the `./` section above); consumers' refs
-  to tooling are pinned like any other.
+  to tooling are pinned like any other, which is why the consumer
+  templates reference a release tag.
 - `ignorePaths` — adds mise's lockfile sidecars (`.mise/locks/`,
   `.config/mise/locks/`) to `:ignoreModulesAndTests`'s list. Lockfile
   version 3 keeps each `npm:`/`pipx:` tool's dependency graph there as

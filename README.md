@@ -22,7 +22,11 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 
 A consuming repo copies two pipeline workflows — one per trigger —
 whose jobs call this repo's single-concern reusable workflows, each
-delegating with `secrets: inherit`:
+delegating with `secrets: inherit`. Replace `<tag>` with a workflows
+release tag (`v<version>`) rather than `main`: the
+[Renovate preset](#renovate-preset) pins it to a commit and bumps it
+once per release, where a `@main` ref would be bumped on every commit to
+this repo:
 
 ```yaml
 # .github/workflows/pr.yml
@@ -38,20 +42,20 @@ permissions:
 jobs:
   ci:
     name: CI
-    uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
     secrets: inherit
   changeset:
     name: Changeset
-    uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@<tag>
   dependencies:
     name: Dependencies
     permissions:
       contents: read
       pull-requests: write # Dependency Review posts a PR comment
-    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@<tag>
   pre-commit:
     name: Pre-Commit
-    uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/pre-commit.yml@<tag>
 ```
 
 ```yaml
@@ -68,7 +72,7 @@ permissions:
 jobs:
   ci:
     name: CI
-    uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
     secrets: inherit
   cd:
     name: CD
@@ -76,7 +80,7 @@ jobs:
     permissions:
       contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
-    uses: gtbuchanan/tooling/.github/workflows/cd.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/cd.yml@<tag>
     secrets: inherit
 ```
 
@@ -112,7 +116,7 @@ instead:
 ```yaml
 jobs:
   ci:
-    uses: gtbuchanan/tooling/.github/workflows/ci.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 ```
@@ -199,7 +203,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write # Dependency Review posts a PR comment
-    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@main
+    uses: gtbuchanan/tooling/.github/workflows/dependency-review.yml@<tag>
     with:
       config-file: .github/dependency-review-config.yml
       fail-on-severity: low
