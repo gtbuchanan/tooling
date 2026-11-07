@@ -21,8 +21,9 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 ## Reusable Workflows
 
 A consuming repo copies two pipeline workflows — one per trigger —
-whose jobs call this repo's single-concern reusable workflows, each
-delegating with `secrets: inherit`. Replace `<tag>` with a workflows
+whose jobs call this repo's single-concern reusable workflows. Each call
+passes only the secrets its workflow reads: `CODECOV_TOKEN` to CI, and
+nothing to CD, whose App key lives in the `release` environment. Replace `<tag>` with a workflows
 release tag (`v<version>`) rather than `main`: the
 [Renovate preset](#renovate-preset) pins it to a commit and bumps it
 once per release, where a `@main` ref would be bumped on every commit to
@@ -43,7 +44,8 @@ jobs:
   ci:
     name: CI
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   changeset:
     name: Changeset
     uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@<tag>
@@ -73,7 +75,8 @@ jobs:
   ci:
     name: CI
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   cd:
     name: CD
     needs: ci
@@ -81,7 +84,6 @@ jobs:
       contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@<tag>
-    secrets: inherit
 ```
 
 The reusable workflows each job calls:
@@ -109,17 +111,8 @@ a per-package turbo task. The workflow installs the
 package uploads on every commit — that is what keeps Codecov's commit
 statuses dependable enough to require in branch protection.
 
-Add a `CODECOV_TOKEN` repository secret; `secrets: inherit` on the `CI`
-job (shown in the pipelines above) forwards it. To pass it explicitly
-instead:
-
-```yaml
-jobs:
-  ci:
-    uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-```
+Add a `CODECOV_TOKEN` repository secret; the `CI` job (shown in the
+pipelines above) passes it to `ci.yml`.
 
 Each upload names its flag after the package's unscoped
 `package.json` name (`@acme/utils` → `utils`). Codecov compares a flag

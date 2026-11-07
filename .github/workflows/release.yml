@@ -16,7 +16,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    secrets: inherit
+    # No secrets: the App key lives in the `release` environment, which CD's
+    # jobs read directly.
     uses: ./.github/workflows/cd.yml
     with:
       # tooling vendors @gtbuchanan/cli as a workspace package, so CD runs gtb
@@ -25,7 +26,8 @@ jobs:
 
   ci:
     name: CI
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     uses: ./.github/workflows/ci.yml
 
 name: Release
