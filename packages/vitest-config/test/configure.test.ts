@@ -10,10 +10,7 @@ import {
   configureGlobal,
   configurePackage,
   configureProject,
-  coverageInclude,
-  defaultCoverageDirs,
   excludeDefault,
-  resolveCoverageInclude,
 } from '#src/index.js';
 
 const allScriptExtensions = ['cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx'];
@@ -135,6 +132,27 @@ describe.concurrent(configure, () => {
       { name: 'slow', timeout: 300_000 },
     ]);
   });
+
+  it('accepts slow tag options', ({ expect }) => {
+    const priority = faker.number.int({ min: 1, max: 10 });
+
+    const config = configure({ slow: { priority } });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', priority, timeout: 300_000 },
+    ]);
+  });
+
+  it('accepts custom tags', ({ expect }) => {
+    const tag = { name: faker.lorem.word() };
+
+    const config = configure({ tags: [tag] });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', timeout: 300_000 },
+      tag,
+    ]);
+  });
 });
 
 describe.concurrent(configureGlobal, () => {
@@ -238,41 +256,6 @@ describe.concurrent(configureGlobal, () => {
       { name: 'slow', timeout: 300_000 },
       { name: 'db', timeout: 60_000 },
     ]);
-  });
-});
-
-describe.concurrent(resolveCoverageInclude, () => {
-  it('returns default patterns without projects', ({ expect }) => {
-    expect(resolveCoverageInclude()).toStrictEqual([...coverageInclude]);
-  });
-
-  it('includes per-project and root-level patterns', ({ expect }) => {
-    const result = resolveCoverageInclude(['packages/*']);
-
-    expect(result).toStrictEqual([
-      ...coverageInclude.map(pattern => `packages/*/${pattern}`),
-      ...coverageInclude,
-    ]);
-  });
-
-  it('handles multiple project patterns', ({ expect }) => {
-    const result = resolveCoverageInclude(['apps/*', 'libs/*']);
-
-    expect(result).toStrictEqual([
-      ...coverageInclude.map(pattern => `apps/*/${pattern}`),
-      ...coverageInclude.map(pattern => `libs/*/${pattern}`),
-      ...coverageInclude,
-    ]);
-  });
-
-  it('respects custom coverage dirs', ({ expect }) => {
-    const result = resolveCoverageInclude(undefined, ['src']);
-
-    expect(result).toStrictEqual(['src/**/*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}']);
-  });
-
-  it('includes all default dirs', ({ expect }) => {
-    expect(defaultCoverageDirs).toStrictEqual(['bin', 'scripts', 'src']);
   });
 });
 
@@ -384,5 +367,26 @@ describe.concurrent(configurePackage, () => {
     const config = configurePackage();
 
     expect(config.test).not.toHaveProperty('testTimeout');
+  });
+
+  it('accepts slow tag options', ({ expect }) => {
+    const priority = faker.number.int({ min: 1, max: 10 });
+
+    const config = configurePackage({ slow: { priority } });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', priority, timeout: 300_000 },
+    ]);
+  });
+
+  it('accepts custom tags', ({ expect }) => {
+    const tag = { name: faker.lorem.word() };
+
+    const config = configurePackage({ tags: [tag] });
+
+    expect(config.test?.tags).toStrictEqual([
+      { name: 'slow', timeout: 300_000 },
+      tag,
+    ]);
   });
 });
