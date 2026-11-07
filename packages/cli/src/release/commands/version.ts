@@ -12,10 +12,11 @@ export interface VersionDeps {
 }
 
 /**
- * Applies `changeset version`, then regenerates native manifests via the
- * `manifest` sync scope, so both land in the same changesets version
- * commit/PR. The sync no-ops when the workspace ships no non-npm packages, so
- * this is safe to run unconditionally. Sequenced inside one command because
+ * Applies `changeset version`, then a full sync, so the version-stamped files
+ * it regenerates (a `PklProject` today) land in the same changesets version
+ * commit/PR. Every other step rewrites what a drift-free `main` already holds,
+ * so the sync needs no list of which steps follow the version. Sequenced
+ * inside one command because
  * changesets/action runs its `version-script` input without a shell — a `&&`
  * chain in the workflow gets passed to changesets as bogus positional args
  * ("Too many arguments passed to changesets"), so the chaining has to live
@@ -34,20 +35,18 @@ export const executeVersion = async ({
   sync,
 }: VersionDeps): Promise<void> => {
   await runCommand('pnpm', { args: ['exec', 'changeset', 'version'] });
-  sync({ scopes: new Set(['manifest']) });
+  sync({});
   await runCommand('hk', { args: ['fix', '--unstaged'] });
 };
 
 /**
  * `gtb version` — CD's changesets version command: `changeset version`
- * followed by a `manifest`-scoped sync so any regenerated native manifests
- * land in the same version commit/PR, then `hk fix` over what both wrote. The
- * manifest sync is a no-op for plain-npm workspaces, so CD runs this
- * unconditionally.
+ * followed by a full sync so any version-stamped files land in the same
+ * version commit/PR, then `hk fix` over what both wrote.
  */
 export const version = defineCommand({
   meta: {
-    description: 'Apply changesets version, sync native manifests, then hk fix',
+    description: 'Apply changesets version, sync, then hk fix',
     name: rootNames.version,
   },
   run: () => executeVersion({ run, sync: runSync }),

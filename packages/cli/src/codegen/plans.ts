@@ -9,13 +9,17 @@ import {
 type Write = Extract<Finding, { kind: 'write' }>;
 
 /**
- * What `gtb verify` prints for each finding: every change a write would make,
- * prefixed with its path, and every problem as it stands.
+ * What `gtb verify` prints for the findings: every change a write would make,
+ * prefixed with its path, and every problem as it stands, since only the plan
+ * knows the hand edit that fixes one. One closing line names the sync that
+ * applies the writes.
  */
-export const reportFindings = (findings: readonly Finding[]): readonly string[] =>
-  findings.flatMap(finding => (finding.kind === 'write'
+export const reportFindings = (findings: readonly Finding[]): readonly string[] => [
+  ...findings.flatMap(finding => (finding.kind === 'write'
     ? finding.changes.map(change => `${finding.path}: ${change}`)
-    : finding.message));
+    : finding.message)),
+  ...(findings.some(({ kind }) => kind === 'write') ? ['run gtb sync to apply these changes'] : []),
+];
 
 /**
  * Options for {@link syncPlans}.

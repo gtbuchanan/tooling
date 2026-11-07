@@ -24,7 +24,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
   package.json                 — @gtbuchanan/github-workflows (private; changesets versions the reusables + actions)
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
-    cd.yml                 — Reusable: gtb version (changesets + manifest sync + hk fix) then gtb publish (npm via OIDC + non-npm channels)
+    cd.yml                 — Reusable: gtb version (changesets + sync + hk fix) then gtb publish (npm via OIDC + non-npm channels)
     changeset-check.yml    — Reusable: gtb changeset check (changeset exists + catalog changes reaching published packages are released)
     ci.yml                 — Reusable: build + slow + e2e + coverage
     dependency-review.yml  — Reusable: scan dep changes (vulns + licenses)
@@ -153,16 +153,16 @@ coverage, setupFiles, and mock reset.
   `\(name)@\(version)` interpolation, not an hk-version URL).
 - **`PklProject` is author-owned; sync patches it.** A `PklProject`
   legitimately holds author content (`dependencies`, `evaluatorSettings`,
-  package metadata), so `gtb sync` (the `manifest` scope) does **not** generate
+  package metadata), so the Pkl toolchain's plan does **not** generate
   the file — it patches only the three convention fields in the `package {}`
   block: `version` (stamped from the changeset-managed `package.json`) and
   `baseUri`/`packageZipUrl` (written as `\(name)` and `\(name)@\(version)`
   interpolations respectively), leaving `name` and everything else verbatim. The interpolations are
-  byte-stable, so a version bump changes only the `version` line. This is the
-  generic non-npm-manifest seam (`codegen/manifest-sync.ts`, a kind-keyed writer
-  registry; the source-text helper — brace-match + line patch, no Pkl parser —
-  is `toolchains/pkl/pkl-project.ts`); a future .NET `.csproj` writer patches the same way.
-  `gtb verify manifest` asserts no drift on the owned fields.
+  byte-stable, so a version bump changes only the `version` line. The plan is
+  `toolchains/pkl/plan.ts`, and the source-text helper it patches with
+  (brace-match + line patch, no Pkl parser) is `toolchains/pkl/pkl-project.ts`;
+  a future .NET toolchain would patch a `.csproj` from its own plan the same
+  way. `gtb verify` asserts no drift on the owned fields.
   **Publishability is the presence of a `package {}` block** — Pkl's own
   definition of a distributable package — so a deps-only or block-less
   `PklProject` stays internal. Turbo wires `typecheck:pkl` (`pkl eval`,
@@ -355,9 +355,10 @@ through `package.json` scripts backed by `gtb` leaf commands.
   passes. Both phases go through `gtb`, so the caller must depend on
   `@gtbuchanan/cli`:
   - **`gtb version`** is changesets/action's `version-script` command —
-    `changeset version` then a `manifest`-scoped sync, in one process so any
-    regenerated `PklProject` lands in the same version commit/PR (keeping
-    `gtb verify manifest` drift-free). The chaining lives inside `gtb`
+    `changeset version` then a full sync, in one process so any regenerated
+    `PklProject` lands in the same version commit/PR (keeping `gtb verify`
+    drift-free). Every other step rewrites what a drift-free `main` already
+    holds, which `CI / Config Check` keeps true. The chaining lives inside `gtb`
     because changesets/action splits its `version-script` input on
     whitespace and execs it without a shell, so a `&&` chain would be passed
     to changesets as bogus args. It ends with `hk fix --unstaged` over the

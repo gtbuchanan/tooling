@@ -7,9 +7,9 @@ interface RunCall {
 }
 
 describe.concurrent(executeVersion, () => {
-  it('awaits changeset version before the manifest-scoped sync', async ({ expect }) => {
+  it('awaits changeset version before a full sync', async ({ expect }) => {
     const order: string[] = [];
-    let syncScopes: readonly string[] = [];
+    let syncScopes: ReadonlySet<string> | undefined = new Set();
     let hasRunFinished = false;
 
     await executeVersion({
@@ -24,11 +24,11 @@ describe.concurrent(executeVersion, () => {
         expect(hasRunFinished).toBe(true);
 
         order.push('sync');
-        syncScopes = [...(options.scopes ?? [])];
+        syncScopes = options.scopes;
       },
     });
 
-    expect(syncScopes).toStrictEqual(['manifest']);
+    expect(syncScopes).toBeUndefined();
     expect(order.slice(0, 3)).toStrictEqual(['run:start', 'run:end', 'sync']);
   });
 

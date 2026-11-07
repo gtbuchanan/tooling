@@ -90,11 +90,11 @@ jobs:
       # `gtb version` needs node_modules (the local changeset bin + gtb itself).
       - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
-      # `gtb version` runs `changeset version` then a `manifest`-scoped sync in
-      # one process so regenerated native manifests land in the same version
-      # commit/PR (the sync no-ops for plain-npm repos), then `hk fix` over the
-      # files both wrote, so the release PR passes its own `Pre-Commit` check
-      # (and `HK=0` below skips only hk's git hook, not this). It can't be a `&&`
+      # `gtb version` runs `changeset version` then a full sync in one process
+      # so version-stamped files such as a PklProject land in the same version
+      # commit/PR, then `hk fix` over the files both wrote, so the release PR
+      # passes its own `Pre-Commit` check (and `HK=0` below skips only hk's
+      # git hook, not this). It can't be a `&&`
       # chain in this input: changesets/action splits `version-script` on
       # whitespace and execs it without a shell, so `&&` (and everything after)
       # would be passed to changesets as bogus positional args ("Too many
@@ -122,7 +122,7 @@ name: CD
 # Reusable: changesets version + publish (npm via OIDC, plus any non-npm
 # channels) — the deploy phase. Run by the Release pipeline (release.yml) as
 # its `CD` job after CI passes. Both phases go through `gtb` (version: changeset
-# version + manifest sync; publish: changeset publish + non-npm channels), so
+# version + sync; publish: changeset publish + non-npm channels), so
 # the caller must depend on `@gtbuchanan/cli`. The publish job's `release`
 # environment and OIDC token resolve in the caller's repo, so the caller must
 # grant `id-token: write` and define a `release` environment. Every write to

@@ -238,18 +238,6 @@ describe.concurrent(runVerify, () => {
       expect.stringContaining(dependency.name),
     ]);
   });
-
-  /*
-   * A toolchain's rules are not generated config, so the scope that checks a
-   * manifest's generated fields leaves them out.
-   */
-  it('scoped to manifest leaves out what the toolchains check', ({ expect }) => {
-    const { dependency, root } = createWorkspaceDepProject();
-
-    const drift = runVerify({ cwd: root, scopes: new Set(['manifest']) });
-
-    expect(drift.some(msg => msg.includes(dependency.name))).toBe(false);
-  });
 });
 
 describe.concurrent(parseIgnoreArgs, () => {

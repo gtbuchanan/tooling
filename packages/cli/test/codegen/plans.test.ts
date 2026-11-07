@@ -30,7 +30,7 @@ const createRoot = (): string => {
 const discoverAt = (root: string) => () => discoverWorkspace({ capabilities, cwd: root });
 
 describe.concurrent(reportFindings, () => {
-  it('prefixes each change with its path and leaves problems as they are', ({ expect }) => {
+  it('prefixes each change with its path and names the sync once', ({ expect }) => {
     expect(reportFindings([
       { changes: ['adds a', 'adds b'], content: '', kind: 'write', path: 'one.json' },
       { kind: 'problem', message: 'two.json: hand-edit this' },
@@ -40,7 +40,13 @@ describe.concurrent(reportFindings, () => {
       'one.json: adds b',
       'two.json: hand-edit this',
       'three.json: adds c',
+      'run gtb sync to apply these changes',
     ]);
+  });
+
+  it('names no sync when only problems remain', ({ expect }) => {
+    expect(reportFindings([{ kind: 'problem', message: 'two.json: hand-edit this' }]))
+      .toStrictEqual(['two.json: hand-edit this']);
   });
 });
 

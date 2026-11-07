@@ -4,7 +4,7 @@
  * `gtb verify mise`); no args means all scopes.
  */
 export const syncScopes = [
-  'manifest', 'mise', 'scripts', 'toolchains', 'tsconfig', 'turbo',
+  'mise', 'scripts', 'toolchains', 'tsconfig', 'turbo',
 ] as const;
 
 /**

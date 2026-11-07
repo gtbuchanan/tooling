@@ -2,13 +2,33 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
-import { checkManifests, generateManifests } from '#src/codegen/manifest-sync.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
+import type { Finding } from '#src/tasks/toolchain.js';
 import { capabilities } from '#src/toolchains/index.js';
+import { planPklProjects } from '#src/toolchains/pkl/plan.js';
 import { createPklWorkspace, createTempDir, pklProjectSource, writeJson } from '#test/helpers.js';
 
+const plan = (root: string): readonly Finding[] => planPklProjects({
+  discovery: discoverWorkspace({ capabilities, cwd: root }),
+  force: false,
+  ignored: new Set(),
+});
+
+/*
+ * The content of the single write planned for `root`, failing on any other
+ * outcome.
+ */
+const plannedContent = (root: string): string => {
+  const [finding, ...rest] = plan(root);
+  if (finding?.kind !== 'write' || rest.length > 0) {
+    throw new Error(`expected one write, planned ${JSON.stringify(plan(root))}`);
+  }
+  return finding.content;
+};
+
 /**
- * Scaffolds a single-package repo (root = package) with a publishable Pkl package.
+ * Scaffolds a single-package repo (root = package) with a publishable Pkl
+ * package whose `PklProject` holds none of the sync-owned fields yet.
  */
 const writePublishablePkg = (
   root: string,
@@ -23,21 +43,25 @@ const writePublishablePkg = (
   );
 };
 
-describe.concurrent(generateManifests, () => {
-  it('patches the package block, preserving the author-owned name', ({ expect }) => {
+describe.concurrent(planPklProjects, () => {
+  it('plans the patched package block, preserving the author-owned name', ({ expect }) => {
     const ws = createPklWorkspace();
-    const expected = pklProjectSource({
-      name: ws.name,
-      repoPath: ws.repoPath,
-      version: ws.version,
-    });
+    const filePath = path.join(ws.pkgDir, 'PklProject');
+    const synced = pklProjectSource({ name: ws.name, repoPath: ws.repoPath, version: ws.version });
+    writeFileSync(filePath, synced.replace(`"${ws.version}"`, '"0.0.0-stale"'));
 
-    const [manifest, ...rest] =
-      generateManifests(discoverWorkspace({ capabilities, cwd: ws.root }));
+    expect(plan(ws.root)).toStrictEqual([{
+      changes: ['out of date'],
+      content: synced,
+      kind: 'write',
+      path: filePath,
+    }]);
+  });
 
-    expect(rest).toHaveLength(0);
-    expect(manifest?.filePath).toBe(path.join(ws.pkgDir, 'PklProject'));
-    expect(manifest?.content).toBe(expected);
+  it('plans nothing when the PklProject is up to date', ({ expect }) => {
+    const ws = createPklWorkspace();
+
+    expect(plan(ws.root)).toStrictEqual([]);
   });
 
   it('inserts a v<version> packageZipUrl tag for a single-package repo', ({ expect }) => {
@@ -49,11 +73,9 @@ describe.concurrent(generateManifests, () => {
       { homepage, name: `@scope/${name}`, version: build.semverVersion() },
       name,
     );
-
-    const [manifest] = generateManifests(discoverWorkspace({ capabilities, cwd: root }));
     const repoPath = homepage.replace(/^https?:\/\//v, '');
 
-    expect(manifest?.content).toContain(
+    expect(plannedContent(root)).toContain(
       String.raw`packageZipUrl = "https://${repoPath}/releases/download/v\(version)/`,
     );
   });
@@ -63,8 +85,7 @@ describe.concurrent(generateManifests, () => {
     const name = build.packageName();
     writePublishablePkg(root, { homepage: build.gitHubRepoUrl(), name: `@scope/${name}` }, name);
 
-    expect(() => generateManifests(discoverWorkspace({ capabilities, cwd: root })))
-      .toThrow(/missing "version"/v);
+    expect(() => plan(root)).toThrow(/missing "version"/v);
   });
 
   it('throws when the repository URL is missing', ({ expect }) => {
@@ -72,8 +93,7 @@ describe.concurrent(generateManifests, () => {
     const name = build.packageName();
     writePublishablePkg(root, { name: `@scope/${name}`, version: build.semverVersion() }, name);
 
-    expect(() => generateManifests(discoverWorkspace({ capabilities, cwd: root })))
-      .toThrow(/homepage or repository\.url/v);
+    expect(() => plan(root)).toThrow(/homepage or repository\.url/v);
   });
 
   it('falls back to repository.url when homepage is absent', ({ expect }) => {
@@ -85,45 +105,24 @@ describe.concurrent(generateManifests, () => {
       version: build.semverVersion(),
     }, name);
 
-    const [manifest] = generateManifests(discoverWorkspace({ capabilities, cwd: root }));
-
-    expect(manifest?.content).toContain(String.raw`baseUri = "package://github.com/o/r/\(name)"`);
+    expect(plannedContent(root))
+      .toContain(String.raw`baseUri = "package://github.com/o/r/\(name)"`);
   });
 
   it('ignores packages without Pkl source', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(path.join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'packages/*'\n");
-    writeJson(root, 'package.json', { homepage: build.gitHubRepoUrl(), private: true });
+    writeJson(root, 'package.json', { private: true });
     const pkgDir = path.join(root, 'packages', build.packageName());
     mkdirSync(pkgDir, { recursive: true });
     writeJson(pkgDir, 'package.json', { name: build.scopedPackageName() });
 
-    expect(generateManifests(discoverWorkspace({ capabilities, cwd: root }))).toHaveLength(0);
+    expect(plan(root)).toStrictEqual([]);
   });
 
   it('ignores a Pkl project without a package block', ({ expect }) => {
     const ws = createPklWorkspace({ publishable: false });
 
-    expect(generateManifests(discoverWorkspace({ capabilities, cwd: ws.root }))).toHaveLength(0);
-  });
-});
-
-describe.concurrent(checkManifests, () => {
-  it('passes when the on-disk PklProject matches', ({ expect }) => {
-    const ws = createPklWorkspace();
-
-    expect(checkManifests(discoverWorkspace({ capabilities, cwd: ws.root }))).toStrictEqual([]);
-  });
-
-  it('reports drift when a sync-owned field is stale', ({ expect }) => {
-    const ws = createPklWorkspace();
-    writeFileSync(
-      path.join(ws.pkgDir, 'PklProject'),
-      'amends "pkl:Project"\n\npackage {\n  name = "x"\n  version = "0.0.0-stale"\n}\n',
-    );
-
-    expect(checkManifests(discoverWorkspace({ capabilities, cwd: ws.root }))).toStrictEqual([
-      `${path.join(ws.pkgDir, 'PklProject')}: out of date (run gtb sync manifest)`,
-    ]);
+    expect(plan(ws.root)).toStrictEqual([]);
   });
 });
