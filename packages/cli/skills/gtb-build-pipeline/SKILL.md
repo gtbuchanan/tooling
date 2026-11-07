@@ -157,7 +157,7 @@ Several tasks write the published output directory, each declaring `outputs` for
 `gtb sync` reconciles generated state:
 
 - `turbo.json` tasks + aggregates (scope: `turbo`)
-- per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json` (scope: `tsconfig`)
+- per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json` (scope: `toolchains`), keeping keys gtb doesn't write
 - per-package + root `package.json` scripts (scope: `scripts`)
 - `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml` (scope: `mise`)
 

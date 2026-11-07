@@ -45,10 +45,16 @@ export const readJsonFile = (path: string): Record<string, unknown> =>
   v.parse(UnknownRecord, JSON.parse(readFileSync(path, 'utf8')));
 
 /**
+ * The text of a JSON file holding `data`: indented, with a trailing newline.
+ */
+export const jsonContent = (data: unknown): string =>
+  `${JSON.stringify(data, undefined, jsonIndent)}\n`;
+
+/**
  * Writes a JSON object to a file with formatting and trailing newline.
  */
 export const writeJsonFile = (path: string, data: unknown): void => {
-  writeFileSync(path, `${JSON.stringify(data, undefined, jsonIndent)}\n`);
+  writeFileSync(path, jsonContent(data));
 };
 
 const classifyScripts = (
