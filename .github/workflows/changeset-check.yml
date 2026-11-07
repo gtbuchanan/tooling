@@ -48,6 +48,7 @@ jobs:
           PNPM_GTB_COMMAND: ${{ inputs.gtb-from-source && 'run' || 'exec' }}
         name: Verify changesets cover this PR
         run: pnpm "$PNPM_GTB_COMMAND" gtb changeset check --since=HEAD^1
+    timeout-minutes: 10
 
 name: Changeset
 

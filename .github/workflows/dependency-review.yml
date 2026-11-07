@@ -15,6 +15,7 @@ jobs:
           config-file: ${{ inputs.config-file }}
           external-repo-token: ${{ github.token }}
           fail-on-severity: ${{ inputs.fail-on-severity }}
+    timeout-minutes: 10
 
   version-check:
     name: Version Check
@@ -188,6 +189,7 @@ jobs:
             exit 1
           fi
         shell: bash
+    timeout-minutes: 10
 
 name: Dependency Review
 

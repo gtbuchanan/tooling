@@ -57,6 +57,7 @@ jobs:
           PNPM_GTB_COMMAND: ${{ inputs.gtb-from-source && 'run' || 'exec' }}
         name: Publish packages
         run: pnpm "$PNPM_GTB_COMMAND" gtb publish
+    timeout-minutes: 15
 
   version:
     # For the App key, which lives in the environment (see the header).
@@ -116,6 +117,7 @@ jobs:
           # attributes them to the app that owns `github-token`. The git-cli
           # path leaves them unverified.
           version-script: ${{ inputs.gtb-from-source && 'pnpm run gtb' || 'pnpm exec gtb' }} version
+    timeout-minutes: 15
 
 name: CD
 

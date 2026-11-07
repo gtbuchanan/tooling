@@ -322,6 +322,13 @@ rejected by the Forgejo runner these workflows also target. A release
 pins these refs to its own tag instead (see `gtb publish` below). Do
 **not** "simplify" these back to `./`.
 
+**Job timeouts.** Every reusable job sets a fixed `timeout-minutes`, and a
+caller can't raise it. The values are sized for a consumer's cold run, not
+this repo's cache-warm ones: 30 for
+Build, E2E Test and Slow Tests, which grow with the consumer's code, and
+10–15 for the rest. If one proves too tight, an input defaulting to the
+current value raises it without breaking a caller.
+
 Every job that needs Node, pnpm, hk, or pkl prepends `mise-setup`, which
 installs the exact versions pinned in `mise.toml` / `mise.lock`. Tool
 caching is owned by `mise-setup` (mise data dir) and `pnpm-tasks`
