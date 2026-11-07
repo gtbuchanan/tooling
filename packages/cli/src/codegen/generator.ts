@@ -27,11 +27,11 @@ export interface VerifyContext {
 
 /**
  * One generated artifact: how `gtb sync` writes it and how `gtb verify`
- * reports its drift, one message per problem. A generator that only checks
- * has no sync step.
+ * reports its drift, one message per problem. Sync returns the problems it
+ * can't fix, which fail it. A generator that only checks has no sync step.
  */
 export interface Generator {
-  readonly sync?: (context: SyncContext) => void;
+  readonly sync?: (context: SyncContext) => readonly string[];
   readonly verify: (context: VerifyContext) => readonly string[];
 }
 

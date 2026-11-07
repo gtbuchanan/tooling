@@ -40,9 +40,10 @@ export interface RunSyncOptions {
  * per-package tsconfigs, `package.json` scripts, `mise.tasks.toml` (when the
  * root has a `mise.toml`), and whatever the toolchains plan. With `force: false`
  * (default), existing script values are preserved; with `force: true`,
- * they're overwritten.
+ * they're overwritten. Returns the problems no sync can fix, empty when
+ * there are none.
  */
-export const runSync = (options: RunSyncOptions = {}): void => {
+export const runSync = (options: RunSyncOptions = {}): readonly string[] => {
   const scopes = options.scopes ?? new Set(syncScopes);
   const cwd = options.cwd ?? process.cwd();
   const isForce = options.force ?? false;
@@ -53,16 +54,12 @@ export const runSync = (options: RunSyncOptions = {}): void => {
    * what discovery finds: the root tsconfig gives a single-package root the
    * typescript capability its scripts and turbo tasks follow from.
    */
-  for (const scope of syncOrder) {
-    if (!scopes.has(scope)) {
-      continue;
-    }
-
+  return syncOrder.filter(scope => scopes.has(scope)).flatMap((scope) => {
     const context: SyncContext = {
       discovery: discoverWorkspace({ capabilities, cwd }), force: isForce, logger,
     };
-    generators[scope].sync?.(context);
-  }
+    return generators[scope].sync?.(context) ?? [];
+  });
 };
 
 /**
@@ -81,7 +78,8 @@ export interface SyncCommandArgs {
  * Translates citty args into {@link RunSyncOptions} and invokes
  * {@link runSync}. Lives between the citty wrapper and the pure
  * function so the args translation is testable without going through
- * citty's `runCommand`. Returns the exit code (1 on an unknown scope).
+ * citty's `runCommand`. Returns the exit code: 1 on an unknown scope, or
+ * when the sync leaves a problem only a hand edit fixes.
  */
 export const syncCommand = (args: SyncCommandArgs, logger: Logger): number => {
   const parsed = parseSyncScopes(args.scopes ?? []);
@@ -93,14 +91,17 @@ export const syncCommand = (args: SyncCommandArgs, logger: Logger): number => {
     return 1;
   }
 
-  runSync({
+  const problems = runSync({
     ...(args.cwd !== undefined && { cwd: args.cwd }),
     force: args.force ?? false,
     logger,
     scopes: parsed.scopes,
   });
+  for (const message of problems) {
+    logger.error(message);
+  }
 
-  return 0;
+  return problems.length === 0 ? 0 : 1;
 };
 
 /**

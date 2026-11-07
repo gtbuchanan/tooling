@@ -108,13 +108,14 @@ const checkTsconfigBase = (rootDir: string): readonly string[] => {
 export const tsconfigGenerator: Generator = {
   sync: ({ discovery, logger }) => {
     if (!isGtbBuild(discovery)) {
-      return;
+      return [];
     }
     writeTsconfigBase(logger, discovery.rootDir);
     for (const descriptor of planTsconfigs(discovery.rootDir, discovery.packages)) {
       const userOpts = readUserCompilerOptions(descriptor.path);
       writeSortedAndLog(logger, descriptor.path, descriptor.generate(userOpts));
     }
+    return [];
   },
   verify: ({ discovery }) => (isGtbBuild(discovery)
     ? [

@@ -43,11 +43,12 @@ const checkTurboTasks = (
 export const turboGenerator: Generator = {
   sync: ({ discovery, logger }) => {
     if (!isGtbBuild(discovery)) {
-      return;
+      return [];
     }
     writeSortedAndLog(
       logger, path.join(discovery.rootDir, 'turbo.json'), generateTurboJson(discovery),
     );
+    return [];
   },
   verify: ({ discovery, ignored }) => (isGtbBuild(discovery)
     ? [

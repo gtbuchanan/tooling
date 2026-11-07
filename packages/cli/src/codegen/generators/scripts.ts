@@ -99,12 +99,13 @@ const checkShadowedAggregates = (
 export const scriptsGenerator: Generator = {
   sync: ({ discovery, force, logger }) => {
     if (!isGtbBuild(discovery)) {
-      return;
+      return [];
     }
     for (const pkg of discovery.packages) {
       writePackageScripts(logger, pkg, discovery, force);
     }
     writeRootScripts(logger, discovery, force);
+    return [];
   },
   verify: ({ discovery, ignored }) => (isGtbBuild(discovery)
     ? [

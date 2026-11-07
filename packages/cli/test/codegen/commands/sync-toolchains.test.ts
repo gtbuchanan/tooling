@@ -1,9 +1,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'vitest';
-import { runSync } from '#src/codegen/commands/sync.js';
+import { runSync, syncCommand } from '#src/codegen/commands/sync.js';
 import { runVerify } from '#src/codegen/commands/verify.js';
 import { captureLogger, createPklWorkspace, pklProjectSource } from '#test/helpers.js';
+import { createWorkspaceDepProject } from '#test/toolchains/npm/fixtures.js';
 
 const createStalePklWorkspace = () => {
   const ws = createPklWorkspace();
@@ -29,5 +30,18 @@ describe.concurrent('toolchain plans', () => {
 
     expect(runVerify({ cwd: ws.root, scopes: new Set(['toolchains']) }))
       .toStrictEqual([`${filePath}: out of date`, 'run gtb sync to apply these changes']);
+  });
+
+  /*
+   * A problem is drift no sync can fix, so a sync that finds one fails, as
+   * the hk fix step running it would otherwise pass over what the check step
+   * reports.
+   */
+  it('sync reports what only a hand edit fixes and fails', ({ expect }) => {
+    const { dependency, root } = createWorkspaceDepProject();
+    const { err, logger } = captureLogger();
+
+    expect(syncCommand({ cwd: root, scopes: ['toolchains'] }, logger)).toBe(1);
+    expect(err()).toContain(dependency.name);
   });
 });

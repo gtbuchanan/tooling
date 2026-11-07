@@ -17,11 +17,12 @@ export const miseGenerator: Generator = {
    */
   sync: ({ discovery, logger }) => {
     if (!discovery.hasMise) {
-      return;
+      return [];
     }
     const filePath = path.join(discovery.rootDir, miseTasksFileName);
     writeFileSync(filePath, generateMiseTasks(discovery));
     logger.info(`wrote ${filePath}`);
+    return [];
   },
   verify: ({ discovery }) =>
     (discovery.hasMise ? checkMiseTasksInclude(discovery.rootDir) : []),

@@ -71,14 +71,15 @@ const syncPass = (
   options: SyncPlansOptions,
   discovery: WorkspaceDiscovery,
   pass: number,
-): void => {
-  const writes = toolchainPlans(toolchains, {
+): readonly string[] => {
+  const findings = toolchainPlans(toolchains, {
     discovery,
     force: options.force,
     ignored: new Set(),
-  }).filter(finding => finding.kind === 'write');
+  });
+  const writes = findings.filter(finding => finding.kind === 'write');
   if (writes.length === 0) {
-    return;
+    return reportFindings(findings);
   }
   if (pass > maxPasses) {
     const paths = writes.map(({ path }) => path).join(', ');
@@ -90,16 +91,14 @@ const syncPass = (
   for (const write of writes) {
     applyWrite(options.logger, write);
   }
-  syncPass(toolchains, options, options.discover(), pass + 1);
+  return syncPass(toolchains, options, options.discover(), pass + 1);
 };
 
 /**
  * Applies every toolchain's writes, re-planning against fresh discovery until
- * a pass plans none.
+ * a pass plans none, and returns the problems that pass still finds.
  */
 export const syncPlans = (
   toolchains: readonly Toolchain[],
   options: SyncPlansOptions,
-): void => {
-  syncPass(toolchains, options, options.discovery, 1);
-};
+): readonly string[] => syncPass(toolchains, options, options.discovery, 1);

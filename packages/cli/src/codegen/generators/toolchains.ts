@@ -9,14 +9,12 @@ import { capabilities, toolchains } from '#src/toolchains/index.js';
  * rules over hand-authored files only an edit can satisfy.
  */
 export const toolchainsGenerator: Generator = {
-  sync: ({ discovery, force, logger }) => {
-    syncPlans(toolchains, {
-      discover: () => discoverWorkspace({ capabilities, cwd: discovery.rootDir }),
-      discovery,
-      force,
-      logger,
-    });
-  },
+  sync: ({ discovery, force, logger }) => syncPlans(toolchains, {
+    discover: () => discoverWorkspace({ capabilities, cwd: discovery.rootDir }),
+    discovery,
+    force,
+    logger,
+  }),
   verify: ({ discovery, ignored }) =>
     reportFindings(toolchainPlans(toolchains, { discovery, force: false, ignored })),
 };

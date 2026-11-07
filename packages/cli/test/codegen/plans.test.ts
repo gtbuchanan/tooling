@@ -172,4 +172,18 @@ describe.concurrent(syncPlans, () => {
 
     expect(discoveries).toBe(0);
   });
+
+  it('returns the problems the settled pass finds', ({ expect }) => {
+    const root = createRoot();
+    const filePath = path.join(root, 'out.txt');
+    const problem: Toolchain = {
+      plan: () => [{ kind: 'problem', message: 'out.txt: hand-edit this' }],
+      registrations: [],
+    };
+    const { logger } = captureLogger();
+
+    expect(syncPlans([writing(filePath, 'content'), problem], {
+      discover: discoverAt(root), discovery: discoverAt(root)(), force: false, logger,
+    })).toStrictEqual(['out.txt: hand-edit this']);
+  });
 });
