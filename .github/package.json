@@ -1,6 +1,6 @@
 {
   "name": "@gtbuchanan/github-workflows",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Reusable GitHub workflows and composite actions, released by tag rather than to a registry",
   "scripts": {
