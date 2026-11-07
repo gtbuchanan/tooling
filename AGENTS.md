@@ -348,7 +348,12 @@ through `package.json` scripts backed by `gtb` leaf commands.
   treats any other server as GHES and refuses to run. Edit both halves
   together. The forks stay on v4: their newer branches fail against
   Forgejo 17.0.1 (see the comment in `ci.yml`), so test on Forgejo
-  before moving them.
+  before moving them. They publish branches rather than tags, so
+  `.github/renovate.json` hands them to a `git-refs` custom manager,
+  which proposes each new commit on the v4 branch and blocks the newer
+  branches as majors. Its rules match `depName`: the manager's
+  `packageName` is the repository URL, so `matchPackageNames` never
+  matches it.
 - **`cd.yml`** — The deploy phase: `version` then `publish` (npm trusted
   publishing via OIDC, `release` environment), gated on
   `hasChangesets == 'false'`. Run by `release.yml` as its `CD` job after CI

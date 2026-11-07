@@ -1,5 +1,19 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "git-refs",
+      "description": "Track the head of the v4 branch of ChristopherHX's gitea artifact forks. They publish branches, not tags, so the github-actions manager finds no version for '# v4'; git-refs resolves the branch itself, so its commits arrive as digest updates",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "uses: (?<depName>ChristopherHX/gitea-(?:download|upload)-artifact)@(?<currentDigest>[0-9a-f]{40}) # (?<currentValue>v4)\\b"
+      ],
+      "packageNameTemplate": "https://github.com/{{{depName}}}"
+    }
+  ],
   "extends": [
     "github>gtbuchanan/tooling"
   ],
@@ -9,6 +23,42 @@
       "description": "Skip @vitest/eslint-plugin 1.6.21: vitest/valid-expect false-positives on expect.any (upstream vitest-dev/eslint-plugin-vitest#924, fixed in 1.6.22 via #925). Remove once >=1.6.22 is adopted.",
       "matchPackageNames": [
         "@vitest/eslint-plugin"
+      ]
+    },
+    {
+      "description": "Hand ChristopherHX's gitea artifact forks to the git-refs customManager above, which can follow their v4 branch",
+      "enabled": false,
+      "matchDepNames": [
+        "ChristopherHX/gitea-download-artifact",
+        "ChristopherHX/gitea-upload-artifact"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ]
+    },
+    {
+      "description": "Clear the release-age quarantine for ChristopherHX's gitea artifact forks: git-refs reports no release timestamps, so the quarantine would hold their digest updates pending forever",
+      "matchDatasources": [
+        "git-refs"
+      ],
+      "matchDepNames": [
+        "ChristopherHX/gitea-download-artifact",
+        "ChristopherHX/gitea-upload-artifact"
+      ],
+      "minimumReleaseAge": "0 days"
+    },
+    {
+      "description": "Keep ChristopherHX's gitea artifact forks on their v4 branch: the newer branches fail against Forgejo 17.0.1 (see ci.yml), so moving to one needs testing on Forgejo first",
+      "enabled": false,
+      "matchDatasources": [
+        "git-refs"
+      ],
+      "matchDepNames": [
+        "ChristopherHX/gitea-download-artifact",
+        "ChristopherHX/gitea-upload-artifact"
+      ],
+      "matchUpdateTypes": [
+        "major"
       ]
     }
   ]
