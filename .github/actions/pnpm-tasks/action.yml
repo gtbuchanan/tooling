@@ -57,7 +57,7 @@ runs:
 
     - env:
         COMMANDS: ${{ inputs.commands }}
-      if: inputs.commands != ''
+      if: ${{ inputs.commands != '' }}
       name: Run pnpm commands
       # Split each line into argv with read -a rather than an unquoted $cmd,
       # which would also glob-expand any word that matches a file.
@@ -71,7 +71,7 @@ runs:
 
     # Prune stale packages on inexact cache restore so the re-saved cache
     # does not grow unbounded
-    - if: steps.pnpm-cache.outputs.cache-hit != 'true'
+    - if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
       name: Prune pnpm store
       run: pnpm store prune
       shell: bash

@@ -29,7 +29,7 @@ jobs:
       # A repo with no publishable package (all private) legitimately packs
       # nothing, and the tarballs aren't consumed downstream — this artifact is
       # for inspection — so an empty match is not a failure or a warning.
-      - if: github.server_url == 'https://github.com'
+      - if: ${{ github.server_url == 'https://github.com' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: ignore
@@ -37,7 +37,7 @@ jobs:
           path: |
             dist/packages/npm/*.tgz
             packages/*/dist/packages/npm/*.tgz
-      - if: github.server_url != 'https://github.com'
+      - if: ${{ github.server_url != 'https://github.com' }}
         uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: ignore
@@ -48,7 +48,7 @@ jobs:
 
       # When slow tests are enabled, merged coverage comes from the coverage job.
       # Otherwise, fast-only coverage is the final artifact.
-      - if: inputs.run-slow-tests != true && github.server_url == 'https://github.com'
+      - if: ${{ inputs.run-slow-tests != true && github.server_url == 'https://github.com' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
@@ -56,7 +56,7 @@ jobs:
           path: |
             dist/coverage/vitest/fast/
             packages/*/dist/coverage/vitest/fast/
-      - if: inputs.run-slow-tests != true && github.server_url != 'https://github.com'
+      - if: ${{ inputs.run-slow-tests != true && github.server_url != 'https://github.com' }}
         uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: error
@@ -69,10 +69,10 @@ jobs:
   codecov:
     continue-on-error: true
     if: >-
-      !cancelled()
+      ${{ !cancelled()
       && needs.build.result == 'success'
       && (needs.coverage.result == 'success'
-      || needs.coverage.result == 'skipped')
+      || needs.coverage.result == 'skipped') }}
     name: Codecov Upload
     needs: [build, coverage]
     runs-on: ubuntu-24.04
@@ -86,12 +86,12 @@ jobs:
       # workspace. Restoring it there puts each `dist/coverage/` back exactly
       # where its `coverage:codecov:upload` task looks for it, whatever the
       # repo's shape. The step is paired for Forgejo; see the build job.
-      - if: github.server_url == 'https://github.com'
+      - if: ${{ github.server_url == 'https://github.com' }}
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: coverage
           path: .
-      - if: github.server_url != 'https://github.com'
+      - if: ${{ github.server_url != 'https://github.com' }}
         uses: ChristopherHX/gitea-download-artifact@75635f32b4c1c41c4b3d64e8f85210112ed4c9c7 # v4
         with:
           name: coverage
@@ -131,7 +131,7 @@ jobs:
     timeout-minutes: 10
 
   coverage:
-    if: inputs.run-slow-tests == true
+    if: ${{ inputs.run-slow-tests == true }}
     name: Coverage Merge
     needs: [build, slow-tests]
     runs-on: ubuntu-24.04
@@ -145,7 +145,7 @@ jobs:
           task: coverage:merge
 
       # Paired for Forgejo; see the build job.
-      - if: github.server_url == 'https://github.com'
+      - if: ${{ github.server_url == 'https://github.com' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
@@ -153,7 +153,7 @@ jobs:
           path: |
             dist/coverage/vitest/merged/
             packages/*/dist/coverage/vitest/merged/
-      - if: github.server_url != 'https://github.com'
+      - if: ${{ github.server_url != 'https://github.com' }}
         uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: error
@@ -164,7 +164,7 @@ jobs:
     timeout-minutes: 10
 
   e2e:
-    if: inputs.run-e2e == true
+    if: ${{ inputs.run-e2e == true }}
     name: E2E Test
     needs: build
     runs-on: ubuntu-24.04
@@ -198,7 +198,7 @@ jobs:
     timeout-minutes: 30
 
   slow-tests:
-    if: inputs.run-slow-tests == true
+    if: ${{ inputs.run-slow-tests == true }}
     name: Slow Tests
     runs-on: ubuntu-24.04
     steps:
@@ -211,7 +211,7 @@ jobs:
           task: test:slow
 
       # Paired for Forgejo; see the build job.
-      - if: github.server_url == 'https://github.com'
+      - if: ${{ github.server_url == 'https://github.com' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
@@ -219,7 +219,7 @@ jobs:
           path: |
             dist/test-results/
             packages/*/dist/test-results/
-      - if: github.server_url != 'https://github.com'
+      - if: ${{ github.server_url != 'https://github.com' }}
         uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # v4
         with:
           if-no-files-found: error

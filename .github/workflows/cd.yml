@@ -3,7 +3,7 @@ jobs:
   # Requires npm trusted publishing (OIDC) configured for each package.
   publish:
     environment: release
-    if: needs.version.outputs.hasChangesets == 'false'
+    if: ${{ needs.version.outputs.hasChangesets == 'false' }}
     name: Publish
     needs: version
     # The job token only checks out and fetches: every release, tag and Git

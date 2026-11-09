@@ -24,7 +24,7 @@ jobs:
       # The commands run through pnpm, so they install too. Gating them
       # on `use-pnpm` would skip the step that runs them and leave the
       # hooks reading the tree they exist to complete.
-      - if: inputs.use-pnpm || inputs.pnpm-commands != ''
+      - if: ${{ inputs.use-pnpm || inputs.pnpm-commands != '' }}
         uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
         with:
           commands: ${{ inputs.pnpm-commands }}

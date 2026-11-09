@@ -50,7 +50,7 @@ runs:
         echo "hit=$hit" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    - if: steps.cache-check.outputs.hit != 'true'
+    - if: ${{ steps.cache-check.outputs.hit != 'true' }}
       uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
 
     - env:

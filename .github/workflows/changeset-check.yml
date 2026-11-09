@@ -1,7 +1,7 @@
 ---
 jobs:
   check:
-    if: github.head_ref != 'changeset-release/main'
+    if: ${{ github.head_ref != 'changeset-release/main' }}
     name: Changeset Check
     runs-on: ubuntu-24.04
     steps:
