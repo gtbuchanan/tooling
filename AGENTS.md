@@ -510,8 +510,10 @@ through `package.json` scripts backed by `gtb` leaf commands.
 
 Composite actions:
 
-- **`mise-setup`** — Restores the mise data dir with an arch-specific
-  `restore-keys` fallback, installs missing tools via
+- **`mise-setup`** — Restores the mise data dir with a `restore-keys`
+  fallback specific to the OS release and architecture (installed tools
+  run only on the image they were installed on, while the pnpm store and
+  `~/.npm` hold packages and key on `runner.os`), installs missing tools via
   `jdx/mise-action` (with `cache: false` so we own the cache layer),
   and prunes unreferenced versions on inexact restore. Sets
   `MISE_LOCKED=1` so `mise install` fails on `mise.toml` ↔ `mise.lock`

@@ -23,14 +23,28 @@ runs:
         } >> "$GITHUB_ENV"
       shell: bash
 
+    # The cache holds installed tools, which run only on the image they were
+    # installed on, and runner.os reads `Linux` on every Ubuntu release. On
+    # Windows, uname -s carries the OS build.
+    - id: platform
+      name: Resolve OS release
+      run: |
+        case "$(uname -s)" in
+          Darwin) os_release="macos-$(sw_vers -productVersion | cut -d. -f1)" ;;
+          Linux) os_release="$(. /etc/os-release && echo "${ID:-linux}-${VERSION_ID:-}")" ;;
+          *) os_release="$(uname -s)" ;;
+        esac
+        echo "os-release=${os_release}" >> "$GITHUB_OUTPUT"
+      shell: bash
+
     - id: cache
       name: Restore mise data
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        key: mise-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mise.lock') }}
+        key: mise-${{ steps.platform.outputs.os-release }}-${{ runner.arch }}-${{ hashFiles('mise.lock') }}
         path: ${{ runner.temp }}/.mise
         restore-keys: |
-          mise-${{ runner.os }}-${{ runner.arch }}-
+          mise-${{ steps.platform.outputs.os-release }}-${{ runner.arch }}-
 
     # mise-action unzips mise under os.tmpdir() then renames (io.mv) the binary
     # into MISE_DATA_DIR. On Windows os.tmpdir() is on C: but MISE_DATA_DIR sits
