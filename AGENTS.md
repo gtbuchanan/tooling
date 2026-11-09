@@ -332,6 +332,11 @@ Build, E2E Test and Slow Tests, which grow with the consumer's code, and
 10–15 for the rest. If one proves too tight, an input defaulting to the
 current value raises it without breaking a caller.
 
+**Runner label.** Every reusable job runs on a fixed `ubuntu-<version>` label,
+which Renovate's github-actions manager tracks without a rule of its own. The
+label also has to exist on the Forgejo runners these workflows target, so
+register it there before taking a bump.
+
 Every job that needs Node, pnpm, hk, or pkl prepends `mise-setup`, which
 installs the exact versions pinned in `mise.toml` / `mise.lock`. Tool
 caching is owned by `mise-setup` (mise data dir) and `pnpm-tasks`
