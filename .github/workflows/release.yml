@@ -15,7 +15,7 @@ jobs:
     needs: ci
     permissions:
       contents: read
-      id-token: write
+      id-token: write # npm trusted publishing (OIDC)
     # The App key is a secret of the `release` environment. A called workflow
     # sees only the secret names its caller passes, so the name has to be
     # passed even though the value here is empty: CD's jobs run in the
