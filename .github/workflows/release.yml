@@ -16,8 +16,12 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    # No secrets: the App key lives in the `release` environment, which CD's
-    # jobs read directly.
+    # The App key is a secret of the `release` environment. A called workflow
+    # sees only the secret names its caller passes, so the name has to be
+    # passed even though the value here is empty: CD's jobs run in the
+    # environment, and its value replaces this one.
+    secrets:
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     uses: ./.github/workflows/cd.yml
     with:
       # tooling vendors @gtbuchanan/cli as a workspace package, so CD runs gtb

@@ -138,10 +138,11 @@ name: CD
 # `release` environment, with a deployment branch policy for the default
 # branch only: a repository secret reaches every workflow run, so any code in
 # a same-repository PR's CI could read a key that bypasses the release-tag
-# ruleset. A job in an environment reads that environment's secret over any
-# the caller passes, so the optional declaration below keeps an explicit or
-# inherited repository secret working without reaching around the
-# environment one.
+# ruleset. The caller still has to pass the secret's name: a called
+# workflow's `secrets` context holds only the names its caller passes, and a
+# name it was never given stays empty even in the environment. A job in an
+# environment then reads that environment's value over the caller's, which
+# from a caller outside the environment is empty.
 on:
   workflow_call:
     inputs:
@@ -157,10 +158,11 @@ on:
     secrets:
       APP_PRIVATE_KEY:
         description: >-
-          GitHub App private key, paired with the APP_ID variable. Optional
-          here because it belongs in the `release` environment, which both
-          jobs run in; declared so a caller that passes it by name, rather
-          than through `secrets: inherit`, is still accepted.
+          GitHub App private key, paired with the APP_ID variable. Pass it by
+          name, from `secrets.APP_PRIVATE_KEY`: the value
+          comes from the `release` environment both jobs run in, but only for
+          a name the caller passed. Optional because that caller-side value
+          is empty.
         required: false
 
 permissions:

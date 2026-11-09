@@ -278,6 +278,8 @@ jobs:
       contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@<tag>
+    secrets:
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }} # resolved from the release environment
 ```
 
 **Naming / required checks.** Branch protection keys on the **leaf job

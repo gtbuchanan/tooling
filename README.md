@@ -23,7 +23,9 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 A consuming repo copies two pipeline workflows — one per trigger —
 whose jobs call this repo's single-concern reusable workflows. Each call
 passes only the secrets its workflow reads: `CODECOV_TOKEN` to CI, and
-nothing to CD, whose App key lives in the `release` environment. Replace `<tag>` with a workflows
+`APP_PRIVATE_KEY` to CD. The key lives in the `release` environment, so
+the caller's value is empty, but a called workflow sees only the names
+its caller passes, and CD's jobs read the value from the environment. Replace `<tag>` with a workflows
 release tag (`v<version>`) rather than `main`: the
 [Renovate preset](#renovate-preset) pins it to a commit and bumps it
 once per release, where a `@main` ref would be bumped on every commit to
@@ -84,6 +86,8 @@ jobs:
       contents: read # checkout; every write goes through the App token
       id-token: write # npm trusted publishing (OIDC)
     uses: gtbuchanan/tooling/.github/workflows/cd.yml@<tag>
+    secrets:
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }} # resolved from the release environment
 ```
 
 The reusable workflows each job calls:
