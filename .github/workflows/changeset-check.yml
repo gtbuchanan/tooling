@@ -29,6 +29,7 @@ jobs:
             echo "::error::Changeset Check needs a pull_request merge-commit checkout (PR head: ${PR_HEAD_SHA:-none})"
             exit 1
           fi
+        shell: bash
 
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
@@ -48,6 +49,7 @@ jobs:
           PNPM_GTB_COMMAND: ${{ inputs.gtb-from-source && 'run' || 'exec' }}
         name: Verify changesets cover this PR
         run: pnpm "$PNPM_GTB_COMMAND" gtb changeset check --since=HEAD^1
+        shell: bash
     timeout-minutes: 10
 
 name: Changeset

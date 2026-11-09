@@ -33,6 +33,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         name: Run hk on the PR's changed files
         run: mise run hk:base -- "$BASE_SHA"
+        shell: bash
     timeout-minutes: 15
 
 name: Pre-Commit

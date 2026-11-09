@@ -57,6 +57,7 @@ jobs:
           PNPM_GTB_COMMAND: ${{ inputs.gtb-from-source && 'run' || 'exec' }}
         name: Publish packages
         run: pnpm "$PNPM_GTB_COMMAND" gtb publish
+        shell: bash
     timeout-minutes: 15
 
   version:
