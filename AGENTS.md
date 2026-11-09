@@ -107,8 +107,9 @@ coverage, setupFiles, and mock reset.
   - `jactionlint` — `Defaults.jactionlint`, binary via mise `github:jdx/jactionlint`
     (the maintained actionlint fork). Lints workflows, composite actions and
     Dependabot config, and runs `shellcheck` (mise `aqua:koalaman/shellcheck`)
-    on `run:` scripts when it's on PATH. The preset pins the `correctness`
-    profile (see the doc comment in `Defaults.pkl` for why).
+    on `run:` scripts when it's on PATH. The preset defaults to the
+    `correctness` profile, and `Defaults.jactionlintWith(profile)` builds the
+    step at another (see the doc comments in `Defaults.pkl` for why).
   - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)
   - `shellcheck` / `shfmt` — from `Defaults.shell` (via `recommended`),

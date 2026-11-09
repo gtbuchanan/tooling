@@ -39,6 +39,11 @@ only inside the `renovate` npm package — add `npm:renovate` to your mise
 - `fileHygiene` — large-file, end-of-file-newline, byte-order-marker, and
   trailing-whitespace fixers, each pre-wired with the default exclude.
 - `forbidSubmodules` — a per-OS gitlink (submodule) guard.
+- `jactionlint` — lints workflows, composite actions and Dependabot config at
+  the `correctness` profile. `jactionlintWith(profile)` builds the same step at
+  `default` or `pedantic`, whose autofixes rewrite workflows during pre-commit:
+  `["jactionlint"] = Defaults.jactionlintWith("pedantic")` after spreading
+  `recommended`.
 - `renovateConfig` — validates `.github/renovate.json` via
   `renovate-config-validator`. Amend its `glob` to target a different file
   (e.g. `default.json` for preset-authoring repos).
