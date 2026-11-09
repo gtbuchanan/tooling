@@ -140,9 +140,9 @@ the set would shift as packages come and go, so no such check could be
 a stable requirement. Per-package numbers live in the Codecov comment
 and the Flags tab.
 
-**Drift risk:** The Codecov job uses `continue-on-error`, so upload
-failures never block PRs, and `require_ci_to_pass: false` keeps
-Codecov's status and comment posting when an unrelated check fails.
+**Drift risk:** A failed upload fails the `Codecov Upload` job, and
+`require_ci_to_pass: false` keeps Codecov's status and comment posting
+when an unrelated check fails.
 `carryforward: true` holds a package's last known coverage on the run
 that skips an upload anyway; without it Codecov reads the missing flag
 as 0%. The cost is that Codecov cannot tell coverage it carried forward

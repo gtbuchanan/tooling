@@ -67,7 +67,6 @@ jobs:
     timeout-minutes: 30
 
   codecov:
-    continue-on-error: true
     if: >-
       ${{ !cancelled()
       && needs.build.result == 'success'
