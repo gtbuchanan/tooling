@@ -3,6 +3,7 @@ import type { Leaf } from '#src/tasks/leaf.js';
 import {
   type Toolchain, toolchainCapabilities, toolchainLeaves,
 } from '#src/tasks/toolchain.js';
+import { changesetsToolchain } from '#src/toolchains/changesets/index.js';
 import { codecovToolchain } from '#src/toolchains/codecov/index.js';
 import { eslintToolchain } from '#src/toolchains/eslint/index.js';
 import { npmToolchain } from '#src/toolchains/npm/index.js';
@@ -17,6 +18,7 @@ import { vitestToolchain } from '#src/toolchains/vitest/index.js';
  * neither can exist without the other.
  */
 export const toolchains: readonly Toolchain[] = [
+  changesetsToolchain,
   codecovToolchain,
   eslintToolchain,
   npmToolchain,
