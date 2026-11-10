@@ -1,5 +1,14 @@
 # @gtbuchanan/vitest-config
 
+## 0.4.0
+
+### Minor Changes
+
+- e3db3c2: Accept `slow` and `tags` in the `configurePackage` options
+
+  `configure` accepts them too. Both functions type their options as the new
+  `VitestConfigurePackageOptions`.
+
 ## 0.3.0
 
 ### Minor Changes

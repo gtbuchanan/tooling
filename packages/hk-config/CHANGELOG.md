@@ -1,5 +1,31 @@
 # @gtbuchanan/hk-config
 
+## 0.7.0
+
+### Minor Changes
+
+- 030b02f: Bump the hk package imports to v2.11.0
+
+  `Defaults.pkl` imports hk's `Config.pkl` and `Builtins.pkl` from a
+  version-pinned release URL, now v2.11.0 to match `mise.toml`.
+
+  Move your own `hk.pkl` `amends` URL to v2.11.0 in the same change. Pkl treats
+  the same class from two hk versions as unrelated types, so a config amending
+  one version while importing a preset built on another fails to evaluate.
+- e8cd571: Add `gtbCliSteps(prefix)`, a step that runs `gtb verify`
+
+  The `gtb-verify` step it returns runs `gtb verify` and fixes drift with
+  `gtb sync`, re-staging what sync writes. Spread it into a step mapping with the
+  prefix that resolves `gtb` in your repo: `null` when gtb comes from a mise
+  `npm:@gtbuchanan/cli` tool, `"pnpm exec"` when it's a workspace devDependency.
+
+  A repo that adopts only the hk preset needs `@gtbuchanan/cli` 2.0.1 or later,
+  and can then replace a hand-written `gtb verify mise` step with this one.
+- fd8436f: Add `jactionlintWith(profile)` to build jactionlint at any profile
+
+  It takes `correctness`, `default` or `pedantic`. `jactionlint` stays the
+  `correctness` instance, so `recommended` is unchanged.
+
 ## 0.6.0
 
 ### Minor Changes
