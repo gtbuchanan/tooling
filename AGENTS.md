@@ -22,6 +22,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
     pnpm-tasks/          — Composite action: cache pnpm store, install deps
     turbo-run/           — Composite action: run turbo task, skip install on cache hit
     upload-artifact/     — Composite action: upload an artifact on GitHub or Forgejo
+    version-check/       — Composite action: dependency-review.yml's Version Check script
   dependency-review-config.yml — License allowlist for dependency-review.yml
   jactionlint.yaml             — jactionlint rule exemptions for this repo's pedantic lint
   package.json                 — @gtbuchanan/github-workflows (private; changesets versions the reusables + actions)
@@ -539,6 +540,10 @@ Composite actions:
 - **`upload-artifact`** / **`download-artifact`** — Upload or download an
   artifact on any of the forges, running upstream `actions/*-artifact` on
   github.com and ChristopherHX's fork everywhere else (see `ci.yml`).
+- **`version-check`** — The `Version Check` job of `dependency-review.yml`.
+  The script is `version-check.sh` beside the action, run through
+  `$GITHUB_ACTION_PATH`, so it's linted as a shell file and reachable from a
+  caller's run.
 
 ### Renovate preset
 

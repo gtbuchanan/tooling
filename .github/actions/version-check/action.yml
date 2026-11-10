@@ -1,0 +1,35 @@
+---
+description: Fail when a dependency a PR newly declares is behind its latest eligible release
+inputs:
+  base-sha:
+    default: ${{ github.event.pull_request.base.sha }}
+    description: Commit the PR merges into
+    required: false
+  head-sha:
+    default: ${{ github.event.pull_request.head.sha }}
+    description: Commit at the head of the PR
+    required: false
+  minimum-release-age-days:
+    default: '3'
+    description: >-
+      Quarantine window, in days. A release published within it is too fresh
+      to count as latest. Set 0 to compare against the absolute latest.
+    required: false
+  token:
+    default: ${{ github.token }}
+    description: Token for the dependency-graph and compare APIs
+    required: false
+name: Version Check
+runs:
+  # The script is a file beside this action, reached through
+  # GITHUB_ACTION_PATH: a path in the calling workflow would resolve against
+  # the caller's checkout.
+  steps:
+    - env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        GH_TOKEN: ${{ inputs.token }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        MIN_RELEASE_AGE_DAYS: ${{ inputs.minimum-release-age-days }}
+      run: '"$GITHUB_ACTION_PATH/version-check.sh"'
+      shell: bash
+  using: composite
