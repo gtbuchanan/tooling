@@ -2,4 +2,7 @@
 '@gtbuchanan/hk-config': minor
 ---
 
-Add `jactionlintWith(profile)`, which builds the jactionlint step at the `correctness`, `default` or `pedantic` profile. `jactionlint` stays the `correctness` instance, so `recommended` is unchanged.
+Add `jactionlintWith(profile)` to build jactionlint at any profile
+
+It takes `correctness`, `default` or `pedantic`. `jactionlint` stays the
+`correctness` instance, so `recommended` is unchanged.

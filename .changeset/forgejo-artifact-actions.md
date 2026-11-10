@@ -2,4 +2,10 @@
 '@gtbuchanan/github-workflows': patch
 ---
 
-Run the `ci.yml` artifact steps on Forgejo and Gitea. The upstream `upload-artifact` and `download-artifact` refuse any server other than github.com, so off GitHub each step now uses ChristopherHX's v4 fork, which drops that check.
+Run `ci.yml`'s artifact steps on Forgejo and Gitea
+
+The upstream `upload-artifact` and `download-artifact` refuse any server other
+than github.com. The steps now go through new `upload-artifact` and
+`download-artifact` composite actions. These run the upstream actions on
+github.com and, everywhere else, ChristopherHX's v4 forks, which drop that
+check.

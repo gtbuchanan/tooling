@@ -2,4 +2,7 @@
 '@gtbuchanan/github-workflows': patch
 ---
 
-Add a `version-check` composite action holding the Version Check script of `dependency-review.yml` as a shell file.
+Add a `version-check` composite action
+
+It holds `dependency-review.yml`'s Version Check script as a shell file. The
+Version Check job now runs through it, with no change in what it checks.

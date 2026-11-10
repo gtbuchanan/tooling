@@ -2,4 +2,7 @@
 '@gtbuchanan/github-workflows': patch
 ---
 
-Pin the third-party actions in the reusable workflows and composite actions to commits, with the full version in a comment.
+Pin the third-party actions to commits
+
+This covers the reusable workflows and composite actions, each pin carrying the
+full version in a comment.

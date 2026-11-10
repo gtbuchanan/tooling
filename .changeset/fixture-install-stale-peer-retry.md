@@ -1,4 +1,4 @@
 ---
 ---
 
-Retry a fixture install when a stale packument surfaces as a peer conflict
+Retry fixture installs on a peer conflict from a stale packument

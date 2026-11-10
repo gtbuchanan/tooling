@@ -2,4 +2,7 @@
 '@gtbuchanan/vitest-config': minor
 ---
 
-Accept `slow` and `tags` in the options for `configure` and `configurePackage`, typed as the new `VitestConfigurePackageOptions`
+Accept `slow` and `tags` in the `configurePackage` options
+
+`configure` accepts them too. Both functions type their options as the new
+`VitestConfigurePackageOptions`.
