@@ -6,8 +6,7 @@
       "datasourceTemplate": "git-refs",
       "description": "Track the head of the v4 branch of ChristopherHX's gitea artifact forks. They publish branches, not tags, so the github-actions manager finds no version for '# v4'; git-refs resolves the branch itself, so its commits arrive as digest updates",
       "managerFilePatterns": [
-        "/^\\.github/actions/[^/]+-artifact/action\\.ya?ml$/",
-        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+        "/^\\.github/actions/[^/]+-artifact/action\\.ya?ml$/"
       ],
       "matchStrings": [
         "uses: (?<depName>ChristopherHX/gitea-(?:download|upload)-artifact)@(?<currentDigest>[0-9a-f]{40}) # (?<currentValue>v4)\\b"
@@ -60,7 +59,7 @@
       "minimumReleaseAge": "0 days"
     },
     {
-      "description": "Keep ChristopherHX's gitea artifact forks on their v4 branch: the newer branches fail against Forgejo 17.0.1 (see ci.yml), so moving to one needs testing on Forgejo first",
+      "description": "Keep ChristopherHX's gitea artifact forks on their v4 branch: the newer branches fail against Forgejo 17.0.1 (see the upload-artifact and download-artifact actions), so moving to one needs testing on Forgejo first",
       "enabled": false,
       "matchDatasources": [
         "git-refs"

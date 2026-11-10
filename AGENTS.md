@@ -367,13 +367,13 @@ through `package.json` scripts backed by `gtb` leaf commands.
   workspace. The `packages` upload uses `if-no-files-found: ignore` — a
   repo whose packages are all private packs nothing, and nothing consumes
   the tarballs downstream.
-  Each artifact step is a pair gated on `github.server_url`: upstream
-  `actions/*-artifact` on github.com, and ChristopherHX's GitHub-hosted
-  `gitea-*-artifact` forks, pinned by commit, everywhere else. Upstream
-  treats any other server as GHES and refuses to run. Edit both halves
-  together. The forks stay on v4: their newer branches fail against
-  Forgejo 17.0.1 (see the comment in `ci.yml`), so test on Forgejo
-  before moving them. They publish branches rather than tags, so
+  Each artifact step goes through the `upload-artifact` /
+  `download-artifact` actions, which pair upstream `actions/*-artifact` on
+  github.com with ChristopherHX's GitHub-hosted `gitea-*-artifact` forks,
+  pinned by commit, everywhere else, gated on `github.server_url`. Upstream
+  treats any other server as GHES and refuses to run. The forks stay on
+  v4: their newer branches fail against Forgejo 17.0.1 (see the comments
+  in the actions), so test on Forgejo before moving them. They publish branches rather than tags, so
   `.github/renovate.json` hands them to a `git-refs` custom manager,
   which proposes each new commit on the v4 branch and blocks the newer
   branches as majors. Its rules match `depName`: the manager's
@@ -539,7 +539,7 @@ Composite actions:
   locked version.
 - **`upload-artifact`** / **`download-artifact`** — Upload or download an
   artifact on any of the forges, running upstream `actions/*-artifact` on
-  github.com and ChristopherHX's fork everywhere else (see `ci.yml`).
+  github.com and ChristopherHX's fork everywhere else (see `ci.yml` above).
 - **`version-check`** — The `Version Check` job of `dependency-review.yml`.
   The script is `version-check.sh` beside the action, run through
   `$GITHUB_ACTION_PATH`, so it's linted as a shell file and reachable from a
