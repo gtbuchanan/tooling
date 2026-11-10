@@ -199,4 +199,18 @@ describe.concurrent(planTsconfigFiles, () => {
     });
     expect(writeOf(findings, filePath)).toBeUndefined();
   });
+
+  it('reports a tsconfig holding a JSON array as a problem', ({ expect }) => {
+    const { pkgDir, root } = createProject();
+    const filePath = path.join(pkgDir, 'tsconfig.json');
+    writeFileSync(filePath, JSON.stringify([build.packageName()]));
+
+    const findings = plan(root);
+
+    expect(findings).toContainEqual({
+      kind: 'problem',
+      message: `${filePath}: could not be parsed as a JSON object — fix it by hand`,
+    });
+    expect(writeOf(findings, filePath)).toBeUndefined();
+  });
 });

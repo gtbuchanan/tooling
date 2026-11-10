@@ -16,7 +16,13 @@ export const StringArray = v.array(v.string());
  */
 export const StringRecord = v.record(v.string(), v.string());
 
+/*
+`v.record` accepts an array, whose indices pass as string keys.
+*/
+const notArray = v.check<unknown>(value => !Array.isArray(value));
+
 /**
- * Reusable `Record<string, unknown>` schema (e.g. compilerOptions).
+ * Reusable `Record<string, unknown>` schema (e.g. compilerOptions). Rejects
+ * an array, which a rewrite spreading the record would turn into index keys.
  */
-export const UnknownRecord = v.record(v.string(), v.unknown());
+export const UnknownRecord = v.pipe(v.unknown(), notArray, v.record(v.string(), v.unknown()));

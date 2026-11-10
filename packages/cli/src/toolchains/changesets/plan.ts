@@ -6,15 +6,6 @@ import { jsonContent } from '#src/core/file-writer.js';
 import { UnknownRecord } from '#src/core/schemas.js';
 import type { Finding, PlanContext } from '#src/tasks/toolchain.js';
 
-/*
-`v.record` accepts an array, which spreading would turn into index keys.
-*/
-const JsonObject = v.pipe(
-  v.unknown(),
-  v.check(value => !Array.isArray(value)),
-  UnknownRecord,
-);
-
 type ReadResult =
   | { readonly kind: 'absent' }
   | { readonly kind: 'invalid' }
@@ -23,7 +14,7 @@ type ReadResult =
 
 const parseObject = (text: string): ReadResult => {
   try {
-    const result = v.safeParse(JsonObject, JSON.parse(text));
+    const result = v.safeParse(UnknownRecord, JSON.parse(text));
     return result.success ? { kind: 'object', value: result.output } : { kind: 'invalid' };
   } catch {
     return { kind: 'invalid' };
