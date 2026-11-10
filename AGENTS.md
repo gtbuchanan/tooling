@@ -396,8 +396,9 @@ through `package.json` scripts backed by `gtb` leaf commands.
     release PR fails its own `Pre-Commit` check. `.changeset/config.json`
     sets `"format": false` so hk is the only formatter: changesets' `auto`
     would otherwise find the root `prettier` and format the CHANGELOGs
-    first, without eslint-config's options. `gtb verify toolchains`
-    requires the setting wherever `.changeset/config.json` exists.
+    first, without eslint-config's options. The changesets toolchain's plan
+    owns that one key, so `gtb sync` sets it and `gtb verify` fails without
+    it, in any gtb-built repo with a `.changeset/config.json`.
   - **`gtb publish`** runs `changeset publish` (npm, honoring the ambient
     OIDC + `NPM_CONFIG_PROVENANCE` env), then creates a GitHub release per
     published npm package, and then dispatches every non-npm channel (the
