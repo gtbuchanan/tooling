@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import * as v from 'valibot';
 import { isGtbBuild } from '#src/core/discovery.js';
@@ -18,21 +18,29 @@ const JsonObject = v.pipe(
 type ReadResult =
   | { readonly kind: 'absent' }
   | { readonly kind: 'invalid' }
+  | { readonly kind: 'notFile' }
   | { readonly kind: 'object'; readonly value: Record<string, unknown> };
 
-const readConfig = (filePath: string): ReadResult => {
-  let text: string;
-  try {
-    text = readFileSync(filePath, 'utf8');
-  } catch {
-    return { kind: 'absent' };
-  }
+const parseObject = (text: string): ReadResult => {
   try {
     const result = v.safeParse(JsonObject, JSON.parse(text));
     return result.success ? { kind: 'object', value: result.output } : { kind: 'invalid' };
   } catch {
     return { kind: 'invalid' };
   }
+};
+
+/*
+Only a missing path means the repo doesn't use changesets. Any other read
+failure throws, since passing it would skip the check silently.
+*/
+const readConfig = (filePath: string): ReadResult => {
+  const stats = statSync(filePath, { throwIfNoEntry: false });
+  if (stats === undefined) {
+    return { kind: 'absent' };
+  }
+
+  return stats.isFile() ? parseObject(readFileSync(filePath, 'utf8')) : { kind: 'notFile' };
 };
 
 /**
@@ -60,6 +68,12 @@ export const planChangesetsConfig = ({ discovery }: PlanContext): readonly Findi
       return [{
         kind: 'problem',
         message: `${filePath}: could not be parsed as a JSON object — fix it by hand`,
+      }];
+    }
+    case 'notFile': {
+      return [{
+        kind: 'problem',
+        message: `${filePath}: not a file — replace it with the changesets config`,
       }];
     }
     case 'object': {

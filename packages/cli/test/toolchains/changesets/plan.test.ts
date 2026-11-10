@@ -87,6 +87,16 @@ describe.concurrent(planChangesetsConfig, () => {
     }]);
   });
 
+  it('reports a config path that is not a file', ({ expect }) => {
+    const { configPath, root } = createRepo();
+    mkdirSync(configPath, { recursive: true });
+
+    expect(plan(root)).toStrictEqual([{
+      kind: 'problem',
+      message: `${configPath}: not a file — replace it with the changesets config`,
+    }]);
+  });
+
   it('plans nothing for a config that disables formatting', ({ expect }) => {
     const { root } = createRepo(JSON.stringify({ format: false }));
 
