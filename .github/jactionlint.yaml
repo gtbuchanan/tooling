@@ -1,0 +1,17 @@
+---
+rules:
+  secrets-outside-env:
+    allow:
+      # A secret of the release environment only. The caller still has to pass
+      # it by name, or CD's job in that environment receives an empty value.
+      - APP_PRIVATE_KEY
+      # A repository secret, because pull requests upload coverage too and the
+      # token can do nothing but upload.
+      - CODECOV_TOKEN
+  # The reusables reference this repository's actions by full path on
+  # purpose: a `./` ref resolves against the caller's checkout (see AGENTS.md).
+  self-repository: 'off'
+  unpinned-uses:
+    policies:
+      # Those refs track `main` until a release pins them to its own tag.
+      gtbuchanan/tooling: any

@@ -21,6 +21,7 @@ mise.toml              — Pin dev-tool versions for local + CI; postinstall hoo
     pnpm-tasks/          — Composite action: cache pnpm store, install deps
     turbo-run/           — Composite action: run turbo task, skip install on cache hit
   dependency-review-config.yml — License allowlist for dependency-review.yml
+  jactionlint.yaml             — jactionlint rule exemptions for this repo's pedantic lint
   package.json                 — @gtbuchanan/github-workflows (private; changesets versions the reusables + actions)
   renovate.json                — Repo-local Renovate config (extends the shared preset)
   workflows/
@@ -109,7 +110,9 @@ coverage, setupFiles, and mock reset.
     Dependabot config, and runs `shellcheck` (mise `aqua:koalaman/shellcheck`)
     on `run:` scripts when it's on PATH. The preset defaults to the
     `correctness` profile, and `Defaults.jactionlintWith(profile)` builds the
-    step at another (see the doc comments in `Defaults.pkl` for why).
+    step at another (see the doc comments in `Defaults.pkl` for why). This
+    repository lints at `pedantic`, with its exemptions in
+    `.github/jactionlint.yaml`.
   - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)
   - `shellcheck` / `shfmt` — from `Defaults.shell` (via `recommended`),
@@ -841,10 +844,11 @@ Update CI workflow
 `@gtbuchanan/github-workflows`, so an edit to a reusable workflow, a composite
 action or `dependency-review-config.yml` is a package change like any other.
 GitHub reads workflows only from `.github/workflows/`, which is why the package
-root is `.github/` rather than a directory under `packages/`. `renovate.json`,
-`pr.yml` and `release.yml` are excluded in `changedFilePatterns`: they configure
-this repository, and consumers reach none of them by ref. The package has no
-ESLint config of its own, so the root `lint:eslint` covers it.
+root is `.github/` rather than a directory under `packages/`.
+`jactionlint.yaml`, `renovate.json`, `pr.yml` and `release.yml` are excluded in
+`changedFilePatterns`: they configure this repository, and consumers reach none
+of them by ref. The package has no ESLint config of its own, so the root
+`lint:eslint` covers it.
 
 ### Changesets private-package versioning
 
