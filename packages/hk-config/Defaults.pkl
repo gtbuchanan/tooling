@@ -45,12 +45,13 @@ function jactionlintWith(profile: JactionlintProfile): Config.Step = (Builtins.j
   fix = withProfile(Builtins.jactionlint.fix as Config.CommandSpec, profile)
 }
 
-/// `jactionlintWith` at the `correctness` profile: the checks actionlint makes.
-/// The `default` profile adds hardening rules (timeouts, concurrency groups,
-/// SHA-pinned actions) whose autofixes would rewrite a consumer's workflows
-/// during pre-commit. This stays the default only until the preset moves to
-/// `pedantic`: https://github.com/gtbuchanan/tooling/issues/678
-jactionlint: Config.Step = jactionlintWith("correctness")
+/// `jactionlintWith` at the `pedantic` profile, jactionlint's strictest: the
+/// checks actionlint makes, plus hardening rules (timeouts, concurrency groups,
+/// SHA-pinned actions) and style rules. Their autofixes rewrite workflows
+/// during `hk fix`, so a consumer reviews that diff when it takes a bump.
+/// Exempt a deliberate design in `.github/jactionlint.yaml`, or narrow the
+/// whole step with `jactionlintWith("correctness")`.
+jactionlint: Config.Step = jactionlintWith("pedantic")
 
 /// File-hygiene builtins with the lockfile-exclude already wired.
 fileHygiene: Mapping<String, Config.Step> = new {
