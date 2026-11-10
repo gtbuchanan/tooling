@@ -23,7 +23,7 @@ jobs:
       contents: read
     runs-on: ubuntu-24.04
     steps:
-      - uses: gtbuchanan/tooling/.github/actions/version-check@main
+      - uses: gtbuchanan/tooling/.github/actions/version-check@v1.1.0
         with:
           minimum-release-age-days: ${{ inputs.minimum-release-age-days }}
     timeout-minutes: 10
@@ -40,7 +40,7 @@ on:
           (always, never, on-failure).
         type: string
       config-file:
-        default: gtbuchanan/tooling/.github/dependency-review-config.yml@main
+        default: gtbuchanan/tooling/.github/dependency-review-config.yml@v1.1.0
         description: >-
           Dependency-review config file. Either a path in
           the calling repo or `<owner>/<repo>/<path>@<ref>`

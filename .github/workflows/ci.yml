@@ -6,16 +6,16 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.1.0
         with:
           task: build:ci
 
       # A repo with no publishable package (all private) legitimately packs
       # nothing, and the tarballs aren't consumed downstream — this artifact is
       # for inspection — so an empty match is not a failure or a warning.
-      - uses: gtbuchanan/tooling/.github/actions/upload-artifact@main
+      - uses: gtbuchanan/tooling/.github/actions/upload-artifact@v1.1.0
         with:
           if-no-files-found: ignore
           name: packages
@@ -26,7 +26,7 @@ jobs:
       # When slow tests are enabled, merged coverage comes from the coverage job.
       # Otherwise, fast-only coverage is the final artifact.
       - if: ${{ inputs.run-slow-tests != true }}
-        uses: gtbuchanan/tooling/.github/actions/upload-artifact@main
+        uses: gtbuchanan/tooling/.github/actions/upload-artifact@v1.1.0
         with:
           if-no-files-found: error
           name: coverage
@@ -47,14 +47,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
       # The coverage uploads glob both the root and the `packages/*` layout, so
       # the artifact is rooted at the least common ancestor of the two — the
       # workspace. Restoring it there puts each `dist/coverage/` back exactly
       # where its `coverage:codecov:upload` task looks for it, whatever the
       # repo's shape.
-      - uses: gtbuchanan/tooling/.github/actions/download-artifact@main
+      - uses: gtbuchanan/tooling/.github/actions/download-artifact@v1.1.0
         with:
           name: coverage
           path: .
@@ -73,7 +73,7 @@ jobs:
 
       - env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+        uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.1.0
         with:
           task: coverage:codecov:upload
     timeout-minutes: 10
@@ -84,9 +84,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
-      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@v1.1.0
 
       - name: Check config drift
         run: pnpm verify
@@ -101,13 +101,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.1.0
         with:
           task: coverage:merge
 
-      - uses: gtbuchanan/tooling/.github/actions/upload-artifact@main
+      - uses: gtbuchanan/tooling/.github/actions/upload-artifact@v1.1.0
         with:
           if-no-files-found: error
           name: coverage
@@ -124,7 +124,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
       # Each e2e fixture runs its own `npm install` into a temp project, so
       # without a warm npm cache every fixture re-downloads the same
@@ -145,7 +145,7 @@ jobs:
           restore-keys: |
             npm-e2e-${{ runner.os }}-
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.1.0
         with:
           task: test:e2e
     timeout-minutes: 30
@@ -157,13 +157,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.1.0
         with:
           task: test:slow
 
-      - uses: gtbuchanan/tooling/.github/actions/upload-artifact@main
+      - uses: gtbuchanan/tooling/.github/actions/upload-artifact@v1.1.0
         with:
           if-no-files-found: error
           name: test-results-slow

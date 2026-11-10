@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
       # The eslint step shells out to `pnpm exec eslint`, so it needs
       # node_modules. Node-free consumers set `use-pnpm: false` to skip
@@ -25,7 +25,7 @@ jobs:
       # on `use-pnpm` would skip the step that runs them and leave the
       # hooks reading the tree they exist to complete.
       - if: ${{ inputs.use-pnpm || inputs.pnpm-commands != '' }}
-        uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+        uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@v1.1.0
         with:
           commands: ${{ inputs.pnpm-commands }}
 

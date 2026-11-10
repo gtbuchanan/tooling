@@ -15,15 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
-      - uses: gtbuchanan/tooling/.github/actions/turbo-run@main
+      - uses: gtbuchanan/tooling/.github/actions/turbo-run@v1.1.0
         with:
           task: pack
 
       # `pnpm-tasks` restores node_modules for `pnpm exec gtb`, since turbo-run
       # skips install on a pack cache hit.
-      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@v1.1.0
 
       # Releases are cut as the GitHub App rather than with the job token, for
       # two reasons. The workflows release commits a tree whose
@@ -72,7 +72,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@v1.1.0
 
       - id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -90,7 +90,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       # `gtb version` needs node_modules (the local changeset bin + gtb itself).
-      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@v1.1.0
 
       # `gtb version` runs `changeset version` then a full sync in one process
       # so version-stamped files such as a PklProject land in the same version
