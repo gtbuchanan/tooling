@@ -6,6 +6,7 @@
       "datasourceTemplate": "git-refs",
       "description": "Track the head of the v4 branch of ChristopherHX's gitea artifact forks. They publish branches, not tags, so the github-actions manager finds no version for '# v4'; git-refs resolves the branch itself, so its commits arrive as digest updates",
       "managerFilePatterns": [
+        "/^\\.github/actions/[^/]+-artifact/action\\.ya?ml$/",
         "/^\\.github/workflows/[^/]+\\.ya?ml$/"
       ],
       "matchStrings": [
