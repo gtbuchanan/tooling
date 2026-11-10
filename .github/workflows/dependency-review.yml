@@ -29,6 +29,10 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           MIN_RELEASE_AGE_DAYS: ${{ inputs.minimum-release-age-days }}
         name: Check newly-added deps are at latest version
+        # The script stays inline because a script file in this reusable
+        # would resolve against the caller's checkout, and a composite action
+        # here would have to land before any workflow could reference it.
+        # jactionlint ignore=max-run-lines
         run: |
           set -euo pipefail
 
