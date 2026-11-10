@@ -1,5 +1,68 @@
 # @gtbuchanan/cli
 
+## 2.1.0
+
+### Minor Changes
+
+- d09d34d: Remove the `manifest` sync scope
+
+  The Pkl toolchain now stamps each publishable `PklProject` under the
+  `toolchains` scope, and `gtb version` runs a full sync after
+  `changeset version`. `gtb sync manifest` and `gtb verify manifest` now fail with
+  an unknown scope.
+- 33b8e17: Fail `gtb sync` on drift only a hand edit fixes
+
+  `gtb sync` now reports each such problem, such as a published package depending
+  on a private workspace package, and exits 1, so an hk fix step running it fails
+  on what its check step reports.
+- dd18661: Keep the tsconfig keys gtb doesn't write
+
+  The tsconfigs now come from the TypeScript toolchain, under the `toolchains`
+  scope, and the `tsconfig` scope is gone. A rewrite keeps every key gtb doesn't
+  own, such as `$schema`, `references`, `exclude` or a tool's own settings, where
+  it used to drop them.
+
+  A tsconfig that can't be parsed is reported for a hand fix instead of having its
+  compiler options written away, and a base path that isn't a file fails
+  `gtb sync` with a message instead of a stack trace.
+- f0af8a8: Require `"format": false` in `.changeset/config.json`
+
+  `gtb sync` now sets it, and `gtb verify` fails until it's set. `gtb version`
+  formats the CHANGELOGs with hk, and changesets' `"auto"` default would otherwise
+  run a root-installed prettier over them first, without eslint-config's options.
+  Every other key in the config is kept. Repos that don't depend on
+  `@gtbuchanan/cli`, or have no changesets config, are unaffected.
+
+### Patch Changes
+
+- 8cd6f6c: Reject JSON arrays where gtb reads an object
+
+  A `package.json` whose `dependencies`, `scripts`, `exports` or another string
+  map holds an array, or a tsconfig or other JSON config holding one where gtb
+  expects an object, is now reported instead of being read as an object keyed by
+  index. `gtb sync` would otherwise have rewritten such a tsconfig with `"0"`,
+  `"1"`, … keys.
+- 049541c: Skip build config when the workspace root doesn't depend on the CLI
+
+  `gtb sync` and `gtb verify` skip `turbo.json`, `package.json` scripts and
+  tsconfigs in a workspace whose root doesn't depend on `@gtbuchanan/cli`. A repo
+  that adopts only the hk preset and runs gtb from mise can now run plain
+  `gtb sync` without getting build config it doesn't use.
+- b7c0e47: Settle `gtb sync` in one run for a single-package TypeScript root
+
+  The root tsconfig `gtb sync` writes gives a single-package root the typescript
+  capability, and the root's scripts and turbo tasks used to catch up only on a
+  second sync.
+
+  Toolchains now plan their workspace checks as findings that `gtb sync` applies
+  and `gtb verify` reports, so a toolchain can own the files it generates.
+- a48bb1f: Write tsconfigs only for a workspace holding TypeScript
+
+  `gtb sync` scaffolded `tsconfig.base.json` and the root tsconfigs in every
+  workspace depending on the CLI, TypeScript or not. It now writes them only where
+  a package is configured for TypeScript or the root holds TypeScript files. Files
+  an earlier sync wrote are left in place.
+
 ## 2.0.0
 
 ### Major Changes

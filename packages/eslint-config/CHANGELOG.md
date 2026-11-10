@@ -1,5 +1,20 @@
 # @gtbuchanan/eslint-config
 
+## 0.6.1
+
+### Patch Changes
+
+- f836a17: Skip build output when discovering nested `.gitignore` files
+
+  The walk now skips `.turbo`, `coverage` and `dist`. It doesn't apply the rules
+  it loads, so it descended into build output, and a concurrent build deleting one
+  of those directories mid-walk failed config loading with `ENOENT`. Passing your
+  own `recursive.skipDirs` replaces this list.
+- @gtbuchanan/eslint-plugin-agent-skills@1.0.0
+  - @gtbuchanan/eslint-plugin-markdownlint@0.1.2
+  - @gtbuchanan/eslint-plugin-md-frontmatter@0.1.3
+  - @gtbuchanan/eslint-plugin-yamllint@0.1.2
+
 ## 0.6.0
 
 ### Minor Changes
