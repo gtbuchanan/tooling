@@ -11,18 +11,24 @@ import * as v from 'valibot';
  */
 export const StringArray = v.array(v.string());
 
+const notArray = v.check<unknown>(value => !Array.isArray(value));
+
+/*
+`v.record` accepts an array, whose indices pass as string keys, so every
+record here rejects one first.
+*/
+const recordOf = <TValue extends v.GenericSchema>(value: TValue): v.SchemaWithPipe<readonly [
+  v.UnknownSchema,
+  typeof notArray,
+  v.RecordSchema<v.StringSchema<undefined>, TValue, undefined>,
+]> => v.pipe(v.unknown(), notArray, v.record(v.string(), value));
+
 /**
  * Reusable `Record<string, string>` schema (e.g. dependency maps).
  */
-export const StringRecord = v.record(v.string(), v.string());
-
-/*
-`v.record` accepts an array, whose indices pass as string keys.
-*/
-const notArray = v.check<unknown>(value => !Array.isArray(value));
+export const StringRecord = recordOf(v.string());
 
 /**
- * Reusable `Record<string, unknown>` schema (e.g. compilerOptions). Rejects
- * an array, which a rewrite spreading the record would turn into index keys.
+ * Reusable `Record<string, unknown>` schema (e.g. compilerOptions).
  */
-export const UnknownRecord = v.pipe(v.unknown(), notArray, v.record(v.string(), v.unknown()));
+export const UnknownRecord = recordOf(v.unknown());

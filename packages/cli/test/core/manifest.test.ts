@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
+import * as v from 'valibot';
 import { describe, it } from 'vitest';
 import {
+  ManifestSchema,
   buildOutput,
   buildRepoFields,
   resolveLicense,
@@ -179,5 +181,13 @@ describe.concurrent(resolveLicense, () => {
 
   it('returns undefined when neither sets a license', ({ expect }) => {
     expect(resolveLicense({}, {})).toBeUndefined();
+  });
+});
+
+describe.concurrent('manifest schema', () => {
+  it('rejects a dependency map written as an array', ({ expect }) => {
+    const manifest = { dependencies: [build.scopedPackageName()] };
+
+    expect(v.safeParse(ManifestSchema, manifest)).toHaveProperty('success', false);
   });
 });
