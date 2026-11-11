@@ -98,7 +98,6 @@ const verifyTurbo = (root: string, ignored?: ReadonlySet<string>): readonly stri
   runVerify({
     cwd: root,
     ...(ignored !== undefined && { ignored }),
-    scopes: new Set(['turbo'] as const),
   });
 
 describe.concurrent('generate task verification', () => {

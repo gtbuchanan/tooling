@@ -12,7 +12,7 @@ import type { Capability } from '#src/core/capability.js';
 import {
   type WorkspaceDiscovery, type WorkspacePackage, discoverWorkspace,
 } from '#src/core/discovery.js';
-import { mergePackageScripts, writeJsonFile } from '#src/core/file-writer.js';
+import { mergePackageScripts, sortKeysDeep, writeJsonFile } from '#src/core/file-writer.js';
 import { buildInclude } from '#src/core/layout.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
 import { ManifestSchema, unscopedName } from '#src/core/manifest.js';
@@ -353,7 +353,7 @@ export const readScripts = (pkgDir: string): Record<string, string> => {
  */
 export const initProject = (root: string): void => {
   const discovery = discoverWorkspace({ capabilities, cwd: root });
-  writeJsonFile(path.join(root, 'turbo.json'), generateTurboJson(discovery));
+  writeJsonFile(path.join(root, 'turbo.json'), sortKeysDeep(generateTurboJson(discovery)));
   writeTsconfigs(root, discovery.packages);
   mergePackageScripts(path.join(root, 'package.json'), generateRootScripts(discovery), true);
 

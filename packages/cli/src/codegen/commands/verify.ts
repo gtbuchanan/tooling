@@ -1,12 +1,13 @@
 import { defineCommand } from 'citty';
-import type { VerifyContext } from '#src/codegen/generator.js';
-import { generators } from '#src/codegen/generators/index.js';
+import { reportFindings } from '#src/codegen/plans.js';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '#src/codegen/sync-scopes.js';
+import { workspacePlans } from '#src/codegen/workspace-plans.js';
 import { rootNames } from '#src/core/command-names.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
+import { planFindings } from '#src/tasks/toolchain.js';
 import { capabilities } from '#src/toolchains/index.js';
 
 /**
@@ -45,12 +46,17 @@ export interface RunVerifyOptions {
  */
 export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
   const scopes = options.scopes ?? new Set(syncScopes);
-  const context: VerifyContext = {
-    discovery: discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() }),
-    ignored: options.ignored ?? new Set<string>(),
-  };
+  if (!scopes.has('toolchains')) {
+    return [];
+  }
 
-  return syncScopes.flatMap(scope => (scopes.has(scope) ? generators[scope].verify(context) : []));
+  const discovery = discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() });
+
+  return reportFindings(planFindings(workspacePlans, {
+    discovery,
+    force: false,
+    ignored: options.ignored ?? new Set<string>(),
+  }));
 };
 
 /**

@@ -1,24 +1,13 @@
 import { defineCommand } from 'citty';
-import type { SyncContext } from '#src/codegen/generator.js';
-import { generators } from '#src/codegen/generators/index.js';
+import { syncPlans } from '#src/codegen/plans.js';
 import {
   type SyncScope, parseSyncScopes, syncScopes,
 } from '#src/codegen/sync-scopes.js';
+import { workspacePlans } from '#src/codegen/workspace-plans.js';
 import { rootNames } from '#src/core/command-names.js';
-import { discoverWorkspace } from '#src/core/discovery.js';
+import { type WorkspaceDiscovery, discoverWorkspace } from '#src/core/discovery.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
 import { capabilities } from '#src/toolchains/index.js';
-
-/*
- * Turbo tasks are built from what every other step leaves behind, so they run
- * last and see those steps' writes.
- */
-const builtFromTheRest: ReadonlySet<SyncScope> = new Set(['turbo']);
-
-const syncOrder: readonly SyncScope[] = [
-  ...syncScopes.filter(scope => !builtFromTheRest.has(scope)),
-  ...builtFromTheRest,
-];
 
 /**
  * Options for {@link runSync}.
@@ -28,7 +17,7 @@ export interface RunSyncOptions {
   readonly force?: boolean;
   readonly logger?: Logger;
   /**
-   * Artifacts to generate. Defaults to all {@link SYNC_SCOPES}.
+   * Artifacts to generate. Defaults to all {@link syncScopes}.
    */
   readonly scopes?: ReadonlySet<SyncScope>;
 }
@@ -36,29 +25,26 @@ export interface RunSyncOptions {
 /**
  * Reconciles generated config with the current workspace state.
  *
- * Writes the artifacts selected by `scopes` (default all): `turbo.json`,
- * per-package tsconfigs, `package.json` scripts, `mise.tasks.toml` (when the
- * root has a `mise.toml`), and whatever the toolchains plan. With `force: false`
- * (default), existing script values are preserved; with `force: true`,
- * they're overwritten. Returns the problems no sync can fix, empty when
- * there are none.
+ * Applies every plan's writes: `turbo.json`, per-package tsconfigs,
+ * `package.json` scripts, `mise.tasks.toml` (when the root has a `mise.toml`),
+ * and whatever else the toolchains plan. With `force: false` (default),
+ * existing script values are preserved; with `force: true`, they're
+ * overwritten. Returns the problems no sync can fix, empty when there are
+ * none.
  */
 export const runSync = (options: RunSyncOptions = {}): readonly string[] => {
   const scopes = options.scopes ?? new Set(syncScopes);
+  if (!scopes.has('toolchains')) {
+    return [];
+  }
   const cwd = options.cwd ?? process.cwd();
-  const isForce = options.force ?? false;
-  const logger = options.logger ?? createLogger();
+  const discover = (): WorkspaceDiscovery => discoverWorkspace({ capabilities, cwd });
 
-  /*
-   * Each step discovers afresh, because an earlier step's write can change
-   * what discovery finds: the root tsconfig gives a single-package root the
-   * typescript capability its scripts and turbo tasks follow from.
-   */
-  return syncOrder.filter(scope => scopes.has(scope)).flatMap((scope) => {
-    const context: SyncContext = {
-      discovery: discoverWorkspace({ capabilities, cwd }), force: isForce, logger,
-    };
-    return generators[scope].sync?.(context) ?? [];
+  return syncPlans(workspacePlans, {
+    discover,
+    discovery: discover(),
+    force: options.force ?? false,
+    logger: options.logger ?? createLogger(),
   });
 };
 

@@ -1,10 +1,10 @@
 /**
  * Selectable scopes shared by `gtb sync` and `gtb verify` — each maps to one
- * generated artifact. Passed as positional args (`gtb sync turbo`,
+ * generated artifact. Passed as positional args (`gtb sync toolchains`,
  * `gtb verify toolchains`); no args means all scopes.
  */
 export const syncScopes = [
-  'toolchains', 'turbo',
+  'toolchains',
 ] as const;
 
 /**

@@ -52,7 +52,7 @@ describe.concurrent('generate tasks through turbo', () => {
       version: build.semverVersion(),
     });
 
-    const sync = await fixture.run('gtb', ['sync', 'turbo']);
+    const sync = await fixture.run('gtb', ['sync']);
 
     expect(sync).toMatchObject({ exitCode: 0 });
 
@@ -123,9 +123,11 @@ describe.concurrent('generate tasks through turbo', () => {
       version: '0.0.0',
     });
 
-    const sync = await fixture.run('gtb', ['sync', '-C', workspace, 'turbo']);
+    // Sync writes what it owns, then fails on the config only the author can add
+    const sync = await fixture.run('gtb', ['sync', '-C', workspace]);
 
-    expect(sync).toMatchObject({ exitCode: 0 });
+    expect(sync).toMatchObject({ exitCode: 1 });
+    expect(sync.stderr).toContain('add a package configuration');
 
     const rootTasks: unknown = JSON.parse(
       readFileSync(path.join(workspace, 'turbo.json'), 'utf8'),
@@ -134,7 +136,7 @@ describe.concurrent('generate tasks through turbo', () => {
     expect(rootTasks).toHaveProperty('tasks.generate.dependsOn', ['^generate']);
     expect(rootTasks).not.toHaveProperty('tasks.generate:stamp');
 
-    const verify = await fixture.run('gtb', ['verify', '-C', workspace, 'turbo']);
+    const verify = await fixture.run('gtb', ['verify', '-C', workspace]);
 
     expect(verify).toMatchObject({ exitCode: 1 });
     expect(verify.stderr).toContain('add a package configuration');
@@ -155,7 +157,7 @@ describe.concurrent('generate tasks through turbo', () => {
       },
     });
 
-    const verified = await fixture.run('gtb', ['verify', '-C', workspace, 'turbo']);
+    const verified = await fixture.run('gtb', ['verify', '-C', workspace]);
 
     expect(verified).toMatchObject({ exitCode: 0 });
 

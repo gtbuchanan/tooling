@@ -10,7 +10,7 @@ import {
   generateTurboJson,
 } from '#src/codegen/turbo-config.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
-import { writeJsonFile } from '#src/core/file-writer.js';
+import { readJsonFile, sortKeysDeep, writeJsonFile } from '#src/core/file-writer.js';
 import { capabilities } from '#src/toolchains/index.js';
 import {
   captureLogger,
@@ -22,6 +22,16 @@ import {
   writeJson,
 } from '#test/helpers.js';
 import { createWorkspaceDepProject } from '#test/toolchains/npm/fixtures.js';
+
+/**
+ * Deletes `typecheck:ts` from the synced root `turbo.json`, leaving the rest
+ * as sync wrote it.
+ */
+const removeTypecheckTask = (root: string): void => {
+  const turboPath = path.join(root, 'turbo.json');
+  const { 'typecheck:ts': _removed, ...tasks } = readTurboTasks(root);
+  writeJsonFile(turboPath, sortKeysDeep({ ...readJsonFile(turboPath), tasks }));
+};
 
 interface ConsumerProject {
   readonly app: { basename: string; dir: string; name: string };
@@ -94,9 +104,7 @@ describe.concurrent('verify drift detection', () => {
     const { root } = createConsumerProject();
     initProject(root);
 
-    const tasks = readTurboTasks(root);
-    delete tasks['typecheck:ts'];
-    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    removeTypecheckTask(root);
 
     const discovery = discoverWorkspace({ capabilities, cwd: root });
     const expected = generateTurboJson(discovery);
@@ -155,9 +163,7 @@ describe.concurrent(runVerify, () => {
     const { root } = createConsumerProject();
     initProject(root);
 
-    const tasks = readTurboTasks(root);
-    delete tasks['typecheck:ts'];
-    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    removeTypecheckTask(root);
 
     const drift = runVerify({ cwd: root });
 
@@ -168,9 +174,7 @@ describe.concurrent(runVerify, () => {
     const { root } = createConsumerProject();
     initProject(root);
 
-    const tasks = readTurboTasks(root);
-    delete tasks['typecheck:ts'];
-    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    removeTypecheckTask(root);
 
     const drift = runVerify({ cwd: root, ignored: new Set(['typecheck:ts']) });
 
@@ -292,9 +296,7 @@ describe.concurrent(verifyCommand, () => {
   it('returns 1 and writes each drift message to stderr on drift', ({ expect }) => {
     const { root } = createConsumerProject();
     initProject(root);
-    const tasks = readTurboTasks(root);
-    delete tasks['typecheck:ts'];
-    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    removeTypecheckTask(root);
     const { logger, out, err } = captureLogger();
 
     const code = verifyCommand([], { cwd: root }, logger);
@@ -307,9 +309,7 @@ describe.concurrent(verifyCommand, () => {
   it('forwards --ignore flags from rawArgs to runVerify', ({ expect }) => {
     const { root } = createConsumerProject();
     initProject(root);
-    const tasks = readTurboTasks(root);
-    delete tasks['typecheck:ts'];
-    writeJsonFile(path.join(root, 'turbo.json'), { $schema: '', tasks });
+    removeTypecheckTask(root);
     const { logger } = captureLogger();
 
     const code = verifyCommand(['--ignore', 'typecheck:ts'], { cwd: root }, logger);

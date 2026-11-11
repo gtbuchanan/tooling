@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb verify, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify, the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb verify, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -156,10 +156,10 @@ Several tasks write the published output directory, each declaring `outputs` for
 
 `gtb sync` reconciles generated state:
 
-- `turbo.json` tasks + aggregates (scope: `turbo`)
-- per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json` (scope: `toolchains`), keeping keys gtb doesn't write
-- per-package + root `package.json` scripts (scope: `toolchains`)
-- `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml` (scope: `toolchains`)
+- `turbo.json` tasks + aggregates, rewriting any hand edit
+- per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json`, keeping keys gtb doesn't write
+- per-package + root `package.json` scripts
+- `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml`
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
@@ -169,13 +169,11 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 **Single-package tsconfigs.** When the root _is_ the lone package (no `packages` globs in `pnpm-workspace.yaml`), the root and per-package tsconfig layers target the same files, so sync collapses them into one: both `tsconfig.json` and `tsconfig.build.json` extend `./tsconfig.base.json`, and the build config carries the root layer's `declaration`/`sourceMap` alongside the package layer's `outDir`/`rootDir`/`include`. Package `extends` paths are derived from the package's actual depth below the root, not assumed to be `packages/<name>`.
 
-**Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync turbo`, `gtb verify toolchains turbo`. No args means all scopes. An unknown scope exits non-zero.
-
 `mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify` asserts the include is present and the file current. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
 
-`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The mise check self-skips when the repo has no `mise.toml`, and the turbo, scripts and tsconfig steps when the root doesn't depend on `@gtbuchanan/cli`, so an hk-preset adopter runs plain `gtb sync`.
+`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. It reports exactly what `gtb sync` would change, plus the problems only a hand edit fixes. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The mise check self-skips when the repo has no `mise.toml`, and the turbo, scripts and tsconfig steps when the root doesn't depend on `@gtbuchanan/cli`, so an hk-preset adopter runs plain `gtb sync`.
 
-Most checks compare a file against what sync would generate. The `turbo` scope carries one that doesn't: the `generate:*` package configurations described above are author-owned, so verify asserts they exist and are wired correctly instead of regenerating them (`--ignore generate:<name>` opts a script out).
+Most checks compare a file against what sync would generate. One doesn't: the `generate:*` package configurations described above are author-owned, so verify asserts they exist and are wired correctly instead of regenerating them (`--ignore generate:<name>` opts a script out).
 
 **Published packages can't depend on private ones.** `gtb verify` carries the other non-generated check: every install-time workspace dependency of a published package must itself be published. pnpm rewrites a `workspace:` specifier to the linked package's concrete version at pack time and never asks whether that version reached the registry — a `private: true` package still has a `version` to substitute — so the tarball ships a dependency no consumer can resolve, and `pnpm publish` says nothing. The check covers `dependencies`, `peerDependencies`, and `optionalDependencies`, since all three survive publish and take the same rewrite. Two things are exempt: `devDependencies`, which publishing strips, and anything `bundleDependencies` actually bundles, which the tarball carries itself. The remedy is publishing the dependency, or moving it to `devDependencies` when it's build-time only — a workspace package a bundler inlines is exactly that, and belongs there regardless. See [the published dependencies reference](references/published-dependencies.md) before treating `bundleDependencies: true` as an exemption or leaning on an e2e suite to catch this.
 

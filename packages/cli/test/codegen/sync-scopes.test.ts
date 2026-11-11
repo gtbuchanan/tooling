@@ -7,19 +7,19 @@ describe.concurrent(parseSyncScopes, () => {
   });
 
   it('selects only the named scopes', ({ expect }) => {
-    expect(parseSyncScopes(['toolchains', 'turbo'])).toStrictEqual({
-      scopes: new Set(['toolchains', 'turbo']),
+    expect(parseSyncScopes(['toolchains'])).toStrictEqual({
+      scopes: new Set(['toolchains']),
     });
   });
 
   it('reports unknown scopes as errors', ({ expect }) => {
-    expect(parseSyncScopes(['turbo', 'bogus'])).toMatchObject({
+    expect(parseSyncScopes(['toolchains', 'bogus'])).toMatchObject({
       errors: [expect.stringContaining("unknown scope 'bogus'")],
     });
   });
 
   // Their plans run under the toolchains scope
-  it.for(['mise', 'scripts'])('no longer accepts the %s scope', (scope, { expect }) => {
+  it.for(['mise', 'scripts', 'turbo'])('no longer accepts the %s scope', (scope, { expect }) => {
     expect(parseSyncScopes([scope])).toMatchObject({
       errors: [expect.stringContaining(`unknown scope '${scope}'`)],
     });
