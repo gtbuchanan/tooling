@@ -41,7 +41,7 @@ runs:
       name: Restore mise data
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        key: mise-${{ steps.platform.outputs.os-release }}-${{ runner.arch }}-${{ hashFiles('mise.lock') }}
+        key: mise-${{ steps.platform.outputs.os-release }}-${{ runner.arch }}-${{ hashFiles('mise.lock', '.config/mise.lock') }}
         path: ${{ runner.temp }}/.mise
         restore-keys: |
           mise-${{ steps.platform.outputs.os-release }}-${{ runner.arch }}-
