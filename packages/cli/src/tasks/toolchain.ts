@@ -70,6 +70,12 @@ export type Finding =
   | { readonly kind: 'problem'; readonly message: string };
 
 /**
+ * What one owner of generated files finds out of date in the workspace, empty
+ * where nothing is.
+ */
+export type Plan = (context: PlanContext) => readonly Finding[];
+
+/**
  * One toolchain: everything the CLI knows about a tool, held in the tool's own
  * module so adding one edits nothing central.
  */
@@ -80,11 +86,7 @@ export interface Toolchain {
    * cannot be left out and silently never hold.
    */
   readonly detects?: readonly Capability[];
-  /**
-   * What the toolchain finds out of date in the workspace, empty where
-   * nothing is.
-   */
-  readonly plan?: (context: PlanContext) => readonly Finding[];
+  readonly plan?: Plan;
   readonly registrations: readonly Registration[];
 }
 
@@ -96,12 +98,18 @@ export const toolchainCapabilities = (
 ): readonly Capability[] => toolchains.flatMap(({ detects }) => detects ?? []);
 
 /**
- * Every toolchain's findings, in registry order.
+ * Every toolchain's plan, in registry order.
  */
-export const toolchainPlans = (
-  toolchains: readonly Toolchain[],
+export const toolchainPlans = (toolchains: readonly Toolchain[]): readonly Plan[] =>
+  toolchains.flatMap(({ plan }) => (plan === undefined ? [] : [plan]));
+
+/**
+ * Every plan's findings, in order.
+ */
+export const planFindings = (
+  plans: readonly Plan[],
   context: PlanContext,
-): readonly Finding[] => toolchains.flatMap(({ plan }) => plan?.(context) ?? []);
+): readonly Finding[] => plans.flatMap(plan => plan(context));
 
 const registrationsOf = (toolchains: readonly Toolchain[]): readonly Registration[] =>
   toolchains.flatMap(toolchain => toolchain.registrations);

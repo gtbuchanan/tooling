@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, it } from 'vitest';
 import { reportFindings, syncPlans } from '#src/codegen/plans.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
-import type { Toolchain } from '#src/tasks/toolchain.js';
+import type { Plan } from '#src/tasks/toolchain.js';
 import { capabilities } from '#src/toolchains/index.js';
 import { captureLogger, createTempDir, writeJson } from '#test/helpers.js';
 
@@ -11,15 +11,15 @@ const readOrUndefined = (filePath: string): string | undefined =>
   (existsSync(filePath) ? readFileSync(filePath, 'utf8') : undefined);
 
 /*
- * A toolchain that plans `content` into `filePath` until the file holds it,
+ * A plan that plans `content` into `filePath` until the file holds it,
  * as a real plan only writes what would change.
  */
-const writing = (filePath: string, content: string): Toolchain => ({
-  plan: () => (readOrUndefined(filePath) === content
+const writing = (filePath: string, content: string): Plan => () =>
+  (readOrUndefined(filePath) === content
     ? []
-    : [{ changes: ['creates it'], content, kind: 'write', path: filePath }]),
-  registrations: [],
-});
+    : [{ changes: ['creates it'], content, kind: 'write', path: filePath }]);
+
+const handEdit: Plan = () => [{ kind: 'problem', message: 'out.txt: hand-edit this' }];
 
 const createRoot = (): string => {
   const root = createTempDir();
@@ -78,12 +78,9 @@ describe.concurrent(syncPlans, () => {
       wasFirstDiscovered = existsSync(first);
       return discoverAt(root)();
     };
-    const followsFirst: Toolchain = {
-      plan: () => (wasFirstDiscovered && !existsSync(second)
-        ? [{ changes: ['follows first'], content: 'second', kind: 'write', path: second }]
-        : []),
-      registrations: [],
-    };
+    const followsFirst: Plan = () => (wasFirstDiscovered && !existsSync(second)
+      ? [{ changes: ['follows first'], content: 'second', kind: 'write', path: second }]
+      : []);
     const { logger } = captureLogger();
 
     syncPlans([followsFirst, writing(first, 'first')], {
@@ -96,10 +93,9 @@ describe.concurrent(syncPlans, () => {
   it('throws when the plans never settle', ({ expect }) => {
     const root = createRoot();
     const filePath = path.join(root, 'out.txt');
-    const restless: Toolchain = {
-      plan: () => [{ changes: ['rewrites it'], content: 'same', kind: 'write', path: filePath }],
-      registrations: [],
-    };
+    const restless: Plan = () => [
+      { changes: ['rewrites it'], content: 'same', kind: 'write', path: filePath },
+    ];
     const { logger } = captureLogger();
 
     expect(() => {
@@ -114,12 +110,9 @@ describe.concurrent(syncPlans, () => {
     const seen: { force: boolean; ignored: ReadonlySet<string> }[] = [];
     const { logger } = captureLogger();
 
-    const recording: Toolchain = {
-      plan: ({ force, ignored }) => {
-        seen.push({ force, ignored });
-        return [];
-      },
-      registrations: [],
+    const recording: Plan = ({ force, ignored }) => {
+      seen.push({ force, ignored });
+      return [];
     };
 
     syncPlans([recording], {
@@ -166,7 +159,7 @@ describe.concurrent(syncPlans, () => {
     };
     const { logger } = captureLogger();
 
-    syncPlans([{ plan: () => [], registrations: [] }], {
+    syncPlans([() => []], {
       discover, discovery: discoverAt(root)(), force: false, logger,
     });
 
@@ -176,13 +169,9 @@ describe.concurrent(syncPlans, () => {
   it('returns the problems the settled pass finds', ({ expect }) => {
     const root = createRoot();
     const filePath = path.join(root, 'out.txt');
-    const problem: Toolchain = {
-      plan: () => [{ kind: 'problem', message: 'out.txt: hand-edit this' }],
-      registrations: [],
-    };
     const { logger } = captureLogger();
 
-    expect(syncPlans([writing(filePath, 'content'), problem], {
+    expect(syncPlans([writing(filePath, 'content'), handEdit], {
       discover: discoverAt(root), discovery: discoverAt(root)(), force: false, logger,
     })).toStrictEqual(['out.txt: hand-edit this']);
   });
