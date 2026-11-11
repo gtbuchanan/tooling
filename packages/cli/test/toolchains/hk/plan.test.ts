@@ -119,6 +119,32 @@ describe.concurrent(planMiseTasks, () => {
     expect(problems(plan(root))).toStrictEqual([missingInclude(miseTomlPath)]);
   });
 
+  it('reports a .config/mise.toml that does not include the tasks file', ({ expect }) => {
+    const { root } = createRepo();
+    const configPath = path.join(root, '.config', 'mise.toml');
+    mkdirSync(path.dirname(configPath));
+    writeFileSync(configPath, '[tools]\nnode = "24"\n');
+
+    expect(problems(plan(root))).toStrictEqual([missingInclude(configPath)]);
+  });
+
+  it('accepts the include from any mise config', ({ expect }) => {
+    const { root } = createRepo({ miseToml: includingTasks });
+    mkdirSync(path.join(root, '.config'));
+    writeFileSync(path.join(root, '.config', 'mise.toml'), '[tools]\nnode = "24"\n');
+
+    expect(problems(plan(root))).toStrictEqual([]);
+  });
+
+  it('reports every mise config when none includes the tasks file', ({ expect }) => {
+    const { miseTomlPath, root } = createRepo({ miseToml: '[tools]\nnode = "24"\n' });
+    const configPath = path.join(root, '.config', 'mise.toml');
+    mkdirSync(path.dirname(configPath));
+    writeFileSync(configPath, '');
+
+    expect(problems(plan(root))).toStrictEqual([missingInclude(`${configPath}, ${miseTomlPath}`)]);
+  });
+
   it('reports an includes that is not a list as missing the tasks file', ({ expect }) => {
     const { miseTomlPath, root } = createRepo({
       miseToml: '[task_config]\nincludes = "mise.tasks.toml"\n',
@@ -148,6 +174,13 @@ describe.concurrent(planMiseTasks, () => {
 
   it('plans nothing in a repo without a mise.toml', ({ expect }) => {
     const { root } = createRepo();
+
+    expect(plan(root)).toStrictEqual([]);
+  });
+
+  it('plans nothing in a repo with a mise lockfile but no config', ({ expect }) => {
+    const { root } = createRepo();
+    writeFileSync(path.join(root, 'mise.lock'), '');
 
     expect(plan(root)).toStrictEqual([]);
   });

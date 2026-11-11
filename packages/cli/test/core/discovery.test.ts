@@ -241,4 +241,47 @@ describe.concurrent(discoverWorkspace, () => {
 
     expect(result.isSelfHosted).toBe(true);
   });
+
+  it.for([
+    '.config/mise.lock',
+    '.config/mise.toml',
+    '.config/mise/config.toml',
+    '.mise.toml',
+    'mise.lock',
+    'mise.toml',
+  ])('lists the mise file %s', (file, { expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {});
+    mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+    writeFileSync(path.join(root, file), '');
+
+    const result = discoverWorkspace({ capabilities, cwd: root });
+
+    expect(result.miseFiles).toStrictEqual([file]);
+  });
+
+  it('lists every mise file present, sorted', ({ expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {});
+    mkdirSync(path.join(root, '.config'));
+    const files = ['mise.toml', '.config/mise.lock', '.config/mise.toml'];
+    for (const file of files) {
+      writeFileSync(path.join(root, file), '');
+    }
+
+    const result = discoverWorkspace({ capabilities, cwd: root });
+
+    expect(result.miseFiles).toStrictEqual(['.config/mise.lock', '.config/mise.toml', 'mise.toml']);
+  });
+
+  it('leaves out local overrides and directories named like mise files', ({ expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {});
+    writeFileSync(path.join(root, 'mise.local.toml'), '');
+    mkdirSync(path.join(root, 'mise.toml'));
+
+    const result = discoverWorkspace({ capabilities, cwd: root });
+
+    expect(result.miseFiles).toStrictEqual([]);
+  });
 });

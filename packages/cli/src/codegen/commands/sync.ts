@@ -20,7 +20,7 @@ export interface RunSyncOptions {
  * Reconciles generated config with the current workspace state.
  *
  * Applies every plan's writes: `turbo.json`, per-package tsconfigs,
- * `package.json` scripts, `mise.tasks.toml` (when the root has a `mise.toml`),
+ * `package.json` scripts, `mise.tasks.toml` (when the repo configures mise),
  * and whatever else the toolchains plan. With `force: false` (default),
  * existing script values are preserved; with `force: true`, they're
  * overwritten. Returns the problems no sync can fix, empty when there are

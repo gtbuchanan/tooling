@@ -43,34 +43,41 @@ const parseIncludes = (text: string): readonly string[] | undefined => {
 
 /*
 The include stays a hand edit so sync never round-trips the comment-heavy
-mise.toml, which leaves it a problem to report rather than a write.
+mise.toml, which leaves it a problem to report rather than a write. mise merges
+every config it finds, so the include may sit in any of them, and a config that
+cannot be parsed leaves the answer unknown.
 */
-const planInclude = (filePath: string): readonly Finding[] => {
-  const includes = parseIncludes(readFileSync(filePath, 'utf8'));
-  if (includes === undefined) {
-    return [{
+const planInclude = (filePaths: readonly string[]): readonly Finding[] => {
+  const configs = filePaths.map(filePath => ({
+    filePath,
+    includes: parseIncludes(readFileSync(filePath, 'utf8')),
+  }));
+  const unparseable = configs.filter(({ includes }) => includes === undefined);
+  if (unparseable.length > 0) {
+    return unparseable.map(({ filePath }) => ({
       kind: 'problem',
       message: `${filePath}: could not be parsed as TOML — fix it by hand`,
-    }];
+    }));
   }
 
-  return includes.includes(miseTasksFileName)
+  return configs.some(({ includes }) => includes?.includes(miseTasksFileName) === true)
     ? []
     : [{
         kind: 'problem',
-        message: `${filePath}: [task_config] includes must contain ` +
+        message: `${filePaths.join(', ')}: [task_config] includes must contain ` +
           `"${miseTasksFileName}" — add it by hand`,
       }];
 };
 
 /**
  * Generates `mise.tasks.toml`, the `hk:all` / `hk:base` mise tasks, and checks
- * that `mise.toml` loads it. Only a repo pinning its tools with mise gets
+ * that a mise config loads it. Only a repo pinning its tools with mise gets
  * either, whether or not it builds with gtb: an hk-only adopter runs gtb from
  * mise's `npm:` backend.
  */
 export const planMiseTasks = ({ discovery }: PlanContext): readonly Finding[] => {
-  if (!discovery.hasMise) {
+  const configs = discovery.miseFiles.filter(file => file.endsWith('.toml'));
+  if (configs.length === 0) {
     return [];
   }
 
@@ -79,6 +86,6 @@ export const planMiseTasks = ({ discovery }: PlanContext): readonly Finding[] =>
       path.join(discovery.rootDir, miseTasksFileName),
       generateMiseTasks(discovery),
     ),
-    ...planInclude(path.join(discovery.rootDir, 'mise.toml')),
+    ...planInclude(configs.map(file => path.join(discovery.rootDir, file))),
   ];
 };

@@ -2,16 +2,19 @@ import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
 import { makeDiscovery, makePackage } from '#test/helpers.js';
 
+const rootMiseFiles = ['mise.lock', 'mise.toml'];
+
 describe.concurrent('generateTurboJson (globalDependencies)', () => {
-  it('emits globalDependencies for mise files when the workspace has mise.toml', ({ expect }) => {
-    const discovery = makeDiscovery([makePackage()], { hasMise: true });
+  it('emits globalDependencies for every mise file the workspace has', ({ expect }) => {
+    const miseFiles = ['.config/mise.lock', '.config/mise.toml', 'mise.toml'];
+    const discovery = makeDiscovery([makePackage()], { miseFiles });
 
     const result = generateTurboJson(discovery);
 
-    expect(result.globalDependencies).toStrictEqual(['mise.lock', 'mise.toml']);
+    expect(result.globalDependencies).toStrictEqual(miseFiles);
   });
 
-  it('omits globalDependencies when the workspace has no mise.toml', ({ expect }) => {
+  it('omits globalDependencies when the workspace has no mise files', ({ expect }) => {
     const discovery = makeDiscovery([makePackage()]);
 
     const result = generateTurboJson(discovery);
@@ -69,8 +72,8 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
 
   it('emits mise files and the lockfile when self-hosted with mise.toml', ({ expect }) => {
     const discovery = makeDiscovery([makePackage()], {
-      hasMise: true,
       isSelfHosted: true,
+      miseFiles: rootMiseFiles,
     });
 
     const result = generateTurboJson(discovery);

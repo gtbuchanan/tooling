@@ -68,7 +68,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
    * granular caching.
    */
   const globalDependencies = [
-    ...(discovery.hasMise ? ['mise.lock', 'mise.toml'] : []),
+    ...discovery.miseFiles,
     ...(discovery.isSelfHosted ? ['pnpm-lock.yaml', ...vendoredCliSources(discovery)] : []),
   ].toSorted(localeComparer);
 

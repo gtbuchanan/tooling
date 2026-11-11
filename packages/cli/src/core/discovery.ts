@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { Capability } from '#src/core/capability.js';
 import {
@@ -73,6 +73,20 @@ export interface WorkspacePackage {
   readonly name: string;
 }
 
+/*
+ * The files mise reads a project's config and lockfile from, sorted. A
+ * `.local` variant is one developer's override and stays out, so it cannot
+ * move the cache for everyone else.
+ */
+const miseFileCandidates = [
+  '.config/mise.lock',
+  '.config/mise.toml',
+  '.config/mise/config.toml',
+  '.mise.toml',
+  'mise.lock',
+  'mise.toml',
+] as const;
+
 /**
  * Full workspace discovery result.
  */
@@ -82,10 +96,6 @@ export interface WorkspaceDiscovery {
    */
   readonly dependsOnCli: boolean;
   /**
-   * Workspace root has a `mise.toml` pinning dev tool versions.
-   */
-  readonly hasMise: boolean;
-  /**
    * Whether a pnpm-workspace.yaml was found.
    */
   readonly isMonorepo: boolean;
@@ -93,6 +103,11 @@ export interface WorkspaceDiscovery {
    * `@gtbuchanan/cli` is a workspace:* dependency (bootstrapping).
    */
   readonly isSelfHosted: boolean;
+  /**
+   * The mise config and lockfiles present at the root, as sorted POSIX paths
+   * relative to it. They pin the toolchain every task runs on.
+   */
+  readonly miseFiles: readonly string[];
   /**
    * The packages matched by the workspace globs.
    */
@@ -121,6 +136,9 @@ export const vendoredCli = (discovery: WorkspaceDiscovery): WorkspacePackage | u
 
 const hasDir = (base: string, name: string): boolean =>
   existsSync(path.join(base, name));
+
+const isFile = (file: string): boolean =>
+  statSync(file, { throwIfNoEntry: false })?.isFile() === true;
 
 /**
  * Lists files in a directory (returns empty array if dir doesn't exist).
@@ -209,9 +227,9 @@ export const discoverWorkspace = (
 
   return {
     dependsOnCli: '@gtbuchanan/cli' in rootDeps,
-    hasMise: existsSync(path.join(ctx.rootDir, 'mise.toml')),
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
+    miseFiles: miseFileCandidates.filter(file => isFile(path.join(ctx.rootDir, file))),
     packages: ctx.packageDirs.map(dir => buildPackage(dir, parseManifest(dir), capabilities)),
     packageGlobs: ctx.packageGlobs,
     root: buildPackage(ctx.rootDir, rootManifest, capabilities),

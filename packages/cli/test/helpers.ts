@@ -398,9 +398,9 @@ export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
    */
   readonly dependsOnCli?: boolean;
   /**
-   * Overrides {@link WorkspaceDiscovery.hasMise} (defaults to `false`).
+   * Overrides {@link WorkspaceDiscovery.miseFiles} (defaults to none).
    */
-  readonly hasMise?: boolean;
+  readonly miseFiles?: readonly string[];
   /**
    * Overrides {@link WorkspaceDiscovery.isMonorepo} (defaults to more than
    * one package). Real discovery also reports a monorepo for a single
@@ -419,16 +419,16 @@ export const makeDiscovery = (
 ): WorkspaceDiscovery => {
   const {
     dependsOnCli: hasCliDependency = false,
-    hasMise = false,
     isMonorepo = packages.length > 1,
+    miseFiles = [],
     isSelfHosted = false,
     ...rootOverrides
   } = overrides;
   return {
     dependsOnCli: hasCliDependency,
-    hasMise,
     isMonorepo,
     isSelfHosted,
+    miseFiles,
     packages,
     packageGlobs: isMonorepo
       ? [{ dirs: packages.map(({ dir }) => dir), pattern: 'packages/*' }]

@@ -159,7 +159,7 @@ Several tasks write the published output directory, each declaring `outputs` for
 - `turbo.json` tasks + aggregates, rewriting any hand edit
 - per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json`, keeping keys gtb doesn't write
 - per-package + root `package.json` scripts
-- `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml`
+- `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the repo has a mise config (`mise.toml`, `.mise.toml`, `.config/mise.toml` or `.config/mise/config.toml`)
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
