@@ -296,16 +296,6 @@ describe.concurrent(runSync, () => {
     expect(readFileSync(path.join(root, 'package.json'), 'utf8')).toBe(manifestBefore);
   });
 
-  it('scoped to mise writes only mise.tasks.toml, not turbo.json', ({ expect }) => {
-    const { root } = createConsumerProject();
-    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
-
-    runSync({ cwd: root, logger: silentLogger, scopes: new Set(['mise']) });
-
-    expect(existsSync(path.join(root, 'mise.tasks.toml'))).toBe(true);
-    expect(existsSync(path.join(root, 'turbo.json'))).toBe(false);
-  });
-
   it('force overwrites existing scripts', ({ expect }) => {
     const { app, root } = createConsumerProject();
     runSync({ cwd: root, logger: silentLogger });

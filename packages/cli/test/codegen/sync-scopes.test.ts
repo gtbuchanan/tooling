@@ -7,14 +7,21 @@ describe.concurrent(parseSyncScopes, () => {
   });
 
   it('selects only the named scopes', ({ expect }) => {
-    expect(parseSyncScopes(['mise', 'turbo'])).toStrictEqual({
-      scopes: new Set(['mise', 'turbo']),
+    expect(parseSyncScopes(['scripts', 'turbo'])).toStrictEqual({
+      scopes: new Set(['scripts', 'turbo']),
     });
   });
 
   it('reports unknown scopes as errors', ({ expect }) => {
-    expect(parseSyncScopes(['mise', 'bogus'])).toMatchObject({
+    expect(parseSyncScopes(['scripts', 'bogus'])).toMatchObject({
       errors: [expect.stringContaining("unknown scope 'bogus'")],
+    });
+  });
+
+  // The hk toolchain's plan owns mise.tasks.toml, under the toolchains scope
+  it('no longer accepts the mise scope', ({ expect }) => {
+    expect(parseSyncScopes(['mise'])).toMatchObject({
+      errors: [expect.stringContaining("unknown scope 'mise'")],
     });
   });
 });

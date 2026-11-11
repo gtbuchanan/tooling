@@ -274,7 +274,7 @@ lockfile maintenance schedule.
 Run `gtb sync` to generate `turbo.json`, tsconfigs, per-package scripts,
 `codecov.yml`, and (in repos using mise) `mise.tasks.toml` from project
 discovery. Use `--force` to overwrite existing scripts, or pass scope
-args (e.g. `gtb sync mise`) to limit it. Run `gtb verify` to check
+args (e.g. `gtb sync turbo`) to limit it. Run `gtb verify` to check
 generated config hasn't drifted.
 
 See the [CLI package](packages/cli) for all available commands.

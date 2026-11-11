@@ -1,9 +1,5 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { parse as parseToml, stringify } from 'smol-toml';
-import * as v from 'valibot';
+import { stringify } from 'smol-toml';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
-import { StringArray } from '#src/core/schemas.js';
 
 /**
  * Filename of the generated, fully-owned mise tasks include.
@@ -61,39 +57,4 @@ export const generateMiseTasks = (
    * commit and fight `gtb sync`.
    */
   return `${header}\n\n${stringify(tasks).trimEnd()}\n`;
-};
-
-const TaskConfigSchema = v.looseObject({
-  includes: v.optional(StringArray),
-});
-
-const MiseConfigSchema = v.looseObject({
-  task_config: v.optional(TaskConfigSchema),
-});
-
-/**
- * Drift check for `gtb verify`: `gtb sync` writes `mise.tasks.toml`, but
- * the `[task_config] includes` line that loads it is a manual, one-time
- * edit (so sync never round-trips the comment-heavy `mise.toml`). Asserts
- * the include is present — read-only, so no comment-preservation risk.
- * Returns drift messages (empty when satisfied).
- */
-export const checkMiseTasksInclude = (rootDir: string): readonly string[] => {
-  const filePath = path.join(rootDir, 'mise.toml');
-  let parsed: unknown;
-  try {
-    parsed = parseToml(readFileSync(filePath, 'utf8'));
-  } catch {
-    return ['mise.toml: invalid TOML'];
-  }
-  const result = v.safeParse(MiseConfigSchema, parsed);
-  const includes = result.success ? result.output.task_config?.includes ?? [] : [];
-  if (includes.includes(miseTasksFileName)) {
-    return [];
-  }
-
-  return [
-    `mise.toml: [task_config] includes must contain "${miseTasksFileName}" ` +
-    '(run gtb sync, then add the include)',
-  ];
 };

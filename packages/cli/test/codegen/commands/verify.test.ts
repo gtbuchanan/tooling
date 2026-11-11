@@ -3,6 +3,7 @@ import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
+import { runSync } from '#src/codegen/commands/sync.js';
 import { parseIgnoreArgs, runVerify, verifyCommand } from '#src/codegen/commands/verify.js';
 import {
   generatePackageScripts,
@@ -208,26 +209,21 @@ describe.concurrent(runVerify, () => {
     expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
   });
 
-  it('passes an hk-only adopter that has none of the build config', ({ expect }) => {
+  it('passes a synced hk-only adopter that has none of the build config', ({ expect }) => {
     const root = createHkOnlyProject();
+    runSync({ cwd: root, logger: captureLogger().logger });
 
     expect(runVerify({ cwd: root })).toStrictEqual([]);
   });
 
-  it('scoped to mise ignores turbo/script drift', ({ expect }) => {
-    const { root } = createConsumerProject();
-    // Un-synced project: a full verify flags missing turbo.json, scripts, etc.
+  it('reports a hand-edited mise.tasks.toml', ({ expect }) => {
+    const root = createHkOnlyProject();
+    const tasksPath = path.join(root, 'mise.tasks.toml');
+    writeFileSync(tasksPath, '["hk:all"]\nrun = "hk check --all"\n');
 
-    expect(runVerify({ cwd: root }).length).toBeGreaterThan(0);
-    expect(runVerify({ cwd: root, scopes: new Set(['mise']) })).toStrictEqual([]);
-  });
-
-  it('scoped to mise reports only the mise include drift', ({ expect }) => {
-    const { root } = createConsumerProject();
-    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
-
-    expect(runVerify({ cwd: root, scopes: new Set(['mise']) })).toStrictEqual([
-      expect.stringContaining('[task_config] includes'),
+    expect(runVerify({ cwd: root })).toStrictEqual([
+      `${tasksPath}: out of date`,
+      'run gtb sync to apply these changes',
     ]);
   });
 

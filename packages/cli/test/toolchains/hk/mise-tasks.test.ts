@@ -1,11 +1,8 @@
-import { writeFileSync } from 'node:fs';
-import path from 'node:path';
 import { parse as parseToml } from 'smol-toml';
 import { describe, it } from 'vitest';
 import {
-  checkMiseTasksInclude, generateMiseTasks, miseTasksFileName,
+  generateMiseTasks, miseTasksFileName,
 } from '#src/toolchains/hk/mise-tasks.js';
-import { createTempDir } from '#test/helpers.js';
 
 describe.concurrent(generateMiseTasks, () => {
   it('emits hk:all and hk:base as loadable include-format tasks', ({ expect }) => {
@@ -45,33 +42,5 @@ describe.concurrent(generateMiseTasks, () => {
     expect(generateMiseTasks({ dependsOnCli: false, isSelfHosted: false })).toContain(
       `includes = ["${miseTasksFileName}"]`,
     );
-  });
-});
-
-describe.concurrent(checkMiseTasksInclude, () => {
-  it('passes when the include is present', ({ expect }) => {
-    const dir = createTempDir();
-    writeFileSync(
-      path.join(dir, 'mise.toml'),
-      '[task_config]\nincludes = ["mise-tasks", "mise.tasks.toml"]\n',
-    );
-
-    expect(checkMiseTasksInclude(dir)).toStrictEqual([]);
-  });
-
-  it('reports drift when the include is missing', ({ expect }) => {
-    const dir = createTempDir();
-    writeFileSync(path.join(dir, 'mise.toml'), '[tools]\nnode = "24"\n');
-
-    expect(checkMiseTasksInclude(dir)).toStrictEqual([
-      expect.stringContaining('[task_config] includes must contain'),
-    ]);
-  });
-
-  it('reports invalid TOML', ({ expect }) => {
-    const dir = createTempDir();
-    writeFileSync(path.join(dir, 'mise.toml'), 'includes = [');
-
-    expect(checkMiseTasksInclude(dir)).toStrictEqual(['mise.toml: invalid TOML']);
   });
 });

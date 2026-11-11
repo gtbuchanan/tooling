@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb sync mise, gtb verify, gtb verify mise, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify (including scoped runs), the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb verify, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -169,11 +169,11 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 **Single-package tsconfigs.** When the root _is_ the lone package (no `packages` globs in `pnpm-workspace.yaml`), the root and per-package tsconfig layers target the same files, so sync collapses them into one: both `tsconfig.json` and `tsconfig.build.json` extend `./tsconfig.base.json`, and the build config carries the root layer's `declaration`/`sourceMap` alongside the package layer's `outDir`/`rootDir`/`include`. Package `extends` paths are derived from the package's actual depth below the root, not assumed to be `packages/<name>`.
 
-**Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync mise`, `gtb verify mise turbo`. No args means all scopes. This lets a repo regenerate or check just one artifact. An unknown scope exits non-zero.
+**Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync turbo`, `gtb verify scripts turbo`. No args means all scopes. This lets a repo regenerate or check just one artifact. An unknown scope exits non-zero.
 
-`mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify mise` asserts the include is present. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
+`mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify` asserts the include is present and the file current. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
 
-`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The `mise` step self-skips when the repo has no `mise.toml`, and the turbo, scripts and tsconfig steps when the root doesn't depend on `@gtbuchanan/cli`, so an hk-preset adopter runs plain `gtb sync`.
+`gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The mise check self-skips when the repo has no `mise.toml`, and the turbo, scripts and tsconfig steps when the root doesn't depend on `@gtbuchanan/cli`, so an hk-preset adopter runs plain `gtb sync`.
 
 Most checks compare a file against what sync would generate. The `turbo` scope carries one that doesn't: the `generate:*` package configurations described above are author-owned, so verify asserts they exist and are wired correctly instead of regenerating them (`--ignore generate:<name>` opts a script out).
 

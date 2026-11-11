@@ -41,8 +41,7 @@ export interface RunVerifyOptions {
 
 /**
  * Validates the artifacts selected by `scopes` (default all) against the
- * baseline from discovery (empty result = no drift). The mise check
- * self-skips when the repo lacks that tool.
+ * baseline from discovery (empty result = no drift).
  */
 export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
   const scopes = options.scopes ?? new Set(syncScopes);

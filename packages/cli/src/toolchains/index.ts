@@ -6,6 +6,7 @@ import {
 import { changesetsToolchain } from '#src/toolchains/changesets/index.js';
 import { codecovToolchain } from '#src/toolchains/codecov/index.js';
 import { eslintToolchain } from '#src/toolchains/eslint/index.js';
+import { hkToolchain } from '#src/toolchains/hk/index.js';
 import { npmToolchain } from '#src/toolchains/npm/index.js';
 import { pklToolchain } from '#src/toolchains/pkl/index.js';
 import { skillsToolchain } from '#src/toolchains/skills/index.js';
@@ -21,6 +22,7 @@ export const toolchains: readonly Toolchain[] = [
   changesetsToolchain,
   codecovToolchain,
   eslintToolchain,
+  hkToolchain,
   npmToolchain,
   pklToolchain,
   skillsToolchain,
