@@ -4,7 +4,7 @@ import { parse as parseToml } from 'smol-toml';
 import { describe, it } from 'vitest';
 import {
   checkMiseTasksInclude, generateMiseTasks, miseTasksFileName,
-} from '#src/codegen/mise-tasks.js';
+} from '#src/toolchains/hk/mise-tasks.js';
 import { createTempDir } from '#test/helpers.js';
 
 describe.concurrent(generateMiseTasks, () => {

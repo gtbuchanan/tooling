@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { Generator } from '#src/codegen/generator.js';
 import {
   checkMiseTasksInclude, generateMiseTasks, miseTasksFileName,
-} from '#src/codegen/mise-tasks.js';
+} from '#src/toolchains/hk/mise-tasks.js';
 
 /**
  * `mise.tasks.toml`, which wires the hk mise tasks.
