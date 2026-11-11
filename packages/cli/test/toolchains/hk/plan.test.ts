@@ -10,35 +10,34 @@ import { planMiseTasks } from '#src/toolchains/hk/plan.js';
 import { capabilities } from '#src/toolchains/index.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
-const includingTasks = '[task_config]\nincludes = ["mise-tasks", "mise.tasks.toml"]\n';
-
 interface RepoOptions {
   readonly dependsOnCli?: boolean;
-  readonly miseToml?: string;
+  readonly miseConfig?: string;
 }
 
 interface Repo {
-  readonly miseTomlPath: string;
+  readonly fragmentPath: string;
   readonly root: string;
-  readonly tasksPath: string;
 }
 
 /**
- * A root with `miseToml` as its `mise.toml` when given.
+ * A root with a `mise.toml`, unless `miseConfig` names none.
  */
-const createRepo = ({ dependsOnCli = true, miseToml }: RepoOptions = {}): Repo => {
+const createRepo = (
+  { dependsOnCli = true, miseConfig = 'mise.toml' }: RepoOptions = {},
+): Repo => {
   const root = createTempDir();
   writeJson(root, 'package.json', {
     ...(dependsOnCli && { devDependencies: { '@gtbuchanan/cli': build.semverRange() } }),
     name: build.packageName(),
     private: true,
   });
-  const miseTomlPath = path.join(root, 'mise.toml');
-  if (miseToml !== undefined) {
-    writeFileSync(miseTomlPath, miseToml);
+  if (miseConfig !== '') {
+    mkdirSync(path.dirname(path.join(root, miseConfig)), { recursive: true });
+    writeFileSync(path.join(root, miseConfig), '[tools]\nnode = "24"\n');
   }
 
-  return { miseTomlPath, root, tasksPath: path.join(root, 'mise.tasks.toml') };
+  return { fragmentPath: path.join(root, '.config', 'mise', 'conf.d', 'gtb.toml'), root };
 };
 
 const plan = (root: string): readonly Finding[] => planMiseTasks({
@@ -47,12 +46,14 @@ const plan = (root: string): readonly Finding[] => planMiseTasks({
   ignored: new Set(),
 });
 
-const TasksSchema = v.record(v.string(), v.looseObject({ run: v.string() }));
+const TaskSchema = v.looseObject({ run: v.string() });
+
+const FragmentSchema = v.object({ tasks: v.record(v.string(), TaskSchema) });
 
 // Each task's command, keyed by task name
 const runsOf = (content: string): Record<string, string> => {
-  const tasks = Object.entries(v.parse(TasksSchema, parseToml(content)));
-  return Object.fromEntries(tasks.map(([name, { run }]) => [name, run]));
+  const { tasks } = v.parse(FragmentSchema, parseToml(content));
+  return Object.fromEntries(Object.entries(tasks).map(([name, { run }]) => [name, run]));
 };
 
 const parsedWrites = (findings: readonly Finding[]) =>
@@ -60,126 +61,94 @@ const parsedWrites = (findings: readonly Finding[]) =>
     ? { changes: finding.changes, path: finding.path, runs: runsOf(finding.content) }
     : finding));
 
-const problems = (findings: readonly Finding[]): readonly Finding[] =>
-  findings.filter(({ kind }) => kind === 'problem');
-
-const missingInclude = (miseTomlPath: string): Finding => ({
-  kind: 'problem',
-  message: `${miseTomlPath}: [task_config] includes must contain "mise.tasks.toml" ` +
-    '— add it by hand',
-});
-
 describe.concurrent(planMiseTasks, () => {
-  it('writes the hk tasks when the file is missing', ({ expect }) => {
-    const { root, tasksPath } = createRepo({ miseToml: includingTasks });
+  it('writes the hk tasks into conf.d when the file is missing', ({ expect }) => {
+    const { fragmentPath, root } = createRepo();
 
     expect(parsedWrites(plan(root))).toStrictEqual([{
       changes: ['missing'],
-      path: tasksPath,
+      path: fragmentPath,
       runs: { 'hk:all': 'pnpm exec gtb hk all', 'hk:base': 'pnpm exec gtb hk base' },
     }]);
   });
 
+  it('writes the hk tasks beside a mise config under .config', ({ expect }) => {
+    const { fragmentPath, root } = createRepo({ miseConfig: '.config/mise.toml' });
+
+    expect(plan(root).map(finding => finding.kind === 'write' && finding.path))
+      .toStrictEqual([fragmentPath]);
+  });
+
   it('rewrites a hand-edited tasks file', ({ expect }) => {
-    const { root, tasksPath } = createRepo({ miseToml: includingTasks });
-    writeFileSync(tasksPath, '["hk:all"]\nrun = "hk check --all"\n');
+    const { fragmentPath, root } = createRepo();
+    mkdirSync(path.dirname(fragmentPath), { recursive: true });
+    writeFileSync(fragmentPath, '[tasks."hk:all"]\nrun = "hk check --all"\n');
 
     expect(parsedWrites(plan(root))).toStrictEqual([{
       changes: ['out of date'],
-      path: tasksPath,
+      path: fragmentPath,
       runs: { 'hk:all': 'pnpm exec gtb hk all', 'hk:base': 'pnpm exec gtb hk base' },
     }]);
   });
 
   it('plans nothing once its write is applied', ({ expect }) => {
-    const { root, tasksPath } = createRepo({ miseToml: includingTasks });
+    const { fragmentPath, root } = createRepo();
     for (const finding of plan(root)) {
-      if (finding.kind === 'write') {
-        writeFileSync(finding.path, finding.content);
+      if (finding.kind !== 'write') {
+        continue;
       }
+      mkdirSync(path.dirname(finding.path), { recursive: true });
+      writeFileSync(finding.path, finding.content);
     }
 
-    expect(existsSync(tasksPath)).toBe(true);
+    expect(existsSync(fragmentPath)).toBe(true);
     expect(plan(root)).toStrictEqual([]);
   });
 
   it('runs a bare gtb in a repo that does not depend on the CLI', ({ expect }) => {
-    const { root, tasksPath } = createRepo({ dependsOnCli: false, miseToml: includingTasks });
+    const { fragmentPath, root } = createRepo({ dependsOnCli: false });
 
     expect(parsedWrites(plan(root))).toStrictEqual([{
       changes: ['missing'],
-      path: tasksPath,
+      path: fragmentPath,
       runs: { 'hk:all': 'gtb hk all', 'hk:base': 'gtb hk base' },
     }]);
   });
 
-  it('reports a mise.toml that does not include the tasks file', ({ expect }) => {
-    const { miseTomlPath, root } = createRepo({ miseToml: '[tools]\nnode = "24"\n' });
-
-    expect(problems(plan(root))).toStrictEqual([missingInclude(miseTomlPath)]);
-  });
-
-  it('reports a .config/mise.toml that does not include the tasks file', ({ expect }) => {
+  /*
+   * While a config still includes it, the old file's tasks take precedence
+   * over conf.d's, so the repository would keep running the stale commands.
+   */
+  it('reports a leftover mise.tasks.toml', ({ expect }) => {
     const { root } = createRepo();
-    const configPath = path.join(root, '.config', 'mise.toml');
-    mkdirSync(path.dirname(configPath));
-    writeFileSync(configPath, '[tools]\nnode = "24"\n');
+    const legacyPath = path.join(root, 'mise.tasks.toml');
+    writeFileSync(legacyPath, '["hk:all"]\nrun = "gtb hk all"\n');
 
-    expect(problems(plan(root))).toStrictEqual([missingInclude(configPath)]);
-  });
-
-  it('accepts the include from any mise config', ({ expect }) => {
-    const { root } = createRepo({ miseToml: includingTasks });
-    mkdirSync(path.join(root, '.config'));
-    writeFileSync(path.join(root, '.config', 'mise.toml'), '[tools]\nnode = "24"\n');
-
-    expect(problems(plan(root))).toStrictEqual([]);
-  });
-
-  it('reports every mise config when none includes the tasks file', ({ expect }) => {
-    const { miseTomlPath, root } = createRepo({ miseToml: '[tools]\nnode = "24"\n' });
-    const configPath = path.join(root, '.config', 'mise.toml');
-    mkdirSync(path.dirname(configPath));
-    writeFileSync(configPath, '');
-
-    expect(problems(plan(root))).toStrictEqual([missingInclude(`${configPath}, ${miseTomlPath}`)]);
-  });
-
-  it('reports an includes that is not a list as missing the tasks file', ({ expect }) => {
-    const { miseTomlPath, root } = createRepo({
-      miseToml: '[task_config]\nincludes = "mise.tasks.toml"\n',
-    });
-
-    expect(problems(plan(root))).toStrictEqual([missingInclude(miseTomlPath)]);
-  });
-
-  it('reports a mise.toml that is not valid TOML', ({ expect }) => {
-    const { miseTomlPath, root } = createRepo({ miseToml: 'includes = [' });
-
-    expect(problems(plan(root))).toStrictEqual([{
+    expect(plan(root).filter(({ kind }) => kind === 'problem')).toStrictEqual([{
       kind: 'problem',
-      message: `${miseTomlPath}: could not be parsed as TOML — fix it by hand`,
+      message: `${legacyPath}: gtb now writes the hk tasks to .config/mise/conf.d/gtb.toml ` +
+        '— delete this file and its [task_config] includes entry',
     }]);
   });
 
   it('reports a directory where the tasks file belongs', ({ expect }) => {
-    const { root, tasksPath } = createRepo({ miseToml: includingTasks });
-    mkdirSync(tasksPath);
+    const { fragmentPath, root } = createRepo();
+    mkdirSync(fragmentPath, { recursive: true });
 
     expect(plan(root)).toStrictEqual([{
       kind: 'problem',
-      message: `${tasksPath}: not a file — remove it so gtb sync can write the hk tasks`,
+      message: `${fragmentPath}: not a file — remove it so gtb sync can write the hk tasks`,
     }]);
   });
 
-  it('plans nothing in a repo without a mise.toml', ({ expect }) => {
-    const { root } = createRepo();
+  it('plans nothing in a repo without a mise config', ({ expect }) => {
+    const { root } = createRepo({ miseConfig: '' });
 
     expect(plan(root)).toStrictEqual([]);
   });
 
   it('plans nothing in a repo with a mise lockfile but no config', ({ expect }) => {
-    const { root } = createRepo();
+    const { root } = createRepo({ miseConfig: '' });
     writeFileSync(path.join(root, 'mise.lock'), '');
 
     expect(plan(root)).toStrictEqual([]);

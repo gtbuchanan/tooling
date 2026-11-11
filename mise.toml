@@ -26,11 +26,6 @@ minimum_release_age = "3d"
 # them so fuzzy/`latest` resolution picks up our own just-cut releases.
 minimum_release_age_excludes = ["npm:@gtbuchanan/*"]
 
-# mise.tasks.toml is generated and owned by `gtb sync`; this include is
-# the one manual hookup (gtb verify checks it).
-[task_config]
-includes = ["mise.tasks.toml"]
-
 # pnpm ignores the `os` field on workspace packages, so the Termux shim's
 # bin doesn't get auto-symlinked into node_modules/.bin via the usual
 # optionalDependencies path. `bootstrap` does it explicitly on Termux.

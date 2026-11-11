@@ -181,38 +181,6 @@ describe.concurrent(runVerify, () => {
     expect(drift).toHaveLength(0);
   });
 
-  it('skips the mise include check when there is no mise.toml', ({ expect }) => {
-    const { root } = createConsumerProject();
-    initProject(root);
-
-    const drift = runVerify({ cwd: root });
-
-    expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
-  });
-
-  it('reports drift when mise.toml omits the tasks include', ({ expect }) => {
-    const { root } = createConsumerProject();
-    initProject(root);
-    writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
-
-    const drift = runVerify({ cwd: root });
-
-    expect(drift.some(msg => msg.includes('[task_config] includes'))).toBe(true);
-  });
-
-  it('passes the mise include check when the include is present', ({ expect }) => {
-    const { root } = createConsumerProject();
-    initProject(root);
-    writeFileSync(
-      path.join(root, 'mise.toml'),
-      '[task_config]\nincludes = ["mise.tasks.toml"]\n',
-    );
-
-    const drift = runVerify({ cwd: root });
-
-    expect(drift.some(msg => msg.includes('mise.toml'))).toBe(false);
-  });
-
   it('passes a synced hk-only adopter that has none of the build config', ({ expect }) => {
     const root = createHkOnlyProject();
     runSync({ cwd: root, logger: captureLogger().logger });
@@ -220,13 +188,14 @@ describe.concurrent(runVerify, () => {
     expect(runVerify({ cwd: root })).toStrictEqual([]);
   });
 
-  it('reports a hand-edited mise.tasks.toml', ({ expect }) => {
+  it('reports a hand-edited mise fragment', ({ expect }) => {
     const root = createHkOnlyProject();
-    const tasksPath = path.join(root, 'mise.tasks.toml');
-    writeFileSync(tasksPath, '["hk:all"]\nrun = "hk check --all"\n');
+    runSync({ cwd: root, logger: captureLogger().logger });
+    const fragmentPath = path.join(root, '.config', 'mise', 'conf.d', 'gtb.toml');
+    writeFileSync(fragmentPath, '[tasks."hk:all"]\nrun = "hk check --all"\n');
 
     expect(runVerify({ cwd: root })).toStrictEqual([
-      `${tasksPath}: out of date`,
+      `${fragmentPath}: out of date`,
       'run gtb sync to apply these changes',
     ]);
   });

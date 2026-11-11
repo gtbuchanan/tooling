@@ -272,9 +272,9 @@ lockfile maintenance schedule.
 ## Consumer setup
 
 Run `gtb sync` to generate `turbo.json`, tsconfigs, per-package scripts,
-`codecov.yml`, and (in repos using mise) `mise.tasks.toml` from project
-discovery. Use `--force` to overwrite existing scripts. Run `gtb verify`
-to check generated config hasn't drifted.
+`codecov.yml`, and (in repos using mise) `.config/mise/conf.d/gtb.toml`
+from project discovery. Use `--force` to overwrite existing scripts. Run
+`gtb verify` to check generated config hasn't drifted.
 
 See the [CLI package](packages/cli) for all available commands.
 

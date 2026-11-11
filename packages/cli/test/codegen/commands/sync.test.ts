@@ -265,9 +265,9 @@ describe.concurrent(runSync, () => {
     expect(manifest).toHaveProperty(['scripts', 'deploy:skills'], 'gtb task deploy:skills');
   });
 
-  it('writes mise.tasks.toml only when the root has a mise.toml', ({ expect }) => {
+  it('writes the mise fragment only when the root has a mise.toml', ({ expect }) => {
     const { root } = createConsumerProject();
-    const tasksPath = path.join(root, 'mise.tasks.toml');
+    const tasksPath = path.join(root, '.config', 'mise', 'conf.d', 'gtb.toml');
 
     runSync({ cwd: root, logger: silentLogger });
 
@@ -284,15 +284,22 @@ describe.concurrent(runSync, () => {
    * An hk-only adopter runs gtb from mise rather than a dependency, so its
    * workspace builds without turbo and owns whatever tsconfig it has.
    */
-  it('writes only mise.tasks.toml when the root does not depend on the CLI', ({ expect }) => {
+  it('writes only the mise fragment when the root does not depend on the CLI', ({ expect }) => {
     const root = createHkOnlyProject();
     const manifestBefore = readFileSync(path.join(root, 'package.json'), 'utf8');
 
     runSync({ cwd: root, logger: silentLogger });
 
-    expect(new Set(readdirSync(root))).toStrictEqual(
-      new Set(['mise.tasks.toml', 'mise.toml', 'package.json']),
-    );
+    const written = readdirSync(root, { encoding: 'utf8', recursive: true });
+
+    expect(new Set(written)).toStrictEqual(new Set([
+      '.config',
+      path.join('.config', 'mise'),
+      path.join('.config', 'mise', 'conf.d'),
+      path.join('.config', 'mise', 'conf.d', 'gtb.toml'),
+      'mise.toml',
+      'package.json',
+    ]));
     expect(readFileSync(path.join(root, 'package.json'), 'utf8')).toBe(manifestBefore);
   });
 

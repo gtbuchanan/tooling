@@ -158,9 +158,9 @@ local gtbVerify: Config.Step = new {
     "**/turbo.json",
     "**/vitest.config.*",
     ".config/mise.toml",
+    ".config/mise/conf.d/gtb.toml",
     ".config/mise/config.toml",
     ".mise.toml",
-    "mise.tasks.toml",
     "mise.toml",
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
@@ -170,7 +170,7 @@ local gtbVerify: Config.Step = new {
     "**/package.json",
     "**/tsconfig.*.json",
     "**/tsconfig.json",
-    "mise.tasks.toml",
+    ".config/mise/conf.d/gtb.toml",
     "turbo.json",
   )
   check = "gtb verify"
