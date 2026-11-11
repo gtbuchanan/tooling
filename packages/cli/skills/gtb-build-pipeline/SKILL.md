@@ -158,8 +158,8 @@ Several tasks write the published output directory, each declaring `outputs` for
 
 - `turbo.json` tasks + aggregates (scope: `turbo`)
 - per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json` (scope: `toolchains`), keeping keys gtb doesn't write
-- per-package + root `package.json` scripts (scope: `scripts`)
-- `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml` (scope: `mise`)
+- per-package + root `package.json` scripts (scope: `toolchains`)
+- `mise.tasks.toml` — the `hk:all` / `hk:base` mise tasks, written only when the root has a `mise.toml` (scope: `toolchains`)
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
@@ -169,7 +169,7 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 **Single-package tsconfigs.** When the root _is_ the lone package (no `packages` globs in `pnpm-workspace.yaml`), the root and per-package tsconfig layers target the same files, so sync collapses them into one: both `tsconfig.json` and `tsconfig.build.json` extend `./tsconfig.base.json`, and the build config carries the root layer's `declaration`/`sourceMap` alongside the package layer's `outDir`/`rootDir`/`include`. Package `extends` paths are derived from the package's actual depth below the root, not assumed to be `packages/<name>`.
 
-**Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync turbo`, `gtb verify scripts turbo`. No args means all scopes. This lets a repo regenerate or check just one artifact. An unknown scope exits non-zero.
+**Scoped runs.** Both `gtb sync` and `gtb verify` take positional scope args to limit the work to a subset: `gtb sync turbo`, `gtb verify toolchains turbo`. No args means all scopes. An unknown scope exits non-zero.
 
 `mise.tasks.toml` is loaded by a one-time manual `[task_config] includes = ["mise.tasks.toml"]` in `mise.toml` (so sync never round-trips the hand-authored file); `gtb verify` asserts the include is present and the file current. An explicit `includes` replaces mise's default `mise-tasks/` discovery, so a repo keeping its own script tasks lists both: `includes = ["mise-tasks", "mise.tasks.toml"]`.
 

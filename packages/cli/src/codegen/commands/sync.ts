@@ -10,10 +10,10 @@ import { type Logger, createLogger } from '#src/core/logger.js';
 import { capabilities } from '#src/toolchains/index.js';
 
 /*
- * Scripts and turbo tasks are built from what every other step leaves
- * behind, so they run last and see those steps' writes.
+ * Turbo tasks are built from what every other step leaves behind, so they run
+ * last and see those steps' writes.
  */
-const builtFromTheRest: ReadonlySet<SyncScope> = new Set(['scripts', 'turbo']);
+const builtFromTheRest: ReadonlySet<SyncScope> = new Set(['turbo']);
 
 const syncOrder: readonly SyncScope[] = [
   ...syncScopes.filter(scope => !builtFromTheRest.has(scope)),
