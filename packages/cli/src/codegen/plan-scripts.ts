@@ -69,12 +69,16 @@ const planShadowedAggregates = (
   discovery: WorkspaceDiscovery,
   ignored: ReadonlySet<string>,
 ): readonly Finding[] => {
+  const forbidden = forbiddenRootScripts(discovery).filter(name => !ignored.has(name));
+  if (forbidden.length === 0) {
+    return [];
+  }
   const scripts = v.parse(ManifestSchema, readJsonFile(
     path.join(discovery.rootDir, 'package.json'),
   )).scripts ?? {};
 
-  return forbiddenRootScripts(discovery)
-    .filter(name => !ignored.has(name) && Object.hasOwn(scripts, name))
+  return forbidden
+    .filter(name => Object.hasOwn(scripts, name))
     .map(name => ({
       kind: 'problem',
       message: `${discovery.rootDir}: script '${name}' shadows the turbo task of the ` +
