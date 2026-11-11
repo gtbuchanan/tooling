@@ -4,6 +4,7 @@
   "baseBranch": "main",
   "changedFilePatterns": [
     "**",
+    "!codecov.yml",
     "!e2e/**",
     "!eslint.config.ts",
     "!jactionlint.yaml",

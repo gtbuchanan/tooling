@@ -4,10 +4,10 @@
 
 [mise] manages the repo's pinned dev tools for every contributor and
 CI. Run `mise install` to get the versions the repo pins.
-Those versions live in `mise.toml`. pnpm is pinned twice — in
-`mise.toml` and in `package.json`'s `packageManager` field, which turbo
-requires for workspace resolution — so keep the two in sync when
-bumping by hand (Renovate groups them into one PR).
+Those versions live in `.config/mise.toml`. pnpm is pinned twice — in
+`.config/mise.toml` and in `package.json`'s `packageManager` field,
+which turbo requires for workspace resolution — so keep the two in sync
+when bumping by hand (Renovate groups them into one PR).
 
 Install mise:
 
@@ -24,8 +24,8 @@ mise install
 mise run bootstrap
 ```
 
-`mise install` reads `mise.toml` + `mise.lock` and verifies each
-downloaded binary against the recorded sha256. `mise run bootstrap`
+`mise install` reads `.config/mise.toml` + `.config/mise.lock` and
+verifies each downloaded binary against the recorded sha256. `mise run bootstrap`
 then runs `pnpm install --frozen-lockfile` (and on Termux/Android,
 symlinks the pnpm shim into `node_modules/.bin`).
 `[settings] lockfile = true` in `mise.toml` keeps the lockfile

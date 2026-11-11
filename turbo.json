@@ -2,8 +2,8 @@
   "$schema": "https://turbo.build/schema.json",
   "agentGuidance": false,
   "globalDependencies": [
-    "mise.lock",
-    "mise.toml",
+    ".config/mise.lock",
+    ".config/mise.toml",
     "packages/cli/bin/**",
     "packages/cli/package.json",
     "packages/cli/src/**",

@@ -4,7 +4,7 @@ amends "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.
 // path because tooling can't `package://`-import its own unpublished
 // release — the same own-repo-vs-consumer split as the `./` workflow refs
 // documented in AGENTS.md. Consumers import it via the published package URL.
-import "packages/hk-config/Defaults.pkl"
+import "../packages/hk-config/Defaults.pkl"
 
 // eslint args shared by the step's check/fix; only `--fix` differs.
 local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"

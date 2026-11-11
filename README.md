@@ -127,7 +127,8 @@ since worktrees and clones rename it.
 `codecov.yml` lists no flags. Per-package rules live in
 `flag_management.default_rules`, which Codecov applies to whatever
 flags it ingests, so adding a package needs no config change. Copy
-this repo's `codecov.yml` as a starting point and edit the targets.
+this repo's `.github/codecov.yml` as a starting point and edit the
+targets.
 
 Two repo-wide checks come back from Codecov: `codecov/project`
 (the whole report against itself, `auto` target with a 1% threshold)
