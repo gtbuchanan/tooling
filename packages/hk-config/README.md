@@ -40,10 +40,11 @@ only inside the `renovate` npm package — add `npm:renovate` to your mise
   trailing-whitespace fixers, each pre-wired with the default exclude.
 - `forbidSubmodules` — a per-OS gitlink (submodule) guard.
 - `jactionlint` — lints workflows, composite actions and Dependabot config at
-  the `correctness` profile. `jactionlintWith(profile)` builds the same step at
-  `default` or `pedantic`, whose autofixes rewrite workflows during pre-commit:
-  `["jactionlint"] = Defaults.jactionlintWith("pedantic")` after spreading
-  `recommended`.
+  the `pedantic` profile, whose autofixes rewrite workflows during `hk fix`.
+  Exempt a deliberate design in `.github/jactionlint.yaml`.
+  `jactionlintWith(profile)` builds the same step at `default` or
+  `correctness`: amend `recommended` before spreading it, with
+  `...(Defaults.recommended) { ["jactionlint"] = Defaults.jactionlintWith("correctness") }`.
 - `renovateConfig` — validates `.github/renovate.json` via
   `renovate-config-validator`. Amend its `glob` to target a different file
   (e.g. `default.json` for preset-authoring repos).

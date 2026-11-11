@@ -112,9 +112,8 @@ coverage, setupFiles, and mock reset.
     (the maintained actionlint fork). Lints workflows, composite actions and
     Dependabot config, and runs `shellcheck` (mise `aqua:koalaman/shellcheck`)
     on `run:` scripts when it's on PATH. The preset defaults to the
-    `correctness` profile, and `Defaults.jactionlintWith(profile)` builds the
-    step at another (see the doc comments in `Defaults.pkl` for why). This
-    repository lints at `pedantic`, with its exemptions in
+    `pedantic` profile, and `Defaults.jactionlintWith(profile)` builds the
+    step at another. This repository's exemptions are in
     `.github/jactionlint.yaml`.
   - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)

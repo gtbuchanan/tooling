@@ -10,10 +10,7 @@ import "packages/hk-config/Defaults.pkl"
 local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
 
 local allSteps = new Mapping<String, Step> {
-    ...(Defaults.recommended) {
-        // Exemptions live in .github/jactionlint.yaml.
-        ["jactionlint"] = Defaults.jactionlintWith("pedantic")
-    }
+    ...Defaults.recommended
 
     // `pnpm run`: this repository vendors the CLI, so the root `gtb` script
     // runs it from source.
