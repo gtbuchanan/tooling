@@ -39,7 +39,6 @@ const syncScripts = (root: string): void => {
     cwd: root,
     force: true,
     logger: captureLogger().logger,
-    scopes: new Set(['toolchains']),
   });
 };
 
@@ -87,7 +86,7 @@ describe.concurrent('single-package root scripts', () => {
 
     syncScripts(root);
 
-    expect(runVerify({ cwd: root, scopes: new Set(['toolchains']) })).toStrictEqual([]);
+    expect(runVerify({ cwd: root })).toStrictEqual([]);
   });
 
   it('reports a leftover aggregate script as drift', ({ expect }) => {
@@ -95,7 +94,7 @@ describe.concurrent('single-package root scripts', () => {
     syncScripts(root);
     addShadowingCheckScript(root);
 
-    const drift = runVerify({ cwd: root, scopes: new Set(['toolchains']) });
+    const drift = runVerify({ cwd: root });
 
     expect(drift).toStrictEqual([
       `${root}: script 'check' shadows the turbo task of the same name — ` +
@@ -108,11 +107,7 @@ describe.concurrent('single-package root scripts', () => {
     syncScripts(root);
     addShadowingCheckScript(root);
 
-    const drift = runVerify({
-      cwd: root,
-      ignored: new Set(['check']),
-      scopes: new Set(['toolchains']),
-    });
+    const drift = runVerify({ cwd: root, ignored: new Set(['check']) });
 
     expect(drift).toStrictEqual([]);
   });

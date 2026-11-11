@@ -231,12 +231,10 @@ describe.concurrent(runVerify, () => {
     ]);
   });
 
-  it('scoped to toolchains reports what the toolchains check', ({ expect }) => {
+  it('reports what the toolchains check', ({ expect }) => {
     const { dependency, root } = createWorkspaceDepProject();
 
-    expect(runVerify({ cwd: root, scopes: new Set(['toolchains']) })).toStrictEqual([
-      expect.stringContaining(dependency.name),
-    ]);
+    expect(runVerify({ cwd: root })).toContainEqual(expect.stringContaining(dependency.name));
   });
 });
 
@@ -271,14 +269,16 @@ describe.concurrent(parseIgnoreArgs, () => {
 });
 
 describe.concurrent(verifyCommand, () => {
-  it('returns 1 and logs when given an unknown scope', ({ expect }) => {
+  // A synced project, so only the argument can fail it
+  it('returns 1 when given a positional argument', ({ expect }) => {
     const { root } = createConsumerProject();
+    initProject(root);
     const { logger, err } = captureLogger();
 
-    const code = verifyCommand([], { cwd: root, scopes: ['bogus'] }, logger);
+    const code = verifyCommand(['mise'], { cwd: root, positionals: ['mise'] }, logger);
 
     expect(code).toBe(1);
-    expect(err()).toContain('unknown scope');
+    expect(err()).toBe("gtb verify takes no arguments, but got 'mise'\n");
   });
 
   it('returns 0 and logs success when there is no drift', ({ expect }) => {

@@ -30,7 +30,7 @@ const createProjectWithoutBase = (): string => {
 };
 
 const syncTsconfigs = (root: string): void => {
-  runSync({ cwd: root, logger: captureLogger().logger, scopes: new Set(['toolchains']) });
+  runSync({ cwd: root, logger: captureLogger().logger });
 };
 
 describe.concurrent('tsconfig.base.json scaffolding', () => {
@@ -59,7 +59,7 @@ describe.concurrent('tsconfig.base.json scaffolding', () => {
     syncTsconfigs(root);
     rmSync(path.join(root, 'tsconfig.base.json'));
 
-    expect(runVerify({ cwd: root, scopes: new Set(['toolchains']) }))
+    expect(runVerify({ cwd: root }))
       .toContainEqual(expect.stringContaining('tsconfig.base.json'));
   });
 
@@ -67,9 +67,9 @@ describe.concurrent('tsconfig.base.json scaffolding', () => {
     const root = createProjectWithoutBase();
     mkdirSync(path.join(root, 'tsconfig.base.json'));
 
-    expect(runSync({ cwd: root, logger: captureLogger().logger, scopes: new Set(['toolchains']) }))
+    expect(runSync({ cwd: root, logger: captureLogger().logger }))
       .toContainEqual(expect.stringContaining('not a file'));
-    expect(runVerify({ cwd: root, scopes: new Set(['toolchains']) }))
+    expect(runVerify({ cwd: root }))
       .toContainEqual(expect.stringContaining('tsconfig.base.json'));
   });
 });

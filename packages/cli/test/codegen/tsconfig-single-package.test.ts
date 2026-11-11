@@ -36,7 +36,6 @@ const syncTsconfigs = (root: string): void => {
     cwd: root,
     force: true,
     logger: captureLogger().logger,
-    scopes: new Set(['toolchains']),
   });
 };
 
@@ -68,7 +67,7 @@ describe.concurrent('single-package tsconfigs', () => {
 
     syncTsconfigs(root);
 
-    expect(runVerify({ cwd: root, scopes: new Set(['toolchains']) })).toStrictEqual([]);
+    expect(runVerify({ cwd: root })).toStrictEqual([]);
   });
 
   it('stays idempotent across repeated syncs', ({ expect }) => {

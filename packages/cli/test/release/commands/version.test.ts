@@ -7,9 +7,8 @@ interface RunCall {
 }
 
 describe.concurrent(executeVersion, () => {
-  it('awaits changeset version before a full sync', async ({ expect }) => {
+  it('awaits changeset version before the sync', async ({ expect }) => {
     const order: string[] = [];
-    let syncScopes: ReadonlySet<string> | undefined = new Set();
     let hasRunFinished = false;
 
     await executeVersion({
@@ -20,15 +19,13 @@ describe.concurrent(executeVersion, () => {
         order.push('run:end');
       },
       // `sync` is synchronous (`=> void`); it must not run until `run` settled.
-      sync: (options) => {
+      sync: () => {
         expect(hasRunFinished).toBe(true);
 
         order.push('sync');
-        syncScopes = options.scopes;
       },
     });
 
-    expect(syncScopes).toBeUndefined();
     expect(order.slice(0, 3)).toStrictEqual(['run:start', 'run:end', 'sync']);
   });
 

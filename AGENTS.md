@@ -861,8 +861,8 @@ changesets' own tagging is unused here.
 package whose version is load-bearing. `@gtbuchanan/test-utils` is listed there
 because it exists only as a `devDependency` — it has no published surface, and
 changesets' skipped-dependents validation passes `ignoreDevDependencies: true`,
-so ignoring it raises no `Invalid tree` error. `gtb verify toolchains`
-independently forbids a published package from taking a private workspace
+so ignoring it raises no `Invalid tree` error. `gtb verify` independently
+forbids a published package from taking a private workspace
 package as a runtime dependency, so that stays true.
 
 Note that `changeset status` only asserts that _some_ changeset exists once any

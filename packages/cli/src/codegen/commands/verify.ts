@@ -1,8 +1,6 @@
 import { defineCommand } from 'citty';
 import { reportFindings } from '#src/codegen/plans.js';
-import {
-  type SyncScope, parseSyncScopes, syncScopes,
-} from '#src/codegen/sync-scopes.js';
+import { rejectPositionals } from '#src/codegen/positionals.js';
 import { workspacePlans } from '#src/codegen/workspace-plans.js';
 import { rootNames } from '#src/core/command-names.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
@@ -34,22 +32,13 @@ export const parseIgnoreArgs = (args: readonly string[]): ReadonlySet<string> =>
 export interface RunVerifyOptions {
   readonly cwd?: string;
   readonly ignored?: ReadonlySet<string>;
-  /**
-   * Artifacts to check. Defaults to all {@link syncScopes}.
-   */
-  readonly scopes?: ReadonlySet<SyncScope>;
 }
 
 /**
- * Validates the artifacts selected by `scopes` (default all) against the
- * baseline from discovery (empty result = no drift).
+ * Validates every generated artifact against the baseline from discovery
+ * (empty result = no drift).
  */
 export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => {
-  const scopes = options.scopes ?? new Set(syncScopes);
-  if (!scopes.has('toolchains')) {
-    return [];
-  }
-
   const discovery = discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() });
 
   return reportFindings(planFindings(workspacePlans, {
@@ -65,9 +54,9 @@ export const runVerify = (options: RunVerifyOptions = {}): readonly string[] => 
 export interface VerifyCommandArgs {
   readonly cwd?: string | undefined;
   /**
-   * Positional scope tokens (citty `args._`). Empty means all scopes.
+   * Positional arguments (citty `args._`), which the command rejects.
    */
-  readonly scopes?: readonly string[] | undefined;
+  readonly positionals?: readonly string[] | undefined;
 }
 
 /**
@@ -82,19 +71,15 @@ export const verifyCommand = (
   args: VerifyCommandArgs,
   logger: Logger,
 ): number => {
-  const parsed = parseSyncScopes(args.scopes ?? []);
-  if ('errors' in parsed) {
-    for (const message of parsed.errors) {
-      logger.error(message);
-    }
-
+  const rejection = rejectPositionals(rootNames.verify, args.positionals ?? []);
+  if (rejection !== undefined) {
+    logger.error(rejection);
     return 1;
   }
 
   const drift = runVerify({
     ...(args.cwd !== undefined && { cwd: args.cwd }),
     ignored: parseIgnoreArgs(rawArgs),
-    scopes: parsed.scopes,
   });
 
   if (drift.length === 0) {
@@ -125,14 +110,12 @@ export const verify = defineCommand({
     },
   },
   meta: {
-    description:
-      'Verify generated config matches the expected baseline ' +
-      `(optionally scope to: ${syncScopes.join(', ')})`,
+    description: 'Verify generated config matches the expected baseline',
     name: rootNames.verify,
   },
   run: ({ rawArgs, args }) => {
     const exitCode = verifyCommand(
-      rawArgs, { cwd: args.cwd, scopes: args._ }, createLogger(),
+      rawArgs, { cwd: args.cwd, positionals: args._ }, createLogger(),
     );
     if (exitCode !== 0) {
       process.exitCode = exitCode;

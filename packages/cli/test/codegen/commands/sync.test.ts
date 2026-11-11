@@ -314,21 +314,16 @@ describe.concurrent(runSync, () => {
 });
 
 describe.concurrent(syncCommand, () => {
-  it('returns 1 and logs when given an unknown scope', ({ expect }) => {
+  // A former scope such as `toolchains` would otherwise pass silently
+  it('returns 1 and writes nothing when given a positional argument', ({ expect }) => {
     const { root } = createConsumerProject();
     const { logger, err } = captureLogger();
 
-    const code = syncCommand({ cwd: root, scopes: ['bogus'] }, logger);
+    const code = syncCommand({ cwd: root, positionals: ['toolchains'] }, logger);
 
     expect(code).toBe(1);
-    expect(err()).toContain('unknown scope');
-  });
-
-  it('returns 0 for a valid scope', ({ expect }) => {
-    const { root } = createConsumerProject();
-    const { logger } = captureLogger();
-
-    expect(syncCommand({ cwd: root, scopes: ['toolchains'] }, logger)).toBe(0);
+    expect(err()).toBe("gtb sync takes no arguments, but got 'toolchains'\n");
+    expect(existsSync(path.join(root, 'turbo.json'))).toBe(false);
   });
 
   it('passes cwd from args through to runSync', ({ expect }) => {

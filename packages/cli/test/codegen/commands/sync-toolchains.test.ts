@@ -20,7 +20,7 @@ describe.concurrent('toolchain plans', () => {
     const { filePath, synced, ws } = createStalePklWorkspace();
     const { logger } = captureLogger();
 
-    runSync({ cwd: ws.root, logger, scopes: new Set(['toolchains']) });
+    runSync({ cwd: ws.root, logger });
 
     expect(readFileSync(filePath, 'utf8')).toBe(synced);
   });
@@ -28,7 +28,7 @@ describe.concurrent('toolchain plans', () => {
   it('verify reports what a toolchain plans to write', ({ expect }) => {
     const { filePath, ws } = createStalePklWorkspace();
 
-    expect(runVerify({ cwd: ws.root, scopes: new Set(['toolchains']) }))
+    expect(runVerify({ cwd: ws.root }))
       .toStrictEqual([`${filePath}: out of date`, 'run gtb sync to apply these changes']);
   });
 
@@ -41,7 +41,7 @@ describe.concurrent('toolchain plans', () => {
     const { dependency, root } = createWorkspaceDepProject();
     const { err, logger } = captureLogger();
 
-    expect(syncCommand({ cwd: root, scopes: ['toolchains'] }, logger)).toBe(1);
+    expect(syncCommand({ cwd: root }, logger)).toBe(1);
     expect(err()).toContain(dependency.name);
   });
 });
