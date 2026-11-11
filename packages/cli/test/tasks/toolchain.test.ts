@@ -5,9 +5,11 @@ import type { Capability } from '#src/core/capability.js';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import type { Leaf, PublishingLeaf, Report } from '#src/tasks/leaf.js';
 import {
+  type Plan,
   type PlanContext,
   type PublishingRegistration,
   type Toolchain,
+  planFindings,
   taskSubCommands,
   toolchainCapabilities,
   toolchainLeaves,
@@ -291,26 +293,34 @@ const makeContext = (): PlanContext => {
   };
 };
 
+const firstPlan: Plan = () => [];
+const secondPlan: Plan = () => [];
+
 describe.concurrent(toolchainPlans, () => {
-  it('collects every toolchain\'s findings, in registry order', ({ expect }) => {
-    const context = makeContext();
-    const filePath = path.join(context.discovery.rootDir, 'first.json');
+  it('collects every toolchain\'s plan, in registry order', ({ expect }) => {
     const toolchains: readonly Toolchain[] = [
-      {
-        plan: ({ discovery }) => [{ kind: 'problem', message: `npm: ${discovery.rootDir}` }],
-        registrations: [],
-      },
+      { plan: firstPlan, registrations: [] },
       { registrations: [] },
-      {
-        plan: () => [
-          { changes: ['adds a'], content: 'a', kind: 'write', path: filePath },
-          { kind: 'problem', message: 'eslint: second' },
-        ],
-        registrations: [],
-      },
+      { plan: secondPlan, registrations: [] },
     ];
 
-    expect(toolchainPlans(toolchains, context)).toStrictEqual([
+    expect(toolchainPlans(toolchains)).toStrictEqual([firstPlan, secondPlan]);
+  });
+});
+
+describe.concurrent(planFindings, () => {
+  it('collects every plan\'s findings, in order', ({ expect }) => {
+    const context = makeContext();
+    const filePath = path.join(context.discovery.rootDir, 'first.json');
+    const plans: readonly Plan[] = [
+      ({ discovery }) => [{ kind: 'problem', message: `npm: ${discovery.rootDir}` }],
+      () => [
+        { changes: ['adds a'], content: 'a', kind: 'write', path: filePath },
+        { kind: 'problem', message: 'eslint: second' },
+      ],
+    ];
+
+    expect(planFindings(plans, context)).toStrictEqual([
       { kind: 'problem', message: `npm: ${context.discovery.rootDir}` },
       { changes: ['adds a'], content: 'a', kind: 'write', path: filePath },
       { kind: 'problem', message: 'eslint: second' },
@@ -320,17 +330,12 @@ describe.concurrent(toolchainPlans, () => {
   it('hands each plan the run\'s context', ({ expect }) => {
     const context = { ...makeContext(), force: true, ignored: new Set(['lint:eslint']) };
     const seen: PlanContext[] = [];
-    const toolchains: readonly Toolchain[] = [
-      {
-        plan: (given) => {
-          seen.push(given);
-          return [];
-        },
-        registrations: [],
-      },
-    ];
+    const recording: Plan = (given) => {
+      seen.push(given);
+      return [];
+    };
 
-    toolchainPlans(toolchains, context);
+    planFindings([recording], context);
 
     expect(seen).toStrictEqual([context]);
   });

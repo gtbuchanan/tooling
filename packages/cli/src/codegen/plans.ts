@@ -3,7 +3,7 @@ import nodePath from 'node:path';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import type { Logger } from '#src/core/logger.js';
 import {
-  type Finding, type Toolchain, toolchainPlans,
+  type Finding, type Plan, planFindings,
 } from '#src/tasks/toolchain.js';
 
 type Write = Extract<Finding, { kind: 'write' }>;
@@ -67,12 +67,12 @@ const assertOneWriterPerFile = (writes: readonly Write[]): void => {
 };
 
 const syncPass = (
-  toolchains: readonly Toolchain[],
+  plans: readonly Plan[],
   options: SyncPlansOptions,
   discovery: WorkspaceDiscovery,
   pass: number,
 ): readonly string[] => {
-  const findings = toolchainPlans(toolchains, {
+  const findings = planFindings(plans, {
     discovery,
     force: options.force,
     ignored: new Set(),
@@ -91,14 +91,14 @@ const syncPass = (
   for (const write of writes) {
     applyWrite(options.logger, write);
   }
-  return syncPass(toolchains, options, options.discover(), pass + 1);
+  return syncPass(plans, options, options.discover(), pass + 1);
 };
 
 /**
- * Applies every toolchain's writes, re-planning against fresh discovery until
+ * Applies every plan's writes, re-planning against fresh discovery until
  * a pass plans none, and returns the problems that pass still finds.
  */
 export const syncPlans = (
-  toolchains: readonly Toolchain[],
+  plans: readonly Plan[],
   options: SyncPlansOptions,
-): readonly string[] => syncPass(toolchains, options, options.discovery, 1);
+): readonly string[] => syncPass(plans, options, options.discovery, 1);

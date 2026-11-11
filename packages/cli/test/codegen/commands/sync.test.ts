@@ -328,7 +328,7 @@ describe.concurrent(syncCommand, () => {
     const { root } = createConsumerProject();
     const { logger } = captureLogger();
 
-    expect(syncCommand({ cwd: root, scopes: ['turbo'] }, logger)).toBe(0);
+    expect(syncCommand({ cwd: root, scopes: ['toolchains'] }, logger)).toBe(0);
   });
 
   it('passes cwd from args through to runSync', ({ expect }) => {
