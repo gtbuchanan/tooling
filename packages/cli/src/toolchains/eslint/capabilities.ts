@@ -7,9 +7,9 @@ const sharedConfig = '@gtbuchanan/eslint-config';
  * `eslint.config.*` of its own, which is what `lint:eslint` reads.
  */
 export const eslint: Capability = {
-  detect: ({ entries, manifest: { dependencies = {}, devDependencies = {} } }) =>
+  detect: ({ files, manifest: { dependencies = {}, devDependencies = {} } }) =>
     Object.hasOwn(dependencies, sharedConfig) ||
     Object.hasOwn(devDependencies, sharedConfig) ||
-    entries.some(entry => entry.startsWith('eslint.config.')),
+    files.some(file => file.startsWith('eslint.config.')),
   name: 'eslint',
 };

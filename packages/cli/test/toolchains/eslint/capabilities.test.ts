@@ -4,9 +4,10 @@ import type { CapabilitySource } from '#src/core/capability.js';
 import type { Manifest } from '#src/core/manifest.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 
-const source = (entries: readonly string[], manifest: Manifest = {}): CapabilitySource => ({
+const source = (files: readonly string[], manifest: Manifest = {}): CapabilitySource => ({
   dir: '/repo',
-  entries,
+  directories: [],
+  files,
   manifest,
 });
 
