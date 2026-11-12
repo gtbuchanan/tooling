@@ -368,27 +368,15 @@ export const initProject = (root: string): void => {
 
 export const makePackage = (
   overrides: Partial<WorkspacePackage> = {},
-): WorkspacePackage => {
-  const merged = {
-    buildIncludes: [...buildInclude] as readonly string[],
-    capabilities: new Set<Capability>(),
-    dir: '/fake/pkg',
-    generateScripts: [] as readonly string[],
-    hasBin: false,
-    hasE2e: false,
-    hasGenerate: false,
-    hasScripts: false,
-    hasSrc: false,
-    hasTest: false,
-    manifest: {},
-    name: 'pkg',
-    ...overrides,
-  };
-  return {
-    ...merged,
-    hasGenerate: overrides.hasGenerate ?? merged.generateScripts.length > 0,
-  };
-};
+): WorkspacePackage => ({
+  buildIncludes: [...buildInclude],
+  capabilities: new Set<Capability>(),
+  dir: '/fake/pkg',
+  generateScripts: [],
+  manifest: {},
+  name: 'pkg',
+  ...overrides,
+});
 
 export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
   /**

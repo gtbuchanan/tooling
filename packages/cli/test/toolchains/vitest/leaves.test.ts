@@ -9,7 +9,7 @@ import { makeDiscovery, makePackage } from '#test/helpers.js';
 describe.concurrent(generateTurboJson, () => {
   it('includes test:vitest:fast when any package has Vitest + test/', ({ expect }) => {
     const discovery = makeDiscovery([
-      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -33,7 +33,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest:fast inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
-      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -46,7 +46,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest:slow inputs match all vitest configs except e2e', ({ expect }) => {
     const discovery = makeDiscovery([
-      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -59,7 +59,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest tasks depend on transit', ({ expect }) => {
     const discovery = makeDiscovery([
-      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -70,7 +70,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('test:vitest tasks gate on the compile aggregate, not the ts leaf', ({ expect }) => {
     const discovery = makeDiscovery([
-      makePackage({ capabilities: new Set([vitestTests, published]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests, published]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -81,7 +81,7 @@ describe.concurrent(generateTurboJson, () => {
 
   it('omits the compile edge from test:vitest tasks when nothing is published', ({ expect }) => {
     const discovery = makeDiscovery([
-      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]) }),
     ]);
 
     const result = generateTurboJson(discovery);
@@ -116,7 +116,7 @@ describe.concurrent(generateTurboJson, () => {
 
 describe.concurrent(generatePackageScripts, () => {
   it('generates test:vitest:fast for Vitest + test/ packages', ({ expect }) => {
-    const caps = makePackage({ capabilities: new Set([vitestTests]), hasTest: true });
+    const caps = makePackage({ capabilities: new Set([vitestTests]) });
 
     const result = generatePackageScripts(caps, false);
 

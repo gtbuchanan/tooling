@@ -37,12 +37,6 @@ const capabilities = (name: string): WorkspacePackage => ({
   capabilities: new Set(),
   dir: faker.system.directoryPath(),
   generateScripts: [],
-  hasBin: false,
-  hasE2e: false,
-  hasGenerate: false,
-  hasScripts: false,
-  hasSrc: false,
-  hasTest: false,
   manifest: {},
   name,
 });

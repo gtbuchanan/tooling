@@ -19,7 +19,7 @@ describe.concurrent('generateTurboJson (transit)', () => {
 
   it('includes the transit node when Vitest exists without TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([
-      makePackage({ capabilities: new Set([vitestTests]), hasTest: true }),
+      makePackage({ capabilities: new Set([vitestTests]) }),
     ]);
 
     const result = generateTurboJson(discovery);

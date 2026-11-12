@@ -57,56 +57,6 @@ describe.concurrent(discoverPackage, () => {
     expect(result).toHaveProperty('name', path.basename(dir));
   });
 
-  it('detects test directory', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(path.join(dir, 'test'));
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasTest).toBe(true);
-  });
-
-  it('detects e2e directory', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(path.join(dir, 'e2e'));
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasE2e).toBe(true);
-  });
-
-  it('detects bin directory', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(path.join(dir, 'bin'));
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasBin).toBe(true);
-  });
-
-  it('detects scripts directory', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(path.join(dir, 'scripts'));
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasScripts).toBe(true);
-  });
-
-  it('detects src directory', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-    mkdirSync(path.join(dir, 'src'));
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result.hasSrc).toBe(true);
-  });
-
   it('detects generate via script prefix', ({ expect }) => {
     const dir = createTempDir();
     const generateKey = `generate:${faker.lorem.word()}`;
@@ -116,7 +66,6 @@ describe.concurrent(discoverPackage, () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.hasGenerate).toBe(true);
     expect(result.generateScripts).toStrictEqual([generateKey]);
   });
 
@@ -148,24 +97,7 @@ describe.concurrent(discoverPackage, () => {
 
     const result = discoverPackage(dir, capabilities);
 
-    expect(result.hasGenerate).toBe(false);
     expect(result.generateScripts).toStrictEqual([]);
-  });
-
-  it('returns all false for minimal package', ({ expect }) => {
-    const dir = createTempDir();
-    writeJson(dir, 'package.json', {});
-
-    const result = discoverPackage(dir, capabilities);
-
-    expect(result).toMatchObject({
-      hasBin: false,
-      hasE2e: false,
-      hasGenerate: false,
-      hasScripts: false,
-      hasSrc: false,
-      hasTest: false,
-    });
   });
 });
 

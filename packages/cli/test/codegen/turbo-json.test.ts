@@ -74,7 +74,6 @@ describe.concurrent(generateTurboJson, () => {
     const discovery = makeDiscovery([
       makePackage({
         capabilities: new Set([eslint, typescript, vitestTests]),
-        hasTest: true,
       }),
     ]);
 
@@ -104,7 +103,6 @@ describe.concurrent(generateTurboJson, () => {
     const discovery = makeDiscovery([
       makePackage({
         capabilities: new Set([eslint, typescript, vitestTests, published]),
-        hasTest: true,
       }),
     ]);
 

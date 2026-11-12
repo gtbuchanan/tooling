@@ -56,7 +56,6 @@ describe.concurrent(generateRootScripts, () => {
   it('includes aliases and required scripts', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
       capabilities: new Set([eslint, typescript, vitestTests, published]),
-      hasTest: true,
     }));
 
     const result = generateRootScripts(discovery);
@@ -141,7 +140,6 @@ describe.concurrent(generateRootScripts, () => {
         capabilities: new Set([
           eslint, pklPackage, pklSource, published, skills, typescript, vitestE2e, vitestTests,
         ]),
-        hasTest: true,
       }),
     ]);
 
@@ -156,7 +154,6 @@ describe.concurrent(forbiddenRootScripts, () => {
     const discovery = makeDiscovery([
       makePackage({
         capabilities: new Set([eslint, typescript, vitestTests, published]),
-        hasTest: true,
       }),
     ]);
 
@@ -179,7 +176,6 @@ describe.concurrent(forbiddenRootScripts, () => {
   it('lists nothing for monorepos, where the aliases are legitimate', ({ expect }) => {
     const discovery = makeDiscovery(monorepoOf({
       capabilities: new Set([eslint, typescript, vitestTests, published]),
-      hasTest: true,
     }));
 
     expect(forbiddenRootScripts(discovery)).toStrictEqual([]);

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { Capability } from '#src/core/capability.js';
 import {
@@ -31,33 +31,9 @@ export interface WorkspacePackage {
    */
   readonly dir: string;
   /**
-   * Has a `bin/` directory.
-   */
-  readonly hasBin: boolean;
-  /**
-   * Has an `e2e/` directory.
-   */
-  readonly hasE2e: boolean;
-  /**
-   * Has one or more `generate:*` scripts in package.json.
-   */
-  readonly hasGenerate: boolean;
-  /**
    * Names of `generate:*` scripts found in package.json.
    */
   readonly generateScripts: readonly string[];
-  /**
-   * Has a `scripts/` directory.
-   */
-  readonly hasScripts: boolean;
-  /**
-   * Has a `src/` directory.
-   */
-  readonly hasSrc: boolean;
-  /**
-   * Has a `test/` directory.
-   */
-  readonly hasTest: boolean;
   /**
    * The package's `package.json`, or `{}` when it has none. A toolchain reads
    * what it needs of it in a function beside the capabilities it declares.
@@ -142,9 +118,6 @@ export interface WorkspaceDiscovery {
 export const vendoredCli = (discovery: WorkspaceDiscovery): WorkspacePackage | undefined =>
   discovery.packages.find(pkg => pkg.name === '@gtbuchanan/cli');
 
-const hasDir = (base: string, name: string): boolean =>
-  existsSync(path.join(base, name));
-
 const isFile = (file: string): boolean =>
   statSync(file, { throwIfNoEntry: false })?.isFile() === true;
 
@@ -183,20 +156,13 @@ const buildPackage = (
   capabilities: readonly Capability[],
 ): WorkspacePackage => {
   const files = listFiles(dir);
-  const generateScripts = collectGenerateScripts(manifest);
 
   return {
     buildIncludes: resolveBuildIncludes(dir),
     capabilities: new Set(capabilities.filter(capability =>
       capability.detect({ dir, entries: files, manifest }))),
     dir,
-    generateScripts,
-    hasBin: hasDir(dir, 'bin'),
-    hasE2e: hasDir(dir, 'e2e'),
-    hasGenerate: generateScripts.length > 0,
-    hasScripts: hasDir(dir, 'scripts'),
-    hasSrc: hasDir(dir, 'src'),
-    hasTest: hasDir(dir, 'test'),
+    generateScripts: collectGenerateScripts(manifest),
     manifest,
     name: manifest.name ?? path.basename(dir),
   };
