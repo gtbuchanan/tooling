@@ -1,15 +1,13 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
 import type { Capability, CapabilitySource } from '#src/core/capability.js';
 
 const sharedConfig = '@gtbuchanan/vitest-config';
 
 const isVitestUser = (
-  { entries, manifest: { dependencies = {}, devDependencies = {} } }: CapabilitySource,
+  { files, manifest: { dependencies = {}, devDependencies = {} } }: CapabilitySource,
 ): boolean =>
   Object.hasOwn(dependencies, sharedConfig) ||
   Object.hasOwn(devDependencies, sharedConfig) ||
-  entries.some(entry => entry.startsWith('vitest.config.'));
+  files.some(file => file.startsWith('vitest.config.'));
 
 /**
  * Has unit tests for Vitest to run: uses Vitest, by depending on
@@ -17,7 +15,7 @@ const isVitestUser = (
  * `test/` directory.
  */
 export const vitestTests: Capability = {
-  detect: source => isVitestUser(source) && existsSync(path.join(source.dir, 'test')),
+  detect: source => isVitestUser(source) && source.directories.includes('test'),
   name: 'vitestTests',
 };
 
@@ -25,6 +23,6 @@ export const vitestTests: Capability = {
  * Holds a `vitest.config.e2e.*`, which is what `test:vitest:e2e` runs.
  */
 export const vitestE2e: Capability = {
-  detect: ({ entries }) => entries.some(entry => entry.startsWith('vitest.config.e2e.')),
+  detect: ({ files }) => files.some(file => file.startsWith('vitest.config.e2e.')),
   name: 'vitestE2e',
 };

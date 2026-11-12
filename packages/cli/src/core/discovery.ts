@@ -1,6 +1,6 @@
-import { readdirSync, statSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import path from 'node:path';
-import type { Capability } from '#src/core/capability.js';
+import { type Capability, listDirectory } from '#src/core/capability.js';
 import { generateTaskPrefix } from '#src/core/layout.js';
 import type { Manifest } from '#src/core/manifest.js';
 import { localeComparer } from '#src/core/sort.js';
@@ -115,17 +115,6 @@ export interface WorkspaceDiscovery {
 const isFile = (file: string): boolean =>
   statSync(file, { throwIfNoEntry: false })?.isFile() === true;
 
-/**
- * Lists files in a directory (returns empty array if dir doesn't exist).
- */
-const listFiles = (dir: string): readonly string[] => {
-  try {
-    return readdirSync(dir);
-  } catch {
-    return [];
-  }
-};
-
 const parseManifest = (dir: string): Manifest => {
   try {
     return readParsedManifest(dir);
@@ -168,11 +157,10 @@ const buildPackage = (
   manifest: Manifest,
   capabilities: readonly Capability[],
 ): WorkspacePackage => {
-  const files = listFiles(dir);
+  const source = { ...listDirectory(dir), manifest };
 
   return {
-    capabilities: new Set(capabilities.filter(capability =>
-      capability.detect({ dir, entries: files, manifest }))),
+    capabilities: new Set(capabilities.filter(capability => capability.detect(source))),
     dir,
     generateScripts: collectGenerateScripts(manifest),
     manifest,

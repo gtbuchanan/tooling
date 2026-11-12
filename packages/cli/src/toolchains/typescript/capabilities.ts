@@ -1,6 +1,6 @@
-import { type Dirent, readdirSync } from 'node:fs';
+import type { Dirent } from 'node:fs';
 import path from 'node:path';
-import type { Capability } from '#src/core/capability.js';
+import { type Capability, readEntries } from '#src/core/capability.js';
 import { typeCheckInclude } from '#src/toolchains/typescript/layout.js';
 
 /**
@@ -8,10 +8,10 @@ import { typeCheckInclude } from '#src/toolchains/typescript/layout.js';
  * `tsconfig.json` of its own.
  */
 export const typescript: Capability = {
-  detect: ({ entries, manifest: { dependencies = {}, devDependencies = {} } }) =>
+  detect: ({ files, manifest: { dependencies = {}, devDependencies = {} } }) =>
     Object.hasOwn(dependencies, '@gtbuchanan/tsconfig') ||
     Object.hasOwn(devDependencies, '@gtbuchanan/tsconfig') ||
-    entries.includes('tsconfig.json'),
+    files.includes('tsconfig.json'),
   name: 'typescript',
 };
 
@@ -34,17 +34,6 @@ const isTypeScriptFile = (name: string): boolean =>
  */
 const isTypeScriptSource = (entry: Dirent): boolean =>
   entry.isFile() && isTypeScriptFile(entry.name);
-
-/**
- * Lists a directory's entries, or nothing when it cannot be read.
- */
-const readEntries = (dir: string): readonly Dirent[] => {
-  try {
-    return readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-};
 
 /*
  * What tsc excludes when a config declares no `exclude` of its own, which
@@ -87,8 +76,8 @@ const typeCheckDirectories = typeCheckInclude.filter(entry => !entry.includes('*
  * error to tsc (TS18003), not a no-op.
  */
 export const typescriptSources: Capability = {
-  detect: ({ dir }) =>
-    readEntries(dir).some(isTypeScriptSource) ||
+  detect: ({ dir, files }) =>
+    files.some(isTypeScriptFile) ||
     typeCheckDirectories.some(name => hasTypeScriptWithin(path.join(dir, name))),
   name: 'typescriptSources',
 };

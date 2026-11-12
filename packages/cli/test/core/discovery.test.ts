@@ -8,18 +8,21 @@ import { discoverPackage, discoverWorkspace } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
 import { capabilities } from '#src/toolchains/index.js';
+import { pklSource } from '#src/toolchains/pkl/capabilities.js';
+import { skills } from '#src/toolchains/skills/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
+import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
 const writeMarker = (dir: string): void => {
-  writeFileSync(path.join(dir, 'marker'), '');
+  mkdirSync(path.join(dir, 'marker'));
 };
 
 /**
- * Holds where the directory has a `marker` entry and its manifest names it `name`.
+ * Holds where the directory has a `marker` subdirectory and its manifest names it `name`.
  */
 const markedAs = (name: string): Capability => ({
-  detect: ({ entries, manifest }) => entries.includes('marker') && manifest.name === name,
+  detect: ({ directories, manifest }) => directories.includes('marker') && manifest.name === name,
   name: `marked as ${name}`,
 });
 
@@ -36,6 +39,46 @@ describe.concurrent(discoverPackage, () => {
     const result = discoverPackage(dir, [never, marked, markedAs(build.scopedPackageName())]);
 
     expect(result.capabilities).toStrictEqual(new Set([marked]));
+  });
+
+  /*
+   * Each of these detects a file by name, and a directory carrying the name
+   * would put the package in the plan and leave a generator writing over it.
+   */
+  it.for([
+    { capability: eslint, file: 'eslint.config.ts' },
+    { capability: pklSource, file: 'Defaults.pkl' },
+    { capability: typescript, file: 'tsconfig.json' },
+    { capability: vitestE2e, file: 'vitest.config.e2e.ts' },
+  ])('does not take a directory for $file', ({ capability, file }, { expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    mkdirSync(path.join(dir, file));
+
+    const result = discoverPackage(dir, [capability]);
+
+    expect(result.capabilities).toStrictEqual(new Set());
+  });
+
+  it('does not take a file for the skills directory', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    writeFileSync(path.join(dir, 'skills'), '');
+
+    const result = discoverPackage(dir, [skills]);
+
+    expect(result.capabilities).toStrictEqual(new Set());
+  });
+
+  it('does not take a file for the test directory', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    writeFileSync(path.join(dir, 'vitest.config.ts'), '');
+    writeFileSync(path.join(dir, 'test'), '');
+
+    const result = discoverPackage(dir, [vitestTests]);
+
+    expect(result.capabilities).toStrictEqual(new Set());
   });
 
   it('exposes the manifest name', ({ expect }) => {

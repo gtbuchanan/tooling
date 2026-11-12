@@ -3,8 +3,8 @@ import path from 'node:path';
 import type { Capability, CapabilitySource } from '#src/core/capability.js';
 import { hasPackageBlock } from '#src/toolchains/pkl/pkl-project.js';
 
-const isPklSource = ({ entries }: CapabilitySource): boolean =>
-  entries.some(entry => entry.endsWith('.pkl') && entry !== 'hk.pkl');
+const isPklSource = ({ files }: CapabilitySource): boolean =>
+  files.some(file => file.endsWith('.pkl') && file !== 'hk.pkl');
 
 /**
  * Holds hand-authored Pkl source — a `*.pkl` file other than the hk config

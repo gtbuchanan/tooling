@@ -4,7 +4,8 @@ import type { CapabilitySource } from '#src/core/capability.js';
 import type { Manifest } from '#src/core/manifest.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 
-const source = (manifest: Manifest): CapabilitySource => ({ dir: '/repo', entries: [], manifest });
+const source = (manifest: Manifest): CapabilitySource =>
+  ({ dir: '/repo', directories: [], files: [], manifest });
 
 describe.concurrent('published', () => {
   it('holds for a package naming a publish directory', ({ expect }) => {
