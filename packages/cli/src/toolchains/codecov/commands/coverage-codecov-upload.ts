@@ -19,6 +19,47 @@ const PullRequestEventSchema = v.object({
   }),
 });
 
+const RepoSchema = v.object({
+  full_name: v.string(),
+});
+
+const ForkBaseSchema = v.object({
+  repo: RepoSchema,
+});
+
+const ForkHeadSchema = v.object({
+  label: v.string(),
+  repo: RepoSchema,
+});
+
+/*
+ * Parsed apart from PullRequestEventSchema so a payload without these
+ * fields still yields the head sha. A deleted fork's `head.repo` is null,
+ * which fails the parse and leaves the branch to the CLI.
+ */
+const ForkEventSchema = v.object({
+  pull_request: v.object({
+    base: ForkBaseSchema,
+    head: ForkHeadSchema,
+  }),
+});
+
+const readEvent = (): unknown => {
+  const eventPath = process.env['GITHUB_EVENT_PATH'];
+  if (eventPath === undefined || eventPath === '' || !existsSync(eventPath)) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(readFileSync(eventPath, 'utf8'));
+  } catch {
+    /*
+     * Unreadable or non-JSON event payloads shouldn't fail the upload —
+     * every value read from the payload has a fallback.
+     */
+    return undefined;
+  }
+};
+
 const resolveNetworkRoot = (): string => {
   const cwd = process.cwd();
   const gitPath = findUpSync('.git', { cwd });
@@ -35,27 +76,31 @@ const resolveNetworkRoot = (): string => {
  * from the event payload and pass it via -C, mirroring what
  * codecov/codecov-action does. See codecov/codecov-cli#474.
  */
-const resolveCommitSha = (): string | undefined => {
-  const eventPath = process.env['GITHUB_EVENT_PATH'];
-  if (eventPath !== undefined && eventPath !== '' && existsSync(eventPath)) {
-    try {
-      const result = v.safeParse(
-        PullRequestEventSchema,
-        JSON.parse(readFileSync(eventPath, 'utf8')),
-      );
-      if (result.success) {
-        return result.output.pull_request.head.sha;
-      }
-    } catch {
-      /*
-       * Unreadable or non-JSON event payloads shouldn't fail the
-       * upload — fall through to GITHUB_SHA (push events land here too,
-       * where GITHUB_SHA is already the real commit).
-       */
-    }
+const resolveCommitSha = (event: unknown): string | undefined => {
+  const result = v.safeParse(PullRequestEventSchema, event);
+  if (result.success) {
+    return result.output.pull_request.head.sha;
   }
+  // Push events land here too, where GITHUB_SHA is already the real commit.
   const sha = process.env['GITHUB_SHA'];
   return sha === undefined || sha === '' ? undefined : sha;
+};
+
+/*
+ * Codecov accepts an upload without a token only for an unprotected
+ * branch, which it recognizes by an `owner:branch` name. A fork's run gets
+ * no token (nor an OIDC one), but the CLI sends the bare head ref, which
+ * Codecov treats as protected and refuses. Pass the head label instead,
+ * as codecov/codecov-action does. A same-repository pull request keeps
+ * the CLI's own branch detection.
+ */
+const resolveForkBranch = (event: unknown): string | undefined => {
+  const result = v.safeParse(ForkEventSchema, event);
+  if (!result.success) {
+    return undefined;
+  }
+  const { base, head } = result.output.pull_request;
+  return head.repo.full_name === base.repo.full_name ? undefined : head.label;
 };
 
 /**
@@ -80,7 +125,9 @@ export const coverageCodecovUpload = (
       return;
     }
 
-    const sha = resolveCommitSha();
+    const event = readEvent();
+    const sha = resolveCommitSha(event);
+    const branch = resolveForkBranch(event);
     /*
      * Must match the flag `gtb sync` writes into codecov.yml for this
      * package, so both go through codecovName — otherwise the upload
@@ -102,6 +149,7 @@ export const coverageCodecovUpload = (
         '--disable-search',
         '--network-root-folder', resolveNetworkRoot(),
         ...(sha === undefined ? [] : ['-C', sha]),
+        ...(branch === undefined ? [] : ['-B', branch]),
         ...files.flatMap(file => ['-f', file]),
         '-F', flag,
         ...rawArgs,

@@ -220,6 +220,87 @@ describe('coverage:codecov:upload', () => {
     expect(getRunArgs()).toContain(headSha);
   });
 
+  /*
+   * Codecov accepts a tokenless upload only for an unprotected branch, which
+   * it recognizes by an `owner:branch` name. The CLI sends the bare head ref,
+   * so a fork's upload is refused unless the head label is passed instead.
+   */
+  it('passes the head label as branch for a fork pull request', async ({
+    expect,
+  }) => {
+    vi.stubEnv('CI', 'true');
+    vi.stubEnv('GITHUB_EVENT_PATH', '/ci/event.json');
+    const label = `${build.packageName()}:${build.packageName()}`;
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify({
+      pull_request: {
+        base: { repo: { full_name: `${build.packageName()}/repo` } },
+        head: {
+          label,
+          repo: { full_name: `${build.packageName()}/fork` },
+          sha: faker.git.commitSha(),
+        },
+      },
+    }));
+
+    await invoke([]);
+
+    const args = getRunArgs();
+
+    expect(args[args.indexOf('-B') + 1]).toBe(label);
+  });
+
+  it('leaves the branch to the CLI for a same-repository pull request', async ({
+    expect,
+  }) => {
+    vi.stubEnv('CI', 'true');
+    vi.stubEnv('GITHUB_EVENT_PATH', '/ci/event.json');
+    const repo = { full_name: `${build.packageName()}/repo` };
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify({
+      pull_request: {
+        base: { repo },
+        head: { label: build.packageName(), repo, sha: faker.git.commitSha() },
+      },
+    }));
+
+    await invoke([]);
+
+    expect(getRunArgs()).not.toContain('-B');
+  });
+
+  /*
+   * A deleted fork leaves `head.repo` null, and a forge's payload may omit
+   * the fields entirely. Neither may cost the upload its head sha.
+   */
+  it('passes the head sha without a branch when head.repo is null', async ({
+    expect,
+  }) => {
+    vi.stubEnv('CI', 'true');
+    vi.stubEnv('GITHUB_EVENT_PATH', '/ci/event.json');
+    const headSha = faker.git.commitSha();
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify({
+      pull_request: {
+        base: { repo: { full_name: `${build.packageName()}/repo` } },
+        head: {
+          label: build.packageName(),
+          /* eslint-disable-next-line unicorn/no-null --
+             GitHub's payload carries null here, which JSON can't spell as undefined */
+          repo: null,
+          sha: headSha,
+        },
+      },
+    }));
+
+    await invoke([]);
+
+    const args = getRunArgs();
+
+    expect(args).not.toContain('-B');
+    expect(args[args.indexOf('-C') + 1]).toBe(headSha);
+  });
+
   it('falls back to GITHUB_SHA when not a pull request', async ({ expect }) => {
     vi.stubEnv('CI', 'true');
     vi.stubEnv('GITHUB_EVENT_PATH', '/ci/event.json');
