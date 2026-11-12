@@ -3,7 +3,8 @@ import type { Finding, PlanContext } from '#src/tasks/toolchain.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { workspaceDependenciesOf } from '#src/toolchains/npm/manifest.js';
 
-const isPublished = (pkg: WorkspacePackage): boolean => pkg.capabilities.has(published);
+const isPublished = (pkg: Pick<WorkspacePackage, 'capabilities'>): boolean =>
+  pkg.capabilities.has(published);
 
 /**
  * Flags a published package that declares a *private* workspace package among

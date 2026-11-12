@@ -1,13 +1,13 @@
 import { parse as parseToml } from 'smol-toml';
 import { describe, it } from 'vitest';
-import type { WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { HkMiseInput } from '#src/toolchains/hk/mise-config.js';
 import { generateMiseFragment } from '#src/toolchains/mise/fragment.js';
 
-const withHk: Pick<WorkspaceDiscovery, 'cli' | 'hkFiles'> = {
+const withHk: HkMiseInput = {
   cli: { kind: 'dependency' },
-  hkFiles: ['.config/hk.pkl'],
+  root: { hkFiles: ['.config/hk.pkl'] },
 };
-const withoutHk = { ...withHk, hkFiles: [] };
+const withoutHk: HkMiseInput = { ...withHk, root: { hkFiles: [] } };
 
 describe.concurrent(generateMiseFragment, () => {
   it.for([

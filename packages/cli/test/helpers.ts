@@ -376,17 +376,21 @@ export const makePackage = (
   ...overrides,
 });
 
-export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
+export interface MakeDiscoveryOverrides {
+  /**
+   * Overrides the root's capabilities (defaults to none).
+   */
+  readonly capabilities?: ReadonlySet<Capability>;
   /**
    * Overrides {@link WorkspaceDiscovery.cli} (defaults to `path`).
    */
   readonly cli?: CliSource;
   /**
-   * Overrides {@link WorkspaceDiscovery.hkFiles} (defaults to none).
+   * Overrides the root's hk config files (defaults to none).
    */
   readonly hkFiles?: readonly string[];
   /**
-   * Overrides {@link WorkspaceDiscovery.miseFiles} (defaults to none).
+   * Overrides the root's mise files (defaults to none).
    */
   readonly miseFiles?: readonly string[];
   /**
@@ -402,22 +406,20 @@ export const makeDiscovery = (
   overrides: MakeDiscoveryOverrides = {},
 ): WorkspaceDiscovery => {
   const {
+    capabilities = new Set<Capability>(),
     cli = { kind: 'path' },
     hkFiles = [],
     isMonorepo = packages.length > 1,
     miseFiles = [],
-    ...rootOverrides
   } = overrides;
   return {
     cli,
-    hkFiles,
     isMonorepo,
-    miseFiles,
     packages,
     packageGlobs: isMonorepo
       ? [{ dirs: packages.map(({ dir }) => dir), pattern: 'packages/*' }]
       : [],
-    root: makePackage(rootOverrides),
+    root: { capabilities, hkFiles, miseFiles, name: 'root' },
     rootDir: '/fake/root',
   };
 };

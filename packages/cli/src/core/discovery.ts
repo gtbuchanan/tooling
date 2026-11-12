@@ -75,24 +75,43 @@ export type CliSource =
   | { readonly kind: 'path' };
 
 /**
- * Full workspace discovery result.
+ * What the workspace root holds as the root, apart from any package. A
+ * single-package repo lists its root among `packages` too, which is where its
+ * manifest, name and package capabilities are read from.
  */
-export interface WorkspaceDiscovery {
-  readonly cli: CliSource;
+export interface WorkspaceRoot {
+  /**
+   * The capabilities its toolchains declared that hold at the root, which
+   * decide its own `//#` tasks.
+   */
+  readonly capabilities: ReadonlySet<Capability>;
   /**
    * The hk config files present at the root, as sorted POSIX paths relative
    * to it.
    */
   readonly hkFiles: readonly string[];
   /**
-   * Whether a pnpm-workspace.yaml was found.
-   */
-  readonly isMonorepo: boolean;
-  /**
    * The mise config and lockfiles present at the root, as sorted POSIX paths
    * relative to it. They pin the toolchain every task runs on.
    */
   readonly miseFiles: readonly string[];
+  /**
+   * The root manifest's `name`, or the directory basename where it declares
+   * none. The root is a workspace project of its own, so a package's
+   * `workspace:` specifier can name it.
+   */
+  readonly name: string;
+}
+
+/**
+ * Full workspace discovery result.
+ */
+export interface WorkspaceDiscovery {
+  readonly cli: CliSource;
+  /**
+   * Whether a pnpm-workspace.yaml was found.
+   */
+  readonly isMonorepo: boolean;
   /**
    * The packages matched by the workspace globs.
    */
@@ -102,10 +121,7 @@ export interface WorkspaceDiscovery {
    * directories it matched. Empty in single-package mode.
    */
   readonly packageGlobs: readonly PackageGlob[];
-  /**
-   * The workspace root, discovered like any package.
-   */
-  readonly root: WorkspacePackage;
+  readonly root: WorkspaceRoot;
   /**
    * Workspace root directory.
    */
@@ -152,15 +168,23 @@ const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
     .filter(name => name.startsWith(generateTaskPrefix))
     .toSorted(localeComparer);
 
+const detectCapabilities = (
+  dir: string,
+  manifest: Manifest,
+  capabilities: readonly Capability[],
+): ReadonlySet<Capability> => {
+  const source = { ...listDirectory(dir), manifest };
+
+  return new Set(capabilities.filter(capability => capability.detect(source)));
+};
+
 const buildPackage = (
   dir: string,
   manifest: Manifest,
   capabilities: readonly Capability[],
 ): WorkspacePackage => {
-  const source = { ...listDirectory(dir), manifest };
-
   return {
-    capabilities: new Set(capabilities.filter(capability => capability.detect(source))),
+    capabilities: detectCapabilities(dir, manifest, capabilities),
     dir,
     generateScripts: collectGenerateScripts(manifest),
     manifest,
@@ -199,14 +223,20 @@ export const discoverWorkspace = (
   const rootManifest = parseManifest(ctx.rootDir);
   const packages = ctx.packageDirs.map(dir => buildPackage(dir, parseManifest(dir), capabilities));
 
+  const presentAtRoot = (candidates: readonly string[]): readonly string[] =>
+    candidates.filter(file => isFile(path.join(ctx.rootDir, file)));
+
   return {
     cli: locateCli(rootManifest, packages),
-    hkFiles: hkFileCandidates.filter(file => isFile(path.join(ctx.rootDir, file))),
     isMonorepo,
-    miseFiles: miseFileCandidates.filter(file => isFile(path.join(ctx.rootDir, file))),
     packages,
     packageGlobs: ctx.packageGlobs,
-    root: buildPackage(ctx.rootDir, rootManifest, capabilities),
+    root: {
+      capabilities: detectCapabilities(ctx.rootDir, rootManifest, capabilities),
+      hkFiles: presentAtRoot(hkFileCandidates),
+      miseFiles: presentAtRoot(miseFileCandidates),
+      name: rootManifest.name ?? path.basename(ctx.rootDir),
+    },
     rootDir: ctx.rootDir,
   };
 };

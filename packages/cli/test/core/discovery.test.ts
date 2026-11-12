@@ -285,7 +285,7 @@ describe.concurrent(discoverWorkspace, () => {
 
     const result = discoverWorkspace({ capabilities, cwd: root });
 
-    expect(result.miseFiles).toStrictEqual([file]);
+    expect(result.root.miseFiles).toStrictEqual([file]);
   });
 
   it('lists every mise file present, sorted', ({ expect }) => {
@@ -299,7 +299,8 @@ describe.concurrent(discoverWorkspace, () => {
 
     const result = discoverWorkspace({ capabilities, cwd: root });
 
-    expect(result.miseFiles).toStrictEqual(['.config/mise.lock', '.config/mise.toml', 'mise.toml']);
+    expect(result.root.miseFiles)
+      .toStrictEqual(['.config/mise.lock', '.config/mise.toml', 'mise.toml']);
   });
 
   it('leaves out local overrides and directories named like mise files', ({ expect }) => {
@@ -310,7 +311,7 @@ describe.concurrent(discoverWorkspace, () => {
 
     const result = discoverWorkspace({ capabilities, cwd: root });
 
-    expect(result.miseFiles).toStrictEqual([]);
+    expect(result.root.miseFiles).toStrictEqual([]);
   });
 
   it.for(['.config/hk.pkl', 'hk.pkl'])('lists the hk config %s', (file, { expect }) => {
@@ -321,7 +322,7 @@ describe.concurrent(discoverWorkspace, () => {
 
     const result = discoverWorkspace({ capabilities, cwd: root });
 
-    expect(result.hkFiles).toStrictEqual([file]);
+    expect(result.root.hkFiles).toStrictEqual([file]);
   });
 
   it('leaves out local overrides and directories named like hk configs', ({ expect }) => {
@@ -334,6 +335,6 @@ describe.concurrent(discoverWorkspace, () => {
 
     const result = discoverWorkspace({ capabilities, cwd: root });
 
-    expect(result.hkFiles).toStrictEqual([]);
+    expect(result.root.hkFiles).toStrictEqual([]);
   });
 });

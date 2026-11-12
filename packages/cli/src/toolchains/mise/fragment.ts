@@ -1,6 +1,5 @@
 import { stringify } from 'smol-toml';
-import type { WorkspaceDiscovery } from '#src/core/discovery.js';
-import { type MiseEntry, hkMiseConfig } from '#src/toolchains/hk/mise-config.js';
+import { type HkMiseInput, type MiseEntry, hkMiseConfig } from '#src/toolchains/hk/mise-config.js';
 
 /**
  * Where the generated mise fragment is written, as a POSIX path relative to
@@ -87,7 +86,7 @@ const renderTable = (name: string, entries: readonly MiseEntry[]): readonly stri
  * wholesale, so it never round-trips the hand-authored mise config.
  */
 export const generateMiseFragment = (
-  discovery: Pick<WorkspaceDiscovery, 'cli' | 'hkFiles'>,
+  discovery: HkMiseInput,
 ): string => {
   const hk = hkMiseConfig(discovery);
   const sections = [

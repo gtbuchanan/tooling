@@ -45,7 +45,7 @@ const planLegacyTasks = (filePath: string): readonly Finding[] =>
  * repo with no mise config would start configuring one.
  */
 export const planMiseFragment = ({ discovery }: PlanContext): readonly Finding[] => {
-  if (discovery.miseFiles.every(file => !file.endsWith('.toml'))) {
+  if (discovery.root.miseFiles.every(file => !file.endsWith('.toml'))) {
     return [];
   }
 

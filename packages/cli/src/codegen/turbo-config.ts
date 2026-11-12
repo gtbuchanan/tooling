@@ -64,7 +64,7 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
    * transitive closure already invalidates correctly, so they keep
    * granular caching.
    */
-  const { cli, miseFiles, rootDir } = discovery;
+  const { cli, root: { miseFiles }, rootDir } = discovery;
   const selfHosted = cli.kind === 'workspace'
     ? ['pnpm-lock.yaml', ...vendoredCliSources(rootDir, cli.dir)]
     : [];

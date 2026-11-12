@@ -1,4 +1,11 @@
-import type { CliSource, WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { CliSource, WorkspaceDiscovery, WorkspaceRoot } from '#src/core/discovery.js';
+
+/**
+ * What of discovery the hk mise config is generated from.
+ */
+export type HkMiseInput = Pick<WorkspaceDiscovery, 'cli'> & {
+  readonly root: Pick<WorkspaceRoot, 'hkFiles'>;
+};
 
 /**
  * One key of a mise config table, with the comment lines the generated file
@@ -51,7 +58,7 @@ const miseTaskPrefixes: Readonly<Record<CliSource['kind'], string>> = {
  * tool-level hook runs only when mise installs hk, once per machine.
  */
 export const hkMiseConfig = (
-  { cli, hkFiles }: Pick<WorkspaceDiscovery, 'cli' | 'hkFiles'>,
+  { cli, root: { hkFiles } }: HkMiseInput,
 ): HkMiseConfig | undefined => {
   if (hkFiles.length === 0) {
     return undefined;
