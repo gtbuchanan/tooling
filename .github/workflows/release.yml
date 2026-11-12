@@ -30,8 +30,9 @@ jobs:
 
   ci:
     name: CI
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
+      id-token: write # Codecov Upload authenticates with OIDC
     uses: ./.github/workflows/ci.yml
 
 name: Release

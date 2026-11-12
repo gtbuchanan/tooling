@@ -273,9 +273,10 @@ permissions:
 jobs:
   ci:
     name: CI
+    permissions:
+      contents: read
+      id-token: write # Codecov Upload authenticates with OIDC
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   changeset:
     name: Changeset
     uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@<tag>
@@ -304,9 +305,10 @@ permissions:
 jobs:
   ci:
     name: CI
+    permissions:
+      contents: read
+      id-token: write # Codecov Upload authenticates with OIDC
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   cd:
     name: CD
     needs: ci
@@ -336,10 +338,11 @@ populates. Permissions narrow down the call chain but never elevate, so
 the pipeline grants each calling job the superset its called jobs need,
 and only that job (`pull-requests: write` for Dependencies;
 `contents: read` + `id-token: write` for CD, whose repository writes all
-go through the GitHub App token). The workflow level grants only
+go through the GitHub App token, and for CI, whose `Codecov Upload`
+authenticates with OIDC). The workflow level grants only
 `contents: read`, so no other job gets a write scope. A job-level
 `permissions` block sets every scope it omits to `none`, so `contents:
-read` has to be listed in both job blocks: without it the called jobs ask
+read` has to be listed in every job block: without it the called jobs ask
 for more than the caller grants, and the run is rejected before it starts.
 
 **Why the reusables reference actions by full path, not `./`.** Every
@@ -386,6 +389,12 @@ through `package.json` scripts backed by `gtb` leaf commands.
   Uploads artifacts: `packages` (e2e tarballs) and `coverage` (final
   report). When `run-slow-tests` is enabled, fast and slow coverage are
   merged in a separate `coverage` job.
+  `Codecov Upload` authenticates with the optional `CODECOV_TOKEN` secret
+  when the caller passes one, and otherwise, on github.com only, with a
+  GitHub OIDC token (audience `https://codecov.io`). Codecov trusts no
+  other issuer, so Forgejo callers pass the secret; Forgejo ignores the
+  job's `id-token: write`. A fork's pull request gets neither and uploads
+  tokenless.
   Every artifact path globs **both** repo shapes — the root `dist/…` of a
   single-package repo and the `packages/*/dist/…` of a monorepo — because
   `@actions/glob` has brace expansion disabled, so one combined pattern

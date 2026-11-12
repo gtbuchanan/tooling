@@ -43,6 +43,11 @@ jobs:
       || needs.coverage.result == 'skipped') }}
     name: Codecov Upload
     needs: [build, coverage]
+    # The caller has to grant id-token: write as well, since a called job can't
+    # hold a scope its caller withheld. Forgejo ignores `permissions`.
+    permissions:
+      contents: read
+      id-token: write # the OIDC token the upload authenticates with
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -71,8 +76,31 @@ jobs:
           sudo mv codecov /usr/local/bin/
         shell: bash
 
+      # Codecov takes a GitHub OIDC token wherever it takes an upload token, so
+      # a caller that passes no CODECOV_TOKEN has no secret to store or rotate.
+      # A token the caller does pass wins: Codecov trusts only GitHub's issuer,
+      # so a Forgejo caller authenticates with the secret. GitHub hands a fork's
+      # pull request no OIDC token, as it hands it no secret, so with no request
+      # URL the upload goes out tokenless, as it did before.
       - env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        id: oidc
+        if: ${{ github.server_url == 'https://github.com' }}
+        name: Request Codecov OIDC token
+        run: |
+          if [ -n "$CODECOV_TOKEN" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            exit 0
+          fi
+          token=$(curl -fsS -G \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            --data-urlencode 'audience=https://codecov.io' \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r .value)
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN || steps.oidc.outputs.token }}
         uses: gtbuchanan/tooling/.github/actions/turbo-run@main
         with:
           task: coverage:codecov:upload
@@ -188,8 +216,9 @@ on:
     secrets:
       CODECOV_TOKEN:
         description: >-
-          Codecov upload token (required for private repos,
-          optional for public)
+          Codecov upload token. On github.com the upload authenticates with
+          an OIDC token without it; elsewhere it's required for private
+          repos and optional for public ones
         required: false
 
 permissions:

@@ -22,8 +22,9 @@ Shared build configuration monorepo for JavaScript/TypeScript projects.
 
 A consuming repo copies two pipeline workflows — one per trigger —
 whose jobs call this repo's single-concern reusable workflows. Each call
-passes only the secrets its workflow reads: `CODECOV_TOKEN` to CI, and
-`APP_PRIVATE_KEY` to CD. The key lives in the `release` environment, so
+passes only the secrets its workflow reads: `APP_PRIVATE_KEY` to CD, and
+`CODECOV_TOKEN` to CI only off github.com (see [Coverage](#coverage)).
+The key lives in the `release` environment, so
 the caller's value is empty, but a called workflow sees only the names
 its caller passes, and CD's jobs read the value from the environment. Replace `<tag>` with a workflows
 release tag (`v<version>`) rather than `main`: the
@@ -45,9 +46,10 @@ permissions:
 jobs:
   ci:
     name: CI
+    permissions:
+      contents: read
+      id-token: write # Codecov Upload authenticates with OIDC
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   changeset:
     name: Changeset
     uses: gtbuchanan/tooling/.github/workflows/changeset-check.yml@<tag>
@@ -76,9 +78,10 @@ permissions:
 jobs:
   ci:
     name: CI
+    permissions:
+      contents: read
+      id-token: write # Codecov Upload authenticates with OIDC
     uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   cd:
     name: CD
     needs: ci
@@ -115,8 +118,30 @@ a per-package turbo task. The workflow installs the
 package uploads on every commit — that is what keeps Codecov's commit
 statuses dependable enough to require in branch protection.
 
-Add a `CODECOV_TOKEN` repository secret; the `CI` job (shown in the
-pipelines above) passes it to `ci.yml`.
+On github.com the upload authenticates with a GitHub OIDC token, so
+there is no secret to store or rotate. The `CI` job (shown in the
+pipelines above) grants `id-token: write`, which GitHub requires of the
+caller even though only `ci.yml`'s `Codecov Upload` job uses it. A pull
+request from a fork gets no OIDC token and uploads without one, which
+Codecov accepts for public repositories.
+
+Codecov trusts no OIDC issuer but GitHub's, so on Forgejo add a
+`CODECOV_TOKEN` repository secret and pass it to `ci.yml` from the `CI`
+job. Forgejo ignores `permissions`, so the grant can stay:
+
+```yaml
+jobs:
+  ci:
+    name: CI
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    uses: gtbuchanan/tooling/.github/workflows/ci.yml@<tag>
+```
+
+A token passed this way wins over OIDC on github.com too.
 
 Each upload names its flag after the package's unscoped
 `package.json` name (`@acme/utils` → `utils`). Codecov compares a flag
