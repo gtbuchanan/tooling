@@ -1,8 +1,12 @@
 import { parse as parseToml } from 'smol-toml';
 import { describe, it } from 'vitest';
+import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import { generateMiseFragment } from '#src/toolchains/mise/fragment.js';
 
-const withHk = { dependsOnCli: true, hkFiles: ['.config/hk.pkl'], isSelfHosted: false };
+const withHk: Pick<WorkspaceDiscovery, 'cli' | 'hkFiles'> = {
+  cli: { kind: 'dependency' },
+  hkFiles: ['.config/hk.pkl'],
+};
 const withoutHk = { ...withHk, hkFiles: [] };
 
 describe.concurrent(generateMiseFragment, () => {

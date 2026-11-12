@@ -60,13 +60,25 @@ const miseFileCandidates = [
 const hkFileCandidates = ['.config/hk.pkl', 'hk.pkl'] as const;
 
 /**
+ * Where the `gtb` the generated scripts and mise tasks run comes from.
+ *
+ * - `workspace`: the repository vendoring the CLI, which runs it from the
+ *   source in `dir` rather than an installed copy.
+ * - `dependency`: a root depending on `@gtbuchanan/cli`, which runs the copy
+ *   pnpm installed.
+ * - `path`: neither, as in an hk-only adopter, which runs whatever `gtb` is on
+ *   PATH (mise's `npm:` backend) and has no build for gtb to drive.
+ */
+export type CliSource =
+  | { readonly dir: string; readonly kind: 'workspace' }
+  | { readonly kind: 'dependency' }
+  | { readonly kind: 'path' };
+
+/**
  * Full workspace discovery result.
  */
 export interface WorkspaceDiscovery {
-  /**
-   * Root manifest declares an `@gtbuchanan/cli` dependency (any version).
-   */
-  readonly dependsOnCli: boolean;
+  readonly cli: CliSource;
   /**
    * The hk config files present at the root, as sorted POSIX paths relative
    * to it.
@@ -76,10 +88,6 @@ export interface WorkspaceDiscovery {
    * Whether a pnpm-workspace.yaml was found.
    */
   readonly isMonorepo: boolean;
-  /**
-   * `@gtbuchanan/cli` is a workspace:* dependency (bootstrapping).
-   */
-  readonly isSelfHosted: boolean;
   /**
    * The mise config and lockfiles present at the root, as sorted POSIX paths
    * relative to it. They pin the toolchain every task runs on.
@@ -103,13 +111,6 @@ export interface WorkspaceDiscovery {
    */
   readonly rootDir: string;
 }
-
-/**
- * The workspace package that vendors `@gtbuchanan/cli`, wherever the
- * workspace keeps it. Undefined outside a self-hosted workspace.
- */
-export const vendoredCli = (discovery: WorkspaceDiscovery): WorkspacePackage | undefined =>
-  discovery.packages.find(pkg => pkg.name === '@gtbuchanan/cli');
 
 const isFile = (file: string): boolean =>
   statSync(file, { throwIfNoEntry: false })?.isFile() === true;
@@ -137,6 +138,25 @@ const mergeDeps = (manifest: Manifest): Record<string, string> => ({
   ...manifest.dependencies,
   ...manifest.devDependencies,
 });
+
+const cliPackageName = '@gtbuchanan/cli';
+
+/*
+ * A `workspace:` dependency counts only beside the package it links, which is
+ * what gives the source a directory to run from.
+ */
+const locateCli = (
+  rootManifest: Manifest,
+  packages: readonly WorkspacePackage[],
+): CliSource => {
+  const specifier = mergeDeps(rootManifest)[cliPackageName];
+  const vendored = packages.find(pkg => pkg.name === cliPackageName);
+  if (vendored !== undefined && specifier?.startsWith('workspace:') === true) {
+    return { dir: vendored.dir, kind: 'workspace' };
+  }
+
+  return specifier === undefined ? { kind: 'path' } : { kind: 'dependency' };
+};
 
 const collectGenerateScripts = (manifest: Manifest): readonly string[] =>
   Object.keys(manifest.scripts ?? {})
@@ -189,15 +209,14 @@ export const discoverWorkspace = (
   const isMonorepo = ctx.packageDirs.length > 1 ||
     ctx.packageDirs[0] !== ctx.rootDir;
   const rootManifest = parseManifest(ctx.rootDir);
-  const rootDeps = mergeDeps(rootManifest);
+  const packages = ctx.packageDirs.map(dir => buildPackage(dir, parseManifest(dir), capabilities));
 
   return {
-    dependsOnCli: '@gtbuchanan/cli' in rootDeps,
+    cli: locateCli(rootManifest, packages),
     hkFiles: hkFileCandidates.filter(file => isFile(path.join(ctx.rootDir, file))),
     isMonorepo,
-    isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
     miseFiles: miseFileCandidates.filter(file => isFile(path.join(ctx.rootDir, file))),
-    packages: ctx.packageDirs.map(dir => buildPackage(dir, parseManifest(dir), capabilities)),
+    packages,
     packageGlobs: ctx.packageGlobs,
     root: buildPackage(ctx.rootDir, rootManifest, capabilities),
     rootDir: ctx.rootDir,
@@ -210,4 +229,5 @@ export const discoverWorkspace = (
  * runs gtb from mise for its hooks and owns whatever build config it has, so
  * the steps that generate turbo, scripts and tsconfigs leave it alone.
  */
-export const isGtbBuild = ({ dependsOnCli }: WorkspaceDiscovery): boolean => dependsOnCli;
+export const isGtbBuild = ({ cli }: Pick<WorkspaceDiscovery, 'cli'>): boolean =>
+  cli.kind !== 'path';

@@ -87,7 +87,7 @@ const renderTable = (name: string, entries: readonly MiseEntry[]): readonly stri
  * wholesale, so it never round-trips the hand-authored mise config.
  */
 export const generateMiseFragment = (
-  discovery: Pick<WorkspaceDiscovery, 'dependsOnCli' | 'hkFiles' | 'isSelfHosted'>,
+  discovery: Pick<WorkspaceDiscovery, 'cli' | 'hkFiles'>,
 ): string => {
   const hk = hkMiseConfig(discovery);
   const sections = [

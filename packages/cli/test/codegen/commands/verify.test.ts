@@ -124,7 +124,7 @@ describe.concurrent('verify drift detection', () => {
 
     const discovery = discoverWorkspace({ capabilities, cwd: root });
     const pkg = discovery.packages[0]!;
-    const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
+    const expected = generatePackageScripts(pkg, discovery.cli);
     const actual = readScripts(app.dir);
     const missing = Object.keys(expected).filter(name => !Object.hasOwn(actual, name));
 
@@ -141,7 +141,7 @@ describe.concurrent('verify drift detection', () => {
 
     const discovery = discoverWorkspace({ capabilities, cwd: root });
     const pkg = discovery.packages[0]!;
-    const expected = generatePackageScripts(pkg, discovery.isSelfHosted);
+    const expected = generatePackageScripts(pkg, discovery.cli);
     const actual = readScripts(app.dir);
     const missing = Object.keys(expected).filter(name => !Object.hasOwn(actual, name));
 

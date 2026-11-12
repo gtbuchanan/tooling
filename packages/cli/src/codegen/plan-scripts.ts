@@ -3,7 +3,7 @@ import * as v from 'valibot';
 import {
   forbiddenRootScripts, generatePackageScripts, generateRootScripts,
 } from '#src/codegen/turbo-config.js';
-import { type WorkspaceDiscovery, isGtbBuild, vendoredCli } from '#src/core/discovery.js';
+import { type WorkspaceDiscovery, isGtbBuild } from '#src/core/discovery.js';
 import { jsonContent, readJsonFile, sortKeysDeep } from '#src/core/file-writer.js';
 import { ManifestSchema } from '#src/core/manifest.js';
 import type { Finding, PlanContext } from '#src/tasks/toolchain.js';
@@ -103,11 +103,10 @@ export const planScripts = (context: PlanContext): readonly Finding[] => {
   if (!isGtbBuild(discovery)) {
     return [];
   }
-  const cliDir = vendoredCli(discovery)?.dir;
   const targets: readonly ScriptTarget[] = [
     ...discovery.packages.map(pkg => ({
       dir: pkg.dir,
-      scripts: generatePackageScripts(pkg, discovery.isSelfHosted, cliDir),
+      scripts: generatePackageScripts(pkg, discovery.cli),
     })),
     { dir: discovery.rootDir, scripts: generateRootScripts(discovery) },
   ];

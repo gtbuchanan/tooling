@@ -1,4 +1,4 @@
-import type { WorkspaceDiscovery } from '#src/core/discovery.js';
+import type { CliSource, WorkspaceDiscovery } from '#src/core/discovery.js';
 
 /**
  * One key of a mise config table, with the comment lines the generated file
@@ -30,20 +30,16 @@ export interface HkMiseConfig {
 /*
  * mise tasks run outside pnpm, so `node_modules/.bin` is not on PATH and a
  * bare `gtb` won't resolve the way it does in package.json scripts. Resolve
- * gtb per repo shape:
- *   - self-hosted: the `pnpm run gtb` script shim (source, no build needed)
- *   - depends on `@gtbuchanan/cli`: `pnpm exec` finds it in node_modules
- *   - neither (hk-only adopter): bare `gtb` from mise's npm: backend, so no
+ * gtb per CLI source:
+ *   - workspace: the `pnpm run gtb` script shim (source, no build needed)
+ *   - dependency: `pnpm exec` finds it in node_modules
+ *   - path (hk-only adopter): bare `gtb` from mise's npm: backend, so no
  *     node_modules/pnpm project is needed — add `npm:@gtbuchanan/cli` to [tools]
  */
-const miseTaskPrefix = (
-  discovery: Pick<WorkspaceDiscovery, 'dependsOnCli' | 'isSelfHosted'>,
-): string => {
-  if (discovery.isSelfHosted) {
-    return 'pnpm run gtb';
-  }
-
-  return discovery.dependsOnCli ? 'pnpm exec gtb' : 'gtb';
+const miseTaskPrefixes: Readonly<Record<CliSource['kind'], string>> = {
+  dependency: 'pnpm exec gtb',
+  path: 'gtb',
+  workspace: 'pnpm run gtb',
 };
 
 /**
@@ -55,13 +51,13 @@ const miseTaskPrefix = (
  * tool-level hook runs only when mise installs hk, once per machine.
  */
 export const hkMiseConfig = (
-  discovery: Pick<WorkspaceDiscovery, 'dependsOnCli' | 'hkFiles' | 'isSelfHosted'>,
+  { cli, hkFiles }: Pick<WorkspaceDiscovery, 'cli' | 'hkFiles'>,
 ): HkMiseConfig | undefined => {
-  if (discovery.hkFiles.length === 0) {
+  if (hkFiles.length === 0) {
     return undefined;
   }
 
-  const gtb = miseTaskPrefix(discovery);
+  const gtb = miseTaskPrefixes[cli.kind];
   return {
     env: [{
       comment: [

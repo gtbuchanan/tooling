@@ -10,7 +10,7 @@ import {
 } from '#src/codegen/turbo-config.js';
 import type { Capability } from '#src/core/capability.js';
 import {
-  type WorkspaceDiscovery, type WorkspacePackage, discoverWorkspace,
+  type CliSource, type WorkspaceDiscovery, type WorkspacePackage, discoverWorkspace,
 } from '#src/core/discovery.js';
 import { mergePackageScripts, sortKeysDeep, writeJsonFile } from '#src/core/file-writer.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
@@ -355,7 +355,7 @@ export const initProject = (root: string): void => {
   mergePackageScripts(path.join(root, 'package.json'), generateRootScripts(discovery), true);
 
   for (const pkg of discovery.packages) {
-    const scripts = generatePackageScripts(pkg, discovery.isSelfHosted);
+    const scripts = generatePackageScripts(pkg, discovery.cli);
     const pkgPath = path.join(pkg.dir, 'package.json');
     const manifest = v.parse(ManifestSchema, JSON.parse(readFileSync(pkgPath, 'utf8')));
     writeJson(pkg.dir, 'package.json', {
@@ -378,9 +378,9 @@ export const makePackage = (
 
 export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
   /**
-   * Overrides {@link WorkspaceDiscovery.dependsOnCli} (defaults to `false`).
+   * Overrides {@link WorkspaceDiscovery.cli} (defaults to `path`).
    */
-  readonly dependsOnCli?: boolean;
+  readonly cli?: CliSource;
   /**
    * Overrides {@link WorkspaceDiscovery.hkFiles} (defaults to none).
    */
@@ -395,10 +395,6 @@ export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
    * package under a `packages/*` glob, which no package count can express.
    */
   readonly isMonorepo?: boolean;
-  /**
-   * Overrides {@link WorkspaceDiscovery.isSelfHosted} (defaults to `false`).
-   */
-  readonly isSelfHosted?: boolean;
 }
 
 export const makeDiscovery = (
@@ -406,18 +402,16 @@ export const makeDiscovery = (
   overrides: MakeDiscoveryOverrides = {},
 ): WorkspaceDiscovery => {
   const {
-    dependsOnCli: hasCliDependency = false,
+    cli = { kind: 'path' },
     hkFiles = [],
     isMonorepo = packages.length > 1,
     miseFiles = [],
-    isSelfHosted = false,
     ...rootOverrides
   } = overrides;
   return {
-    dependsOnCli: hasCliDependency,
+    cli,
     hkFiles,
     isMonorepo,
-    isSelfHosted,
     miseFiles,
     packages,
     packageGlobs: isMonorepo

@@ -264,7 +264,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates lint:eslint for ESLint packages', ({ expect }) => {
     const caps = makePackage({ capabilities: new Set([eslint]) });
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(result).toHaveProperty('lint:eslint', 'gtb task lint:eslint');
   });

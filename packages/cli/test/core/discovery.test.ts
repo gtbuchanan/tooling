@@ -156,7 +156,7 @@ describe.concurrent(discoverWorkspace, () => {
     expect(result.packages.map(pkg => pkg.capabilities)).toStrictEqual([new Set([atPackage])]);
   });
 
-  it('includes root capabilities', ({ expect }) => {
+  it('runs the CLI from the workspace package that vendors it', ({ expect }) => {
     const root = createTempDir();
     writeFileSync(
       path.join(root, 'pnpm-workspace.yaml'),
@@ -165,13 +165,33 @@ describe.concurrent(discoverWorkspace, () => {
     writeJson(root, 'package.json', {
       devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
     });
-    const pkgDir = path.join(root, 'packages', build.packageName());
-    mkdirSync(pkgDir, { recursive: true });
-    writeJson(pkgDir, 'package.json', {});
+    const cliDir = path.join(root, 'packages', 'cli');
+    mkdirSync(cliDir, { recursive: true });
+    writeJson(cliDir, 'package.json', { name: '@gtbuchanan/cli' });
 
     const result = discoverWorkspace({ capabilities, cwd: root });
 
-    expect(result.isSelfHosted).toBe(true);
+    expect(result.cli).toStrictEqual({ dir: cliDir, kind: 'workspace' });
+  });
+
+  it('runs the CLI the root depends on', ({ expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': build.semverRange() },
+    });
+
+    const result = discoverWorkspace({ capabilities, cwd: root });
+
+    expect(result.cli).toStrictEqual({ kind: 'dependency' });
+  });
+
+  it('runs whatever CLI is on PATH when the root does not depend on it', ({ expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {});
+
+    const result = discoverWorkspace({ capabilities, cwd: root });
+
+    expect(result.cli).toStrictEqual({ kind: 'path' });
   });
 
   it.for([

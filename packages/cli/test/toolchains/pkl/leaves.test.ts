@@ -47,7 +47,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates pkl scripts for Pkl packages', ({ expect }) => {
     const caps = makePackage({ capabilities: new Set([pklSource, pklPackage]) });
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
     expect(result).toHaveProperty('pack:pkl', 'gtb task pack:pkl');
@@ -56,7 +56,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('omits pack:pkl for an internal Pkl package (no package block)', ({ expect }) => {
     const caps = makePackage({ capabilities: new Set([pklSource]) });
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(result).toHaveProperty('typecheck:pkl', 'gtb task typecheck:pkl');
     expect(result).not.toHaveProperty('pack:pkl');

@@ -118,7 +118,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates test:vitest:fast for Vitest + test/ packages', ({ expect }) => {
     const caps = makePackage({ capabilities: new Set([vitestTests]) });
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(result).toHaveProperty('test:vitest:fast', 'gtb task test:vitest:fast');
     expect(result).toHaveProperty('test:vitest:slow', 'gtb task test:vitest:slow');
@@ -127,7 +127,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates test:vitest:e2e for packages with e2e vitest config', ({ expect }) => {
     const caps = makePackage({ capabilities: new Set([vitestE2e]) });
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(result).toHaveProperty('test:vitest:e2e', 'gtb task test:vitest:e2e');
   });

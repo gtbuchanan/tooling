@@ -125,7 +125,7 @@ describe.concurrent('sync helpers', () => {
     const discovery = discoverWorkspace({ capabilities, cwd: root });
     const appPkg = discovery.packages.find(pkg => pkg.dir === app.dir);
 
-    const scripts = generatePackageScripts(appPkg!, discovery.isSelfHosted);
+    const scripts = generatePackageScripts(appPkg!, discovery.cli);
 
     expect(scripts).toMatchObject({
       'compile:ts': 'gtb task compile:ts',
@@ -141,7 +141,7 @@ describe.concurrent('sync helpers', () => {
     const discovery = discoverWorkspace({ capabilities, cwd: root });
     const libPkg = discovery.packages.find(pkg => pkg.dir === lib.dir);
 
-    const scripts = generatePackageScripts(libPkg!, discovery.isSelfHosted);
+    const scripts = generatePackageScripts(libPkg!, discovery.cli);
 
     expect(scripts).toHaveProperty('typecheck:ts');
     expect(scripts).toHaveProperty('lint:eslint');
@@ -191,17 +191,6 @@ describe.concurrent('sync helpers', () => {
 
     expect(result.skipped).toContain('prepare');
     expect(result.added).toContain('check');
-  });
-
-  it('detects self-hosted workspace', ({ expect }) => {
-    const root = createTempDir();
-    writeJson(root, 'package.json', {
-      devDependencies: { '@gtbuchanan/cli': 'workspace:*' },
-    });
-
-    const discovery = discoverWorkspace({ capabilities, cwd: root });
-
-    expect(discovery.isSelfHosted).toBe(true);
   });
 });
 

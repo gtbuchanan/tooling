@@ -1,8 +1,11 @@
 import { describe, it } from 'vitest';
 import { generateTurboJson } from '#src/codegen/turbo-config.js';
+import type { CliSource } from '#src/core/discovery.js';
 import { makeDiscovery, makePackage } from '#test/helpers.js';
 
 const rootMiseFiles = ['mise.lock', 'mise.toml'];
+
+const workspaceCli: CliSource = { dir: '/fake/root/tools/cli', kind: 'workspace' };
 
 describe.concurrent('generateTurboJson (globalDependencies)', () => {
   it('emits globalDependencies for every mise file the workspace has', ({ expect }) => {
@@ -26,25 +29,13 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
    * Self-hosted workspaces vendor tool-config packages (eslint-config,
    * vitest-config) internally, so turbo's lockfile closure never reaches
    * sibling tasks that consume their plugins — the lockfile must salt the
-   * global hash. Consumers get those packages externally, where turbo's
-   * per-package transitive closure already invalidates correctly.
+   * global hash. And they run gtb from the CLI's source by relative path,
+   * with no dependency edge turbo can follow, so the CLI's sources salt it
+   * too. Consumers get those packages externally, where turbo's per-package
+   * transitive closure already invalidates correctly.
    */
-  it('emits the lockfile in globalDependencies when self-hosted', ({ expect }) => {
-    const discovery = makeDiscovery([makePackage()], { isSelfHosted: true });
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.globalDependencies).toStrictEqual(['pnpm-lock.yaml']);
-  });
-
-  /*
-   * Self-hosted packages run gtb from the CLI's source by relative path, with
-   * no dependency edge turbo can follow, so the CLI's sources must salt every
-   * task explicitly.
-   */
-  it('emits the vendored CLI sources in globalDependencies when self-hosted', ({ expect }) => {
-    const cli = makePackage({ dir: '/fake/root/tools/cli', name: '@gtbuchanan/cli' });
-    const discovery = makeDiscovery([cli, makePackage()], { isSelfHosted: true });
+  it('emits the lockfile and the CLI sources when the CLI is the workspace\'s', ({ expect }) => {
+    const discovery = makeDiscovery([makePackage()], { cli: workspaceCli });
 
     const result = generateTurboJson(discovery);
 
@@ -53,16 +44,14 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
     ]);
   });
 
-  it('emits mise files and the lockfile when self-hosted with mise.toml', ({ expect }) => {
+  it('emits neither for a CLI the root depends on', ({ expect }) => {
     const discovery = makeDiscovery([makePackage()], {
-      isSelfHosted: true,
+      cli: { kind: 'dependency' },
       miseFiles: rootMiseFiles,
     });
 
     const result = generateTurboJson(discovery);
 
-    expect(result.globalDependencies).toStrictEqual([
-      'mise.lock', 'mise.toml', 'pnpm-lock.yaml',
-    ]);
+    expect(result.globalDependencies).toStrictEqual(rootMiseFiles);
   });
 });

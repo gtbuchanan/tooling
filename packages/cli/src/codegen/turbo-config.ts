@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { type TaskEntry, aggregateTasks } from '#src/codegen/turbo-aggregates.js';
-import { type WorkspaceDiscovery, vendoredCli } from '#src/core/discovery.js';
+import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { localeComparer } from '#src/core/sort.js';
 import { createTaskGraph, leafTasks } from '#src/tasks/graph.js';
@@ -32,12 +32,8 @@ export interface TurboJson {
  * script rather than a dependency, so no task edge reaches the CLI and an
  * edit to it would otherwise replay every other package's cached results.
  */
-const vendoredCliSources = (discovery: WorkspaceDiscovery): readonly string[] => {
-  const cli = vendoredCli(discovery);
-  if (cli === undefined) {
-    return [];
-  }
-  const rel = toPosixRelative(discovery.rootDir, cli.dir);
+const vendoredCliSources = (rootDir: string, cliDir: string): readonly string[] => {
+  const rel = toPosixRelative(rootDir, cliDir);
   return ['package.json', ...buildInclude.flatMap(toTurboGlobs)]
     .map(file => path.posix.join(rel, file));
 };
@@ -68,10 +64,11 @@ export const generateTurboJson = (discovery: WorkspaceDiscovery): TurboJson => {
    * transitive closure already invalidates correctly, so they keep
    * granular caching.
    */
-  const globalDependencies = [
-    ...discovery.miseFiles,
-    ...(discovery.isSelfHosted ? ['pnpm-lock.yaml', ...vendoredCliSources(discovery)] : []),
-  ].toSorted(localeComparer);
+  const { cli, miseFiles, rootDir } = discovery;
+  const selfHosted = cli.kind === 'workspace'
+    ? ['pnpm-lock.yaml', ...vendoredCliSources(rootDir, cli.dir)]
+    : [];
+  const globalDependencies = [...miseFiles, ...selfHosted].toSorted(localeComparer);
 
   return {
     $schema: 'https://turbo.build/schema.json',

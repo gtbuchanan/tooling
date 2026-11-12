@@ -197,7 +197,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates typecheck:ts for TypeScript packages', ({ expect }) => {
     const caps = makePackage({ capabilities: new Set([typescript]) });
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(result).toHaveProperty('typecheck:ts', 'gtb task typecheck:ts');
   });
@@ -205,7 +205,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates compile:ts for published packages', ({ expect }) => {
     const caps = makePackage({ capabilities: new Set([published]) });
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(result).toHaveProperty('compile:ts', 'gtb task compile:ts');
   });

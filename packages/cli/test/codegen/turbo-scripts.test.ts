@@ -19,7 +19,7 @@ describe.concurrent(generatePackageScripts, () => {
       capabilities: new Set([typescript]), dir: '/root/packages/app',
     });
 
-    const result = generatePackageScripts(caps, true, '/root/packages/cli');
+    const result = generatePackageScripts(caps, { dir: '/root/packages/cli', kind: 'workspace' });
 
     expect(result).toHaveProperty('typecheck:ts', 'pnpm run gtb task typecheck:ts');
     expect(result).toHaveProperty('gtb', 'node ../cli/bin/gtb.ts');
@@ -28,7 +28,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('points the gtb shim at the CLI wherever the workspace keeps it', ({ expect }) => {
     const caps = makePackage({ dir: '/root/packages/app' });
 
-    const result = generatePackageScripts(caps, true, '/root/tools/gtb');
+    const result = generatePackageScripts(caps, { dir: '/root/tools/gtb', kind: 'workspace' });
 
     expect(result).toHaveProperty(
       'gtb', 'node ../../tools/gtb/bin/gtb.ts',
@@ -38,7 +38,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('points the CLI package\'s own gtb shim at its bin', ({ expect }) => {
     const caps = makePackage({ dir: '/root/tools/gtb' });
 
-    const result = generatePackageScripts(caps, true, '/root/tools/gtb');
+    const result = generatePackageScripts(caps, { dir: '/root/tools/gtb', kind: 'workspace' });
 
     expect(result).toHaveProperty('gtb', 'node bin/gtb.ts');
   });
@@ -46,7 +46,7 @@ describe.concurrent(generatePackageScripts, () => {
   it('generates nothing for empty capabilities', ({ expect }) => {
     const caps = makePackage();
 
-    const result = generatePackageScripts(caps, false);
+    const result = generatePackageScripts(caps, { kind: 'path' });
 
     expect(Object.keys(result)).toHaveLength(0);
   });
@@ -69,7 +69,7 @@ describe.concurrent(generateRootScripts, () => {
   it('routes aliases through pnpm run gtb in self-hosted repos', ({ expect }) => {
     const discovery = makeDiscovery(
       monorepoOf({ capabilities: new Set([eslint, typescript, published]) }),
-      { isSelfHosted: true },
+      { cli: { dir: '/fake/root/packages/cli', kind: 'workspace' } },
     );
 
     const result = generateRootScripts(discovery);

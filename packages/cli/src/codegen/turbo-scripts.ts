@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { workspaceTasks } from '#src/codegen/turbo-config.js';
 import { rootNames } from '#src/core/command-names.js';
-import type { WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
+import type { CliSource, WorkspaceDiscovery, WorkspacePackage } from '#src/core/discovery.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { localeComparer } from '#src/core/sort.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
@@ -15,22 +15,22 @@ import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
  * Bare `gtb` only resolves node_modules/.bin — not sibling scripts — so
  * self-hosted must invoke the script via `pnpm run gtb`.
  */
-const gtbPrefix = (isSelfHosted: boolean): string =>
-  isSelfHosted ? 'pnpm run gtb' : 'gtb';
+const gtbPrefix = (cli: CliSource): string =>
+  cli.kind === 'workspace' ? 'pnpm run gtb' : 'gtb';
 
-const taskCmd = (isSelfHosted: boolean, name: string): string =>
-  `${gtbPrefix(isSelfHosted)} ${taskCommandName} ${name}`;
+const taskCmd = (cli: CliSource, name: string): string =>
+  `${gtbPrefix(cli)} ${taskCommandName} ${name}`;
 
-const rootCmd = (isSelfHosted: boolean, name: string): string =>
-  `${gtbPrefix(isSelfHosted)} ${name}`;
+const rootCmd = (cli: CliSource, name: string): string =>
+  `${gtbPrefix(cli)} ${name}`;
 
 const packageScripts = (
   caps: WorkspacePackage,
-  isSelfHosted: boolean,
+  cli: CliSource,
 ): Record<string, string> => Object.fromEntries(
   leaves
     .filter(leaf => leaf.appliesTo(caps))
-    .map(leaf => [leaf.name, taskCmd(isSelfHosted, leaf.name)]),
+    .map(leaf => [leaf.name, taskCmd(cli, leaf.name)]),
 );
 
 /**
@@ -43,18 +43,16 @@ const gtbShim = (pkgDir: string, cliDir: string): string => {
 };
 
 /**
- * Generates per-package scripts from capabilities. `cliDir` is the vendored
- * CLI package's directory (from `vendoredCli`), which the self-hosted
- * `gtb` shim runs from source.
+ * Generates per-package scripts from capabilities. A workspace CLI adds the
+ * `gtb` shim the other scripts run it from source through.
  */
 export const generatePackageScripts = (
   caps: WorkspacePackage,
-  isSelfHosted: boolean,
-  cliDir?: string,
+  cli: CliSource,
 ): Record<string, string> => {
-  const scripts = packageScripts(caps, isSelfHosted);
-  if (isSelfHosted && cliDir !== undefined) {
-    scripts['gtb'] = gtbShim(caps.dir, cliDir);
+  const scripts = packageScripts(caps, cli);
+  if (cli.kind === 'workspace') {
+    scripts['gtb'] = gtbShim(caps.dir, cli.dir);
   }
 
   return scripts;
@@ -74,7 +72,7 @@ const rootLeafScripts = (discovery: WorkspaceDiscovery): Record<string, string> 
       .filter(leaf => graph.appliesAtRoot(leaf.name))
       .map(leaf => [
         leaf.name,
-        [taskCmd(discovery.isSelfHosted, leaf.name), ...(leaf.root?.args?.(discovery) ?? [])]
+        [taskCmd(discovery.cli, leaf.name), ...(leaf.root?.args?.(discovery) ?? [])]
           .join(' '),
       ]),
   );
@@ -86,8 +84,8 @@ const rootLeafScripts = (discovery: WorkspaceDiscovery): Record<string, string> 
 const requiredRootScripts = (
   discovery: WorkspaceDiscovery,
 ): Readonly<Record<string, string>> => ({
-  [rootNames.prepare]: rootCmd(discovery.isSelfHosted, rootNames.prepare),
-  [rootNames.verify]: rootCmd(discovery.isSelfHosted, rootNames.verify),
+  [rootNames.prepare]: rootCmd(discovery.cli, rootNames.prepare),
+  [rootNames.verify]: rootCmd(discovery.cli, rootNames.verify),
   ...rootLeafScripts(discovery),
 });
 
@@ -103,7 +101,7 @@ const requiredRootScripts = (
  */
 const aliasRootScripts = (discovery: WorkspaceDiscovery): Record<string, string> => {
   const cmd = (name: string): string =>
-    `${rootCmd(discovery.isSelfHosted, rootNames.turbo)} run ${name}`;
+    `${rootCmd(discovery.cli, rootNames.turbo)} run ${name}`;
   const declared = new Set(workspaceTasks(discovery).map(([key]) => key));
   const isDeclared = (name: string): boolean => declared.has(name);
   const graph = createTaskGraph(leaves, discovery);
