@@ -158,19 +158,14 @@ describe.concurrent(generateTurboJson, () => {
     expect(result.tasks).toHaveProperty('compile:ts');
   });
 
-  it('compile:ts inputs derive from resolved buildIncludes', ({ expect }) => {
-    const discovery = makeDiscovery([
-      makePackage({
-        capabilities: new Set([published]),
-        buildIncludes: ['bin', 'src', 'generated', '*.proto.ts'],
-      }),
-    ]);
+  it('compile:ts inputs are the compiled directories and the build config', ({ expect }) => {
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([published]) })]);
 
     const result = generateTurboJson(discovery);
     const inputs = result.tasks['compile:ts']?.inputs ?? [];
 
     expect(inputs).toStrictEqual(expect.arrayContaining([
-      'bin/**', 'src/**', 'generated/**', '*.proto.ts', 'tsconfig.build.json',
+      'bin/**', 'src/**', 'tsconfig.build.json',
     ]));
     expect(inputs).not.toContain('tsconfig.json');
     expect(inputs).not.toContain('scripts/**');

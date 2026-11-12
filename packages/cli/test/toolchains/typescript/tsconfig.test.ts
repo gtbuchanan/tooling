@@ -1,9 +1,9 @@
 import path from 'node:path';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
-import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
+import { buildInclude, typeCheckInclude } from '#src/toolchains/typescript/layout.js';
 import {
   defaultTsconfigVariant,
   generateTsconfigBase,

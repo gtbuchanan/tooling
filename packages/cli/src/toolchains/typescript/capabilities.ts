@@ -1,7 +1,7 @@
 import { type Dirent, readdirSync } from 'node:fs';
 import path from 'node:path';
 import type { Capability } from '#src/core/capability.js';
-import { typeCheckInclude } from '#src/core/layout.js';
+import { typeCheckInclude } from '#src/toolchains/typescript/layout.js';
 
 /**
  * Uses TypeScript: depends on `@gtbuchanan/tsconfig`, or holds a

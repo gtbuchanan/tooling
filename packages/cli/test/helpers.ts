@@ -13,7 +13,6 @@ import {
   type WorkspaceDiscovery, type WorkspacePackage, discoverWorkspace,
 } from '#src/core/discovery.js';
 import { mergePackageScripts, sortKeysDeep, writeJsonFile } from '#src/core/file-writer.js';
-import { buildInclude } from '#src/core/layout.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
 import { ManifestSchema, unscopedName } from '#src/core/manifest.js';
 import { UnknownRecord } from '#src/core/schemas.js';
@@ -369,7 +368,6 @@ export const initProject = (root: string): void => {
 export const makePackage = (
   overrides: Partial<WorkspacePackage> = {},
 ): WorkspacePackage => ({
-  buildIncludes: [...buildInclude],
   capabilities: new Set<Capability>(),
   dir: '/fake/pkg',
   generateScripts: [],

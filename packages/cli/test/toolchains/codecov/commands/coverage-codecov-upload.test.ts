@@ -33,7 +33,6 @@ vi.mock(import('#src/core/process.js'), async (importOriginal) => {
  * A discovered package with no capabilities beyond the given manifest name.
  */
 const capabilities = (name: string): WorkspacePackage => ({
-  buildIncludes: [],
   capabilities: new Set(),
   dir: faker.system.directoryPath(),
   generateScripts: [],

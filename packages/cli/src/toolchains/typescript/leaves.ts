@@ -1,9 +1,6 @@
-import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import {
   buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
 } from '#src/core/dist-source.js';
-import { typeCheckInclude } from '#src/core/layout.js';
-import { localeComparer } from '#src/core/sort.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
 import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
@@ -12,6 +9,7 @@ import { topo } from '#src/tasks/turbo-task.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
+import { buildInclude, typeCheckInclude } from '#src/toolchains/typescript/layout.js';
 
 /**
  * `tsc --noEmit` over the package's `include`.
@@ -62,14 +60,6 @@ export const typecheckTsLeaf: Leaf = {
 };
 
 /*
- * Union of tsconfig.build.json `include` directories across published
- * packages.
- */
-const compileIncludes = ({ packages }: WorkspaceDiscovery): readonly string[] =>
-  [...new Set(packages.flatMap(pkg => (pkg.capabilities.has(published) ? pkg.buildIncludes : [])))]
-    .toSorted(localeComparer);
-
-/*
  * The compiled tree is everything in the output directory the sibling tasks
  * don't write. Subtracting theirs keeps each task's cache entry to what it
  * produced: a shared file captured here would be restored on a `compile:ts`
@@ -93,7 +83,7 @@ export const compileTsLeaf: Leaf = {
     dependsOn: [topo(compileTsLeaf.name), ...codegenDeps(graph)],
     inputs: [
       '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
-      ...compileIncludes(graph.discovery).flatMap(toTurboGlobs), 'tsconfig.build.json',
+      ...buildInclude.flatMap(toTurboGlobs), 'tsconfig.build.json',
     ],
     outputs: compileTsOutputs(graph),
   }),

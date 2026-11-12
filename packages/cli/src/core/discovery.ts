@@ -1,9 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { Capability } from '#src/core/capability.js';
-import {
-  generateTaskPrefix, resolveBuildIncludes,
-} from '#src/core/layout.js';
+import { generateTaskPrefix } from '#src/core/layout.js';
 import type { Manifest } from '#src/core/manifest.js';
 import { localeComparer } from '#src/core/sort.js';
 import {
@@ -17,11 +15,6 @@ import {
  * A workspace package (or the workspace root) as discovery found it.
  */
 export interface WorkspacePackage {
-  /**
-   * Resolved `include` directories from tsconfig.build.json, or the default
-   * build include when there is none. Only a published package compiles them.
-   */
-  readonly buildIncludes: readonly string[];
   /**
    * The capabilities its toolchains declared that hold in the package.
    */
@@ -158,7 +151,6 @@ const buildPackage = (
   const files = listFiles(dir);
 
   return {
-    buildIncludes: resolveBuildIncludes(dir),
     capabilities: new Set(capabilities.filter(capability =>
       capability.detect({ dir, entries: files, manifest }))),
     dir,

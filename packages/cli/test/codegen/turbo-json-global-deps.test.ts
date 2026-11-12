@@ -43,11 +43,7 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
    * task explicitly.
    */
   it('emits the vendored CLI sources in globalDependencies when self-hosted', ({ expect }) => {
-    const cli = makePackage({
-      buildIncludes: ['bin', 'src'],
-      dir: '/fake/root/tools/cli',
-      name: '@gtbuchanan/cli',
-    });
+    const cli = makePackage({ dir: '/fake/root/tools/cli', name: '@gtbuchanan/cli' });
     const discovery = makeDiscovery([cli, makePackage()], { isSelfHosted: true });
 
     const result = generateTurboJson(discovery);
@@ -55,19 +51,6 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
     expect(result.globalDependencies).toStrictEqual([
       'pnpm-lock.yaml', 'tools/cli/bin/**', 'tools/cli/package.json', 'tools/cli/src/**',
     ]);
-  });
-
-  it('normalizes dot-prefixed CLI build includes', ({ expect }) => {
-    const cli = makePackage({
-      buildIncludes: ['./src'],
-      dir: '/fake/root/tools/cli',
-      name: '@gtbuchanan/cli',
-    });
-    const discovery = makeDiscovery([cli, makePackage()], { isSelfHosted: true });
-
-    const result = generateTurboJson(discovery);
-
-    expect(result.globalDependencies).toContain('tools/cli/src/**');
   });
 
   it('emits mise files and the lockfile when self-hosted with mise.toml', ({ expect }) => {

@@ -7,6 +7,7 @@ import { createTaskGraph, leafTasks } from '#src/tasks/graph.js';
 import { toTurboGlobs } from '#src/tasks/turbo-globs.js';
 import type { TurboTask } from '#src/tasks/turbo-task.js';
 import { leaves } from '#src/toolchains/index.js';
+import { buildInclude } from '#src/toolchains/typescript/layout.js';
 
 /**
  * Generated turbo.json structure.
@@ -37,7 +38,7 @@ const vendoredCliSources = (discovery: WorkspaceDiscovery): readonly string[] =>
     return [];
   }
   const rel = toPosixRelative(discovery.rootDir, cli.dir);
-  return ['package.json', ...cli.buildIncludes.flatMap(toTurboGlobs)]
+  return ['package.json', ...buildInclude.flatMap(toTurboGlobs)]
     .map(file => path.posix.join(rel, file));
 };
 

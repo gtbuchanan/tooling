@@ -3,11 +3,11 @@ import * as v from 'valibot';
 import type { WorkspacePackage } from '#src/core/discovery.js';
 import { buildOutDir } from '#src/core/dist-source.js';
 import { readJsonFile } from '#src/core/file-writer.js';
-import { buildInclude, typeCheckInclude } from '#src/core/layout.js';
 import { toPosixRelative } from '#src/core/paths.js';
 import { UnknownRecord } from '#src/core/schemas.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript } from '#src/toolchains/typescript/capabilities.js';
+import { buildInclude, typeCheckInclude } from '#src/toolchains/typescript/layout.js';
 
 /**
  * File name of the single hand-authored tsconfig every generated config

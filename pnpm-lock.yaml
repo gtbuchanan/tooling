@@ -263,9 +263,6 @@ catalogs:
     find-up-simple:
       specifier: ^1.0.1
       version: 1.0.1
-    get-tsconfig:
-      specifier: ^4.14.0
-      version: 4.14.3
     hosted-git-info:
       specifier: ^10.1.1
       version: 10.1.1
@@ -405,9 +402,6 @@ importers:
       find-up-simple:
         specifier: 'catalog:'
         version: 1.0.1
-      get-tsconfig:
-        specifier: 'catalog:'
-        version: 4.14.3
       hosted-git-info:
         specifier: 'catalog:'
         version: 10.1.1
