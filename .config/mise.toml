@@ -13,7 +13,7 @@ run = [
 run_windows = "pnpm install --frozen-lockfile"
 
 [tools]
-hk = "2.11.0"
+hk = "2.12.0"
 jactionlint = "v2.5.0"
 node = "26.13.0"
 # Exempt transitive `@yarnpkg/libzip` from aube's no-downgrade policy — its
