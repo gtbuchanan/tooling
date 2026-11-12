@@ -1,4 +1,5 @@
-import { type Dirent, readdirSync } from 'node:fs';
+import { type Dirent, type Stats, readdirSync, statSync } from 'node:fs';
+import path from 'node:path';
 import type { Manifest } from '#src/core/manifest.js';
 
 /**
@@ -42,17 +43,45 @@ export const readEntries = (dir: string): readonly Dirent[] => {
   }
 };
 
+/*
+ * What an entry is, following a symlink to its target: the tools whose
+ * configs the capabilities look for read through a link, so detection does
+ * too. A link to nothing, or one that loops, is neither.
+ */
+type EntryKind = Pick<Stats, 'isDirectory' | 'isFile'>;
+
+const resolve = (dir: string, entry: Dirent): EntryKind | undefined => {
+  if (!entry.isSymbolicLink()) {
+    return entry;
+  }
+  try {
+    return statSync(path.join(dir, entry.name), { throwIfNoEntry: false });
+  } catch {
+    return undefined;
+  }
+};
+
+interface ResolvedEntry {
+  readonly kind: EntryKind | undefined;
+  readonly name: string;
+}
+
+const namesWhere = (
+  entries: readonly ResolvedEntry[],
+  isWanted: (kind: EntryKind) => boolean,
+): readonly string[] =>
+  entries.filter(({ kind }) => kind !== undefined && isWanted(kind)).map(({ name }) => name);
+
 /**
- * One directory as a capability reads it, empty where it cannot be read. A
- * symlink is neither a file nor a directory here, so it answers no check.
+ * One directory as a capability reads it, empty where it cannot be read.
  */
 export const listDirectory = (dir: string): DirectoryListing => {
-  const entries = readEntries(dir);
+  const entries = readEntries(dir).map(entry => ({ kind: resolve(dir, entry), name: entry.name }));
 
   return {
     dir,
-    directories: entries.filter(entry => entry.isDirectory()).map(entry => entry.name),
-    files: entries.filter(entry => entry.isFile()).map(entry => entry.name),
+    directories: namesWhere(entries, kind => kind.isDirectory()),
+    files: namesWhere(entries, kind => kind.isFile()),
   };
 };
 

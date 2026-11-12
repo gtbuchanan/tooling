@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
@@ -56,6 +56,39 @@ describe.concurrent(discoverPackage, () => {
     mkdirSync(path.join(dir, file));
 
     const result = discoverPackage(dir, [capability]);
+
+    expect(result.capabilities).toStrictEqual(new Set());
+  });
+
+  // The tools follow a symlinked config, so detection has to as well
+  it('follows a symlink to the file it detects', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    const target = path.join(createTempDir(), 'eslint.config.ts');
+    writeFileSync(target, '');
+    symlinkSync(target, path.join(dir, 'eslint.config.ts'), 'file');
+
+    const result = discoverPackage(dir, [eslint]);
+
+    expect(result.capabilities).toStrictEqual(new Set([eslint]));
+  });
+
+  it('follows a symlink to the directory it detects', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    symlinkSync(createTempDir(), path.join(dir, 'skills'), 'dir');
+
+    const result = discoverPackage(dir, [skills]);
+
+    expect(result.capabilities).toStrictEqual(new Set([skills]));
+  });
+
+  it('takes a dangling symlink for neither a file nor a directory', ({ expect }) => {
+    const dir = createTempDir();
+    writeJson(dir, 'package.json', {});
+    symlinkSync(path.join(dir, 'missing.json'), path.join(dir, 'tsconfig.json'), 'file');
+
+    const result = discoverPackage(dir, [typescript]);
 
     expect(result.capabilities).toStrictEqual(new Set());
   });
