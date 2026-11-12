@@ -201,8 +201,9 @@ command (ported from the old `mise-tasks/` bash: CI `check` vs local
 `fix`, shallow-clone base fetch, base-ref diffing — see the
 `gtb-build-pipeline` skill).
 
-- **Generation.** The hk toolchain's plan (`toolchains/hk/plan.ts`) writes
-  the fragment on `gtb sync`, and `gtb verify` fails when the file is
+- **Generation.** The mise toolchain's plan (`toolchains/mise/plan.ts`)
+  writes the fragment on `gtb sync`, taking the tasks from the hk
+  toolchain, and `gtb verify` fails when the file is
   missing or edited. mise loads every file in `conf.d/` beside the
   repository's own config with no `include`, and ranks that config above
   it, so sync never round-trips the comment-heavy `mise.toml` and a task

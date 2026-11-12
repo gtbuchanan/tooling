@@ -6,8 +6,8 @@ import * as v from 'valibot';
 import { describe, it } from 'vitest';
 import { discoverWorkspace } from '#src/core/discovery.js';
 import type { Finding } from '#src/tasks/toolchain.js';
-import { planMiseTasks } from '#src/toolchains/hk/plan.js';
 import { capabilities } from '#src/toolchains/index.js';
+import { planMiseFragment } from '#src/toolchains/mise/plan.js';
 import { createTempDir, writeJson } from '#test/helpers.js';
 
 interface RepoOptions {
@@ -40,7 +40,7 @@ const createRepo = (
   return { fragmentPath: path.join(root, '.config', 'mise', 'conf.d', 'gtb.toml'), root };
 };
 
-const plan = (root: string): readonly Finding[] => planMiseTasks({
+const plan = (root: string): readonly Finding[] => planMiseFragment({
   discovery: discoverWorkspace({ capabilities, cwd: root }),
   force: false,
   ignored: new Set(),
@@ -61,7 +61,7 @@ const parsedWrites = (findings: readonly Finding[]) =>
     ? { changes: finding.changes, path: finding.path, runs: runsOf(finding.content) }
     : finding));
 
-describe.concurrent(planMiseTasks, () => {
+describe.concurrent(planMiseFragment, () => {
   it('writes the hk tasks into conf.d when the file is missing', ({ expect }) => {
     const { fragmentPath, root } = createRepo();
 

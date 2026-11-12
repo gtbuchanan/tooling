@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { Finding, PlanContext } from '#src/tasks/toolchain.js';
-import { generateMiseTasks, miseFragmentFileName } from '#src/toolchains/hk/mise-tasks.js';
+import { generateMiseFragment, miseFragmentFileName } from '#src/toolchains/mise/fragment.js';
 
 // Where gtb wrote the hk tasks before conf.d, loaded through an `includes` entry
 const legacyTasksFileName = 'mise.tasks.toml';
@@ -39,13 +39,12 @@ const planLegacyTasks = (filePath: string): readonly Finding[] =>
     : []);
 
 /**
- * Generates the `hk:all` / `hk:base` mise tasks into a conf.d fragment. Only a
- * repo configuring mise gets it, whether or not it builds with gtb: an hk-only
- * adopter runs gtb from mise's `npm:` backend. mise loads conf.d without being
- * asked, so a fragment in a repo with no mise config would start configuring
- * one.
+ * Generates gtb's conf.d fragment. Only a repo configuring mise gets it,
+ * whether or not it builds with gtb: an hk-only adopter runs gtb from mise's
+ * `npm:` backend. mise loads conf.d without being asked, so a fragment in a
+ * repo with no mise config would start configuring one.
  */
-export const planMiseTasks = ({ discovery }: PlanContext): readonly Finding[] => {
+export const planMiseFragment = ({ discovery }: PlanContext): readonly Finding[] => {
   if (discovery.miseFiles.every(file => !file.endsWith('.toml'))) {
     return [];
   }
@@ -53,7 +52,7 @@ export const planMiseTasks = ({ discovery }: PlanContext): readonly Finding[] =>
   return [
     ...planFragment(
       path.join(discovery.rootDir, miseFragmentFileName),
-      generateMiseTasks(discovery),
+      generateMiseFragment(discovery),
     ),
     ...planLegacyTasks(path.join(discovery.rootDir, legacyTasksFileName)),
   ];
