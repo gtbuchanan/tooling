@@ -277,7 +277,7 @@ describe.concurrent(runSync, () => {
     runSync({ cwd: root, logger: silentLogger });
 
     expect(existsSync(tasksPath)).toBe(true);
-    expect(readFileSync(tasksPath, 'utf8')).toContain('hk:all');
+    expect(readFileSync(tasksPath, 'utf8')).toContain('min_version');
   });
 
   /*
@@ -297,6 +297,7 @@ describe.concurrent(runSync, () => {
       path.join('.config', 'mise'),
       path.join('.config', 'mise', 'conf.d'),
       path.join('.config', 'mise', 'conf.d', 'gtb.toml'),
+      'hk.pkl',
       'mise.toml',
       'package.json',
     ]));

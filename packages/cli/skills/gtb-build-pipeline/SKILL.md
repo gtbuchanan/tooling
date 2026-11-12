@@ -159,7 +159,7 @@ Several tasks write the published output directory, each declaring `outputs` for
 - `turbo.json` tasks + aggregates, rewriting any hand edit
 - per-package `tsconfig.json` / `tsconfig.build.json`, plus a scaffolded root `tsconfig.base.json`, keeping keys gtb doesn't write
 - per-package + root `package.json` scripts
-- `.config/mise/conf.d/gtb.toml` — the `hk:all` / `hk:base` mise tasks, written only when the repo has a mise config (`mise.toml`, `.mise.toml`, `.config/mise.toml` or `.config/mise/config.toml`)
+- `.config/mise/conf.d/gtb.toml` — shared mise settings and hk's tasks, written only when the repo has a mise config (`mise.toml`, `.mise.toml`, `.config/mise.toml` or `.config/mise/config.toml`)
 
 Run after adding packages, changing the task graph, or updating tooling. Without `--force`, existing script values are preserved — this is how packages keep custom overrides. Use `--force` only when intentionally resetting scripts to their generated defaults.
 
@@ -169,7 +169,7 @@ Run after adding packages, changing the task graph, or updating tooling. Without
 
 **Single-package tsconfigs.** When the root _is_ the lone package (no `packages` globs in `pnpm-workspace.yaml`), the root and per-package tsconfig layers target the same files, so sync collapses them into one: both `tsconfig.json` and `tsconfig.build.json` extend `./tsconfig.base.json`, and the build config carries the root layer's `declaration`/`sourceMap` alongside the package layer's `outDir`/`rootDir`/`include`. Package `extends` paths are derived from the package's actual depth below the root, not assumed to be `packages/<name>`.
 
-mise loads every file in `.config/mise/conf.d/` beside the repo's own config with no `include`, so sync owns `gtb.toml` without touching the hand-authored config, and a task the repo defines itself still takes precedence. `gtb verify` asserts the file is current. A repo upgrading from an older gtb deletes its root `mise.tasks.toml` and the `[task_config] includes` entry that loaded it: while both remain, the included tasks override the generated ones, so verify reports the leftover file.
+mise loads every file in `.config/mise/conf.d/` beside the repo's own config with no `include`, so sync owns `gtb.toml` without touching the hand-authored config, and a key the repo sets itself still takes precedence. `gtb verify` asserts the file is current. hk's part needs an `hk.pkl` or `.config/hk.pkl`. mise runs every file's hooks: drop a repo's own `hk install`. A repo upgrading from an older gtb deletes its root `mise.tasks.toml` and the `includes` entry loading it, whose tasks override the generated ones; verify reports the leftover.
 
 `gtb verify` validates no drift from the expected baseline. Exits non-zero if anything is out of sync. Run in CI as a drift gate. It reports exactly what `gtb sync` would change, plus the problems only a hand edit fixes. Use `--ignore <name>` to skip a specific task or script — prefer fixing the drift. The mise check self-skips when the repo has no mise config, and the `turbo.json`, script and tsconfig checks when the root doesn't depend on `@gtbuchanan/cli`, so an hk-preset adopter runs plain `gtb sync`.
 

@@ -87,6 +87,9 @@ const miseFileCandidates = [
   'mise.toml',
 ] as const;
 
+// The files hk reads a project's config from, sorted. `hk.local.pkl` stays out like mise's.
+const hkFileCandidates = ['.config/hk.pkl', 'hk.pkl'] as const;
+
 /**
  * Full workspace discovery result.
  */
@@ -95,6 +98,11 @@ export interface WorkspaceDiscovery {
    * Root manifest declares an `@gtbuchanan/cli` dependency (any version).
    */
   readonly dependsOnCli: boolean;
+  /**
+   * The hk config files present at the root, as sorted POSIX paths relative
+   * to it.
+   */
+  readonly hkFiles: readonly string[];
   /**
    * Whether a pnpm-workspace.yaml was found.
    */
@@ -227,6 +235,7 @@ export const discoverWorkspace = (
 
   return {
     dependsOnCli: '@gtbuchanan/cli' in rootDeps,
+    hkFiles: hkFileCandidates.filter(file => isFile(path.join(ctx.rootDir, file))),
     isMonorepo,
     isSelfHosted: rootDeps['@gtbuchanan/cli']?.startsWith('workspace:') === true,
     miseFiles: miseFileCandidates.filter(file => isFile(path.join(ctx.rootDir, file))),

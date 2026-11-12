@@ -1,30 +1,5 @@
-# The oldest mise that reads mise.lock's `lockfile_version = 3`, declared so an
-# older one fails with a version error instead of a confusing lockfile one.
-# This floor also covers minimum_release_age_excludes (below), added in
-# 2026.6.2. CI pins its own version in `.github/actions/mise-setup`, which only
-# has to stay at or above this.
-min_version = "2026.9.16"
-
-[env]
-# hk wraps hook steps in `mise x` so mise-managed tools resolve without
-# activation.
-HK_MISE = "1"
-
-[hooks]
-postinstall = "hk install --mise"
-
-[settings]
-# Required for the `[hooks]` table.
-experimental = true
-lockfile = true
-# Matches the Renovate/pnpm 3-day quarantine. Only filters fuzzy/`latest`
-# resolution (e.g. manual `mise up --bump`); install of the exact pins
-# in `[tools]` bypasses it, and Renovate already gates automated bumps at
-# 3 days.
-minimum_release_age = "3d"
-# Self-published packages never need the supply-chain quarantine — exclude
-# them so fuzzy/`latest` resolution picks up our own just-cut releases.
-minimum_release_age_excludes = ["npm:@gtbuchanan/*"]
+# min_version, the release-age quarantine, the lockfile setting and the hk
+# wiring come from the generated .config/mise/conf.d/gtb.toml.
 
 # pnpm ignores the `os` field on workspace packages, so the Termux shim's
 # bin doesn't get auto-symlinked into node_modules/.bin via the usual

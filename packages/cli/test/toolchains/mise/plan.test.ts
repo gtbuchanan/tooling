@@ -21,7 +21,7 @@ interface Repo {
 }
 
 /**
- * A root with a `mise.toml`, unless `miseConfig` names none.
+ * A root configuring hk and a `mise.toml`, unless `miseConfig` names none.
  */
 const createRepo = (
   { dependsOnCli = true, miseConfig = 'mise.toml' }: RepoOptions = {},
@@ -32,6 +32,7 @@ const createRepo = (
     name: build.packageName(),
     private: true,
   });
+  writeFileSync(path.join(root, 'hk.pkl'), '');
   if (miseConfig !== '') {
     mkdirSync(path.dirname(path.join(root, miseConfig)), { recursive: true });
     writeFileSync(path.join(root, miseConfig), '[tools]\nnode = "24"\n');

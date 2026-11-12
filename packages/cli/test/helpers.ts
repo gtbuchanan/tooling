@@ -173,8 +173,8 @@ export const writeJson = (dir: string, name: string, data: unknown): void => {
 
 /**
  * Scaffolds a repo that adopts only the hk preset: a TypeScript-flavoured root
- * manifest with no `@gtbuchanan/cli` dependency, and a `mise.toml`. Returns
- * the root.
+ * manifest with no `@gtbuchanan/cli` dependency, an `hk.pkl` and a
+ * `mise.toml`. Returns the root.
  */
 export const createHkOnlyProject = (): string => {
   const root = createTempDir();
@@ -185,6 +185,7 @@ export const createHkOnlyProject = (): string => {
     },
     private: true,
   });
+  writeFileSync(path.join(root, 'hk.pkl'), '');
   writeFileSync(path.join(root, 'mise.toml'), '[tools]\nnode = "24"\n');
 
   return root;
@@ -395,6 +396,10 @@ export interface MakeDiscoveryOverrides extends Partial<WorkspacePackage> {
    */
   readonly dependsOnCli?: boolean;
   /**
+   * Overrides {@link WorkspaceDiscovery.hkFiles} (defaults to none).
+   */
+  readonly hkFiles?: readonly string[];
+  /**
    * Overrides {@link WorkspaceDiscovery.miseFiles} (defaults to none).
    */
   readonly miseFiles?: readonly string[];
@@ -416,6 +421,7 @@ export const makeDiscovery = (
 ): WorkspaceDiscovery => {
   const {
     dependsOnCli: hasCliDependency = false,
+    hkFiles = [],
     isMonorepo = packages.length > 1,
     miseFiles = [],
     isSelfHosted = false,
@@ -423,6 +429,7 @@ export const makeDiscovery = (
   } = overrides;
   return {
     dependsOnCli: hasCliDependency,
+    hkFiles,
     isMonorepo,
     isSelfHosted,
     miseFiles,

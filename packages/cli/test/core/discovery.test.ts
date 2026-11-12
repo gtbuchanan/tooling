@@ -284,4 +284,28 @@ describe.concurrent(discoverWorkspace, () => {
 
     expect(result.miseFiles).toStrictEqual([]);
   });
+
+  it.for(['.config/hk.pkl', 'hk.pkl'])('lists the hk config %s', (file, { expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {});
+    mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+    writeFileSync(path.join(root, file), '');
+
+    const result = discoverWorkspace({ capabilities, cwd: root });
+
+    expect(result.hkFiles).toStrictEqual([file]);
+  });
+
+  it('leaves out local overrides and directories named like hk configs', ({ expect }) => {
+    const root = createTempDir();
+    writeJson(root, 'package.json', {});
+    mkdirSync(path.join(root, '.config'));
+    writeFileSync(path.join(root, 'hk.local.pkl'), '');
+    writeFileSync(path.join(root, '.config', 'hk.local.pkl'), '');
+    mkdirSync(path.join(root, 'hk.pkl'));
+
+    const result = discoverWorkspace({ capabilities, cwd: root });
+
+    expect(result.hkFiles).toStrictEqual([]);
+  });
 });
