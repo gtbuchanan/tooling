@@ -2,14 +2,20 @@ import {
   buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
 } from '#src/core/dist-source.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
-import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
+import { type Need, turboDependsOn } from '#src/tasks/needs.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { toTurboGlobs } from '#src/tasks/turbo-globs.js';
-import { topo } from '#src/tasks/turbo-task.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
 import { buildInclude, typeCheckInclude } from '#src/toolchains/typescript/layout.js';
+
+// SPIKE: what typecheck:ts needs, in workspace terms rather than turbo's.
+export const typecheckTsNeeds: readonly Need[] = [
+  { kind: 'codegen', scope: 'self' },
+  { kind: 'codegen', scope: 'dependencies' },
+  { kind: 'dependency-sources' },
+];
 
 /**
  * `tsc --noEmit` over the package's `include`.
@@ -39,7 +45,7 @@ export const typecheckTsLeaf: Leaf = {
   root: {
     appliesTo: discovery => discovery.root.capabilities.has(typescriptSources),
     task: graph => ({
-      dependsOn: rootSourceDeps(graph),
+      dependsOn: turboDependsOn(typecheckTsNeeds, { kind: 'root' }, graph.discovery),
       inputs: [
         'tsconfig.base.json',
         ...typeCheckInclude.flatMap(toTurboGlobs),
@@ -49,7 +55,7 @@ export const typecheckTsLeaf: Leaf = {
     }),
   },
   task: graph => ({
-    dependsOn: [...codegenDeps(graph), Aggregate.transit],
+    dependsOn: turboDependsOn(typecheckTsNeeds, { kind: 'package' }, graph.discovery),
     inputs: [
       '$TURBO_ROOT$/tsconfig.base.json',
       ...typeCheckInclude.flatMap(toTurboGlobs),
@@ -72,6 +78,13 @@ const compileTsOutputs = (graph: TaskGraph): readonly string[] => [
   ...(graph.applies(deploySkillsLeaf.name) ? [`!${outDirGlob(skillsOutDirEntry)}/**`] : []),
 ];
 
+// SPIKE: what compile:ts needs, in workspace terms rather than turbo's.
+export const compileTsNeeds: readonly Need[] = [
+  { kind: 'task', name: 'compile:ts', scope: 'dependencies' },
+  { kind: 'codegen', scope: 'self' },
+  { kind: 'codegen', scope: 'dependencies' },
+];
+
 /**
  * `tsc -p tsconfig.build.json` into the build output directory.
  */
@@ -80,7 +93,7 @@ export const compileTsLeaf: Leaf = {
   appliesTo: pkg => pkg.capabilities.has(published),
   name: 'compile:ts',
   task: graph => ({
-    dependsOn: [topo(compileTsLeaf.name), ...codegenDeps(graph)],
+    dependsOn: turboDependsOn(compileTsNeeds, { kind: 'package' }, graph.discovery),
     inputs: [
       '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
       ...buildInclude.flatMap(toTurboGlobs), 'tsconfig.build.json',

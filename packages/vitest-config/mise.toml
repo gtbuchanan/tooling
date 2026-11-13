@@ -1,0 +1,14 @@
+[tasks."compile:ts"]
+depends = []
+outputs = [ "dist/source/**", "!dist/source/.npmignore", "!dist/source/LICENSE", "!dist/source/README.md", "!dist/source/package.json", "!dist/source/skills/**" ]
+run = "pnpm run gtb task compile:ts"
+sources = [ "../../tsconfig.base.json", "../../tsconfig.build.json", "bin/**", "src/**", "tsconfig.build.json" ]
+
+[tasks."typecheck:ts"]
+depends = []
+run = "pnpm run gtb task typecheck:ts"
+sources = [ "../../tsconfig.base.json", "bin/**", "scripts/**", "src/**", "test/**", "e2e/**", "*.cjs", "*.cts", "*.js", "*.jsx", "*.mjs", "*.mts", "*.ts", "*.tsx", ".*.cjs", ".*.cts", ".*.js", ".*.jsx", ".*.mjs", ".*.mts", ".*.ts", ".*.tsx", "tsconfig.json", "tsconfig.*.json", "../../tsconfig.base.json", "../test-utils/bin/**", "../test-utils/scripts/**", "../test-utils/src/**", "../test-utils/test/**", "../test-utils/e2e/**", "../test-utils/*.cjs", "../test-utils/*.cts", "../test-utils/*.js", "../test-utils/*.jsx", "../test-utils/*.mjs", "../test-utils/*.mts", "../test-utils/*.ts", "../test-utils/*.tsx", "../test-utils/.*.cjs", "../test-utils/.*.cts", "../test-utils/.*.js", "../test-utils/.*.jsx", "../test-utils/.*.mjs", "../test-utils/.*.mts", "../test-utils/.*.ts", "../test-utils/.*.tsx", "../test-utils/tsconfig.json", "../test-utils/tsconfig.*.json" ]
+
+[tasks."typecheck:ts".outputs]
+auto = true
+

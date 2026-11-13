@@ -1,6 +1,12 @@
 # min_version, the release-age quarantine, the lockfile setting and the hk
 # wiring come from the generated .config/mise/conf.d/gtb.toml.
 
+# SPIKE
+monorepo_root = true
+
+[monorepo]
+config_roots = ["packages/*"]
+
 # pnpm ignores the `os` field on workspace packages, so the Termux shim's
 # bin doesn't get auto-symlinked into node_modules/.bin via the usual
 # optionalDependencies path. `bootstrap` does it explicitly on Termux.
@@ -30,3 +36,8 @@ pkl = "0.33.0"
 pnpm = "12.18.0"
 shellcheck = "0.11.0"
 shfmt = "3.14.1"
+
+[tasks.spikecheck]
+depends = ["//...:typecheck:*"]
+run = "echo spikecheck-body"
+
