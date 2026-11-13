@@ -1,5 +1,21 @@
 # @gtbuchanan/hk-config
 
+## 0.7.1
+
+### Patch Changes
+
+- d7a613c: Lint bats test files with the `shellcheck` and `shfmt` steps
+
+  The steps selected shell sources by hk's `shell` content type alone, which
+  doesn't recognize a `#!/usr/bin/env bats` shebang, so `*.bats` files went
+  unlinted. Both steps now select them too.
+- 72acd9d: Run `gtb-verify` on a change to any mise config gtb reads
+
+  The step fired only on a root `mise.toml`, so editing `.mise.toml`,
+  `.config/mise.toml` or `.config/mise/config.toml` skipped the drift check. It
+  now stages `.config/mise/conf.d/gtb.toml`, where `@gtbuchanan/cli` writes the
+  hk mise tasks, in place of `mise.tasks.toml`, so upgrade the two together.
+
 ## 0.7.0
 
 ### Minor Changes
