@@ -1,5 +1,79 @@
 # @gtbuchanan/cli
 
+## 3.0.0
+
+### Major Changes
+
+- 9c1acf3: Drop the scopes from `gtb sync` and `gtb verify`
+
+  Both commands now always run in full and reject any positional argument, so
+  `gtb sync mise` or `gtb verify toolchains` exits 1 instead of running. Replace
+  a scoped call with a bare `gtb sync` or `gtb verify`, or an hk step with
+  `Defaults.gtbCliSteps` from `@gtbuchanan/hk-config`.
+
+  `gtb verify` also fails when `mise.tasks.toml` is missing or edited, not only
+  when `mise.toml` lacks its include.
+- 70c2055: Find a mise config wherever mise reads one, `.config/` included
+
+  `gtb sync` now recognizes `mise.toml`, `.mise.toml`, `.config/mise.toml` and
+  `.config/mise/config.toml`, and turbo's global dependencies hash every mise
+  config and lockfile present.
+
+  The `hk:all` / `hk:base` tasks move from `mise.tasks.toml` to
+  `.config/mise/conf.d/gtb.toml`, which mise loads with no `include`, so
+  `gtb verify` no longer asks for a `[task_config] includes` entry. After
+  upgrading, run `gtb sync`, then delete `mise.tasks.toml` and its `includes`
+  entry: while both remain, the old tasks override the new ones, so `gtb verify`
+  fails until the file is gone.
+
+### Minor Changes
+
+- 9ebdbe4: Generate the mise settings every gtb repository shares
+
+  `.config/mise/conf.d/gtb.toml` now sets `min_version = "2026.9.16"`,
+  `lockfile = true`, a 3-day `minimum_release_age` that exempts gtb's own
+  releases, and `DO_NOT_TRACK`. A repository with an `hk.pkl` or
+  `.config/hk.pkl` also gets `HK_MISE` and a `postinstall` hook running
+  `hk install --mise`. A key the repository sets in its own mise config still
+  wins, so after `gtb sync` you can delete the copies of these settings it
+  carries. Delete its own `hk install` hook too: mise runs the hooks of every
+  file, so it would install twice.
+
+  The `hk:all` / `hk:base` tasks are now written only where the repository
+  configures hk.
+- 1e993f7: Check the monorepo root's turbo alias scripts in `gtb verify`
+
+  `gtb verify` now reports a missing `check`, `build` or other turbo alias in a
+  monorepo root's `package.json`, which `gtb sync` already adds back on every run.
+  `--ignore <name>` exempts one. `gtb sync` also fails on a single-package root
+  script that shadows a turbo aggregate, as `gtb verify` already did.
+- 1e993f7: Report hand edits to the root `turbo.json` in `gtb verify`
+
+  `gtb verify` now fails when the root `turbo.json` differs in any way from what
+  `gtb sync` generates, not only when it lacks a task, since sync rewrites the
+  whole file. `--ignore <task>` still exempts a task.
+
+### Patch Changes
+
+- e98b980: Stop taking a directory for a config file, or a file for a directory
+
+  A directory named like `tsconfig.json`, `eslint.config.*`, `vitest.config.*`
+  or a `.pkl` file no longer turns on that toolchain, and a file named `skills`
+  or `test` no longer counts as that directory. Each used to put the package in
+  the plan and leave `gtb sync` writing config the package couldn't use.
+- a55beac: Upload coverage from fork pull requests to Codecov
+
+  A fork's run has no Codecov token, and Codecov accepts a tokenless upload only
+  for a branch named `owner:branch`. `gtb task coverage:codecov:upload` now passes
+  the pull request's head label as the branch when its head repository differs
+  from its base, so Codecov stops refusing the upload as one to a protected
+  branch.
+- 971eaf0: Drop the `get-tsconfig` dependency
+
+  `compile:ts` hashes `bin` and `src` directly instead of reading them back
+  from each package's `tsconfig.build.json`, where `gtb sync` writes exactly
+  those two and `gtb verify` rejects any other `include`.
+
 ## 2.1.0
 
 ### Minor Changes
