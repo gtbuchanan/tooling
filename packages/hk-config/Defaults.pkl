@@ -85,26 +85,27 @@ renovateConfig: Config.Step = new {
   check = "renovate-config-validator --strict {{files}}"
 }
 
-// Select shell sources by the `shell` content type — extension AND shebang —
-// so extensionless scripts (mise tasks, the Termux pnpm shim) match. Clear the
-// builtin's `match_any`: its `sh`/`bash` clause over-matches (markdown, JSON,
-// YAML get treated as shell), and hk 1.51 rejects `match_any` alongside `types`.
+// Shell sources: the `shell` content type, which reads the extension and the
+// shebang, so extensionless scripts (mise tasks, the Termux pnpm shim) match,
+// plus bats test files, whose `bats` shebang the type doesn't recognize. Both
+// tools lint bats themselves: shellcheck reads the shebang, and shfmt the
+// extension.
+local shellSources: List<Config.FileSelector> = List(
+  new Config.FileSelector { types = List("shell") },
+  new Config.FileSelector { glob = List("**/*.bats") }
+)
 
-/// shellcheck over shell sources selected by content type.
+/// shellcheck over shell sources (`shell` content type and `*.bats`).
 /// Needs shellcheck on PATH (mise `aqua:koalaman/shellcheck`).
 shellcheck: Config.Step = (Builtins.shellcheck) {
-  match_any = null
-  glob = null
-  types = List("shell")
+  match_any = shellSources
   exclude = defaultExclude
 }
 
 /// shfmt over shell sources, selected like `shellcheck`.
 /// Needs shfmt on PATH (mise `aqua:mvdan/sh`).
 shfmt: Config.Step = (Builtins.shfmt) {
-  match_any = null
-  glob = null
-  types = List("shell")
+  match_any = shellSources
   exclude = defaultExclude
 }
 

@@ -122,7 +122,8 @@ coverage, setupFiles, and mock reset.
   - `shellcheck` / `shfmt` — from `Defaults.shell` (via `recommended`),
     binaries via mise `aqua:koalaman/shellcheck` and `aqua:mvdan/sh`. Select
     shell sources by content type (extension and shebang), so the extensionless
-    Termux pnpm shim (`packages/pnpm-termux-shim/bin/pnpm`) is covered
+    Termux pnpm shim (`packages/pnpm-termux-shim/bin/pnpm`) is covered, plus
+    `*.bats` test files, whose `bats` shebang the content type misses
   - `renovate-preset` / `renovate-config` — both derive from
     `Defaults.renovateConfig` (binary via mise `npm:renovate`);
     `renovate-preset` retargets the glob to `default.json`.
@@ -137,7 +138,7 @@ coverage, setupFiles, and mock reset.
   `renovateConfig`, `jactionlint`, `shellcheck`, `shfmt`, and the
   `defaultExclude` primitive) ship as a Pkl package — `shellcheck` /
   `shfmt` select by content type (extension **and** shebang, so
-  extensionless scripts match) with `defaultExclude` pre-wired. The preset
+  extensionless scripts match) and `*.bats`, with `defaultExclude` pre-wired. The preset
   also exports the `shell` group (`shellcheck` + `shfmt`), the `recommended`
   step mapping (file hygiene + `forbid-submodules` + `renovate-config` +
   `jactionlint` + shell — every step glob/type-gated, so inapplicable ones are
