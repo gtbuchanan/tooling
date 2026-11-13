@@ -212,6 +212,9 @@ catalogs:
     ajv:
       specifier: ^8.20.0
       version: 8.20.0
+    bats:
+      specifier: ^1.13.0
+      version: 1.13.0
     citty:
       specifier: ^0.2.2
       version: 0.2.2
@@ -349,6 +352,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 5.1.0(vitest@5.1.0)
+      bats:
+        specifier: 'catalog:'
+        version: 1.13.0
       console-fail-test:
         specifier: 'catalog:'
         version: 0.10.0
@@ -1796,6 +1802,10 @@ packages:
   baseline-browser-mapping@2.11.33:
     resolution: {integrity: sha512-yiVKDX+qCMRKBE084lXvq9EcwFUhKZ2nU8TK1EQQuOgPNR/lmbGxXOeDdlGUqC2Zz11Cs9rk1d/8NfgBmlkt0w==}
     engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  bats@1.13.0:
+    resolution: {integrity: sha512-giSYKGTOcPZyJDbfbTtzAedLcNWdjCLbXYU3/MwPnjyvDXzu6Dgw8d2M+8jHhZXSmsCMSQqCp+YBsJ603UO4vQ==}
     hasBin: true
 
   bignumber.js@9.3.1:
@@ -4081,6 +4091,8 @@ snapshots:
   balanced-match@4.0.4: {}
 
   baseline-browser-mapping@2.11.33: {}
+
+  bats@1.13.0: {}
 
   bignumber.js@9.3.1: {}
 
