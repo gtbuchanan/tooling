@@ -62,7 +62,7 @@ runs:
       with:
         cache: false
         github_token: ${{ github.server_url == 'https://github.com' && github.token || '' }}
-        version: 2026.11.0
+        version: 2026.11.6
 
     # Prune unreferenced tool versions on inexact cache restore so the
     # re-saved cache does not grow unbounded across mise.lock changes
