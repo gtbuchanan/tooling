@@ -1,119 +1,21 @@
 /// Shared hk building blocks for @gtbuchanan/tooling consumers. The fast path:
 /// spread `...recommended` into a step mapping, add your repo-specific steps
-/// (e.g. eslint), and build the hook trio with `hooksFor(steps)`. The
-/// individual steps (`fileHygiene`, `jactionlint`, `shell`, ...) and the
-/// `defaultExclude` primitive stay exported for granular composition.
+/// (e.g. eslint), and build the hook trio with `hooksFor(steps)`.
+///
+/// This module holds the compositions; each step lives in a module of its own,
+/// one per tool (`Hygiene`, `Shell`, `Workflows`, ...). A consumer amending a
+/// single step imports that module, so each name has one home and the import
+/// says where it lives. `Exclude` carries the exclude patterns, and
+/// `HkPackage` the hk package the whole preset is written against.
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
+import "GtbCli.pkl"
 import "HkPackage.pkl"
-
-/// Machine-generated lockfiles — exempt from the file-hygiene fixers.
-lockfileExclude: Regex = Regex(#"[-.]lock(\.|$)"#)
-
-/// Vendored third-party sources under a root `vendor/` — not ours to fix.
-vendorExclude: Regex = Regex(#"^vendor/"#)
-
-/// Default exclude for file-hygiene (and consumer tool) steps: lockfiles plus
-/// vendored sources. Wire onto your own steps with `exclude = Defaults.defaultExclude`.
-defaultExclude: Regex = Regex("\(lockfileExclude.pattern)|\(vendorExclude.pattern)")
-
-/// jactionlint's rule profiles, narrowest first.
-typealias JactionlintProfile = "correctness"|"default"|"pedantic"
-
-// Insert `--profile <profile>` after the `jactionlint` word of a builtin
-// command, wherever it sits: `check_diff` runs it behind `hk util sarif-diff`.
-// Amending the builtin's spec rather than building a new one keeps its argv
-// and declared `effect` tracking upstream.
-local function withProfile(spec: HkPackage.CommandSpec, profile: JactionlintProfile): HkPackage.CommandSpec = (spec) {
-  command = new HkPackage.Command {
-    argv = (spec.command as HkPackage.Command).argv.flatMap((arg) ->
-      if (arg == "jactionlint") List(arg, "--profile", profile) else List(arg)
-    )
-  }
-}
-
-/// jactionlint (a maintained actionlint fork) over workflows, composite
-/// actions and Dependabot config, limited to `profile`. The flag overrides the
-/// `profile` of `.github/jactionlint.yaml`. Binary via mise
-/// `github:jdx/jactionlint`; shellcheck (`aqua:koalaman/shellcheck`) on PATH
-/// enables run-script linting.
-function jactionlintWith(profile: JactionlintProfile): HkPackage.Step = (HkPackage.builtins.jactionlint) {
-  check = withProfile(HkPackage.builtins.jactionlint.check as HkPackage.CommandSpec, profile)
-  check_diff = withProfile(HkPackage.builtins.jactionlint.check_diff as HkPackage.CommandSpec, profile)
-  fix = withProfile(HkPackage.builtins.jactionlint.fix as HkPackage.CommandSpec, profile)
-}
-
-/// `jactionlintWith` at the `correctness` profile: the checks actionlint makes.
-/// The `default` profile adds hardening rules (timeouts, concurrency groups,
-/// SHA-pinned actions) whose autofixes would rewrite a consumer's workflows
-/// during pre-commit. This stays the default only until the preset moves to
-/// `pedantic`: https://github.com/gtbuchanan/tooling/issues/678
-jactionlint: HkPackage.Step = jactionlintWith("correctness")
-
-/// File-hygiene builtins with the lockfile-exclude already wired.
-fileHygiene: Mapping<String, HkPackage.Step> = new {
-  ["check-added-large-files"] = (HkPackage.builtins.check_added_large_files) { exclude = defaultExclude }
-  ["end-of-file-fixer"] = (HkPackage.builtins.newlines) { exclude = defaultExclude }
-  ["fix-byte-order-marker"] = (HkPackage.builtins.byte_order_marker) { exclude = defaultExclude }
-  ["trailing-whitespace"] = (HkPackage.builtins.trailing_whitespace) { exclude = defaultExclude }
-}
-
-// POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
-// inline on the Windows branch below.
-local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 ' || true)\""
-
-/// Per-OS gitlink (submodule) guard — no hk builtin exists. Runs
-/// unconditionally and fails when the index contains a mode-160000 entry.
-forbidSubmodules: HkPackage.Step = new {
-  check = new HkPackage.Script {
-    windows = "git ls-files -s | findstr /b /c:\"160000 \" >nul && exit /b 1 || exit /b 0"
-    linux = gitlinkGuardPosix
-    macos = gitlinkGuardPosix
-    other = gitlinkGuardPosix
-  }
-}
-
-/// Validates `.github/renovate.json` (every repo extending the shared
-/// Renovate preset has one). renovate-config-validator ships only inside
-/// the `renovate` npm package, so add `npm:renovate` to your mise [tools].
-/// Preset-authoring repos can target `default.json` by amending the glob:
-/// `(Defaults.renovateConfig) { glob = "default.json" }`.
-renovateConfig: HkPackage.Step = new {
-  glob = ".github/renovate.json"
-  check = "renovate-config-validator --strict {{files}}"
-}
-
-// Shell sources: the `shell` content type, which reads the extension and the
-// shebang, so extensionless scripts (mise tasks, the Termux pnpm shim) match,
-// plus bats test files, whose `bats` shebang the type doesn't recognize. Both
-// tools lint bats themselves: shellcheck reads the shebang, and shfmt the
-// extension.
-local shellSources: List<HkPackage.FileSelector> = List(
-  new HkPackage.FileSelector { types = List("shell") },
-  new HkPackage.FileSelector { glob = List("**/*.bats") }
-)
-
-/// shellcheck over shell sources (`shell` content type and `*.bats`).
-/// Needs shellcheck on PATH (mise `aqua:koalaman/shellcheck`).
-shellcheck: HkPackage.Step = (HkPackage.builtins.shellcheck) {
-  match_any = shellSources
-  exclude = defaultExclude
-}
-
-/// shfmt over shell sources, selected like `shellcheck`.
-/// Needs shfmt on PATH (mise `aqua:mvdan/sh`).
-shfmt: HkPackage.Step = (HkPackage.builtins.shfmt) {
-  match_any = shellSources
-  exclude = defaultExclude
-}
-
-/// shellcheck + shfmt as a spreadable group, for repos that lint shell and
-/// want to opt the pair in or out as a unit.
-shell: Mapping<String, HkPackage.Step> = new {
-  ["shellcheck"] = shellcheck
-  ["shfmt"] = shfmt
-}
+import "Hygiene.pkl"
+import "Renovate.pkl"
+import "Shell.pkl"
+import "Workflows.pkl"
 
 /// The recommended step set — spread `...recommended` into a hook's steps to
 /// adopt the whole preset in one line, then add only repo-specific steps (e.g.
@@ -122,59 +24,11 @@ shell: Mapping<String, HkPackage.Step> = new {
 /// for the shell steps. `renovate-preset` (targeting `default.json`) is
 /// intentionally omitted — it's specific to preset-authoring repos.
 recommended: Mapping<String, HkPackage.Step> = new {
-  ...fileHygiene
-  ["jactionlint"] = jactionlint
-  ["forbid-submodules"] = forbidSubmodules
-  ["renovate-config"] = renovateConfig
-  ...shell
-}
-
-/// `gtb verify`, with `gtb sync` as its fix, so a commit that drifts from the
-/// generated config gets it repaired and re-staged rather than reported.
-///
-/// The glob is a trigger, not a work list: the command takes no `{{files}}`
-/// and reads the whole workspace, because drift is a property of the files as
-/// a set. A new package with no tsconfig is drift that no changed file
-/// carries. So the glob names what decides the plan: manifests, tool configs,
-/// Pkl sources, the `test/`, `e2e/` and `skills/` trees that earn a package
-/// its tasks, and `pnpm-lock.yaml`, since upgrading the CLI can change the plan
-/// with nothing else moving. Lockfiles therefore stay in, and the step takes no
-/// `defaultExclude`. Source files are left out: a first `.ts` file earning a
-/// root typecheck task would fire the step on every commit, and CI's own
-/// `gtb verify` still catches it. `stage` lists what sync writes, because hk
-/// otherwise stages only the files the step was triggered by, and sync
-/// creates files no commit contained.
-local gtbVerify: HkPackage.Step = new {
-  glob = List(
-    "**/*.pkl",
-    "**/PklProject",
-    "**/e2e/**",
-    "**/eslint.config.*",
-    "**/package.json",
-    "**/skills/**",
-    "**/test/**",
-    "**/tsconfig.*.json",
-    "**/tsconfig.json",
-    "**/turbo.json",
-    "**/vitest.config.*",
-    ".config/mise.toml",
-    ".config/mise/conf.d/gtb.toml",
-    ".config/mise/config.toml",
-    ".mise.toml",
-    "mise.toml",
-    "pnpm-lock.yaml",
-    "pnpm-workspace.yaml",
-  )
-  stage = List(
-    "**/PklProject",
-    "**/package.json",
-    "**/tsconfig.*.json",
-    "**/tsconfig.json",
-    ".config/mise/conf.d/gtb.toml",
-    "turbo.json",
-  )
-  check = "gtb verify"
-  fix = "gtb sync"
+  ...Hygiene.fileHygiene
+  ["jactionlint"] = Workflows.jactionlint
+  ["forbid-submodules"] = Hygiene.forbidSubmodules
+  ["renovate-config"] = Renovate.renovateConfig
+  ...Shell.shell
 }
 
 /// The steps backed by `@gtbuchanan/cli`, as a spreadable group, with the
@@ -193,7 +47,7 @@ local gtbVerify: HkPackage.Step = new {
 // circular.
 function gtbCliSteps(commandPrefix: String?): Mapping<String, HkPackage.Step> =
   new Mapping<String, HkPackage.Step> {
-    ["gtb-verify"] = (gtbVerify) { prefix = commandPrefix }
+    ["gtb-verify"] = (GtbCli.verify) { prefix = commandPrefix }
   }
 
 /// Build the standard `pre-commit` / `check` / `fix` hook trio from a step

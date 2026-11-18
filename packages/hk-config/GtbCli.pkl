@@ -1,0 +1,53 @@
+/// Steps backed by `@gtbuchanan/cli`. Each invokes a bare `gtb`;
+/// `Defaults.gtbCliSteps` wraps them to set how that name resolves.
+module gtbuchanan.hk.GtbCli
+
+import "HkPackage.pkl"
+
+/// `gtb verify`, with `gtb sync` as its fix, so a commit that drifts from the
+/// generated config gets it repaired and re-staged rather than reported.
+///
+/// The glob is a trigger, not a work list: the command takes no `{{files}}`
+/// and reads the whole workspace, because drift is a property of the files as
+/// a set. A new package with no tsconfig is drift that no changed file
+/// carries. So the glob names what decides the plan: manifests, tool configs,
+/// Pkl sources, the `test/`, `e2e/` and `skills/` trees that earn a package
+/// its tasks, and `pnpm-lock.yaml`, since upgrading the CLI can change the plan
+/// with nothing else moving. Lockfiles therefore stay in, and the step takes no
+/// `defaultExclude`. Source files are left out: a first `.ts` file earning a
+/// root typecheck task would fire the step on every commit, and CI's own
+/// `gtb verify` still catches it. `stage` lists what sync writes, because hk
+/// otherwise stages only the files the step was triggered by, and sync
+/// creates files no commit contained.
+verify: HkPackage.Step = new {
+  glob = List(
+    "**/*.pkl",
+    "**/PklProject",
+    "**/e2e/**",
+    "**/eslint.config.*",
+    "**/package.json",
+    "**/skills/**",
+    "**/test/**",
+    "**/tsconfig.*.json",
+    "**/tsconfig.json",
+    "**/turbo.json",
+    "**/vitest.config.*",
+    ".config/mise.toml",
+    ".config/mise/conf.d/gtb.toml",
+    ".config/mise/config.toml",
+    ".mise.toml",
+    "mise.toml",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+  )
+  stage = List(
+    "**/PklProject",
+    "**/package.json",
+    "**/tsconfig.*.json",
+    "**/tsconfig.json",
+    ".config/mise/conf.d/gtb.toml",
+    "turbo.json",
+  )
+  check = "gtb verify"
+  fix = "gtb sync"
+}

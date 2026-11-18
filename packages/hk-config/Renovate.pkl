@@ -1,0 +1,14 @@
+/// Validates Renovate config.
+module gtbuchanan.hk.Renovate
+
+import "HkPackage.pkl"
+
+/// Validates `.github/renovate.json` (every repo extending the shared
+/// Renovate preset has one). renovate-config-validator ships only inside
+/// the `renovate` npm package, so add `npm:renovate` to your mise [tools].
+/// Preset-authoring repos can target `default.json` by amending the glob:
+/// `(Renovate.renovateConfig) { glob = "default.json" }`.
+renovateConfig: HkPackage.Step = new {
+  glob = ".github/renovate.json"
+  check = "renovate-config-validator --strict {{files}}"
+}

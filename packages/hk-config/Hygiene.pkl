@@ -1,0 +1,28 @@
+/// The `hk util` file-hygiene fixers, plus the guards hk has no builtin for.
+module gtbuchanan.hk.Hygiene
+
+import "Exclude.pkl"
+import "HkPackage.pkl"
+
+/// File-hygiene builtins with the lockfile-exclude already wired.
+fileHygiene: Mapping<String, HkPackage.Step> = new {
+  ["check-added-large-files"] = (HkPackage.builtins.check_added_large_files) { exclude = Exclude.defaultExclude }
+  ["end-of-file-fixer"] = (HkPackage.builtins.newlines) { exclude = Exclude.defaultExclude }
+  ["fix-byte-order-marker"] = (HkPackage.builtins.byte_order_marker) { exclude = Exclude.defaultExclude }
+  ["trailing-whitespace"] = (HkPackage.builtins.trailing_whitespace) { exclude = Exclude.defaultExclude }
+}
+
+// POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
+// inline on the Windows branch below.
+local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 ' || true)\""
+
+/// Per-OS gitlink (submodule) guard — no hk builtin exists. Runs
+/// unconditionally and fails when the index contains a mode-160000 entry.
+forbidSubmodules: HkPackage.Step = new {
+  check = new HkPackage.Script {
+    windows = "git ls-files -s | findstr /b /c:\"160000 \" >nul && exit /b 1 || exit /b 0"
+    linux = gitlinkGuardPosix
+    macos = gitlinkGuardPosix
+    other = gitlinkGuardPosix
+  }
+}

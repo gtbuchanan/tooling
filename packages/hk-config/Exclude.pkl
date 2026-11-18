@@ -1,0 +1,13 @@
+/// Exclude patterns the preset's steps share, exported so a consumer can wire
+/// the same exclude onto its own steps.
+module gtbuchanan.hk.Exclude
+
+/// Machine-generated lockfiles — exempt from the file-hygiene fixers.
+lockfileExclude: Regex = Regex(#"[-.]lock(\.|$)"#)
+
+/// Vendored third-party sources under a root `vendor/` — not ours to fix.
+vendorExclude: Regex = Regex(#"^vendor/"#)
+
+/// Default exclude for file-hygiene (and consumer tool) steps: lockfiles plus
+/// vendored sources. Wire onto your own steps with `exclude = Exclude.defaultExclude`.
+defaultExclude: Regex = Regex("\(lockfileExclude.pattern)|\(vendorExclude.pattern)")

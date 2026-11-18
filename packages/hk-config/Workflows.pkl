@@ -1,0 +1,37 @@
+/// Lints GitHub Actions workflows, composite actions and Dependabot config.
+module gtbuchanan.hk.Workflows
+
+import "HkPackage.pkl"
+
+/// jactionlint's rule profiles, narrowest first.
+typealias JactionlintProfile = "correctness"|"default"|"pedantic"
+
+// Insert `--profile <profile>` after the `jactionlint` word of a builtin
+// command, wherever it sits: `check_diff` runs it behind `hk util sarif-diff`.
+// Amending the builtin's spec rather than building a new one keeps its argv
+// and declared `effect` tracking upstream.
+local function withProfile(spec: HkPackage.CommandSpec, profile: JactionlintProfile): HkPackage.CommandSpec = (spec) {
+  command = new HkPackage.Command {
+    argv = (spec.command as HkPackage.Command).argv.flatMap((arg) ->
+      if (arg == "jactionlint") List(arg, "--profile", profile) else List(arg)
+    )
+  }
+}
+
+/// jactionlint (a maintained actionlint fork) over workflows, composite
+/// actions and Dependabot config, limited to `profile`. The flag overrides the
+/// `profile` of `.github/jactionlint.yaml`. Binary via mise
+/// `github:jdx/jactionlint`; shellcheck (`aqua:koalaman/shellcheck`) on PATH
+/// enables run-script linting.
+function jactionlintWith(profile: JactionlintProfile): HkPackage.Step = (HkPackage.builtins.jactionlint) {
+  check = withProfile(HkPackage.builtins.jactionlint.check as HkPackage.CommandSpec, profile)
+  check_diff = withProfile(HkPackage.builtins.jactionlint.check_diff as HkPackage.CommandSpec, profile)
+  fix = withProfile(HkPackage.builtins.jactionlint.fix as HkPackage.CommandSpec, profile)
+}
+
+/// `jactionlintWith` at the `correctness` profile: the checks actionlint makes.
+/// The `default` profile adds hardening rules (timeouts, concurrency groups,
+/// SHA-pinned actions) whose autofixes would rewrite a consumer's workflows
+/// during pre-commit. This stays the default only until the preset moves to
+/// `pedantic`: https://github.com/gtbuchanan/tooling/issues/678
+jactionlint: HkPackage.Step = jactionlintWith("correctness")

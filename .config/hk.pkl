@@ -5,6 +5,8 @@ amends "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.
 // release — the same own-repo-vs-consumer split as the `./` workflow refs
 // documented in AGENTS.md. Consumers import it via the published package URL.
 import "../packages/hk-config/Defaults.pkl"
+import "../packages/hk-config/Renovate.pkl"
+import "../packages/hk-config/Workflows.pkl"
 
 // eslint args shared by the step's check/fix; only `--fix` differs.
 local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
@@ -12,7 +14,7 @@ local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
 local allSteps = new Mapping<String, Step> {
     ...(Defaults.recommended) {
         // Exemptions live in .github/jactionlint.yaml.
-        ["jactionlint"] = Defaults.jactionlintWith("pedantic")
+        ["jactionlint"] = Workflows.jactionlintWith("pedantic")
     }
 
     // `pnpm run`: this repository vendors the CLI, so the root `gtb` script
@@ -21,7 +23,7 @@ local allSteps = new Mapping<String, Step> {
 
     // Validates the shareable preset itself; the .github/renovate.json
     // validator (renovate-config) comes from recommended.
-    ["renovate-preset"] = (Defaults.renovateConfig) { glob = "default.json" }
+    ["renovate-preset"] = (Renovate.renovateConfig) { glob = "default.json" }
 
     ["eslint"] {
         check = "pnpm exec eslint \(eslintArgs)"

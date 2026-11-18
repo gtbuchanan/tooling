@@ -45,7 +45,7 @@ packages/
   eslint-plugin-markdownlint/   — @gtbuchanan/eslint-plugin-markdownlint (markdownlint via ESLint)
   eslint-plugin-md-frontmatter/ — @gtbuchanan/eslint-plugin-md-frontmatter (Markdown frontmatter validation via JSON Schema)
   eslint-plugin-yamllint/       — @gtbuchanan/eslint-plugin-yamllint (yamllint gap rules via ESLint)
-  hk-config/                    — @gtbuchanan/hk-config (shared hk Pkl preset; private to npm, published as a GitHub-release Pkl package). Defaults.pkl, HkPackage.pkl (the one hk import) + sync-generated PklProject
+  hk-config/                    — @gtbuchanan/hk-config (shared hk Pkl preset; private to npm, published as a GitHub-release Pkl package). Defaults.pkl (compositions), one module per tool, HkPackage.pkl (the one hk import) + sync-generated PklProject
   libsql-termux-shim/           — @gtbuchanan/libsql-termux-shim (libsql native-binding shim on node:sqlite for Termux/Android, os: ["android"])
   pnpm-termux-shim/             — @gtbuchanan/pnpm-termux-shim (pnpm bin shim for Termux/Android, os: ["android"])
   tsconfig/                     — @gtbuchanan/tsconfig (shared base tsconfig.json)
@@ -107,25 +107,25 @@ coverage, setupFiles, and mock reset.
   shared preset's `Defaults.recommended` step set, adds the repo-specific
   `renovate-preset` and `eslint` steps, and builds the `pre-commit` /
   `check` / `fix` hooks via `Defaults.hooksFor`:
-  - File hygiene — `Defaults.fileHygiene` (large files, EOF newline, BOM,
+  - File hygiene — `Hygiene.fileHygiene` (large files, EOF newline, BOM,
     trailing whitespace, each with the lockfile-exclude pre-wired)
-  - `jactionlint` — `Defaults.jactionlint`, binary via mise `github:jdx/jactionlint`
+  - `jactionlint` — `Workflows.jactionlint`, binary via mise `github:jdx/jactionlint`
     (the maintained actionlint fork). Lints workflows, composite actions and
     Dependabot config, and runs `shellcheck` (mise `aqua:koalaman/shellcheck`)
     on `run:` scripts when it's on PATH. The preset defaults to the
-    `correctness` profile, and `Defaults.jactionlintWith(profile)` builds the
-    step at another (see the doc comments in `Defaults.pkl` for why). This
+    `correctness` profile, and `Workflows.jactionlintWith(profile)` builds the
+    step at another (see the doc comments in `Workflows.pkl` for why). This
     repository lints at `pedantic`, with its exemptions in
     `.github/jactionlint.yaml`.
-  - `forbid-submodules` — `Defaults.forbidSubmodules`, a per-OS gitlink
+  - `forbid-submodules` — `Hygiene.forbidSubmodules`, a per-OS gitlink
     guard (no builtin)
-  - `shellcheck` / `shfmt` — from `Defaults.shell` (via `recommended`),
+  - `shellcheck` / `shfmt` — from `Shell.shell` (via `recommended`),
     binaries via mise `aqua:koalaman/shellcheck` and `aqua:mvdan/sh`. Select
     shell sources by content type (extension and shebang), so the extensionless
     Termux pnpm shim (`packages/pnpm-termux-shim/bin/pnpm`) is covered, plus
     `*.bats` test files, whose `bats` shebang the content type misses
   - `renovate-preset` / `renovate-config` — both derive from
-    `Defaults.renovateConfig` (binary via mise `npm:renovate`);
+    `Renovate.renovateConfig` (binary via mise `npm:renovate`);
     `renovate-preset` retargets the glob to `default.json`.
     `check-illegal-windows-names` was dropped (no builtin; redundant on a
     Windows-primary repo)
@@ -133,20 +133,19 @@ coverage, setupFiles, and mock reset.
     by `gtb sync`, run from source through the root `gtb` script
   - `eslint` — repo-specific, stays in `hk.pkl`. `no-commit-to-branch` is
     wired into `pre-commit` by `Defaults.hooksFor` (commit-time-only guard)
-- **`@gtbuchanan/hk-config` preset** (`packages/hk-config/Defaults.pkl`).
-  The reusable building blocks (`fileHygiene`, `forbidSubmodules`,
-  `renovateConfig`, `jactionlint`, `shellcheck`, `shfmt`, and the
-  `defaultExclude` primitive) ship as a Pkl package — `shellcheck` /
-  `shfmt` select by content type (extension **and** shebang, so
-  extensionless scripts match) and `*.bats`, with `defaultExclude` pre-wired. The preset
-  also exports the `shell` group (`shellcheck` + `shfmt`), the `recommended`
-  step mapping (file hygiene + `forbid-submodules` + `renovate-config` +
-  `jactionlint` + shell — every step glob/type-gated, so inapplicable ones are
-  inert) for one-line adoption, `gtbCliSteps(prefix)` (the `gtb-verify` step,
-  kept out of `recommended` because it fails wherever gtb isn't installed),
-  and `hooksFor(steps)` which builds the standard
-  `pre-commit` / `check` / `fix` trio (pre-commit stashes via `patch-file` and
-  adds the commit-time-only `no-commit-to-branch` guard). It's private to
+- **`@gtbuchanan/hk-config` preset** (`packages/hk-config/`). Each step
+  lives in a module of its own, one per tool (`Hygiene`, `Shell`,
+  `Workflows`, `Renovate`, `GtbCli`), with the exclude patterns in `Exclude`
+  and the one hk import in `HkPackage`. `Defaults.pkl` holds only the
+  compositions: the `recommended` step mapping (every step glob/type-gated,
+  so inapplicable ones are inert), `gtbCliSteps(prefix)` (kept out of
+  `recommended` because it fails wherever gtb isn't installed), and
+  `hooksFor(steps)`, which builds the `pre-commit` / `check` / `fix` trio
+  (pre-commit stashes via `patch-file` and adds the commit-time-only
+  `no-commit-to-branch` guard). No module re-exports another's, so each name
+  has one home. A new step lands in its own module, then in `recommended` if
+  it belongs there; the module table is in the package README, which ships
+  to consumers. It's private to
   npm, published as a **GitHub release** so
   consumers `package://`-import it with sha256 integrity (see CD below).
   Consumer import:

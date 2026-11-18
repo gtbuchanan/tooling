@@ -10,50 +10,69 @@ This is a Pkl package published to GitHub releases (not npm), imported via a
 
 ## Usage
 
-Import the preset in your `hk.pkl` and spread its building blocks into your
-hooks:
+Import `Defaults.pkl`, spread `recommended` into a step mapping alongside your
+repository's own steps, and build the hooks with `hooksFor`:
 
 ```pkl
-amends "package://github.com/jdx/hk/releases/download/v1.46.0/hk@1.46.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v1.46.0/hk@1.46.0#/Builtins.pkl"
-import "package://github.com/gtbuchanan/tooling/releases/download/hk-config@0.1.0/hk-config@0.1.0#/Defaults.pkl"
+amends "package://github.com/jdx/hk/releases/download/v<hk-version>/hk@<hk-version>#/Config.pkl"
 
-hooks {
-  ["pre-commit"] {
-    fix = true
-    steps {
-      ...Defaults.fileHygiene
-      ["forbid-submodules"] = Defaults.forbidSubmodules
-      ["renovate-config"] = Defaults.renovateConfig
-    }
+import "package://github.com/gtbuchanan/tooling/releases/download/hk-config@<version>/hk-config@<version>#/Defaults.pkl"
+
+local allSteps = new Mapping<String, Step> {
+  ...Defaults.recommended
+}
+
+hooks = Defaults.hooksFor(allSteps)
+```
+
+The `renovate-config` step shells out to `renovate-config-validator`, which
+ships only inside the `renovate` npm package — add `npm:renovate` to your mise
+`[tools]` so hk can resolve it on `PATH`.
+
+To amend or reuse a single step, import the module that holds it from the same
+package URL, swapping `Defaults.pkl` for the module's file:
+
+```pkl
+import "package://github.com/gtbuchanan/tooling/releases/download/hk-config@<version>/hk-config@<version>#/Workflows.pkl"
+
+local allSteps = new Mapping<String, Step> {
+  ...(Defaults.recommended) {
+    ["jactionlint"] = Workflows.jactionlintWith("pedantic")
   }
 }
 ```
 
-The `renovateConfig` step shells out to `renovate-config-validator`, which ships
-only inside the `renovate` npm package — add `npm:renovate` to your mise
-`[tools]` so hk can resolve it on `PATH`.
+## Preset Modules
 
-## Building Blocks
+`Defaults.pkl` holds the compositions. Every step lives in exactly one module,
+and no module re-exports another's:
 
-- `fileHygiene` — large-file, end-of-file-newline, byte-order-marker, and
-  trailing-whitespace fixers, each pre-wired with the default exclude.
-- `forbidSubmodules` — a per-OS gitlink (submodule) guard.
-- `jactionlint` — lints workflows, composite actions and Dependabot config at
-  the `correctness` profile. `jactionlintWith(profile)` builds the same step at
-  `default` or `pedantic`, whose autofixes rewrite workflows during pre-commit:
-  `["jactionlint"] = Defaults.jactionlintWith("pedantic")` after spreading
-  `recommended`.
-- `renovateConfig` — validates `.github/renovate.json` via
-  `renovate-config-validator`. Amend its `glob` to target a different file
-  (e.g. `default.json` for preset-authoring repos).
+| Module          | Holds                                                   |
+| :-------------- | :------------------------------------------------------ |
+| `Defaults.pkl`  | `recommended`, `gtbCliSteps(prefix)`, `hooksFor(steps)` |
+| `Exclude.pkl`   | `defaultExclude`, `lockfileExclude`, `vendorExclude`    |
+| `GtbCli.pkl`    | `verify`                                                |
+| `HkPackage.pkl` | the hk package's types and `builtins`                   |
+| `Hygiene.pkl`   | `fileHygiene`, `forbidSubmodules`                       |
+| `Renovate.pkl`  | `renovateConfig`                                        |
+| `Shell.pkl`     | `shellcheck`, `shfmt`, `shell`                          |
+| `Workflows.pkl` | `jactionlint`, `jactionlintWith(profile)`               |
+
+- `recommended` — file hygiene, `forbid-submodules`, `renovate-config`,
+  `jactionlint` and the shell pair. Every step is glob- or type-gated, so the
+  ones a repository doesn't need never run.
+- `hooksFor(steps)` — the `pre-commit` / `check` / `fix` hooks over `steps`.
+  `pre-commit` runs in fix mode, stashes unstaged changes, and adds the
+  `no-commit-to-branch` guard.
 - `gtbCliSteps(prefix)` — `gtb verify`, fixed by `gtb sync`, so a commit that
   drifts from the generated config is repaired and re-staged. The argument
   sets how `gtb` resolves: `null` for a mise `npm:@gtbuchanan/cli` tool,
   `"pnpm exec"` for a workspace devDependency. Not in `recommended`, since it
   fails wherever gtb isn't installed.
-- `defaultExclude` — the default exclude regex (lockfiles plus a root
-  `vendor/`), exposed so you can wire the same exclude onto your own tool
-  steps.
-- `lockfileExclude` / `vendorExclude` — the individual exclude regexes that
-  compose `defaultExclude`, for steps that need only one.
+- `jactionlintWith(profile)` — jactionlint at `default` or `pedantic` rather
+  than the `correctness` profile `recommended` uses. The stricter profiles'
+  autofixes rewrite workflows during pre-commit.
+- `renovateConfig` — validates `.github/renovate.json`. Amend its `glob` to
+  target a different file (e.g. `default.json` for preset-authoring repos).
+- `defaultExclude` — lockfiles plus a root `vendor/`, for wiring the preset's
+  exclude onto your own steps.
