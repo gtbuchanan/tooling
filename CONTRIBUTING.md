@@ -106,7 +106,6 @@ disable_tools = ["node", "pnpm", "hk", "pkl", "jactionlint"]
   from source on Bionic, which doesn't compile. mise picks up system
   node from `PATH`.
 - **pnpm** — `npm i -g pnpm` (no `android/arm64` aqua asset).
-- **turbo** — `pkg install turbo`.
 - **hk** — download the static musl aarch64 release tarball
   (`hk-aarch64-unknown-linux-musl.tar.gz`); it runs unmodified on
   Bionic.

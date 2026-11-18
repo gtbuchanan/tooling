@@ -1,25 +1,15 @@
 # Android-Termux setup
 
-Two issues are caused by Termux's Node reporting `process.platform === 'android'`; a third (memory pressure) is unrelated and applies to any low-memory host. Native Android support upstream was declined in [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616), so `gtb turbo` ships the workaround instead.
+Two issues are specific to Termux, getting a turbo that runs and getting it to spawn `pnpm`, and a third (memory pressure) applies to any low-memory host. The [`@gtbuchanan/pnpm-termux-shim` README](https://github.com/gtbuchanan/tooling/tree/main/packages/pnpm-termux-shim#readme) explains the first two; what follows is what to do.
 
-**1. Node_modules launcher rejects android.** The launcher in `node_modules/.bin/turbo` exits early when `process.platform === 'android'`, and pnpm filters `@turbo/<os>-<arch>` optional dependencies by host platform so none of the bundled platform binaries are installed either. Install the native turbo from Termux's package registry instead:
+**1. Getting a turbo that runs.** Depend on turbo `^2.10.8`, whose npm launcher starts on Android. A repo still using the Termux-packaged turbo (`pkg install turbo`) should bump turbo rather than keep it: that package lags upstream and rejects keys `gtb sync` writes into `turbo.json`.
 
-```sh
-pkg install turbo
-```
-
-That puts a Bionic-built `turbo` at `$PREFIX/bin/turbo` (typically `/data/data/com.termux/files/usr/bin/turbo`). `gtb turbo` resolves it directly via `$PREFIX` (with the standard prefix as fallback) and execs it, bypassing the node_modules launcher entirely.
-
-**2. Turbo child-process spawn ENOENT (historically).** The npm-distributed Linux turbo binary is glibc-built, but Termux is Bionic. Termux's `LD_PRELOAD=libtermux-exec-ld-preload.so` rewrites `/usr/bin/env` shebangs in `execve` syscalls — but the preload is Bionic-only, so it never loads into a glibc turbo. When such a turbo spawns `pnpm`, the kernel sees `#!/usr/bin/env node` and fails because Termux has no `/usr/bin/env`.
-
-The Termux-pkg turbo is Bionic-built, so the preload loads correctly and child-process spawns resolve `pnpm` without issue. `@gtbuchanan/pnpm-termux-shim` is retained defensively in case turbo reintroduces a glibc npm distribution, or another glibc binary in the graph needs to spawn `pnpm`. The shim is an `os: ["android"]`-filtered package whose `bin: { pnpm: ... }` entry has an absolute-path shebang; pnpm symlinks it into `<rootDir>/node_modules/.bin/pnpm` ahead of the system `pnpm` in PATH. On non-Android hosts it's filtered out at install — zero footprint.
-
-Add it as an `optionalDependencies` entry on the workspace root (so the bin lands in the root's `node_modules/.bin`, not nested under a transitive dep):
+**2. Turbo child-process spawn failures.** turbo can't spawn Termux's own `pnpm`, failing every task with `unable to spawn child process: Exec format error (os error 8)`. Add `@gtbuchanan/pnpm-termux-shim` to the **workspace root** `optionalDependencies` (only the root's `node_modules/.bin/` is on turbo's PATH), and run turbo through `gtb turbo`, as every generated root script does. Plain `turbo` from a `pnpm run` script under pnpm 11 and earlier fails instead with `No such file or directory (os error 2)` on every non-root task.
 
 ```jsonc
 {
   "optionalDependencies": {
-    "@gtbuchanan/pnpm-termux-shim": "^0.1.0",
+    "@gtbuchanan/pnpm-termux-shim": "^0.1.2",
   },
 }
 ```

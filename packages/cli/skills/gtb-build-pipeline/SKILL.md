@@ -1,6 +1,6 @@
 ---
 name: gtb-build-pipeline
-description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify, the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (with the Android/Termux escape hatch), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb verify, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise conf.d, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit.
+description: Build pipeline guidance for projects using @gtbuchanan/cli. Covers the Turborepo task graph, gtb sync and verify, the gtb hk pre-commit runner, the gtb changeset catalog gate, the gtb turbo wrapper (PATH normalization, plus Android/Termux setup), consumer script customization, and test-bucket strategy. Trigger keywords - @gtbuchanan/cli, @gtbuchanan/pnpm-termux-shim, turbo.json, gtb sync, gtb verify, gtb turbo, gtb task, gtb hk, gtb changeset check, hk:all, hk:base, mise conf.d, mise.tasks.toml, pnpm catalog, compile:ts, pack:npm, deploy:skills, task graph, transit, unable to spawn child process, turbo on Termux.
 ---
 
 # @gtbuchanan/cli build pipeline
@@ -46,12 +46,11 @@ scripts are unaffected: they call `gtb task <name>` and never turbo.
 `gtb verify` reports any root script that shadows an aggregate, so a
 repo synced before this rule landed is told which scripts to delete.
 
-`gtb turbo` is a thin pass-through to `turbo` on every supported
-platform. On Android (`process.platform === 'android'`) it resolves
-the global turbo binary installed via Termux's package registry
-(`$PREFIX/bin/turbo`) and execs it directly, bypassing the
-node_modules launcher (which rejects the platform upfront). See
-[Android-Termux setup](#android-termux-setup) below.
+`gtb turbo` runs `turbo` with every PATH entry rewritten to an absolute
+path first. Turbo resolves the package manager once from the invoking
+directory, then spawns it from each package's directory, so a match from
+a relative entry no longer resolves. See
+[Android-Termux setup](#android-termux-setup) below for when that bites.
 
 `pnpm verify`, `pnpm prepare`, and `pnpm run gtb <cmd>` invoke the CLI directly.
 
@@ -192,7 +191,7 @@ Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The
 
 ## Android-Termux setup
 
-Termux's Node reports `process.platform === 'android'`, which the `node_modules` turbo launcher rejects outright; install turbo from Termux's own registry (`pkg install turbo`) and `gtb turbo` execs it directly. Separately, run heavy aggregates (`build`, `test:slow`, `test:e2e`) with `--concurrency=1` on any memory-constrained host. See [the Android-Termux reference](references/android-termux.md) for the full setup, the `@gtbuchanan/pnpm-termux-shim` rationale, and why `gtb turbo` doesn't set the concurrency ceiling itself.
+Turbo `^2.10.8` runs from `node_modules` on Termux, so no Termux-packaged turbo is needed. Spawning `pnpm` still takes `@gtbuchanan/pnpm-termux-shim` on the workspace root, reached through `gtb turbo`'s PATH normalization. Separately, run heavy aggregates (`build`, `test:slow`, `test:e2e`) with `--concurrency=1` on any memory-constrained host. See [the Android-Termux reference](references/android-termux.md) for the setup and why `gtb turbo` doesn't set the concurrency ceiling itself.
 
 ## Customizing behavior
 

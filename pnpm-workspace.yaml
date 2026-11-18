@@ -48,7 +48,7 @@ catalog:
   skills: 1.7.6
   skills-npm: 4.1.0
   smol-toml: ^1.7.0
-  turbo: ^2.5.4
+  turbo: ^2.10.8
   typescript: ^6.0.0
   typescript-eslint: ^8.64.0
   valibot: ^1.4.2

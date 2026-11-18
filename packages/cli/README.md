@@ -24,7 +24,7 @@ with the current workspace. Re-run after adding packages or changing
 capabilities.
 
 Run the pipeline via the `gtb turbo` wrapper (generated root scripts
-delegate to it so Android/Termux users get a transparent escape hatch):
+delegate to it so its PATH normalization applies everywhere):
 
 ```sh
 pnpm exec gtb turbo run check   # compile → lint + test:fast (parallel)
@@ -37,30 +37,10 @@ single-package repo (where the root _is_ the package) gets none: a root
 script named after an aggregate makes turbo re-enter itself, so the
 `gtb turbo run` form above is the entry point there.
 
-`gtb turbo` is a thin pass-through to `turbo` on every supported
-platform. On Android, `process.platform === 'android'` causes the
-node_modules launcher to refuse to start; the wrapper resolves the
-native turbo from Termux's package registry and execs it directly.
-Install it once per Termux environment:
-
-```sh
-pkg install turbo
-```
-
-That puts a Bionic-built `turbo` at `$PREFIX/bin/turbo` (typically
-`/data/data/com.termux/files/usr/bin/turbo`), which `gtb turbo`
-resolves and execs.
-
-The Termux-pkg turbo is Bionic-built, so its child-process spawns
-honor Termux's `LD_PRELOAD` shebang rewriter and resolve
-`#!/usr/bin/env <name>` correctly.
-[`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim) is retained
-defensively in case turbo reintroduces a glibc npm distribution, or
-another glibc binary in the graph needs to spawn `pnpm`. Add it to
-your **workspace root** `package.json` `optionalDependencies` (not
-inside any individual package — under pnpm strict layout, only the
-root's `node_modules/.bin/` is on turbo's PATH at spawn time). The
-shim's `os: ["android"]` filter keeps it off non-Android hosts.
+`gtb turbo` runs `turbo` with every PATH entry made absolute, which
+running turbo on Termux/Android depends on. That setup, turbo `^2.10.8`
+plus a `pnpm` turbo can spawn, is in
+[`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim#usage).
 
 The `prepare` script must be declared so pnpm runs it on install to
 sync skills from installed packages:
@@ -92,7 +72,7 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 | --------- | ------------------------------------------------- |
 | `verify`  | Validate generated config against workspace state |
 | `sync`    | Reconcile `turbo.json`, tsconfigs, scripts        |
-| `turbo`   | Run turbo (with an Android escape hatch)          |
+| `turbo`   | Run turbo with cwd-independent PATH entries       |
 | `prepare` | Sync skills from installed packages               |
 
 ### Task leaves (`gtb task <name>`)

@@ -95,9 +95,9 @@ const requiredRootScripts = (
  * repos get none.
  *
  * Aliases route through `gtb turbo` rather than `turbo` directly so the
- * Android escape hatch (resolve Linux platform binary, bypass turbo's
- * launcher) activates transparently. On every other platform `gtb turbo`
- * is a thin pass-through, so this does not change behavior.
+ * PATH normalization it applies (absolute entries only, so turbo's
+ * package-manager lookup survives the cwd change it makes per task)
+ * covers every alias.
  */
 const aliasRootScripts = (discovery: WorkspaceDiscovery): Record<string, string> => {
   const cmd = (name: string): string =>
