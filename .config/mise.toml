@@ -6,7 +6,7 @@ description = "Set up the workspace (install deps)"
 run = "pnpm install --frozen-lockfile"
 
 [tools]
-hk = "2.11.0"
+hk = "2.12.0"
 jactionlint = "v2.6.0"
 node = "26.13.1"
 # Exempt transitive `@yarnpkg/libzip` from aube's no-downgrade policy — its
