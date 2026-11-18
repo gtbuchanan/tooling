@@ -55,12 +55,13 @@ and no module re-exports another's:
 | `Exclude.pkl`   | `defaultExclude`, `lockfileExclude`, `vendorExclude`                         |
 | `GtbCli.pkl`    | `verify`                                                                     |
 | `HkPackage.pkl` | the hk package's types and `builtins`                                        |
-| `Hygiene.pkl`   | `fileHygiene`, `forbidSubmodules`                                            |
+| `Hygiene.pkl`   | `fileHygiene`, `forbidSubmodules`, `illegalWindowsNames`                     |
 | `Renovate.pkl`  | `renovateConfig`                                                             |
 | `Shell.pkl`     | `shellcheck`, `shfmt`, `shell`                                               |
 | `Workflows.pkl` | `jactionlint`, `jactionlintWith(profile)`                                    |
 
-- `recommended` — file hygiene, `forbid-submodules`, `renovate-config`,
+- `recommended` — file hygiene, `forbid-submodules`, `illegal-windows-names`,
+  `renovate-config`,
   `jactionlint` and the shell pair. Every step is glob- or type-gated, so the
   ones a repository doesn't need never run.
 - `hooksFor(steps)` — the `pre-commit` / `check` / `fix` hooks over `steps`.

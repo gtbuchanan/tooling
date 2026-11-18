@@ -26,3 +26,34 @@ forbidSubmodules: HkPackage.Step = new {
     other = gitlinkGuardPosix
   }
 }
+
+// Names Windows refuses to create: the reserved device names (bare or with an
+// extension), the characters Win32 forbids in a path segment, and a segment
+// ending in a space or a dot. Matched against the paths hk passes rather than
+// the working tree, so the check never has to create one to test itself.
+local illegalWindowsNamePattern =
+  #"(^|/)(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)|[<>:"|?*\\]|[ .](/|$)"#
+
+local illegalWindowsNamesPosix = """
+  if printf '%s\\n' {{files}} | grep -Eiq '\(illegalWindowsNamePattern)'; then
+    echo 'error: path is not representable on Windows' >&2
+    printf '%s\\n' {{files}} | grep -Ei '\(illegalWindowsNamePattern)' >&2
+    exit 1
+  fi
+  """
+
+/// Rejects paths Windows cannot represent, so a file added on Linux or macOS
+/// can't leave the repository un-checkout-able on Windows. Mirrors pre-commit's
+/// `check-illegal-windows-names`, which has no hk builtin.
+///
+/// A no-op on Windows rather than a cmd.exe translation: Windows refuses to
+/// create these names, so one only enters from Linux or macOS, which is where
+/// the guard runs, CI included.
+illegalWindowsNames: HkPackage.Step = new {
+  check = new HkPackage.Script {
+    windows = "exit /b 0"
+    linux = illegalWindowsNamesPosix
+    macos = illegalWindowsNamesPosix
+    other = illegalWindowsNamesPosix
+  }
+}

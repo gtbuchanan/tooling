@@ -28,6 +28,7 @@ recommended: Mapping<String, HkPackage.Step> = new {
   ...Hygiene.fileHygiene
   ["jactionlint"] = Workflows.jactionlint
   ["forbid-submodules"] = Hygiene.forbidSubmodules
+  ["illegal-windows-names"] = Hygiene.illegalWindowsNames
   ["renovate-config"] = Renovate.renovateConfig
   ...Shell.shell
 }

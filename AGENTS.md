@@ -126,9 +126,11 @@ coverage, setupFiles, and mock reset.
     `*.bats` test files, whose `bats` shebang the content type misses
   - `renovate-preset` / `renovate-config` — both derive from
     `Renovate.renovateConfig` (binary via mise `npm:renovate`);
-    `renovate-preset` retargets the glob to `default.json`.
-    `check-illegal-windows-names` was dropped (no builtin; redundant on a
-    Windows-primary repo)
+    `renovate-preset` retargets the glob to `default.json`
+  - `illegal-windows-names` — `Hygiene.illegalWindowsNames`, rejecting paths
+    Windows can't check out (reserved device names, forbidden characters, a
+    trailing space or dot). No hk builtin; a no-op on Windows, which can't
+    create such names
   - `gtb-verify` — `Defaults.gtbCliSteps("pnpm run")`: `gtb verify`, fixed
     by `gtb sync`, run from source through the root `gtb` script
   - `eslint` — `Defaults.nodeSteps("pnpm exec")`, resolving ESLint from the
