@@ -20,6 +20,7 @@ import "package://github.com/gtbuchanan/tooling/releases/download/hk-config@<ver
 
 local allSteps = new Mapping<String, Step> {
   ...Defaults.recommended
+  ...Defaults.nodeSteps("pnpm exec") // drop if the repository has no ESLint
 }
 
 hooks = Defaults.hooksFor(allSteps)
@@ -47,16 +48,17 @@ local allSteps = new Mapping<String, Step> {
 `Defaults.pkl` holds the compositions. Every step lives in exactly one module,
 and no module re-exports another's:
 
-| Module          | Holds                                                   |
-| :-------------- | :------------------------------------------------------ |
-| `Defaults.pkl`  | `recommended`, `gtbCliSteps(prefix)`, `hooksFor(steps)` |
-| `Exclude.pkl`   | `defaultExclude`, `lockfileExclude`, `vendorExclude`    |
-| `GtbCli.pkl`    | `verify`                                                |
-| `HkPackage.pkl` | the hk package's types and `builtins`                   |
-| `Hygiene.pkl`   | `fileHygiene`, `forbidSubmodules`                       |
-| `Renovate.pkl`  | `renovateConfig`                                        |
-| `Shell.pkl`     | `shellcheck`, `shfmt`, `shell`                          |
-| `Workflows.pkl` | `jactionlint`, `jactionlintWith(profile)`               |
+| Module          | Holds                                                                        |
+| :-------------- | :--------------------------------------------------------------------------- |
+| `Defaults.pkl`  | `recommended`, `nodeSteps(prefix)`, `gtbCliSteps(prefix)`, `hooksFor(steps)` |
+| `Eslint.pkl`    | `eslint`, `eslintArgs`                                                       |
+| `Exclude.pkl`   | `defaultExclude`, `lockfileExclude`, `vendorExclude`                         |
+| `GtbCli.pkl`    | `verify`                                                                     |
+| `HkPackage.pkl` | the hk package's types and `builtins`                                        |
+| `Hygiene.pkl`   | `fileHygiene`, `forbidSubmodules`                                            |
+| `Renovate.pkl`  | `renovateConfig`                                                             |
+| `Shell.pkl`     | `shellcheck`, `shfmt`, `shell`                                               |
+| `Workflows.pkl` | `jactionlint`, `jactionlintWith(profile)`                                    |
 
 - `recommended` — file hygiene, `forbid-submodules`, `renovate-config`,
   `jactionlint` and the shell pair. Every step is glob- or type-gated, so the
@@ -64,6 +66,10 @@ and no module re-exports another's:
 - `hooksFor(steps)` — the `pre-commit` / `check` / `fix` hooks over `steps`.
   `pre-commit` runs in fix mode, stashes unstaged changes, and adds the
   `no-commit-to-branch` guard.
+- `nodeSteps(prefix)` — ESLint over every changed file at zero warnings, reading
+  the repository's own flat config. The argument sets how `eslint` resolves:
+  `"pnpm exec"` for a workspace devDependency, `null` for PATH. Not in
+  `recommended`, since it fails wherever ESLint isn't installed. Needs ESLint 10.
 - `gtbCliSteps(prefix)` — `gtb verify`, fixed by `gtb sync`, so a commit that
   drifts from the generated config is repaired and re-staged. The argument
   sets how `gtb` resolves: `null` for a mise `npm:@gtbuchanan/cli` tool,

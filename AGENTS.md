@@ -105,7 +105,7 @@ coverage, setupFiles, and mock reset.
   mise fragment's `[hooks] postinstall = "hk install --mise"` on `mise install` (Git
   2.54+ config-based hooks, wrapped in `mise x`). `hk.pkl` spreads the
   shared preset's `Defaults.recommended` step set, adds the repo-specific
-  `renovate-preset` and `eslint` steps, and builds the `pre-commit` /
+  `renovate-preset` step, and builds the `pre-commit` /
   `check` / `fix` hooks via `Defaults.hooksFor`:
   - File hygiene — `Hygiene.fileHygiene` (large files, EOF newline, BOM,
     trailing whitespace, each with the lockfile-exclude pre-wired)
@@ -131,15 +131,17 @@ coverage, setupFiles, and mock reset.
     Windows-primary repo)
   - `gtb-verify` — `Defaults.gtbCliSteps("pnpm run")`: `gtb verify`, fixed
     by `gtb sync`, run from source through the root `gtb` script
-  - `eslint` — repo-specific, stays in `hk.pkl`. `no-commit-to-branch` is
-    wired into `pre-commit` by `Defaults.hooksFor` (commit-time-only guard)
+  - `eslint` — `Defaults.nodeSteps("pnpm exec")`, resolving ESLint from the
+    workspace. `no-commit-to-branch` is wired into `pre-commit` by
+    `Defaults.hooksFor` (commit-time-only guard)
 - **`@gtbuchanan/hk-config` preset** (`packages/hk-config/`). Each step
   lives in a module of its own, one per tool (`Hygiene`, `Shell`,
-  `Workflows`, `Renovate`, `GtbCli`), with the exclude patterns in `Exclude`
+  `Workflows`, `Renovate`, `Eslint`, `GtbCli`), with the exclude patterns in `Exclude`
   and the one hk import in `HkPackage`. `Defaults.pkl` holds only the
   compositions: the `recommended` step mapping (every step glob/type-gated,
   so inapplicable ones are inert), `gtbCliSteps(prefix)` (kept out of
-  `recommended` because it fails wherever gtb isn't installed), and
+  `recommended` because it fails wherever gtb isn't installed),
+  `nodeSteps(prefix)` (ESLint, out of `recommended` for the same reason), and
   `hooksFor(steps)`, which builds the `pre-commit` / `check` / `fix` trio
   (pre-commit stashes via `patch-file` and adds the commit-time-only
   `no-commit-to-branch` guard). No module re-exports another's, so each name

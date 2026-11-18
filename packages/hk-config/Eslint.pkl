@@ -1,0 +1,33 @@
+/// ESLint, reading the repository's own flat config. Invokes a bare `eslint`;
+/// `Defaults.nodeSteps` wraps it to set how that name resolves.
+module gtbuchanan.hk.Eslint
+
+import "HkPackage.pkl"
+
+/// The arguments both commands pass, ending in `{{files}}`. Exported so a
+/// repository that replaces the command (a wrapper script, say) keeps the
+/// shared flags:
+///
+///     ["eslint"] {
+///       check = "node scripts/eslint-diff.ts \(Eslint.eslintArgs)"
+///       prefix = null
+///     }
+///
+/// `--no-warn-ignored` matters because the step passes every changed file and
+/// leaves selection to the config's own ignores: without it, each ignored file
+/// is a warning, and `--max-warnings=0` turns that into a failure.
+eslintArgs: String = "--max-warnings=0 --no-warn-ignored {{files}}"
+
+/// ESLint over every changed file, gated at zero warnings.
+///
+/// No glob: `@gtbuchanan/eslint-config` lints YAML, JSON and Markdown as well
+/// as code, so the config decides which files it reads, and a glob here would
+/// drift from it. Nor does it take `Exclude.defaultExclude`, for the same
+/// reason.
+///
+/// Needs ESLint 10, which resolves the nearest config per file, so a workspace
+/// package lints against its own `eslint.config.ts` rather than the root's.
+eslint: HkPackage.Step = new {
+  check = "eslint \(eslintArgs)"
+  fix = "eslint --fix \(eslintArgs)"
+}

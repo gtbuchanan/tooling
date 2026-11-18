@@ -10,6 +10,7 @@
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
+import "Eslint.pkl"
 import "GtbCli.pkl"
 import "HkPackage.pkl"
 import "Hygiene.pkl"
@@ -48,6 +49,24 @@ recommended: Mapping<String, HkPackage.Step> = new {
 function gtbCliSteps(commandPrefix: String?): Mapping<String, HkPackage.Step> =
   new Mapping<String, HkPackage.Step> {
     ["gtb-verify"] = (GtbCli.verify) { prefix = commandPrefix }
+  }
+
+/// The steps backed by npm-published binaries (ESLint today), as a spreadable
+/// group, with the caller deciding how those binaries resolve:
+///
+///     ...Defaults.nodeSteps("pnpm exec")  // the workspace's own copy
+///     ...Defaults.nodeSteps(null)         // on PATH
+///
+/// Kept out of `recommended` because the choice has no safe default: `pnpm
+/// exec` breaks a repository with no workspace, and PATH silently runs a
+/// different version than the one a pnpm repository pinned. A repository
+/// linting with `@gtbuchanan/eslint-config` has a workspace anyway, since
+/// ESLint resolves the config's plugins from it, so `"pnpm exec"` is its
+/// answer.
+// `commandPrefix` rather than `prefix`, for the reason on `gtbCliSteps`.
+function nodeSteps(commandPrefix: String?): Mapping<String, HkPackage.Step> =
+  new Mapping<String, HkPackage.Step> {
+    ["eslint"] = (Eslint.eslint) { prefix = commandPrefix }
   }
 
 /// Build the standard `pre-commit` / `check` / `fix` hook trio from a step

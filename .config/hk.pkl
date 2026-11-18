@@ -8,9 +8,6 @@ import "../packages/hk-config/Defaults.pkl"
 import "../packages/hk-config/Renovate.pkl"
 import "../packages/hk-config/Workflows.pkl"
 
-// eslint args shared by the step's check/fix; only `--fix` differs.
-local eslintArgs = "--max-warnings=0 --no-warn-ignored {{files}}"
-
 local allSteps = new Mapping<String, Step> {
     ...(Defaults.recommended) {
         // Exemptions live in .github/jactionlint.yaml.
@@ -21,14 +18,12 @@ local allSteps = new Mapping<String, Step> {
     // runs it from source.
     ...Defaults.gtbCliSteps("pnpm run")
 
+    // `pnpm exec`: eslint and its shared config are workspace devDependencies.
+    ...Defaults.nodeSteps("pnpm exec")
+
     // Validates the shareable preset itself; the .github/renovate.json
     // validator (renovate-config) comes from recommended.
     ["renovate-preset"] = (Renovate.renovateConfig) { glob = "default.json" }
-
-    ["eslint"] {
-        check = "pnpm exec eslint \(eslintArgs)"
-        fix = "pnpm exec eslint --fix \(eslintArgs)"
-    }
 }
 
 hooks = Defaults.hooksFor(allSteps)
