@@ -26,8 +26,7 @@ mise run bootstrap
 
 `mise install` reads `.config/mise.toml` + `.config/mise.lock` and
 verifies each downloaded binary against the recorded sha256. `mise run bootstrap`
-then runs `pnpm install --frozen-lockfile` (and on Termux/Android,
-symlinks the pnpm shim into `node_modules/.bin`).
+then runs `pnpm install --frozen-lockfile`.
 `[settings] lockfile = true`, which `gtb sync` generates into
 `.config/mise/conf.d/gtb.toml`, keeps the lockfile
 self-perpetuating: a local `mise.toml` edit re-runs through `mise

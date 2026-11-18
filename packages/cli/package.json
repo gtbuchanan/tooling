@@ -60,6 +60,9 @@
       "optional": true
     }
   },
+  "optionalDependencies": {
+    "@gtbuchanan/pnpm-termux-shim": "workspace:^"
+  },
   "engines": {
     "node": ">=24.0.0"
   },

@@ -34,7 +34,9 @@ on macOS, Linux, or Windows.
 The `os` filter lives under `publishConfig` in the source manifest so
 the dev workspace doesn't trip pnpm's "unsupported platform" warning
 during dogfooding. The published tarball still ships with
-`"os": ["android"]` at the top level.
+`"os": ["android"]` at the top level. The `bin` entry lives there too:
+without the `os` filter, a workspace dependent would otherwise get this
+`pnpm` linked into its `node_modules/.bin` on every platform.
 
 Upstream context:
 [vercel/turborepo#5616](https://github.com/vercel/turborepo/issues/5616)
@@ -48,9 +50,14 @@ what this shim addresses.
 ## Usage
 
 For turbo, depend on turbo `^2.10.8`, the first release whose launcher
-starts on Android. Then add the shim to `optionalDependencies` of any
-package whose graph spawns `pnpm` from a binary the Termux `LD_PRELOAD`
-can't reach (for turbo, the workspace root):
+starts on Android. A repository that runs turbo through `gtb turbo` from
+[`@gtbuchanan/cli`](https://github.com/gtbuchanan/tooling/tree/main/packages/cli)
+needs nothing more: the CLI takes this package as an optional dependency
+and, on Android, puts its `bin/` first on turbo's PATH.
+
+Anywhere else, add the shim to `optionalDependencies` of any package
+whose graph spawns `pnpm` from a binary the Termux `LD_PRELOAD` can't
+reach (for plain turbo, the workspace root):
 
 ```jsonc
 {

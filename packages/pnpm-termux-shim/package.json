@@ -11,9 +11,6 @@
   },
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "pnpm": "./dist/source/bin/pnpm"
-  },
   "files": [
     "bin"
   ],

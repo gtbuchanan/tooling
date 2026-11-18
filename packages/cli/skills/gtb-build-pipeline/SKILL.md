@@ -191,7 +191,7 @@ Invoked via mise (`mise run hk:base`) so hk and its tools resolve from mise. The
 
 ## Android-Termux setup
 
-Turbo `^2.10.8` runs from `node_modules` on Termux, so no Termux-packaged turbo is needed. Spawning `pnpm` still takes `@gtbuchanan/pnpm-termux-shim` on the workspace root, reached through `gtb turbo`'s PATH normalization. Separately, run heavy aggregates (`build`, `test:slow`, `test:e2e`) with `--concurrency=1` on any memory-constrained host. See [the Android-Termux reference](references/android-termux.md) for the setup and why `gtb turbo` doesn't set the concurrency ceiling itself.
+Turbo `^2.10.8` runs from `node_modules` on Termux, so no Termux-packaged turbo is needed. Spawning `pnpm` takes `@gtbuchanan/pnpm-termux-shim`, which the CLI carries and `gtb turbo` puts first on PATH, so run turbo through `gtb turbo` rather than plainly. Separately, run heavy aggregates (`build`, `test:slow`, `test:e2e`) with `--concurrency=1` on any memory-constrained host. See [the Android-Termux reference](references/android-termux.md) for the setup and why `gtb turbo` doesn't set the concurrency ceiling itself.
 
 ## Customizing behavior
 

@@ -37,9 +37,9 @@ single-package repo (where the root _is_ the package) gets none: a root
 script named after an aggregate makes turbo re-enter itself, so the
 `gtb turbo run` form above is the entry point there.
 
-`gtb turbo` runs `turbo` with every PATH entry made absolute, which
-running turbo on Termux/Android depends on. That setup, turbo `^2.10.8`
-plus a `pnpm` turbo can spawn, is in
+`gtb turbo` runs `turbo` with every PATH entry made absolute and, on
+Termux/Android, a `pnpm` turbo can spawn first on PATH. The rest of the
+Termux setup is depending on turbo `^2.10.8`; see
 [`@gtbuchanan/pnpm-termux-shim`](../pnpm-termux-shim#usage).
 
 The `prepare` script must be declared so pnpm runs it on install to

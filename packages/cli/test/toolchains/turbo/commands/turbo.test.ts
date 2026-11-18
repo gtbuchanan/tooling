@@ -1,10 +1,18 @@
 import path from 'node:path';
 import { describe, it } from 'vitest';
-import { withAbsolutePathEntries } from '#src/toolchains/turbo/commands/turbo.js';
+import {
+  termuxShimDirectory,
+  turboEnv,
+  withAbsolutePathEntries,
+  withPathEntryFirst,
+} from '#src/toolchains/turbo/commands/turbo.js';
 
 const cwd = path.resolve('/repo');
 const join = (...segments: readonly string[]): string => path.join(cwd, ...segments);
 const entriesOf = (value = ''): readonly string[] => value.split(path.delimiter);
+const missing = (): string => {
+  throw Object.assign(new Error('Cannot find module'), { code: 'MODULE_NOT_FOUND' });
+};
 
 describe.concurrent(withAbsolutePathEntries, () => {
   it('resolves a relative entry against the given directory', ({ expect }) => {
@@ -80,5 +88,76 @@ describe.concurrent(withAbsolutePathEntries, () => {
     withAbsolutePathEntries(source, cwd);
 
     expect(source).toStrictEqual({ PATH: './bin' });
+  });
+});
+
+describe.concurrent(withPathEntryFirst, () => {
+  const shimDir = path.resolve('/shim/bin');
+  const usrBin = path.resolve('/usr/bin');
+
+  it('puts the entry ahead of the existing ones', ({ expect }) => {
+    const env = withPathEntryFirst({ PATH: usrBin }, shimDir);
+
+    expect(entriesOf(env['PATH'])).toStrictEqual([shimDir, usrBin]);
+  });
+
+  it('sets PATH to the entry alone when none is set', ({ expect }) => {
+    const env = withPathEntryFirst({ HOME: '/home/user' }, shimDir);
+
+    expect(env).toStrictEqual({ HOME: '/home/user', PATH: shimDir });
+  });
+
+  it('keeps the existing key casing', ({ expect }) => {
+    const env = withPathEntryFirst({ Path: usrBin }, shimDir);
+
+    expect(env).toStrictEqual({ Path: [shimDir, usrBin].join(path.delimiter) });
+  });
+});
+
+describe.concurrent(turboEnv, () => {
+  const shimRoot = path.resolve('/deps/pnpm-termux-shim');
+  const usrBin = path.resolve('/usr/bin');
+  const installed = (): string => path.join(shimRoot, 'package.json');
+
+  it('puts the shim first on Android', ({ expect }) => {
+    const env = turboEnv({ PATH: usrBin }, cwd, 'android', installed);
+
+    expect(entriesOf(env['PATH'])).toStrictEqual([path.join(shimRoot, 'bin'), usrBin]);
+  });
+
+  it('leaves PATH alone on Android when the shim is not installed', ({ expect }) => {
+    const env = turboEnv({ PATH: usrBin }, cwd, 'android', missing);
+
+    expect(env).toStrictEqual({ PATH: usrBin });
+  });
+
+  it('leaves the shim out on other platforms', ({ expect }) => {
+    const env = turboEnv({ PATH: usrBin }, cwd, 'linux', installed);
+
+    expect(env).toStrictEqual({ PATH: usrBin });
+  });
+});
+
+describe.concurrent(termuxShimDirectory, () => {
+  it('returns the bin directory beside the shim manifest', ({ expect }) => {
+    const root = path.resolve('/deps/pnpm-termux-shim');
+
+    const dir = termuxShimDirectory(() => path.join(root, 'package.json'));
+
+    expect(dir).toBe(path.join(root, 'bin'));
+  });
+
+  it('returns undefined when the shim is not installed', ({ expect }) => {
+    const dir = termuxShimDirectory(missing);
+
+    expect(dir).toBeUndefined();
+  });
+
+  it('rethrows a resolution failure other than a missing module', ({ expect }) => {
+    const error = new Error('Permission denied');
+
+    expect(() => termuxShimDirectory(() => {
+      throw error;
+    })).toThrow(error);
   });
 });
