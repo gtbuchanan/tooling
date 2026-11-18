@@ -7,5 +7,14 @@
 #
 # Honors $PREFIX (Termux's standard env var) so non-default install
 # locations still work; falls back to the shipped Termux paths.
+#
+# pnpm 11 and later ship a native binary behind `bin/pnpm.mjs`, which
+# finds the installed binary and runs it; pnpm 10 and earlier run from
+# `bin/pnpm.cjs`. The package's own `pnpm` bin is no target for either:
+# it is a shebang-less placeholder until pnpm's install script replaces
+# it, and a glibc execvp retries that under /bin/sh, which Termux lacks.
 prefix="${PREFIX:-/data/data/com.termux/files/usr}"
-exec "${prefix}/bin/node" "${prefix}/lib/node_modules/pnpm/bin/pnpm.cjs" "$@"
+pnpm_dir="${prefix}/lib/node_modules/pnpm"
+entry="${pnpm_dir}/bin/pnpm.mjs"
+[ -f "${entry}" ] || entry="${pnpm_dir}/bin/pnpm.cjs"
+exec "${prefix}/bin/node" "${entry}" "$@"

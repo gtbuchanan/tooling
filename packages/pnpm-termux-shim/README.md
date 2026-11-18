@@ -19,8 +19,9 @@ sees the literal shebang path. ENOENT.
 
 The fix is a `pnpm` shim whose own shebang is an absolute path
 (`#!/data/data/com.termux/files/usr/bin/bash`). The kernel resolves it
-fine, the shim execs `node` with pnpm's `.cjs` entry point directly, and
-no `/usr/bin/env` lookup happens anywhere.
+fine, the shim execs `node` with pnpm's entry point directly
+(`bin/pnpm.mjs` from pnpm 11, `bin/pnpm.cjs` before it), and no
+`/usr/bin/env` lookup happens anywhere.
 
 This package ships that shim as a `bin` entry. Adding it as
 `optionalDependencies` of any package puts a working `pnpm` in
