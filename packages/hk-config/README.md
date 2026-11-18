@@ -48,25 +48,31 @@ local allSteps = new Mapping<String, Step> {
 `Defaults.pkl` holds the compositions. Every step lives in exactly one module,
 and no module re-exports another's:
 
-| Module          | Holds                                                                        |
-| :-------------- | :--------------------------------------------------------------------------- |
-| `Defaults.pkl`  | `recommended`, `nodeSteps(prefix)`, `gtbCliSteps(prefix)`, `hooksFor(steps)` |
-| `Eslint.pkl`    | `eslint`, `eslintArgs`                                                       |
-| `Exclude.pkl`   | `defaultExclude`, `lockfileExclude`, `vendorExclude`                         |
-| `GtbCli.pkl`    | `verify`                                                                     |
-| `HkPackage.pkl` | the hk package's types and `builtins`                                        |
-| `Hygiene.pkl`   | `fileHygiene`, `forbidSubmodules`, `illegalWindowsNames`                     |
-| `Renovate.pkl`  | `renovateConfig`                                                             |
-| `Shell.pkl`     | `shellcheck`, `shfmt`, `shell`                                               |
-| `Workflows.pkl` | `jactionlint`, `jactionlintWith(profile)`                                    |
+| Module          | Holds                                                                                     |
+| :-------------- | :---------------------------------------------------------------------------------------- |
+| `Codecov.pkl`   | `codecovConfig`                                                                           |
+| `Defaults.pkl`  | `recommended`, `pushSteps`, `nodeSteps(prefix)`, `gtbCliSteps(prefix)`, `hooksFor(steps)` |
+| `Eslint.pkl`    | `eslint`, `eslintArgs`                                                                    |
+| `Exclude.pkl`   | `defaultExclude`, `lockfileExclude`, `vendorExclude`                                      |
+| `GtbCli.pkl`    | `verify`                                                                                  |
+| `HkPackage.pkl` | the hk package's types and `builtins`                                                     |
+| `Hygiene.pkl`   | `fileHygiene`, `forbidSubmodules`, `illegalWindowsNames`                                  |
+| `Renovate.pkl`  | `renovateConfig`                                                                          |
+| `Shell.pkl`     | `shellcheck`, `shfmt`, `shell`                                                            |
+| `Workflows.pkl` | `jactionlint`, `jactionlintWith(profile)`                                                 |
 
 - `recommended` — file hygiene, `forbid-submodules`, `illegal-windows-names`,
   `renovate-config`,
   `jactionlint` and the shell pair. Every step is glob- or type-gated, so the
   ones a repository doesn't need never run.
-- `hooksFor(steps)` — the `pre-commit` / `check` / `fix` hooks over `steps`.
-  `pre-commit` runs in fix mode, stashes unstaged changes, and adds the
-  `no-commit-to-branch` guard.
+- `hooksFor(steps)` — the `pre-commit` / `pre-push` / `check` / `fix` hooks.
+  `pre-commit` and `fix` run `steps`; `pre-commit` also stashes unstaged
+  changes and adds the `no-commit-to-branch` guard. `pre-push` runs
+  `pushSteps`, and `check`, which CI runs, runs both. An existing clone gets
+  the `pre-push` hook once `hk install` runs again, as `mise install` does.
+- `pushSteps` — the steps that call the network, kept off the commit path:
+  `codecov-config`, which validates the Codecov config against Codecov's own
+  validator. Needs `curl` 7.76 or later on PATH.
 - `nodeSteps(prefix)` — ESLint over every changed file at zero warnings, reading
   the repository's own flat config. The argument sets how `eslint` resolves:
   `"pnpm exec"` for a workspace devDependency, `null` for PATH. Not in

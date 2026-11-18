@@ -10,6 +10,7 @@
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
+import "Codecov.pkl"
 import "Eslint.pkl"
 import "GtbCli.pkl"
 import "HkPackage.pkl"
@@ -70,17 +71,31 @@ function nodeSteps(commandPrefix: String?): Mapping<String, HkPackage.Step> =
     ["eslint"] = (Eslint.eslint) { prefix = commandPrefix }
   }
 
-/// Build the standard `pre-commit` / `check` / `fix` hook trio from a step
-/// mapping, eliminating the per-repo hook boilerplate. `pre-commit` runs in fix
-/// mode and stashes unstaged changes (`patch-file` — faster than `git` and
+/// The steps `hooksFor` runs at push time rather than commit time, spread in
+/// by the preset itself rather than passed by a consumer. Each one reaches the
+/// network: committing offline is ordinary, and a third-party service being
+/// down is a fair reason to stop a push but not a commit. Keep the set small,
+/// since it runs on every push a consumer makes.
+pushSteps: Mapping<String, HkPackage.Step> = new {
+  ["codecov-config"] = Codecov.codecovConfig
+}
+
+/// Build the standard `pre-commit` / `pre-push` / `check` / `fix` hooks from a
+/// step mapping, eliminating the per-repo hook boilerplate. `pre-commit` runs in
+/// fix mode and stashes unstaged changes (`patch-file` — faster than `git` and
 /// avoids the `index is locked` errors git stash hits on Windows — so a fixer
 /// touching a partially-staged file can't drag unstaged hunks into the commit)
 /// and adds the commit-time-only `no-commit-to-branch` guard (it needs a branch
 /// name, so it errors on CI's detached HEAD and is irrelevant to `check`/`fix`).
-/// `check` and `fix` run the same steps in check and fix mode (no stash — they
-/// run over all files, not a partial commit). Consumer:
+/// `pre-push` runs `pushSteps` and nothing else. `check` runs both sets, since
+/// it is what CI runs and the backstop for a push that skipped its hooks; `fix`
+/// runs only `commitSteps`, as `pushSteps` has nothing to fix. Consumer:
 /// `hooks = Defaults.hooksFor(allSteps)`.
-function hooksFor(allSteps: Mapping<String, HkPackage.Step>): Mapping<String, HkPackage.Hook> =
+///
+/// A hook added here reaches an existing clone only once `hk install` runs
+/// again, which the generated mise `postinstall` hook does on every
+/// `mise install`.
+function hooksFor(commitSteps: Mapping<String, HkPackage.Step>): Mapping<String, HkPackage.Hook> =
   // Keep the explicit `Mapping<String, HkPackage.Hook>`: pklr, the Pkl evaluator
   // hk embeds, merges into an existing Mapping entry only where it recorded
   // the value type, which neither a bare `new { ... }` nor the return
@@ -92,15 +107,21 @@ function hooksFor(allSteps: Mapping<String, HkPackage.Step>): Mapping<String, Hk
       fix = true
       stash = "patch-file"
       steps {
-        ...allSteps
+        ...commitSteps
         ["no-commit-to-branch"] = HkPackage.builtins.no_commit_to_branch
       }
     }
+    ["pre-push"] {
+      steps { ...pushSteps }
+    }
     ["check"] {
-      steps { ...allSteps }
+      steps {
+        ...commitSteps
+        ...pushSteps
+      }
     }
     ["fix"] {
       fix = true
-      steps { ...allSteps }
+      steps { ...commitSteps }
     }
   }
