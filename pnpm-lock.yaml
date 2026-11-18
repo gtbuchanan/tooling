@@ -199,7 +199,7 @@ catalogs:
       version: 5.10.0
     '@tsconfig/strictest':
       specifier: ^2.0.8
-      version: 2.0.8
+      version: 2.0.9
     '@types/cross-spawn':
       specifier: ^6.0.6
       version: 6.0.6
@@ -348,7 +348,7 @@ importers:
         version: link:packages/vitest-config
       '@tsconfig/strictest':
         specifier: 'catalog:'
-        version: 2.0.8
+        version: 2.0.9
       '@types/cross-spawn':
         specifier: 'catalog:'
         version: 6.0.6
@@ -738,7 +738,7 @@ importers:
         version: link:../vitest-config
       '@tsconfig/strictest':
         specifier: 'catalog:'
-        version: 2.0.8
+        version: 2.0.9
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)
@@ -1467,8 +1467,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@tsconfig/strictest@2.0.8':
-    resolution: {integrity: sha512-XnQ7vNz5HRN0r88GYf1J9JJjqtZPiHt2woGJOo2dYqyHGGcd6OLGqSlBB6p1j9mpzja6Oe5BoPqWmeDx6X9rLw==}
+  '@tsconfig/strictest@2.0.9':
+    resolution: {integrity: sha512-CbwIySRXoGapLZYXqQHF15cg0wQImJa25Ynmubb7816vnHqTdQrmQlSbZxkJrrBusHLbF1kFbNVn8XtxmQ3EpQ==}
 
   '@turbo/darwin-64@2.11.11':
     resolution: {integrity: sha512-HMMeUIEAsmyIbSYn1ySvF/4gGMa0joiTMq4dQDuloIAnOpbtFT3JEiVsYnASdTWDXvplbRbZlqjU1EBeSR9G1A==}
@@ -3800,7 +3800,7 @@ snapshots:
   '@tombit/binding-win32-x64-msvc@0.1.7':
     optional: true
 
-  '@tsconfig/strictest@2.0.8': {}
+  '@tsconfig/strictest@2.0.9': {}
 
   '@turbo/darwin-64@2.11.11':
     optional: true
