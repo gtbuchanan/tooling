@@ -1,0 +1,36 @@
+/// The hk Pkl package, re-exported as typealiases plus `builtins`. Every other
+/// module in the preset reaches hk through this one rather than naming the
+/// package, so the preset pins hk once and a new module adds no pin.
+///
+/// Named `HkPackage` rather than `Hk`: hk looks for its config as `hk.pkl`, and
+/// on a case-insensitive filesystem a module named `Hk.pkl` answers to that
+/// name.
+///
+/// A consumer's `hk.pkl` still pins hk a second time, in its `amends`, which
+/// takes a literal URI and so cannot read the version from here. hk's own
+/// evaluator tolerates the two differing (#392); the Renovate preset groups
+/// `hk` with `hk-config` so they move together regardless.
+module gtbuchanan.hk.HkPackage
+
+import "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Builtins.pkl"
+
+typealias Step = Config.Step
+
+typealias Hook = Config.Hook
+
+/// hk runs a step's `Script` per OS, and a plain string through `cmd.exe` on
+/// Windows, where a POSIX one-liner fails to parse.
+typealias Script = Config.Script
+
+/// A builtin's command alongside its declared `effect`. Amending a builtin's
+/// command through this keeps the effect tracking upstream.
+typealias CommandSpec = Config.CommandSpec
+
+typealias Command = Config.Command
+
+typealias FileSelector = Config.FileSelector
+
+/// hk's builtin steps. Amend one rather than replacing it, so its declared
+/// `effect` and future defaults keep tracking upstream.
+builtins = Builtins

@@ -45,7 +45,7 @@ packages/
   eslint-plugin-markdownlint/   — @gtbuchanan/eslint-plugin-markdownlint (markdownlint via ESLint)
   eslint-plugin-md-frontmatter/ — @gtbuchanan/eslint-plugin-md-frontmatter (Markdown frontmatter validation via JSON Schema)
   eslint-plugin-yamllint/       — @gtbuchanan/eslint-plugin-yamllint (yamllint gap rules via ESLint)
-  hk-config/                    — @gtbuchanan/hk-config (shared hk Pkl preset; private to npm, published as a GitHub-release Pkl package). Defaults.pkl + sync-generated PklProject
+  hk-config/                    — @gtbuchanan/hk-config (shared hk Pkl preset; private to npm, published as a GitHub-release Pkl package). Defaults.pkl, HkPackage.pkl (the one hk import) + sync-generated PklProject
   libsql-termux-shim/           — @gtbuchanan/libsql-termux-shim (libsql native-binding shim on node:sqlite for Termux/Android, os: ["android"])
   pnpm-termux-shim/             — @gtbuchanan/pnpm-termux-shim (pnpm bin shim for Termux/Android, os: ["android"])
   tsconfig/                     — @gtbuchanan/tsconfig (shared base tsconfig.json)
@@ -156,7 +156,7 @@ coverage, setupFiles, and mock reset.
   tooling can't `package://`-import its own unpublished release — the same
   own-repo-vs-consumer split as the `./` workflow refs below. A Renovate
   `customManager` (in `default.json`) keeps the **hk** version in all
-  `.pkl` package URLs (`hk.pkl`, `packages/hk-config/Defaults.pkl`) in
+  `.pkl` package URLs (`hk.pkl`, `packages/hk-config/HkPackage.pkl`) in
   lockstep; its matchStrings (`download/v…`, `hk@…#`) are hk-specific and
   don't touch hk-config's sync-managed `packageZipUrl` (a
   `\(name)@\(version)` interpolation, not an hk-version URL).
@@ -676,7 +676,7 @@ deps is the trade that keeps a coupled pair in one PR.
 
 A `customManagers` regex entry keeps the hk version embedded in the
 `amends`/`import` package URLs of every `.pkl` file (`hk.pkl`,
-`packages/hk-config/Defaults.pkl`) in lockstep with the hk release.
+`packages/hk-config/HkPackage.pkl`) in lockstep with the hk release.
 Renovate's mise manager bumps `mise.toml`, but the pkl URLs are a second
 copy of the version it can't track natively. Its matchStrings are
 hk-specific (`download/v…`, `hk@…#`), so they ignore the generated
@@ -691,7 +691,7 @@ matches the `.pkl` file pattern nor contains a literal version (its
 
 `hk-config` is grouped with `hk` by a `packageRule`, so a consumer with
 both pending gets one branch instead of two. The two are mutually
-coupled — `Defaults.pkl` is written against a specific hk
+coupled — the preset is written against a specific hk
 `Config`/`Builtins` version, and a consumer's `hk.pkl` pins hk twice (the
 `amends` URL and the mise binary) — so either bump landing alone can
 break the other direction, and both edit `hk.pkl`, so the second PR

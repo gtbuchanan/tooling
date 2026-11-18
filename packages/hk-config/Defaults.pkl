@@ -6,8 +6,7 @@
 @ModuleInfo { minPklVersion = "0.27.2" }
 module gtbuchanan.hk.Defaults
 
-import "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Builtins.pkl"
+import "HkPackage.pkl"
 
 /// Machine-generated lockfiles — exempt from the file-hygiene fixers.
 lockfileExclude: Regex = Regex(#"[-.]lock(\.|$)"#)
@@ -26,9 +25,9 @@ typealias JactionlintProfile = "correctness"|"default"|"pedantic"
 // command, wherever it sits: `check_diff` runs it behind `hk util sarif-diff`.
 // Amending the builtin's spec rather than building a new one keeps its argv
 // and declared `effect` tracking upstream.
-local function withProfile(spec: Config.CommandSpec, profile: JactionlintProfile): Config.CommandSpec = (spec) {
-  command = new Config.Command {
-    argv = (spec.command as Config.Command).argv.flatMap((arg) ->
+local function withProfile(spec: HkPackage.CommandSpec, profile: JactionlintProfile): HkPackage.CommandSpec = (spec) {
+  command = new HkPackage.Command {
+    argv = (spec.command as HkPackage.Command).argv.flatMap((arg) ->
       if (arg == "jactionlint") List(arg, "--profile", profile) else List(arg)
     )
   }
@@ -39,10 +38,10 @@ local function withProfile(spec: Config.CommandSpec, profile: JactionlintProfile
 /// `profile` of `.github/jactionlint.yaml`. Binary via mise
 /// `github:jdx/jactionlint`; shellcheck (`aqua:koalaman/shellcheck`) on PATH
 /// enables run-script linting.
-function jactionlintWith(profile: JactionlintProfile): Config.Step = (Builtins.jactionlint) {
-  check = withProfile(Builtins.jactionlint.check as Config.CommandSpec, profile)
-  check_diff = withProfile(Builtins.jactionlint.check_diff as Config.CommandSpec, profile)
-  fix = withProfile(Builtins.jactionlint.fix as Config.CommandSpec, profile)
+function jactionlintWith(profile: JactionlintProfile): HkPackage.Step = (HkPackage.builtins.jactionlint) {
+  check = withProfile(HkPackage.builtins.jactionlint.check as HkPackage.CommandSpec, profile)
+  check_diff = withProfile(HkPackage.builtins.jactionlint.check_diff as HkPackage.CommandSpec, profile)
+  fix = withProfile(HkPackage.builtins.jactionlint.fix as HkPackage.CommandSpec, profile)
 }
 
 /// `jactionlintWith` at the `correctness` profile: the checks actionlint makes.
@@ -50,14 +49,14 @@ function jactionlintWith(profile: JactionlintProfile): Config.Step = (Builtins.j
 /// SHA-pinned actions) whose autofixes would rewrite a consumer's workflows
 /// during pre-commit. This stays the default only until the preset moves to
 /// `pedantic`: https://github.com/gtbuchanan/tooling/issues/678
-jactionlint: Config.Step = jactionlintWith("correctness")
+jactionlint: HkPackage.Step = jactionlintWith("correctness")
 
 /// File-hygiene builtins with the lockfile-exclude already wired.
-fileHygiene: Mapping<String, Config.Step> = new {
-  ["check-added-large-files"] = (Builtins.check_added_large_files) { exclude = defaultExclude }
-  ["end-of-file-fixer"] = (Builtins.newlines) { exclude = defaultExclude }
-  ["fix-byte-order-marker"] = (Builtins.byte_order_marker) { exclude = defaultExclude }
-  ["trailing-whitespace"] = (Builtins.trailing_whitespace) { exclude = defaultExclude }
+fileHygiene: Mapping<String, HkPackage.Step> = new {
+  ["check-added-large-files"] = (HkPackage.builtins.check_added_large_files) { exclude = defaultExclude }
+  ["end-of-file-fixer"] = (HkPackage.builtins.newlines) { exclude = defaultExclude }
+  ["fix-byte-order-marker"] = (HkPackage.builtins.byte_order_marker) { exclude = defaultExclude }
+  ["trailing-whitespace"] = (HkPackage.builtins.trailing_whitespace) { exclude = defaultExclude }
 }
 
 // POSIX gitlink (submodule, mode 160000) guard; the cmd.exe variant lives
@@ -66,8 +65,8 @@ local gitlinkGuardPosix = "test -z \"$(git ls-files --stage | grep -E '^160000 '
 
 /// Per-OS gitlink (submodule) guard — no hk builtin exists. Runs
 /// unconditionally and fails when the index contains a mode-160000 entry.
-forbidSubmodules: Config.Step = new {
-  check = new Config.Script {
+forbidSubmodules: HkPackage.Step = new {
+  check = new HkPackage.Script {
     windows = "git ls-files -s | findstr /b /c:\"160000 \" >nul && exit /b 1 || exit /b 0"
     linux = gitlinkGuardPosix
     macos = gitlinkGuardPosix
@@ -80,7 +79,7 @@ forbidSubmodules: Config.Step = new {
 /// the `renovate` npm package, so add `npm:renovate` to your mise [tools].
 /// Preset-authoring repos can target `default.json` by amending the glob:
 /// `(Defaults.renovateConfig) { glob = "default.json" }`.
-renovateConfig: Config.Step = new {
+renovateConfig: HkPackage.Step = new {
   glob = ".github/renovate.json"
   check = "renovate-config-validator --strict {{files}}"
 }
@@ -90,28 +89,28 @@ renovateConfig: Config.Step = new {
 // plus bats test files, whose `bats` shebang the type doesn't recognize. Both
 // tools lint bats themselves: shellcheck reads the shebang, and shfmt the
 // extension.
-local shellSources: List<Config.FileSelector> = List(
-  new Config.FileSelector { types = List("shell") },
-  new Config.FileSelector { glob = List("**/*.bats") }
+local shellSources: List<HkPackage.FileSelector> = List(
+  new HkPackage.FileSelector { types = List("shell") },
+  new HkPackage.FileSelector { glob = List("**/*.bats") }
 )
 
 /// shellcheck over shell sources (`shell` content type and `*.bats`).
 /// Needs shellcheck on PATH (mise `aqua:koalaman/shellcheck`).
-shellcheck: Config.Step = (Builtins.shellcheck) {
+shellcheck: HkPackage.Step = (HkPackage.builtins.shellcheck) {
   match_any = shellSources
   exclude = defaultExclude
 }
 
 /// shfmt over shell sources, selected like `shellcheck`.
 /// Needs shfmt on PATH (mise `aqua:mvdan/sh`).
-shfmt: Config.Step = (Builtins.shfmt) {
+shfmt: HkPackage.Step = (HkPackage.builtins.shfmt) {
   match_any = shellSources
   exclude = defaultExclude
 }
 
 /// shellcheck + shfmt as a spreadable group, for repos that lint shell and
 /// want to opt the pair in or out as a unit.
-shell: Mapping<String, Config.Step> = new {
+shell: Mapping<String, HkPackage.Step> = new {
   ["shellcheck"] = shellcheck
   ["shfmt"] = shfmt
 }
@@ -122,7 +121,7 @@ shell: Mapping<String, Config.Step> = new {
 /// inert (pruned, their tool never resolved): a shell-free repo pays nothing
 /// for the shell steps. `renovate-preset` (targeting `default.json`) is
 /// intentionally omitted — it's specific to preset-authoring repos.
-recommended: Mapping<String, Config.Step> = new {
+recommended: Mapping<String, HkPackage.Step> = new {
   ...fileHygiene
   ["jactionlint"] = jactionlint
   ["forbid-submodules"] = forbidSubmodules
@@ -145,7 +144,7 @@ recommended: Mapping<String, Config.Step> = new {
 /// `gtb verify` still catches it. `stage` lists what sync writes, because hk
 /// otherwise stages only the files the step was triggered by, and sync
 /// creates files no commit contained.
-local gtbVerify: Config.Step = new {
+local gtbVerify: HkPackage.Step = new {
   glob = List(
     "**/*.pkl",
     "**/PklProject",
@@ -192,8 +191,8 @@ local gtbVerify: Config.Step = new {
 // Named `commandPrefix` rather than `prefix`: inside the amended body, a bare
 // `prefix` resolves to the property being assigned, which Pkl rejects as
 // circular.
-function gtbCliSteps(commandPrefix: String?): Mapping<String, Config.Step> =
-  new Mapping<String, Config.Step> {
+function gtbCliSteps(commandPrefix: String?): Mapping<String, HkPackage.Step> =
+  new Mapping<String, HkPackage.Step> {
     ["gtb-verify"] = (gtbVerify) { prefix = commandPrefix }
   }
 
@@ -207,20 +206,20 @@ function gtbCliSteps(commandPrefix: String?): Mapping<String, Config.Step> =
 /// `check` and `fix` run the same steps in check and fix mode (no stash — they
 /// run over all files, not a partial commit). Consumer:
 /// `hooks = Defaults.hooksFor(allSteps)`.
-function hooksFor(allSteps: Mapping<String, Config.Step>): Mapping<String, Config.Hook> =
-  // Keep the explicit `Mapping<String, Config.Hook>`: pklr, the Pkl evaluator
+function hooksFor(allSteps: Mapping<String, HkPackage.Step>): Mapping<String, HkPackage.Hook> =
+  // Keep the explicit `Mapping<String, HkPackage.Hook>`: pklr, the Pkl evaluator
   // hk embeds, merges into an existing Mapping entry only where it recorded
   // the value type, which neither a bare `new { ... }` nor the return
   // annotation does. Without it, a consumer amending a hook silently loses
   // every preset step. pklr 2.0.5 merges either form, so there's no removal
   // trigger once hk picks it up: https://github.com/jdx/pklr/pull/189
-  new Mapping<String, Config.Hook> {
+  new Mapping<String, HkPackage.Hook> {
     ["pre-commit"] {
       fix = true
       stash = "patch-file"
       steps {
         ...allSteps
-        ["no-commit-to-branch"] = Builtins.no_commit_to_branch
+        ["no-commit-to-branch"] = HkPackage.builtins.no_commit_to_branch
       }
     }
     ["check"] {
