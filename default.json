@@ -37,6 +37,7 @@
     "Shared Renovate config for @gtbuchanan repositories"
   ],
   "extends": [
+    ":maintainLockFilesWeekly",
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver"
   ],

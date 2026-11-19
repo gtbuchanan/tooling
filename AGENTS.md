@@ -599,6 +599,13 @@ The repo ships a shareable Renovate config at `default.json` for
 consumer repos and uses it on itself via `.github/renovate.json`.
 Beyond `config:recommended`, the preset overrides these defaults:
 
+- `:maintainLockFilesWeekly` — opens a "Lock file maintenance" PR each
+  Monday morning that re-resolves the whole lockfile. It is the only
+  way Renovate moves a transitive dependency in a pnpm lockfile:
+  `transitiveRemediation` covers npm's `package-lock.json` alone, so
+  without it a vulnerable transitive stays locked until its parent's
+  own update happens to re-resolve it. `config:recommended` leaves lock
+  file maintenance off.
 - `helpers:pinGitHubActionDigestsToSemver` — pins every action and
   reusable-workflow ref to a commit with its version in a comment
   (`owner/repo@<sha> # v1.2.3`). Renovate reads the version from the
@@ -633,9 +640,8 @@ Beyond `config:recommended`, the preset overrides these defaults:
 - `semanticCommits: "disabled"` — overrides
   `:semanticPrefixFixDepsChoreOthers` from `config:recommended` to
   match this repo's sentence-case commit style.
-- `timezone: "America/Chicago"` — anchors the weekly
-  `lockFileMaintenance` schedule inherited from
-  `:maintainLockFilesWeekly`.
+- `timezone: "America/Chicago"` — anchors the lock file maintenance
+  schedule and the `packageRules` throttle schedules.
 
 Plus `packageRules` throttles that cap fast-moving deps at bi-monthly
 (`1,15`) — currently `renovatebot/pre-commit-hooks` and the `renovate`
