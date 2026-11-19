@@ -1,5 +1,27 @@
 # @gtbuchanan/eslint-config
 
+## 0.7.0
+
+### Minor Changes
+
+- deca292: Lint with `@stylistic/eslint-plugin` v6
+
+  Its `customize()` preset, which `configure()` builds the stylistic rules from,
+  now enables `@stylistic/list-style`: a list whose brackets sit on their own
+  lines must put each item on its own line too, so a wrapped list can no longer
+  pack several items per line. `@stylistic/indent` also indents a property value
+  that starts on the next line by one level instead of two. `--fix` rewrites both.
+- 2aa3288: Lint with eslint-plugin-unicorn v80
+
+  Its recommended preset, which `configure()` enables for script files, gains
+  `unicorn/prefer-options-parameter`, `unicorn/prefer-regexp-exec` and
+  `unicorn/require-spread-parentheses`, and drops
+  `unicorn/no-async-promise-finally`. Expect new warnings where a function takes
+  more than one optional positional parameter, where `String#match` could be
+  `RegExp#exec`, and where a spread argument such as `...await x` or `...a ?? b`
+  lacks parentheses. `--fix` rewrites the `match` calls and the spreads; an
+  optional positional parameter needs a hand edit or a suppression.
+
 ## 0.6.1
 
 ### Patch Changes
