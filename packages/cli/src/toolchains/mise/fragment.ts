@@ -92,7 +92,7 @@ export const generateMiseFragment = (
   const sections = [
     header,
     renderEntry(minVersion),
-    ...renderTable('env', [...env, ...hk?.env ?? []]),
+    ...renderTable('env', [...env, ...(hk?.env ?? [])]),
     ...renderTable('hooks', hk?.hooks ?? []),
     ...renderTable('settings', settings),
     ...(hk === undefined ? [] : [stringify({ tasks: hk.tasks }).trimEnd()]),
