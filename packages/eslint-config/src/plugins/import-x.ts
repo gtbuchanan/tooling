@@ -71,7 +71,8 @@ const overridesConfig: Linter.Config = {
     'import-x/no-useless-path-segments': 'warn',
     // Justification: Case-insensitive alphabetical grouping by import type
     'import-x/order': [
-      'warn', {
+      'warn',
+      {
         'alphabetize': { caseInsensitive: true, order: 'asc' },
         'newlines-between': 'never',
         'pathGroups': [

@@ -107,8 +107,13 @@ const aliasRootScripts = (discovery: WorkspaceDiscovery): Record<string, string>
   const graph = createTaskGraph(leaves, discovery);
   const aliases = [
     ...[
-      Aggregate.check, Aggregate.buildCi, Aggregate.coverageMerge,
-      Aggregate.pack, Aggregate.testE2e, Aggregate.testSlow, Aggregate.build,
+      Aggregate.check,
+      Aggregate.buildCi,
+      Aggregate.coverageMerge,
+      Aggregate.pack,
+      Aggregate.testE2e,
+      Aggregate.testSlow,
+      Aggregate.build,
     ].filter(isDeclared),
     /*
      * A root that authors skills of its own owns this script name: turbo

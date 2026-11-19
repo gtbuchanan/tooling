@@ -123,7 +123,10 @@ describe.concurrent(planTsconfigs, () => {
      */
     expect(generateAt(descriptors, path.join(rootDir, 'tsconfig.build.json'))).toStrictEqual({
       compilerOptions: {
-        declaration: true, outDir: 'dist/source', rootDir: '.', sourceMap: true,
+        declaration: true,
+        outDir: 'dist/source',
+        rootDir: '.',
+        sourceMap: true,
       },
       extends: './tsconfig.base.json',
       include: [...buildInclude],
@@ -140,7 +143,10 @@ describe.concurrent(planTsconfigs, () => {
 
     // Both layers' keys are owned, so verify checks the whole collapsed set.
     expect(descriptor?.ownedKeys).toStrictEqual({
-      declaration: true, outDir: 'dist/source', rootDir: '.', sourceMap: true,
+      declaration: true,
+      outDir: 'dist/source',
+      rootDir: '.',
+      sourceMap: true,
     });
   });
 
@@ -185,7 +191,10 @@ describe.concurrent(planTsconfigs, () => {
     expect(descriptorAt(descriptors, path.join(rootDir, 'tsconfig.build.json'))
       ?.generate({ declaration: false, rootDir: 'stale', sourceMap: false }))
       .toHaveProperty('compilerOptions', {
-        declaration: true, outDir: 'dist/source', rootDir: '.', sourceMap: true,
+        declaration: true,
+        outDir: 'dist/source',
+        rootDir: '.',
+        sourceMap: true,
       });
   });
 });

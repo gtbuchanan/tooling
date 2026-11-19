@@ -14,7 +14,9 @@ export const testVitestE2e = defineCommand({
   run: async ({ rawArgs }) => {
     await run('vitest', {
       args: [
-        'run', '--config', 'vitest.config.e2e.ts',
+        'run',
+        '--config',
+        'vitest.config.e2e.ts',
         `--outputFile.blob=${blobFile.e2e}`,
         ...rawArgs,
       ],

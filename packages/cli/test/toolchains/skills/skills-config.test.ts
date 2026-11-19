@@ -4,7 +4,8 @@ import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import { describe, it } from 'vitest';
 import {
-  loadConfiguredAgents, skillsConfigFilename,
+  loadConfiguredAgents,
+  skillsConfigFilename,
 } from '#src/toolchains/skills/skills-config.js';
 
 interface Fixture {

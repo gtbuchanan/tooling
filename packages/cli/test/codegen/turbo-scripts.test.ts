@@ -16,7 +16,8 @@ import { makeDiscovery, makePackage, monorepoOf } from '#test/helpers.js';
 describe.concurrent(generatePackageScripts, () => {
   it('generates gtb shim for self-hosted packages', ({ expect }) => {
     const caps = makePackage({
-      capabilities: new Set([typescript]), dir: '/root/packages/app',
+      capabilities: new Set([typescript]),
+      dir: '/root/packages/app',
     });
 
     const result = generatePackageScripts(caps, { dir: '/root/packages/cli', kind: 'workspace' });
@@ -31,7 +32,8 @@ describe.concurrent(generatePackageScripts, () => {
     const result = generatePackageScripts(caps, { dir: '/root/tools/gtb', kind: 'workspace' });
 
     expect(result).toHaveProperty(
-      'gtb', 'node ../../tools/gtb/bin/gtb.ts',
+      'gtb',
+      'node ../../tools/gtb/bin/gtb.ts',
     );
   });
 
@@ -138,7 +140,14 @@ describe.concurrent(generateRootScripts, () => {
     const discovery = makeDiscovery([
       makePackage({
         capabilities: new Set([
-          eslint, pklPackage, pklSource, published, skills, typescript, vitestE2e, vitestTests,
+          eslint,
+          pklPackage,
+          pklSource,
+          published,
+          skills,
+          typescript,
+          vitestE2e,
+          vitestTests,
         ]),
       }),
     ]);
@@ -158,7 +167,12 @@ describe.concurrent(forbiddenRootScripts, () => {
     ]);
 
     expect(forbiddenRootScripts(discovery)).toStrictEqual([
-      'build', 'build:ci', 'check', 'coverage:merge', 'pack', 'test:slow',
+      'build',
+      'build:ci',
+      'check',
+      'coverage:merge',
+      'pack',
+      'test:slow',
     ]);
   });
 

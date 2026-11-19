@@ -25,7 +25,25 @@ import yamllint from './yamllint.ts';
  * Ordered plugin factories. Later entries override earlier ones for the same file.
  */
 export const plugins: readonly PluginFactory[] = [
-  gitignore, typescript, unicorn, promise, regexp, jsdoc, json, yaml, yamllint,
-  toml, pnpm, node, format, markdownlint, markdown, agentSkills, stylistic,
-  eslintComments, importX, core, vitest,
+  gitignore,
+  typescript,
+  unicorn,
+  promise,
+  regexp,
+  jsdoc,
+  json,
+  yaml,
+  yamllint,
+  toml,
+  pnpm,
+  node,
+  format,
+  markdownlint,
+  markdown,
+  agentSkills,
+  stylistic,
+  eslintComments,
+  importX,
+  core,
+  vitest,
 ];

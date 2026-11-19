@@ -79,7 +79,11 @@ describe('gtb task deploy:skills', () => {
     await invoke();
 
     expect(runArgs(fixture)).toStrictEqual([
-      'add', '.', '--skill', '*', '--yes',
+      'add',
+      '.',
+      '--skill',
+      '*',
+      '--yes',
       ...agents.flatMap(agent => ['--agent', agent]),
     ]);
     expect(fixture.mockDetected).not.toHaveBeenCalled();
@@ -93,7 +97,13 @@ describe('gtb task deploy:skills', () => {
     await invoke();
 
     expect(runArgs(fixture)).toStrictEqual([
-      'add', '.', '--skill', '*', '--yes', '--agent', 'claude-code',
+      'add',
+      '.',
+      '--skill',
+      '*',
+      '--yes',
+      '--agent',
+      'claude-code',
     ]);
   });
 

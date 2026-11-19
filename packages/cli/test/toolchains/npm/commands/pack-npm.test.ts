@@ -178,8 +178,7 @@ describe.concurrent(prepack, () => {
     prepack({ cwd: root });
 
     expect(() =>
-      readFileSync(path.join(pkgDir, publishDir, 'package.json')),
-    ).toThrow(/ENOENT/v);
+      readFileSync(path.join(pkgDir, publishDir, 'package.json'))).toThrow(/ENOENT/v);
   });
 
   it('skips packages without publishConfig.directory', ({ expect }) => {
@@ -199,8 +198,7 @@ describe.concurrent(prepack, () => {
     prepack({ cwd: root });
 
     expect(() =>
-      readFileSync(path.join(pkgDir, 'dist', 'source', 'package.json')),
-    ).toThrow(/ENOENT/v);
+      readFileSync(path.join(pkgDir, 'dist', 'source', 'package.json'))).toThrow(/ENOENT/v);
   });
 
   it('copies the package README into the publish directory', ({ expect }) => {

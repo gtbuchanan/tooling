@@ -10,8 +10,7 @@ const findGitignore = (configs: Linter.Config[]) =>
 
 const findGlobalIgnores = (configs: Linter.Config[]) =>
   configs.find(cfg =>
-    cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined,
-  );
+    cfg.ignores !== undefined && cfg.files === undefined && cfg.name === undefined);
 
 /**
  * Writes a throwaway directory tree of `.gitignore` files, keyed by the
@@ -74,8 +73,15 @@ describe.concurrent('ignores', () => {
     const isSkipped = await createSkipPredicate();
 
     for (const file of [
-      'Cargo.lock', 'bun.lock', 'deno.lock', 'mise.lock', 'npm-shrinkwrap.json',
-      'package-lock.json', 'packages.lock.json', 'pnpm-lock.yaml', 'uv.lock',
+      'Cargo.lock',
+      'bun.lock',
+      'deno.lock',
+      'mise.lock',
+      'npm-shrinkwrap.json',
+      'package-lock.json',
+      'packages.lock.json',
+      'pnpm-lock.yaml',
+      'uv.lock',
     ]) {
       await expect(isSkipped(`nested/dir/${file}`)).resolves.toBe(true);
     }

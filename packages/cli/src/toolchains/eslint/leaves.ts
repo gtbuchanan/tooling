@@ -35,8 +35,7 @@ const selfLintedGlobs = ({
       ? pattern
       : dirs
           .filter(dir => linting.has(dir))
-          .map(dir => path.relative(rootDir, dir).replaceAll(path.sep, '/')),
-  );
+          .map(dir => path.relative(rootDir, dir).replaceAll(path.sep, '/')));
 };
 
 /**
@@ -66,7 +65,8 @@ export const lintEslintLeaf: Leaf = {
     args: discovery => [
       '.',
       ...selfLintedGlobs(discovery).flatMap(glob => [
-        '--ignore-pattern', `"${toPackageIgnore(glob)}"`,
+        '--ignore-pattern',
+        `"${toPackageIgnore(glob)}"`,
       ]),
     ],
     appliesTo: discovery => discovery.root.capabilities.has(eslint),
@@ -87,7 +87,12 @@ export const lintEslintLeaf: Leaf = {
     ],
     inputs: [
       '$TURBO_ROOT$/eslint.config.*',
-      'bin/**', 'src/**', 'test/**', 'e2e/**', 'scripts/**', 'skills/**',
+      'bin/**',
+      'src/**',
+      'test/**',
+      'e2e/**',
+      'scripts/**',
+      'skills/**',
       'eslint.config.*',
     ],
     outputs: ['dist/.eslintcache'],

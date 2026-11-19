@@ -74,7 +74,9 @@ describe.concurrent(publishReleases, () => {
 
     expect(stub.createCalls()).toHaveLength(1);
     expect(stub.createCalls()[0]?.args.slice(0, 3)).toStrictEqual([
-      'release', 'create', tagOf(pending),
+      'release',
+      'create',
+      tagOf(pending),
     ]);
   });
 
@@ -110,7 +112,8 @@ describe.concurrent(publishReleases, () => {
     await expect(publishReleases(stub.deps, [failing, healthy], true))
       .rejects.toThrow(AggregateError);
     expect(stub.createCalls().map(call => call.args[2])).toStrictEqual([
-      tagOf(failing), tagOf(healthy),
+      tagOf(failing),
+      tagOf(healthy),
     ]);
   });
 });

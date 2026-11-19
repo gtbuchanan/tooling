@@ -216,8 +216,10 @@ describe.concurrent(parseIgnoreArgs, () => {
 
   it('parses multiple --ignore flags', ({ expect }) => {
     const result = parseIgnoreArgs([
-      '--ignore', 'test:vitest:slow',
-      '--ignore', 'test:vitest:e2e',
+      '--ignore',
+      'test:vitest:slow',
+      '--ignore',
+      'test:vitest:e2e',
     ]);
 
     expect(result.has('test:vitest:slow')).toBe(true);

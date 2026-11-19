@@ -70,8 +70,7 @@ export const workspaceDependenciesOf = (
   const names = runtimeDependencyFields.flatMap(field =>
     Object.entries(manifest[field] ?? {})
       .filter(([name, spec]) => spec.startsWith('workspace:') && !isBundled(field, name))
-      .map(([name]) => name),
-  );
+      .map(([name]) => name));
 
   return [...new Set(names)].toSorted(localeComparer);
 };
@@ -132,8 +131,7 @@ export const catalogDependenciesOf = (
         const catalog = resolveCatalogName(specifier);
 
         return catalog === undefined ? [] : { catalog, name };
-      }),
-  );
+      }));
   const seen = new Map(refs.map(ref => [`${ref.catalog} ${ref.name}`, ref]));
 
   return seen.values().toArray().toSorted((left, right) =>

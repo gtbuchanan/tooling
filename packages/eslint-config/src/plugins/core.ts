@@ -18,7 +18,9 @@ const coreRuleConfig: Linter.Config = {
     'id-length': ['warn', { exceptions: ['v'] }],
     // Justification: Enforces modern JS idiom (x ??= y over x = x ?? y)
     'logical-assignment-operators': [
-      'warn', 'always', { enforceForIfStatements: true },
+      'warn',
+      'always',
+      { enforceForIfStatements: true },
     ],
     // Justification: Comments and blank lines are documentation, not complexity
     'max-lines': ['warn', { skipBlankLines: true, skipComments: true }],

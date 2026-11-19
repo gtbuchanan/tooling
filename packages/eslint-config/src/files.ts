@@ -3,7 +3,14 @@
  * Sorted alphabetically. Used to derive glob patterns for plugin configs.
  */
 export const scriptFileExtensions = [
-  'cjs', 'cts', 'js', 'jsx', 'mjs', 'mts', 'ts', 'tsx',
+  'cjs',
+  'cts',
+  'js',
+  'jsx',
+  'mjs',
+  'mts',
+  'ts',
+  'tsx',
 ] as const;
 
 /**

@@ -95,7 +95,12 @@ export const listReleaseTags = async (
   deps: GithubReleaseDeps,
 ): Promise<ReadonlySet<string>> => {
   const { exitCode, stderr, stdout } = await deps.execute('gh', [
-    'release', 'list', '--limit', releaseListLimit, '--json', 'tagName',
+    'release',
+    'list',
+    '--limit',
+    releaseListLimit,
+    '--json',
+    'tagName',
   ], { cwd: deps.cwd });
   if (exitCode !== 0) {
     throw new Error(`gh release list failed: ${stderr}`);
@@ -164,10 +169,15 @@ export const createGithubRelease = async (
   plan: GithubReleasePlan,
 ): Promise<ReleaseOutcome> => {
   const { exitCode, stderr, stdout } = await deps.execute('gh', [
-    'release', 'create', plan.tag,
-    '--target', plan.target,
-    '--title', plan.tag,
-    '--notes', plan.notes,
+    'release',
+    'create',
+    plan.tag,
+    '--target',
+    plan.target,
+    '--title',
+    plan.tag,
+    '--notes',
+    plan.notes,
     ...(plan.assets ?? []),
   ], { cwd: deps.cwd });
   if (exitCode === 0) {

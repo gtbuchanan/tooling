@@ -13,7 +13,9 @@ export const lintEslint = defineCommand({
   run: async ({ rawArgs }) => {
     await run('eslint', {
       args: [
-        '--cache', '--cache-location', 'dist/.eslintcache',
+        '--cache',
+        '--cache-location',
+        'dist/.eslintcache',
         '--max-warnings=0',
         ...rawArgs,
       ],

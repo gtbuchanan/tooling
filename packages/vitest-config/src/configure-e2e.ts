@@ -67,8 +67,7 @@ const resolveEndToEndProjects = (
   testTimeout: number,
 ): (string | UserWorkspaceConfig)[] =>
   resolveProjectDirs(patterns).map(dir =>
-    buildE2eProjectEntry(dir, testTimeout),
-  );
+    buildE2eProjectEntry(dir, testTimeout));
 
 /**
  * Global e2e configuration for use in a root vitest.config.e2e.ts of a monorepo.

@@ -42,7 +42,12 @@ describe.concurrent(executePublish, () => {
       { args: ['exec', 'changeset', 'publish'], command: 'pnpm' },
     ]);
     expect(order).toStrictEqual([
-      'npm:start', 'npm:end', 'releases:start', 'releases:end', 'non-npm:start', 'non-npm:end',
+      'npm:start',
+      'npm:end',
+      'releases:start',
+      'releases:end',
+      'non-npm:start',
+      'non-npm:end',
     ]);
   });
 

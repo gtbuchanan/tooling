@@ -92,7 +92,9 @@ export const mergePackageScripts = (
   const raw = readJsonFile(path);
   const manifest = v.parse(ManifestSchema, raw);
   const { added, merged, skipped } = classifyScripts(
-    manifest.scripts ?? {}, expected, shouldForce,
+    manifest.scripts ?? {},
+    expected,
+    shouldForce,
   );
 
   /*

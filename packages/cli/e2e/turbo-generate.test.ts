@@ -163,7 +163,8 @@ describe.concurrent('generate tasks through turbo', () => {
 
     const generated = path.join(pkgDir, 'generated', stamp);
     const first = await fixture.run(
-      'gtb', ['turbo', '--cwd', workspace, 'run', 'generate', localCacheOnly],
+      'gtb',
+      ['turbo', '--cwd', workspace, 'run', 'generate', localCacheOnly],
     );
 
     expect(first).toMatchObject({ exitCode: 0 });
@@ -176,7 +177,8 @@ describe.concurrent('generate tasks through turbo', () => {
     rmSync(generated);
 
     const second = await fixture.run(
-      'gtb', ['turbo', '--cwd', workspace, 'run', 'generate', localCacheOnly],
+      'gtb',
+      ['turbo', '--cwd', workspace, 'run', 'generate', localCacheOnly],
     );
 
     expect(second).toMatchObject({ exitCode: 0 });

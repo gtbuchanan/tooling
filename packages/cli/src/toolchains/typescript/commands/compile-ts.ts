@@ -2,7 +2,9 @@ import { existsSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { defineCommand } from 'citty';
 import {
-  buildOutDir, packNpmOutDirEntries, skillsOutDirEntry,
+  buildOutDir,
+  packNpmOutDirEntries,
+  skillsOutDirEntry,
 } from '#src/core/dist-source.js';
 import { run } from '#src/core/process.js';
 import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';

@@ -8,12 +8,28 @@ import { parseYaml, toEslintLoc } from '#src/parse.js';
  * false, False, FALSE, on, On, ON, off, Off, OFF.
  */
 const yaml11Booleans = new Set([
-  'false', 'False', 'FALSE',
-  'n', 'N', 'no', 'No', 'NO',
-  'off', 'Off', 'OFF',
-  'on', 'On', 'ON',
-  'true', 'True', 'TRUE',
-  'y', 'Y', 'yes', 'Yes', 'YES',
+  'false',
+  'False',
+  'FALSE',
+  'n',
+  'N',
+  'no',
+  'No',
+  'NO',
+  'off',
+  'Off',
+  'OFF',
+  'on',
+  'On',
+  'ON',
+  'true',
+  'True',
+  'TRUE',
+  'y',
+  'Y',
+  'yes',
+  'Yes',
+  'YES',
 ]);
 
 interface TruthyOptions {
@@ -80,8 +96,8 @@ export const truthy: Rule.RuleModule = {
               start: toEslintLoc(lineCounter, range[0]),
             },
             message:
-                `truthy value "${source}" should be quoted` +
-                ' to avoid YAML 1.1 boolean coercion',
+              `truthy value "${source}" should be quoted` +
+              ' to avoid YAML 1.1 boolean coercion',
           });
         });
       }

@@ -61,8 +61,8 @@ export const octalValues: Rule.RuleModule = {
               start: toEslintLoc(lineCounter, range[0]),
             },
             message:
-                `${kind} octal value "${node.source}"` +
-                ' may be interpreted differently across YAML versions',
+              `${kind} octal value "${node.source}"` +
+              ' may be interpreted differently across YAML versions',
           });
         });
       }

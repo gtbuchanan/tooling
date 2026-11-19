@@ -169,10 +169,15 @@ describe.concurrent(executePublishWorkflows, () => {
       { ref: `refs/tags/${repo.tag}`, sha: github.createdCommit },
     ]);
     expect(github.releaseCreates().map(({ args }) => args)).toStrictEqual([[
-      'release', 'create', repo.tag,
-      '--target', github.createdCommit,
-      '--title', repo.tag,
-      '--notes', repo.notes,
+      'release',
+      'create',
+      repo.tag,
+      '--target',
+      github.createdCommit,
+      '--title',
+      repo.tag,
+      '--notes',
+      repo.notes,
     ]]);
   });
 

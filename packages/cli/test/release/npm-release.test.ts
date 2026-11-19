@@ -31,7 +31,15 @@ describe.concurrent(executePublishNpmReleases, () => {
 
     expect(createCalls()).toStrictEqual([{
       args: [
-        'release', 'create', tag, '--target', sha, '--title', tag, '--notes', tag,
+        'release',
+        'create',
+        tag,
+        '--target',
+        sha,
+        '--title',
+        tag,
+        '--notes',
+        tag,
       ],
       command: 'gh',
     }]);

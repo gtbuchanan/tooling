@@ -3,7 +3,9 @@ import nodePath from 'node:path';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import type { Logger } from '#src/core/logger.js';
 import {
-  type Finding, type Plan, planFindings,
+  type Finding,
+  type Plan,
+  planFindings,
 } from '#src/tasks/toolchain.js';
 
 type Write = Extract<Finding, { kind: 'write' }>;

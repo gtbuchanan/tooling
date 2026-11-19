@@ -7,8 +7,12 @@ import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import { makeDiscovery, makePackage } from '#test/helpers.js';
 
 const sourceReaders = [
-  'typecheck:ts', 'compile:ts', 'lint:eslint',
-  'test:vitest:fast', 'test:vitest:slow', 'test:vitest:e2e',
+  'typecheck:ts',
+  'compile:ts',
+  'lint:eslint',
+  'test:vitest:fast',
+  'test:vitest:slow',
+  'test:vitest:e2e',
 ];
 
 describe.concurrent('generateTurboJson (codegen edges)', () => {
@@ -34,7 +38,8 @@ describe.concurrent('generateTurboJson (codegen edges)', () => {
     (task, { expect }) => {
       const discovery = makeDiscovery([
         makePackage({
-          capabilities: new Set([vitestE2e, vitestTests]), generateScripts: ['generate:test'],
+          capabilities: new Set([vitestE2e, vitestTests]),
+          generateScripts: ['generate:test'],
         }),
       ]);
 

@@ -3,7 +3,10 @@ import type { Capability } from '#src/core/capability.js';
 import type { WorkspaceDiscovery } from '#src/core/discovery.js';
 import { localeComparer } from '#src/core/sort.js';
 import type {
-  Leaf, PublishingLeaf, Report, ReportKind,
+  Leaf,
+  PublishingLeaf,
+  Report,
+  ReportKind,
 } from '#src/tasks/leaf.js';
 
 type TaskCommand = SubCommandsDef[string];

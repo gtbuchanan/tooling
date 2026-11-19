@@ -57,7 +57,10 @@ describe.concurrent(syncPlans, () => {
     const { logger, out } = captureLogger();
 
     syncPlans([writing(filePath, 'content')], {
-      discover: discoverAt(root), discovery: discoverAt(root)(), force: false, logger,
+      discover: discoverAt(root),
+      discovery: discoverAt(root)(),
+      force: false,
+      logger,
     });
 
     expect(readOrUndefined(filePath)).toBe('content');
@@ -84,7 +87,10 @@ describe.concurrent(syncPlans, () => {
     const { logger } = captureLogger();
 
     syncPlans([followsFirst, writing(first, 'first')], {
-      discover, discovery: discover(), force: false, logger,
+      discover,
+      discovery: discover(),
+      force: false,
+      logger,
     });
 
     expect(readOrUndefined(second)).toBe('second');
@@ -100,7 +106,10 @@ describe.concurrent(syncPlans, () => {
 
     expect(() => {
       syncPlans([restless], {
-        discover: discoverAt(root), discovery: discoverAt(root)(), force: false, logger,
+        discover: discoverAt(root),
+        discovery: discoverAt(root)(),
+        force: false,
+        logger,
       });
     }).toThrow(filePath);
   });
@@ -116,7 +125,10 @@ describe.concurrent(syncPlans, () => {
     };
 
     syncPlans([recording], {
-      discover: discoverAt(root), discovery: discoverAt(root)(), force: true, logger,
+      discover: discoverAt(root),
+      discovery: discoverAt(root)(),
+      force: true,
+      logger,
     });
 
     expect(seen).toStrictEqual([{ force: true, ignored: new Set() }]);
@@ -128,7 +140,10 @@ describe.concurrent(syncPlans, () => {
     const { logger } = captureLogger();
 
     syncPlans([writing(filePath, 'content')], {
-      discover: discoverAt(root), discovery: discoverAt(root)(), force: false, logger,
+      discover: discoverAt(root),
+      discovery: discoverAt(root)(),
+      force: false,
+      logger,
     });
 
     expect(readOrUndefined(filePath)).toBe('content');
@@ -145,7 +160,10 @@ describe.concurrent(syncPlans, () => {
 
     expect(() => {
       syncPlans([writing(filePath, 'first'), writing(filePath, 'second')], {
-        discover: discoverAt(root), discovery: discoverAt(root)(), force: false, logger,
+        discover: discoverAt(root),
+        discovery: discoverAt(root)(),
+        force: false,
+        logger,
       });
     }).toThrow(/more than one plan writes .*out\.txt/v);
   });
@@ -160,7 +178,10 @@ describe.concurrent(syncPlans, () => {
     const { logger } = captureLogger();
 
     syncPlans([() => []], {
-      discover, discovery: discoverAt(root)(), force: false, logger,
+      discover,
+      discovery: discoverAt(root)(),
+      force: false,
+      logger,
     });
 
     expect(discoveries).toBe(0);
@@ -172,7 +193,10 @@ describe.concurrent(syncPlans, () => {
     const { logger } = captureLogger();
 
     expect(syncPlans([writing(filePath, 'content'), handEdit], {
-      discover: discoverAt(root), discovery: discoverAt(root)(), force: false, logger,
+      discover: discoverAt(root),
+      discovery: discoverAt(root)(),
+      force: false,
+      logger,
     })).toStrictEqual(['out.txt: hand-edit this']);
   });
 });

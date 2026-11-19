@@ -102,14 +102,19 @@ export const aggregateTasks = (
   leafEntries: readonly TaskEntry[],
 ): readonly TaskEntry[] => {
   const kinds = leafAggregates(graph, [
-    Aggregate.typecheck, Aggregate.compile, Aggregate.pack, Aggregate.lint,
+    Aggregate.typecheck,
+    Aggregate.compile,
+    Aggregate.pack,
+    Aggregate.lint,
   ]);
   const check = aggregate(Aggregate.check, [
     ...declared(kinds, [Aggregate.typecheck, Aggregate.lint]),
     ...graph.membersOf(Aggregate.check),
   ]);
   const tests = leafAggregates(graph, [
-    Aggregate.testSlow, Aggregate.testE2e, Aggregate.coverageMerge,
+    Aggregate.testSlow,
+    Aggregate.testE2e,
+    Aggregate.coverageMerge,
   ]);
   const ciDeps = declared(
     [...check, ...kinds],

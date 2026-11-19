@@ -35,7 +35,8 @@ export const packNpmLeaf: Leaf = {
     inputs: [
       '$TURBO_ROOT$/LICENSE',
       '$TURBO_ROOT$/package.json',
-      'LICENSE', 'README.md',
+      'LICENSE',
+      'README.md',
       'package.json',
     ],
     outputs: [

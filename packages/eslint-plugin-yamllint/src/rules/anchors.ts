@@ -122,12 +122,16 @@ export const anchors: Rule.RuleModule = {
       for (const doc of documents) {
         const collected = collectAnchors(doc);
         reportAnchorIssues(
-          context, collected, lineCounter,
+          context,
+          collected,
+          lineCounter,
           { shouldForbidDuplicated, shouldForbidUnused },
         );
         if (shouldForbidUndeclared) {
           reportUndeclaredAliases(
-            context, collected, lineCounter,
+            context,
+            collected,
+            lineCounter,
           );
         }
       }

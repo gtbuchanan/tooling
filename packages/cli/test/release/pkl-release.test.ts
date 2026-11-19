@@ -55,7 +55,15 @@ describe.concurrent(executePublishPkl, () => {
     expect(createCalls()).toHaveLength(1);
     expect(createCalls()[0]?.command).toBe('gh');
     expect(createCalls()[0]?.args.slice(0, 9)).toStrictEqual([
-      'release', 'create', tag, '--target', sha, '--title', tag, '--notes', tag,
+      'release',
+      'create',
+      tag,
+      '--target',
+      sha,
+      '--title',
+      tag,
+      '--notes',
+      tag,
     ]);
     expect(createCalls()[0]?.args).toContain(
       path.join(ws.pkgDir, 'dist', 'packages', 'pkl', `${tag}.zip`),
