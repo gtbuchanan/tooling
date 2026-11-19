@@ -66,6 +66,14 @@ minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - '@gtbuchanan/*'
 
+overrides:
+  # oxfmt 0.35 pins tinypool 2.1.0, which has two prototype-pollution RCEs
+  # (fixed in 2.1.2), and eslint-plugin-format still pins oxfmt ^0.35.0.
+  # Remove once eslint-plugin-format moves to an oxfmt that requires a
+  # fixed tinypool. The override reaches this workspace only, so
+  # @gtbuchanan/eslint-config consumers still resolve 2.1.0 until then.
+  oxfmt>tinypool: ^2.1.2
+
 packages:
   - '.github'
   - 'packages/*'
