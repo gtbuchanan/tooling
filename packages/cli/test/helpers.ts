@@ -53,7 +53,10 @@ export const captureLogger = (): CapturedLogger => {
   const stdoutChunks: string[] = [];
   const stderrChunks: string[] = [];
   return {
-    logger: createLogger(captureSink(stdoutChunks), captureSink(stderrChunks)),
+    logger: createLogger({
+      stderr: captureSink(stderrChunks),
+      stdout: captureSink(stdoutChunks),
+    }),
     out: () => stdoutChunks.join(''),
     err: () => stderrChunks.join(''),
   };
@@ -96,10 +99,10 @@ export interface GithubReleaseStub {
   readonly sha: string;
 }
 
-const silentLogger = createLogger(
-  new Writable({ write: (_chunk, _enc, cb) => { cb(); } }),
-  new Writable({ write: (_chunk, _enc, cb) => { cb(); } }),
-);
+const silentLogger = createLogger({
+  stderr: new Writable({ write: (_chunk, _enc, cb) => { cb(); } }),
+  stdout: new Writable({ write: (_chunk, _enc, cb) => { cb(); } }),
+});
 
 /**
  * Stubs the gh/git side of the release channels: `git rev-parse` answers with

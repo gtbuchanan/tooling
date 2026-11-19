@@ -24,7 +24,7 @@ const silentSink = new Writable({
     cb();
   },
 });
-const silentLogger = createLogger(silentSink, silentSink);
+const silentLogger = createLogger({ stderr: silentSink, stdout: silentSink });
 
 interface ConsumerPackage {
   readonly basename: string;

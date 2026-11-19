@@ -265,14 +265,14 @@ const runChangesetStatus = async (
  * the same base ref, which is why they share one command.
  */
 export const runChangesetCheck = async (
-  options: RunChangesetCheckOptions = {},
+  options: RunChangesetCheckOptions,
   deps: CatalogGateDeps = defaultDeps,
 ): Promise<readonly string[]> => {
   const discovery = discoverWorkspace({ capabilities, cwd: options.cwd ?? process.cwd() });
   const base = options.base ?? defaultBaseRef;
   await runChangesetStatus(base, discovery.rootDir, deps);
   const ignored = new Set([
-    ...await readConfiguredIgnores(discovery.rootDir),
+    ...(await readConfiguredIgnores(discovery.rootDir)),
     ...(options.ignored ?? []),
   ]);
 

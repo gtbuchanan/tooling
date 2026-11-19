@@ -17,9 +17,9 @@ const layerZones = layers.map((layer, index) => ({
 }));
 
 export default [
-  ...await configure({
+  ...(await configure({
     tsconfigRootDir: import.meta.dirname,
-  }),
+  })),
   {
     files: ['src/**/*.ts'],
     rules: {
