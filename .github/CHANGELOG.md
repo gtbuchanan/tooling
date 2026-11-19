@@ -1,5 +1,43 @@
 # @gtbuchanan/github-workflows
 
+## 2.0.0
+
+### Major Changes
+
+- c59f92a: Upload coverage to Codecov with GitHub OIDC instead of CODECOV_TOKEN
+
+  `ci.yml`'s `Codecov Upload` job now requests `id-token: write`, so the job
+  calling `ci.yml` must grant it alongside `contents: read`, or GitHub rejects the
+  run before it starts. On github.com the upload then authenticates with an OIDC
+  token, and the `CODECOV_TOKEN` secret can be deleted once the caller stops
+  passing it.
+
+  A `CODECOV_TOKEN` the caller still passes takes precedence. Codecov trusts only
+  GitHub's OIDC issuer, so callers on Forgejo keep passing the secret; Forgejo
+  ignores the permission grant.
+
+### Minor Changes
+
+- c392ae2: Run the reusable jobs on `ubuntu-26.04`
+
+  On Forgejo, a job waits for a runner that registers this label, so register it
+  before updating. The first run on the new image restores no `mise-setup` cache,
+  since that cache is keyed on the OS release.
+
+### Patch Changes
+
+- 99b9c29: Key the `mise-setup` cache on `.config/mise.lock` as well as `mise.lock`
+- c34dada: Install mise v2026.11.8 in `mise-setup`
+
+  `mise-setup` sets `MISE_LOCKED=1`, and from this release a locked install also
+  rejects a `vfox:` tool download whose checksum differs from its `mise.lock`
+  entry.
+- a7e2370: Run `jdx/mise-action` v5.2.9 in `mise-setup`
+
+  Installing mise no longer fails on a Windows runner whose `MISE_DATA_DIR` sits
+  on another drive than the temp directory, and a failed mise download now logs
+  its HTTP status and retries for longer.
+
 ## 1.1.0
 
 ### Minor Changes

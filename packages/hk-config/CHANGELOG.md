@@ -1,5 +1,68 @@
 # @gtbuchanan/hk-config
 
+## 0.8.0
+
+### Minor Changes
+
+- d787a1d: Validate Codecov config at push time
+
+  `hooksFor` now also builds a `pre-push` hook, running the new
+  `Defaults.pushSteps`: steps that call the network, kept off the commit path.
+  The first is `codecov-config`, which checks the Codecov config against
+  Codecov's validator, catching the misspelled key Codecov would otherwise
+  silently ignore. `check` runs it too, so CI does. It needs `curl` 7.76 or later
+  on PATH, and an existing clone gets the `pre-push` hook once `hk install` runs
+  again, as `mise install` does.
+- 7b4be0f: Add the ESLint step as `Defaults.nodeSteps(prefix)`
+
+  Spread `...Defaults.nodeSteps("pnpm exec")` in place of a hand-written `eslint`
+  step. It runs `eslint --max-warnings=0 --no-warn-ignored` over every changed
+  file, as the step consumers have been copying does, and `Eslint.eslintArgs`
+  keeps those flags for a repository that replaces the command. Requires ESLint 10.
+- d094b74: Bump the hk package imports to v2.13.0
+
+  `HkPackage.pkl` imports hk's `Config.pkl` and `Builtins.pkl` from a
+  version-pinned release URL, now v2.13.0.
+
+  Move your own `hk.pkl` `amends` URL to v2.13.0 in the same change. Pkl treats
+  the same class from two hk versions as unrelated types, so a config amending
+  one version while importing a preset built on another fails to evaluate.
+- 7b360ac: Move each preset step into a module of its own
+
+  Breaking: `Defaults.pkl` now holds only `recommended`, `gtbCliSteps` and
+  `hooksFor`. Every step and exclude pattern moved to a module named for its tool,
+  so a reference to one through `Defaults` no longer resolves. Import the module
+  from the same package URL and reference the member through it:
+
+  - `defaultExclude`, `lockfileExclude`, `vendorExclude` → `Exclude.pkl`
+  - `fileHygiene`, `forbidSubmodules` → `Hygiene.pkl`
+  - `jactionlint`, `jactionlintWith`, `JactionlintProfile` → `Workflows.pkl`
+  - `renovateConfig` → `Renovate.pkl`
+  - `shellcheck`, `shfmt`, `shell` → `Shell.pkl`
+
+  A repository that uses only `recommended`, `gtbCliSteps` and `hooksFor` needs no
+  change.
+- 30ccd82: Reject paths Windows can't check out, in `recommended`
+
+  The new `illegal-windows-names` step fails a commit that adds a reserved device
+  name (`aux`, `com1`, ...), a character Windows forbids in a path, or a path
+  segment ending in a space or a dot. It's a no-op on Windows, which can't create
+  such names; it guards commits made on Linux and macOS, CI included.
+
+### Patch Changes
+
+- d7a613c: Lint bats test files with the `shellcheck` and `shfmt` steps
+
+  The steps selected shell sources by hk's `shell` content type alone, which
+  doesn't recognize a `#!/usr/bin/env bats` shebang, so `*.bats` files went
+  unlinted. Both steps now select them too.
+- 72acd9d: Run `gtb-verify` on a change to any mise config gtb reads
+
+  The step fired only on a root `mise.toml`, so editing `.mise.toml`,
+  `.config/mise.toml` or `.config/mise/config.toml` skipped the drift check. It
+  now stages `.config/mise/conf.d/gtb.toml`, where `@gtbuchanan/cli` writes the
+  hk mise tasks, in place of `mise.tasks.toml`, so upgrade the two together.
+
 ## 0.7.0
 
 ### Minor Changes
