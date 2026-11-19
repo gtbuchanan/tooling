@@ -340,7 +340,10 @@ describe.concurrent(changesetCheckCommand, () => {
     };
 
     const exitCode = await changesetCheckCommand(
-      [], { cwd: workspace.root }, captured.logger, deps,
+      [],
+      { cwd: workspace.root },
+      captured.logger,
+      deps,
     );
 
     expect(exitCode).toBe(1);

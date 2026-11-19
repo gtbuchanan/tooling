@@ -113,8 +113,7 @@ describe.concurrent(configure, () => {
     });
 
     const tsConfig = configs.find(config =>
-      Object.hasOwn(config.languageOptions ?? {}, 'parserOptions'),
-    );
+      Object.hasOwn(config.languageOptions ?? {}, 'parserOptions'));
 
     expect(tsConfig).toHaveProperty(
       'languageOptions.parserOptions.tsconfigRootDir',
@@ -224,8 +223,13 @@ describe.concurrent(configure, () => {
     );
 
     expect(targetedFiles).toStrictEqual(expect.arrayContaining([
-      '**/*.css', '**/*.json', '**/*.md',
-      '**/*.scss', '**/*.toml', '**/*.xml', '**/*.yaml',
+      '**/*.css',
+      '**/*.json',
+      '**/*.md',
+      '**/*.scss',
+      '**/*.toml',
+      '**/*.xml',
+      '**/*.yaml',
       '**/package.json',
     ]));
   });
@@ -233,8 +237,7 @@ describe.concurrent(configure, () => {
   it('type-checks all script file extensions', async ({ expect }) => {
     const configs = await defaultConfigs;
     const disableConfig = configs.find(cfg =>
-      cfg.files?.includes('**/*') && cfg.ignores?.includes('**/*.ts'),
-    );
+      cfg.files?.includes('**/*') && cfg.ignores?.includes('**/*.ts'));
 
     for (const ext of allScriptExtensions) {
       expect(disableConfig?.ignores).toContain(`**/*.${ext}`);

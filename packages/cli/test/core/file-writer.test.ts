@@ -4,7 +4,9 @@ import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import {
-  mergePackageScripts, sortKeysDeep, writeJsonFile,
+  mergePackageScripts,
+  sortKeysDeep,
+  writeJsonFile,
 } from '#src/core/file-writer.js';
 import { createTempDir } from '#test/helpers.js';
 
@@ -50,7 +52,9 @@ describe.concurrent(mergePackageScripts, () => {
     }));
 
     const result = mergePackageScripts(
-      filePath, { 'typecheck:ts': 'gtb typecheck:ts' }, false,
+      filePath,
+      { 'typecheck:ts': 'gtb typecheck:ts' },
+      false,
     );
 
     expect(readJson(filePath)).toMatchObject({
@@ -71,7 +75,9 @@ describe.concurrent(mergePackageScripts, () => {
     }));
 
     const result = mergePackageScripts(
-      filePath, { 'typecheck:ts': 'gtb typecheck:ts' }, false,
+      filePath,
+      { 'typecheck:ts': 'gtb typecheck:ts' },
+      false,
     );
 
     expect(readJson(filePath)).toMatchObject({
@@ -88,7 +94,9 @@ describe.concurrent(mergePackageScripts, () => {
     }));
 
     const result = mergePackageScripts(
-      filePath, { 'typecheck:ts': 'gtb typecheck:ts' }, true,
+      filePath,
+      { 'typecheck:ts': 'gtb typecheck:ts' },
+      true,
     );
 
     expect(readJson(filePath)).toMatchObject({

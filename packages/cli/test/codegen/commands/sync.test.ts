@@ -16,7 +16,10 @@ import { createLogger } from '#src/core/logger.js';
 import { ManifestSchema } from '#src/core/manifest.js';
 import { capabilities } from '#src/toolchains/index.js';
 import {
-  captureLogger, createHkOnlyProject, createTempDir, writeJson,
+  captureLogger,
+  createHkOnlyProject,
+  createTempDir,
+  writeJson,
 } from '#test/helpers.js';
 
 const silentSink = new Writable({
@@ -114,8 +117,15 @@ describe.concurrent('sync helpers', () => {
 
     expect(Object.keys(turboJson.tasks)).toStrictEqual(
       expect.arrayContaining([
-        'build', 'build:ci', 'check', 'compile:ts', 'lint:eslint',
-        'pack:npm', 'test:vitest:fast', 'test:vitest:slow', 'typecheck:ts',
+        'build',
+        'build:ci',
+        'check',
+        'compile:ts',
+        'lint:eslint',
+        'pack:npm',
+        'test:vitest:fast',
+        'test:vitest:slow',
+        'typecheck:ts',
       ]),
     );
   });
@@ -186,7 +196,9 @@ describe.concurrent('sync helpers', () => {
     const rootScripts = generateRootScripts(discovery);
 
     const result = mergePackageScripts(
-      path.join(root, 'package.json'), rootScripts, false,
+      path.join(root, 'package.json'),
+      rootScripts,
+      false,
     );
 
     expect(result.skipped).toContain('prepare');
@@ -231,7 +243,8 @@ describe.concurrent(runSync, () => {
     );
 
     expect(manifest).toHaveProperty(
-      ['scripts', 'gtb'], 'node ../../tools/gtb/bin/gtb.ts',
+      ['scripts', 'gtb'],
+      'node ../../tools/gtb/bin/gtb.ts',
     );
   });
 

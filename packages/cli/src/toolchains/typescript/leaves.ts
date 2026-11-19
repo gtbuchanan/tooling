@@ -1,5 +1,8 @@
 import {
-  buildOutDir, outDirGlob, packNpmOutDirEntries, skillsOutDirEntry,
+  buildOutDir,
+  outDirGlob,
+  packNpmOutDirEntries,
+  skillsOutDirEntry,
 } from '#src/core/dist-source.js';
 import { Aggregate } from '#src/tasks/aggregates.js';
 import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
@@ -43,7 +46,8 @@ export const typecheckTsLeaf: Leaf = {
       inputs: [
         'tsconfig.base.json',
         ...typeCheckInclude.flatMap(toTurboGlobs),
-        'tsconfig.json', 'tsconfig.*.json',
+        'tsconfig.json',
+        'tsconfig.*.json',
       ],
       outputs: [],
     }),
@@ -53,7 +57,8 @@ export const typecheckTsLeaf: Leaf = {
     inputs: [
       '$TURBO_ROOT$/tsconfig.base.json',
       ...typeCheckInclude.flatMap(toTurboGlobs),
-      'tsconfig.json', 'tsconfig.*.json',
+      'tsconfig.json',
+      'tsconfig.*.json',
     ],
     outputs: [],
   }),
@@ -82,8 +87,10 @@ export const compileTsLeaf: Leaf = {
   task: graph => ({
     dependsOn: [topo(compileTsLeaf.name), ...codegenDeps(graph)],
     inputs: [
-      '$TURBO_ROOT$/tsconfig.base.json', '$TURBO_ROOT$/tsconfig.build.json',
-      ...buildInclude.flatMap(toTurboGlobs), 'tsconfig.build.json',
+      '$TURBO_ROOT$/tsconfig.base.json',
+      '$TURBO_ROOT$/tsconfig.build.json',
+      ...buildInclude.flatMap(toTurboGlobs),
+      'tsconfig.build.json',
     ],
     outputs: compileTsOutputs(graph),
   }),

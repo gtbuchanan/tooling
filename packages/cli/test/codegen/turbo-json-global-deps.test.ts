@@ -40,7 +40,10 @@ describe.concurrent('generateTurboJson (globalDependencies)', () => {
     const result = generateTurboJson(discovery);
 
     expect(result.globalDependencies).toStrictEqual([
-      'pnpm-lock.yaml', 'tools/cli/bin/**', 'tools/cli/package.json', 'tools/cli/src/**',
+      'pnpm-lock.yaml',
+      'tools/cli/bin/**',
+      'tools/cli/package.json',
+      'tools/cli/src/**',
     ]);
   });
 

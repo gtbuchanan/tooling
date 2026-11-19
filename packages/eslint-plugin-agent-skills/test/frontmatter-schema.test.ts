@@ -163,8 +163,7 @@ describe('defineSkillFrontmatterSchema', () => {
   it('throws on a host name it does not ship', ({ expect }) => {
     expect(() =>
       // @ts-expect-error -- unshipped host name, rejected at runtime
-      defineSkillFrontmatterSchema('claude-cod'),
-    ).toThrow(/claude-cod/v);
+      defineSkillFrontmatterSchema('claude-cod')).toThrow(/claude-cod/v);
   });
 
   it('keeps the spec requirements no source mentions', ({ expect }) => {

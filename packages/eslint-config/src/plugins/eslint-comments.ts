@@ -12,7 +12,8 @@ const plugin: PluginFactory = () => [
     rules: {
       // Justification: Enforces the `--` reason suffix convention
       '@eslint-community/eslint-comments/require-description': [
-        'warn', { ignore: ['eslint-enable'] },
+        'warn',
+        { ignore: ['eslint-enable'] },
       ],
     },
   },

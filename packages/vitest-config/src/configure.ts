@@ -125,8 +125,7 @@ export const resolveCoverageInclude = (
   }
   return [
     ...projectPatterns.flatMap(project =>
-      patterns.map(pattern => `${project}/${pattern}`),
-    ),
+      patterns.map(pattern => `${project}/${pattern}`)),
     ...patterns,
   ];
 };
@@ -231,8 +230,7 @@ const resolveProjects = (
   configureFn: () => UserWorkspaceConfig,
 ): (string | UserWorkspaceConfig)[] =>
   resolveProjectDirs(patterns).map(dir =>
-    buildProjectEntry(dir, configureFn),
-  );
+    buildProjectEntry(dir, configureFn));
 
 /**
  * Builds per-project Vitest settings: test includes and default excludes.

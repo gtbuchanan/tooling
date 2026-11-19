@@ -188,7 +188,9 @@ const mergeDescriptors = (
         ...base,
         ...(overlay.include !== undefined && { include: overlay.include }),
         compilerOptions: {
-          ...base.compilerOptions, ...overlay.compilerOptions, ...ownedKeys,
+          ...base.compilerOptions,
+          ...overlay.compilerOptions,
+          ...ownedKeys,
         },
       };
     },

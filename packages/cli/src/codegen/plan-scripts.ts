@@ -1,7 +1,9 @@
 import path from 'node:path';
 import * as v from 'valibot';
 import {
-  forbiddenRootScripts, generatePackageScripts, generateRootScripts,
+  forbiddenRootScripts,
+  generatePackageScripts,
+  generateRootScripts,
 } from '#src/codegen/turbo-config.js';
 import { type WorkspaceDiscovery, isGtbBuild } from '#src/core/discovery.js';
 import { jsonContent, readJsonFile, sortKeysDeep } from '#src/core/file-writer.js';

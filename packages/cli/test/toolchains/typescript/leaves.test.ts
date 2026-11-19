@@ -1,6 +1,8 @@
 import { describe, it } from 'vitest';
 import {
-  generatePackageScripts, generateRequiredRootScripts, generateTurboJson,
+  generatePackageScripts,
+  generateRequiredRootScripts,
+  generateTurboJson,
 } from '#src/codegen/turbo-config.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
@@ -136,7 +138,10 @@ describe.concurrent(generateTurboJson, () => {
     const inputs = result.tasks['typecheck:ts']?.inputs ?? [];
 
     expect(inputs).toStrictEqual(expect.arrayContaining([
-      '*.ts', '*.mjs', '.*.ts', '.*.mjs',
+      '*.ts',
+      '*.mjs',
+      '.*.ts',
+      '.*.mjs',
     ]));
   });
 
@@ -165,7 +170,9 @@ describe.concurrent(generateTurboJson, () => {
     const inputs = result.tasks['compile:ts']?.inputs ?? [];
 
     expect(inputs).toStrictEqual(expect.arrayContaining([
-      'bin/**', 'src/**', 'tsconfig.build.json',
+      'bin/**',
+      'src/**',
+      'tsconfig.build.json',
     ]));
     expect(inputs).not.toContain('tsconfig.json');
     expect(inputs).not.toContain('scripts/**');

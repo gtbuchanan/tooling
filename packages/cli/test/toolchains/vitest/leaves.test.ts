@@ -1,6 +1,8 @@
 import { describe, it } from 'vitest';
 import {
-  generatePackageScripts, generateRootScripts, generateTurboJson,
+  generatePackageScripts,
+  generateRootScripts,
+  generateTurboJson,
 } from '#src/codegen/turbo-config.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
@@ -40,7 +42,8 @@ describe.concurrent(generateTurboJson, () => {
     const inputs = result.tasks['test:vitest:fast']?.inputs ?? [];
 
     expect(inputs).toStrictEqual(expect.arrayContaining([
-      'vitest.config.*', '!vitest.config.e2e.*',
+      'vitest.config.*',
+      '!vitest.config.e2e.*',
     ]));
   });
 
@@ -53,7 +56,8 @@ describe.concurrent(generateTurboJson, () => {
     const inputs = result.tasks['test:vitest:slow']?.inputs ?? [];
 
     expect(inputs).toStrictEqual(expect.arrayContaining([
-      'vitest.config.*', '!vitest.config.e2e.*',
+      'vitest.config.*',
+      '!vitest.config.e2e.*',
     ]));
   });
 

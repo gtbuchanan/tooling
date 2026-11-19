@@ -24,12 +24,14 @@ const plugin: PluginFactory = () => [
       '@stylistic/no-extra-semi': 'warn',
       // Justification: Matches C# style; ternary/union/intersection before, rest after
       '@stylistic/operator-linebreak': [
-        'warn', 'after',
+        'warn',
+        'after',
         { overrides: { '&': 'before', ':': 'before', '?': 'before', '|': 'before' } },
       ],
       // Justification: Prefer escape-free strings; avoid unnecessary template literals
       '@stylistic/quotes': [
-        'warn', 'single',
+        'warn',
+        'single',
         { allowTemplateLiterals: 'avoidEscape', avoidEscape: true },
       ],
     },

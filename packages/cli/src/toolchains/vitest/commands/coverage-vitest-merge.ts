@@ -14,7 +14,8 @@ export const coverageVitestMerge = defineCommand({
   run: async ({ rawArgs }) => {
     await run('vitest', {
       args: [
-        '--merge-reports', mergeBlobDir,
+        '--merge-reports',
+        mergeBlobDir,
         `--coverage.reportsDirectory=${coverageDir.merged}`,
         /*
          * Replace the config's reporters for this run: vitest 4 refuses to

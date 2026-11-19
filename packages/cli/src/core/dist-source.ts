@@ -19,7 +19,10 @@ export const buildOutDir = 'dist/source';
  * Entries `pack:npm` writes into {@link buildOutDir}.
  */
 export const packNpmOutDirEntries = [
-  '.npmignore', 'LICENSE', 'README.md', 'package.json',
+  '.npmignore',
+  'LICENSE',
+  'README.md',
+  'package.json',
 ] as const;
 
 /**

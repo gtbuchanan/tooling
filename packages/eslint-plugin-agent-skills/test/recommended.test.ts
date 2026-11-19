@@ -5,7 +5,11 @@ import { configs } from '#src/index.js';
 
 const cwd = path.resolve('/repo');
 const referencesFile = path.join(
-  cwd, 'skills', 'my-skill', 'references', 'REFERENCE.md',
+  cwd,
+  'skills',
+  'my-skill',
+  'references',
+  'REFERENCE.md',
 );
 const skillFile = path.join(cwd, 'skills', 'my-skill', 'SKILL.md');
 

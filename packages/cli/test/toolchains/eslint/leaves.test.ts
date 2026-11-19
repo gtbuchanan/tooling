@@ -1,7 +1,10 @@
 import * as build from '@gtbuchanan/test-utils/builders';
 import { describe, it } from 'vitest';
 import {
-  generatePackageScripts, generateRequiredRootScripts, generateRootScripts, generateTurboJson,
+  generatePackageScripts,
+  generateRequiredRootScripts,
+  generateRootScripts,
+  generateTurboJson,
 } from '#src/codegen/turbo-config.js';
 import type { Capability } from '#src/core/capability.js';
 import { createTaskGraph } from '#src/tasks/graph.js';

@@ -6,7 +6,10 @@ import { packNpmLeaf } from '#src/toolchains/npm/leaves.js';
 import { compileTsLeaf } from '#src/toolchains/typescript/leaves.js';
 import { vitestE2e, vitestTests } from '#src/toolchains/vitest/capabilities.js';
 import {
-  blobFile, coverageDir, lcovReport, mergeBlobDir,
+  blobFile,
+  coverageDir,
+  lcovReport,
+  mergeBlobDir,
 } from '#src/toolchains/vitest/paths.js';
 
 /*
@@ -15,8 +18,12 @@ import {
  * Broadening beyond test directories is intentional: tests import source.
  */
 const testInputs = [
-  'bin/**', 'src/**', 'test/**', 'scripts/**',
-  'vitest.config.*', '!vitest.config.e2e.*',
+  'bin/**',
+  'src/**',
+  'test/**',
+  'scripts/**',
+  'vitest.config.*',
+  '!vitest.config.e2e.*',
 ];
 
 /*

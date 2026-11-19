@@ -43,8 +43,7 @@ export const planPklRelease = (
   // zip + its sha256. The metadata sha256 lets consumers pin `::sha256:`.
   return {
     assets: [base, `${base}.sha256`, `${base}.zip`, `${base}.zip.sha256`].map(file =>
-      path.join(assetDir, file),
-    ),
+      path.join(assetDir, file)),
     tag: releaseTag(name, version, isMonorepo),
   };
 };

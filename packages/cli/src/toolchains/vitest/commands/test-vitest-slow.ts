@@ -14,7 +14,9 @@ export const testVitestSlow = defineCommand({
   run: async ({ rawArgs }) => {
     await run('vitest', {
       args: [
-        'run', '--tags-filter=slow', '--pass-with-no-tests',
+        'run',
+        '--tags-filter=slow',
+        '--pass-with-no-tests',
         `--outputFile.blob=${blobFile.slow}`,
         `--coverage.reportsDirectory=${coverageDir.slow}`,
         ...rawArgs,

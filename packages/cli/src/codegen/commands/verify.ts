@@ -115,7 +115,9 @@ export const verify = defineCommand({
   },
   run: ({ rawArgs, args }) => {
     const exitCode = verifyCommand(
-      rawArgs, { cwd: args.cwd, positionals: args._ }, createLogger(),
+      rawArgs,
+      { cwd: args.cwd, positionals: args._ },
+      createLogger(),
     );
     if (exitCode !== 0) {
       process.exitCode = exitCode;

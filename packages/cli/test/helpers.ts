@@ -6,11 +6,16 @@ import { faker } from '@faker-js/faker';
 import * as build from '@gtbuchanan/test-utils/builders';
 import * as v from 'valibot';
 import {
-  generatePackageScripts, generateRootScripts, generateTurboJson,
+  generatePackageScripts,
+  generateRootScripts,
+  generateTurboJson,
 } from '#src/codegen/turbo-config.js';
 import type { Capability } from '#src/core/capability.js';
 import {
-  type CliSource, type WorkspaceDiscovery, type WorkspacePackage, discoverWorkspace,
+  type CliSource,
+  type WorkspaceDiscovery,
+  type WorkspacePackage,
+  discoverWorkspace,
 } from '#src/core/discovery.js';
 import { mergePackageScripts, sortKeysDeep, writeJsonFile } from '#src/core/file-writer.js';
 import { type Logger, createLogger } from '#src/core/logger.js';
@@ -19,7 +24,9 @@ import { UnknownRecord } from '#src/core/schemas.js';
 import type { GithubReleaseDeps } from '#src/release/github-release.js';
 import { capabilities } from '#src/toolchains/index.js';
 import {
-  generateTsconfigBase, planTsconfigs, tsconfigBaseFileName,
+  generateTsconfigBase,
+  planTsconfigs,
+  tsconfigBaseFileName,
 } from '#src/toolchains/typescript/tsconfig.js';
 
 /**

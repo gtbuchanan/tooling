@@ -15,7 +15,8 @@ const scriptRuleOverrides: Linter.Config = {
     '@typescript-eslint/method-signature-style': 'warn',
     // Justification: Prevents snake_case drift from agents and API boundaries
     '@typescript-eslint/naming-convention': [
-      'warn', {
+      'warn',
+      {
         format: ['camelCase', 'PascalCase'],
         leadingUnderscore: 'allow',
         selector: 'variableLike',
@@ -34,11 +35,13 @@ const scriptRuleOverrides: Linter.Config = {
     '@typescript-eslint/no-unused-vars': ['warn', { ignoreRestSiblings: true }],
     // Justification: Allow constant loop conditions (e.g. while(true))
     '@typescript-eslint/no-unnecessary-condition': [
-      'warn', { allowConstantLoopConditions: true },
+      'warn',
+      { allowConstantLoopConditions: true },
     ],
     // Justification: Allows bitwise expressions in enum members
     '@typescript-eslint/prefer-literal-enum-member': [
-      'warn', { allowBitwiseExpressions: true },
+      'warn',
+      { allowBitwiseExpressions: true },
     ],
     // Justification: Falsy coalescing with || is idiomatic for strings and numbers
     '@typescript-eslint/prefer-nullish-coalescing': 'off',

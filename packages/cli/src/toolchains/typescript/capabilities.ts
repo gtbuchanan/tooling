@@ -44,7 +44,9 @@ const isTypeScriptSource = (entry: Dirent): boolean =>
  * the type-check `include` names.
  */
 const defaultExcludedDirectories = new Set([
-  'bower_components', 'jspm_packages', 'node_modules',
+  'bower_components',
+  'jspm_packages',
+  'node_modules',
 ]);
 
 /*
