@@ -7,6 +7,23 @@ concurrency:
   group: ${{ github.workflow }}-caller-${{ github.event.pull_request.number }}
 
 jobs:
+  # Repo-specific, so a consumer copying this file drops it: it runs the bats
+  # suites under .github/test, which test this repository's composite actions.
+  bats:
+    name: Bats Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
+
+      - uses: gtbuchanan/tooling/.github/actions/pnpm-tasks@main
+
+      - name: Run bats suites
+        run: pnpm exec bats --recursive .github/test
+        shell: bash
+    timeout-minutes: 10
+
   changeset:
     name: Changeset
     uses: ./.github/workflows/changeset-check.yml
