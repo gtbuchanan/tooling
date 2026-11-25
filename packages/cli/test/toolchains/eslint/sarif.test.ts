@@ -136,6 +136,12 @@ describe.concurrent(toSarifLog, () => {
     }]);
   });
 
+  it('lists the rules sorted by id', ({ expect }) => {
+    const log = toSarifLog([], { rootDir, rulesMeta: { 'b/rule': {}, 'a/rule': {} } });
+
+    expect(log.runs[0]?.tool.driver.rules.map(({ id }) => id)).toStrictEqual(['a/rule', 'b/rule']);
+  });
+
   it('names a rule that declares no metadata', ({ expect }) => {
     const message = makeMessage();
     const ruleId = message.ruleId ?? '';
