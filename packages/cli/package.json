@@ -44,6 +44,7 @@
     "@gtbuchanan/vitest-config": "workspace:*",
     "@types/cross-spawn": "catalog:",
     "@types/hosted-git-info": "catalog:",
+    "tsdown": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {

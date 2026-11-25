@@ -82,9 +82,13 @@ const compileOutputs = (graph: TaskGraph): readonly string[] => [
  * what tsc reads, plus whatever config the compiler reads of its own.
  * Shared by `compile:ts` and every leaf superseding it, so whichever applies
  * hashes the same sources and owns the same outputs.
+ *
+ * It waits on the `compile` aggregate of its dependencies rather than on
+ * `compile:ts`, which a dependency compiled by a superseding leaf declares
+ * none of.
  */
 export const compileTask = (graph: TaskGraph, configInputs: readonly string[]): TurboTask => ({
-  dependsOn: [topo(compileTsLeaf.name), ...codegenDeps(graph)],
+  dependsOn: [topo(Aggregate.compile), ...codegenDeps(graph)],
   inputs: [
     '$TURBO_ROOT$/tsconfig.base.json',
     '$TURBO_ROOT$/tsconfig.build.json',

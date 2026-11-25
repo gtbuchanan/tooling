@@ -48,6 +48,7 @@ catalog:
   skills: 1.8.1
   skills-npm: 4.1.0
   smol-toml: ^1.7.0
+  tsdown: ^0.23.7
   turbo: ^2.10.8
   typescript: ^6.0.0
   typescript-eslint: ^8.64.0
