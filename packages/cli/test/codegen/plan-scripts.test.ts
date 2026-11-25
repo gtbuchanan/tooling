@@ -138,6 +138,55 @@ describe.concurrent(planScripts, () => {
     expect(write?.manifest.scripts).not.toHaveProperty('lint:eslint');
   });
 
+  /*
+   * The root has no Vitest config, so `test:vitest:fast` applies to nothing
+   * there. A script left from when it did would still run.
+   */
+  it('removes a script running a leaf that no longer applies', ({ expect }) => {
+    const { manifestPath, root } = createRoot({ 'test:vitest:fast': 'gtb task test:vitest:fast' });
+
+    const write = writeTo(plan(root), manifestPath);
+
+    expect(write?.changes)
+      .toContain("script 'test:vitest:fast' runs a leaf that no longer applies");
+    expect(write?.manifest.scripts).not.toHaveProperty('test:vitest:fast');
+  });
+
+  it('removes a leftover leaf script that passes arguments', ({ expect }) => {
+    const { manifestPath, root } = createRoot({
+      'test:vitest:fast': 'gtb task test:vitest:fast --reporter=dot',
+    });
+
+    const write = writeTo(plan(root), manifestPath);
+
+    expect(write?.manifest.scripts).not.toHaveProperty('test:vitest:fast');
+  });
+
+  it('keeps a hand-written script under a leaf\'s name', ({ expect }) => {
+    const { manifestPath, root } = createRoot({ 'test:vitest:fast': 'vitest run' });
+
+    const write = writeTo(plan(root), manifestPath);
+
+    expect(write?.manifest.scripts).toHaveProperty('test:vitest:fast', 'vitest run');
+  });
+
+  it('keeps a leaf script composed with another command', ({ expect }) => {
+    const composed = 'gtb task test:vitest:fast && echo done';
+    const { manifestPath, root } = createRoot({ 'test:vitest:fast': composed });
+
+    const write = writeTo(plan(root), manifestPath);
+
+    expect(write?.manifest.scripts).toHaveProperty('test:vitest:fast', composed);
+  });
+
+  it('keeps an ignored leftover leaf script', ({ expect }) => {
+    const { manifestPath, root } = createRoot({ 'test:vitest:fast': 'gtb task test:vitest:fast' });
+
+    const write = writeTo(plan(root, { ignored: new Set(['test:vitest:fast']) }), manifestPath);
+
+    expect(write?.manifest.scripts).toHaveProperty('test:vitest:fast', 'gtb task test:vitest:fast');
+  });
+
   it('requires the monorepo root\'s turbo aliases', ({ expect }) => {
     const { manifestPath, root } = createMonorepo();
 

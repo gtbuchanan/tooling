@@ -180,6 +180,49 @@ export const generateRootScripts = (
   };
 };
 
+const leafNames: ReadonlySet<string> = new Set(leaves.map(leaf => leaf.name));
+
+/*
+ * What composes one command with another in a shell: separators, pipes,
+ * redirects and substitution. A quoted argument holding one is misread as
+ * composition, which only keeps a script that could have gone.
+ */
+const shellComposition: readonly string[] = [';', '&', '|', '<', '>', '`', '$', '(', ')', '\n'];
+
+/*
+ * Whether a script runs the leaf of its name the way `gtb sync` writes it,
+ * arguments allowed. Anything composed around that command is a step gtb
+ * never wrote.
+ */
+const isLeafInvocation = (cli: CliSource, name: string, value: string): boolean => {
+  const command = taskCmd(cli, name);
+
+  const args = value.slice(command.length);
+
+  return value === command || (value.startsWith(`${command} `) &&
+    shellComposition.every(char => !args.includes(char)));
+};
+
+/**
+ * The scripts in a manifest that run a leaf no longer applying to it, sorted.
+ *
+ * Such a script still runs. A leaf with nothing left to act on fails or
+ * reports a pass, and one another leaf supersedes runs beside its
+ * replacement, both writing the same output. A script counts only where its
+ * name is a leaf's and its value invokes that leaf in the shape `gtb sync`
+ * writes; anything else under the name was written by hand and stays.
+ */
+export const staleLeafScripts = (
+  scripts: Readonly<Record<string, string>>,
+  expected: Readonly<Record<string, string>>,
+  cli: CliSource,
+): readonly string[] =>
+  Object.entries(scripts)
+    .filter(([name, value]) =>
+      leafNames.has(name) && !Object.hasOwn(expected, name) && isLeafInvocation(cli, name, value))
+    .map(([name]) => name)
+    .toSorted(localeComparer);
+
 /**
  * Generates only required root scripts for drift validation.
  */

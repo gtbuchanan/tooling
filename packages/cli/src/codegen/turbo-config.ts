@@ -83,4 +83,5 @@ export {
   generatePackageScripts,
   generateRequiredRootScripts,
   generateRootScripts,
+  staleLeafScripts,
 } from '#src/codegen/turbo-scripts.js';
