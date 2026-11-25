@@ -4,6 +4,7 @@ import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import { ESLint } from 'eslint';
 import { describe, it } from 'vitest';
+import { repositoryRoot } from '#src/toolchains/eslint/formatter.js';
 import { findingsLog, formatterPath } from '#src/toolchains/eslint/paths.js';
 import { createTempDir } from '#test/helpers.js';
 
@@ -45,7 +46,32 @@ const lintProject = (subdir?: string): LintedProject => {
   };
 };
 
-describe.concurrent('ESLint formatter', () => {
+/*
+ * A git runner failing to spawn, as Node rejects when it can't start a
+ * process: with an error carrying the system `code`.
+ */
+const failingGit = (code: string) => async (): Promise<never> => {
+  await Promise.resolve();
+  throw Object.assign(new Error(`spawn git ${code}`), { code });
+};
+
+describe.concurrent(repositoryRoot, () => {
+  it('falls back to the linted directory where git is not installed', async ({ expect }) => {
+    const cwd = createTempDir();
+
+    const root = await repositoryRoot(cwd, failingGit('ENOENT'));
+
+    expect(root).toBe(cwd);
+  });
+
+  it('rethrows a failure to run git other than its absence', async ({ expect }) => {
+    const cwd = createTempDir();
+
+    await expect(repositoryRoot(cwd, failingGit('EACCES'))).rejects.toThrow('EACCES');
+  });
+});
+
+describe.concurrent('formatter', () => {
   it('writes the findings as a SARIF log', async ({ expect }) => {
     using project = lintProject();
 

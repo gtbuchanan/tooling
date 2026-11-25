@@ -7,6 +7,13 @@ import { findingsLog } from '#src/toolchains/eslint/paths.js';
 import { toSarifLog } from '#src/toolchains/eslint/sarif.js';
 
 /*
+ * Spawning a missing binary rejects with `ENOENT` rather than exiting
+ * non-zero, and a machine without git has no repository to be the root of.
+ */
+const isNotFound = (error: unknown): boolean =>
+  error instanceof Error && 'code' in error && error.code === 'ENOENT';
+
+/**
  * The git checkout's root, which code scanning resolves `SRCROOT` to. The
  * pnpm workspace root can sit below it, or hold no packages at all, so it
  * would place a finding under the wrong directory. Outside a git repository
@@ -17,10 +24,20 @@ import { toSarifLog } from '#src/toolchains/eslint/sarif.js';
  * as given, and where that runs through a link (macOS's `/var` is
  * `/private/var`) the two would never share a prefix.
  */
-const repositoryRoot = async (cwd: string): Promise<string> => {
-  const { exitCode, stdout } = await execute('git', ['rev-parse', '--show-cdup'], { cwd });
+export const repositoryRoot = async (
+  cwd: string,
+  runGit: typeof execute = execute,
+): Promise<string> => {
+  try {
+    const { exitCode, stdout } = await runGit('git', ['rev-parse', '--show-cdup'], { cwd });
 
-  return exitCode === 0 ? path.resolve(cwd, stdout) : cwd;
+    return exitCode === 0 ? path.resolve(cwd, stdout) : cwd;
+  } catch (error) {
+    if (isNotFound(error)) {
+      return cwd;
+    }
+    throw error;
+  }
 };
 
 /*
