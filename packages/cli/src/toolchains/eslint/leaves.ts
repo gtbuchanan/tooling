@@ -4,6 +4,7 @@ import { Aggregate } from '#src/tasks/aggregates.js';
 import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
 import type { Leaf } from '#src/tasks/leaf.js';
 import { eslint } from '#src/toolchains/eslint/capabilities.js';
+import { eslintCache, findingsLog, findingsReport } from '#src/toolchains/eslint/paths.js';
 import { typecheckTsLeaf } from '#src/toolchains/typescript/leaves.js';
 
 /*
@@ -76,9 +77,10 @@ export const lintEslintLeaf: Leaf = {
         '$TURBO_DEFAULT$',
         ...selfLintedGlobs(graph.discovery).map(glob => `!${toPackageIgnore(glob)}`),
       ],
-      outputs: ['dist/.eslintcache'],
+      outputs: [eslintCache, findingsLog],
     }),
   },
+  reports: [findingsReport],
   task: graph => ({
     dependsOn: [
       ...codegenDeps(graph),
@@ -95,6 +97,6 @@ export const lintEslintLeaf: Leaf = {
       'skills/**',
       'eslint.config.*',
     ],
-    outputs: ['dist/.eslintcache'],
+    outputs: [eslintCache, findingsLog],
   }),
 };

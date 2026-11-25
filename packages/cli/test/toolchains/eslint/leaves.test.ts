@@ -175,6 +175,26 @@ describe.concurrent(generateTurboJson, () => {
     expect(task?.outputs).toContain('dist/.eslintcache');
   });
 
+  it('lint:eslint caches its findings log', ({ expect }) => {
+    const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
+
+    const result = generateTurboJson(discovery);
+
+    expect(result.tasks['lint:eslint']?.outputs).toContain('dist/findings/eslint.sarif');
+  });
+
+  it('//#lint:eslint caches its findings log', ({ expect }) => {
+    const result = generateTurboJson(monorepoWithRootEslint());
+
+    expect(result.tasks['//#lint:eslint']?.outputs).toContain('dist/findings/eslint.sarif');
+  });
+
+  it('lint:eslint declares its findings log as a report', ({ expect }) => {
+    expect(lintEslintLeaf.reports).toStrictEqual([
+      { format: 'sarif', kind: 'findings', path: 'dist/findings/eslint.sarif' },
+    ]);
+  });
+
   it('prunes typecheck:ts from lint dependsOn when no TypeScript', ({ expect }) => {
     const discovery = makeDiscovery([makePackage({ capabilities: new Set([eslint]) })]);
 
