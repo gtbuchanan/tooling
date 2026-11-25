@@ -19,6 +19,7 @@ catalog:
   '@vitest/coverage-v8': ^5.0.0
   '@vitest/eslint-plugin': ^1.6.23
   ajv: ^8.20.0
+  bats: ^1.13.0
   citty: ^0.2.2
   console-fail-test: ^0.10.0
   cross-spawn: ^7.0.6
