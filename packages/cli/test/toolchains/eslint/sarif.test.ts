@@ -73,6 +73,17 @@ describe.concurrent(toSarifLog, () => {
       .not.toHaveProperty('locations.0.physicalLocation.region');
   });
 
+  /*
+   * ESLint reports some file-level findings at line 0, its own "No matching
+   * configuration" among them, where SARIF lines start at 1.
+   */
+  it('omits the region of a finding at line 0', ({ expect }) => {
+    const message = makeMessage({ column: 0, line: 0 });
+
+    expect(findingOf(makeResult({ messages: [message] })))
+      .not.toHaveProperty('locations.0.physicalLocation.region');
+  });
+
   it('carries the rule and message of a finding', ({ expect }) => {
     const message = makeMessage();
 

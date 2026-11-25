@@ -108,12 +108,13 @@ const srcRoot = 'SRCROOT';
 const errorSeverity = 2;
 
 /*
- * SARIF requires a region to start somewhere, so a finding about the whole
- * file, which has no line, gets none.
+ * SARIF requires a region to start on a line, counted from 1, so a finding
+ * about the whole file gets none: ESLint gives one no line at all, or line 0,
+ * as in its own "No matching configuration" warning.
  */
 const regionOf = (
   { column, endColumn, endLine, line }: LintMessage,
-): { readonly region?: SarifRegion } => (line === undefined
+): { readonly region?: SarifRegion } => (line === undefined || line < 1
   ? {}
   : {
       region: {
