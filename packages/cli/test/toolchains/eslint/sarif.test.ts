@@ -74,6 +74,23 @@ describe.concurrent(toSarifLog, () => {
   });
 
   /*
+   * SARIF locations are URI references, where `#` starts a fragment and `%` an
+   * escape, so a path holding either, or a space, has to be percent-encoded.
+   */
+  it('percent-encodes characters a URI reserves in a file name', ({ expect }) => {
+    const dir = faker.word.noun();
+    const result = makeResult({
+      filePath: path.join(rootDir, dir, 'a#b c%d.ts'),
+      messages: [makeMessage()],
+    });
+
+    expect(findingOf(result)).toHaveProperty(
+      'locations.0.physicalLocation.artifactLocation.uri',
+      `${dir}/a%23b%20c%25d.ts`,
+    );
+  });
+
+  /*
    * ESLint reports some file-level findings at line 0, its own "No matching
    * configuration" among them, where SARIF lines start at 1.
    */

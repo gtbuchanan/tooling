@@ -161,11 +161,19 @@ const rulesOf = (rulesMeta: SarifContext['rulesMeta']): readonly SarifRule[] =>
     .toSorted(([left], [right]) => localeComparer(left, right))
     .map(([id, meta]) => toRule(id, meta));
 
+/*
+ * A relative path as the URI reference SARIF locates a file by. Each segment
+ * is percent-encoded, since a `#` would otherwise start a fragment and a `%`
+ * an escape, while `/` stays the separator.
+ */
+const toUriReference = (relativePath: string): string =>
+  relativePath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+
 const resultsOf = (
   { filePath, messages, suppressedMessages }: LintResult,
   rootDir: string,
 ): readonly SarifResult[] => {
-  const uri = toPosixRelative(rootDir, filePath);
+  const uri = toUriReference(toPosixRelative(rootDir, filePath));
 
   return [
     ...messages.map(message => toResult(uri, message)),
