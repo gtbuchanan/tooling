@@ -4,18 +4,26 @@ import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import { ESLint } from 'eslint';
 import { describe, it } from 'vitest';
-import { repositoryRoot } from '#src/toolchains/eslint/formatter.js';
+import format, { repositoryRoot } from '#src/toolchains/eslint/formatter.js';
 import { findingsLog, formatterPath } from '#src/toolchains/eslint/paths.js';
 import { createTempDir } from '#test/helpers.js';
 
 interface LintedProject extends Disposable {
   readonly dir: string;
+  /**
+   * Formats the findings through the formatter imported here.
+   */
   readonly format: () => Promise<string>;
+  /**
+   * Formats the findings through the formatter ESLint loads from its path, as
+   * `--format` loads it. That import bypasses Vitest, so its lines report no
+   * coverage; the other tests import the formatter directly.
+   */
+  readonly formatByPath: () => Promise<string>;
 }
 
 /*
- * A project with one unused variable, linted by the real ESLint and formatted
- * through the formatter loaded by path, as `--format` loads it. With a
+ * A project with one unused variable, linted by the real ESLint. With a
  * `subdir`, the project is a git repository linted from that subdirectory.
  */
 const lintProject = (subdir?: string): LintedProject => {
@@ -26,15 +34,23 @@ const lintProject = (subdir?: string): LintedProject => {
   }
   mkdirSync(path.join(lintDir, 'src'), { recursive: true });
   writeFileSync(path.join(lintDir, 'src', 'index.js'), 'const unused = 1;\n');
+  const eslint = new ESLint({
+    cwd: lintDir,
+    overrideConfig: { rules: { 'no-unused-vars': 'warn' } },
+    overrideConfigFile: true,
+  });
 
   return {
     dir: lintDir,
     format: async () => {
-      const eslint = new ESLint({
+      const results = await eslint.lintFiles(['src']);
+
+      return await format(results, {
         cwd: lintDir,
-        overrideConfig: { rules: { 'no-unused-vars': 'warn' } },
-        overrideConfigFile: true,
+        rulesMeta: eslint.getRulesMetaForResults(results),
       });
+    },
+    formatByPath: async () => {
       const results = await eslint.lintFiles(['src']);
       const formatter = await eslint.loadFormatter(formatterPath);
 
@@ -105,6 +121,14 @@ describe.concurrent('formatter', () => {
     using project = lintProject();
 
     const output = await project.format();
+
+    expect(output).toContain('no-unused-vars');
+  });
+
+  it('loads from the path lint:eslint passes to --format', async ({ expect }) => {
+    using project = lintProject();
+
+    const output = await project.formatByPath();
 
     expect(output).toContain('no-unused-vars');
   });
