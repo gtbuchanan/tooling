@@ -2,7 +2,7 @@
 
 `compile:ts` emits only a package's own sources, so a published package can't import a private workspace package: the tarball would import a package no registry holds. A bundle inlines it instead.
 
-A published package holding a `tsdown.config.*` (`.ts`, `.mts`, `.cts`, `.js`, `.mjs`, `.cjs` or `.json`) gets `compile:tsdown` in place of `compile:ts`. `gtb sync` writes the new script and deletes the old one. The package needs `tsdown` among its own `devDependencies`, since the task runs the installed binary.
+A published package holding a `tsdown.config.*` (`.ts`, `.mts`, `.cts`, `.js`, `.mjs`, `.cjs` or `.json`) gets `compile:tsdown` in place of `compile:ts`. `gtb sync` writes the new script and deletes the old one. The package needs `tsdown` installed, in its own `devDependencies` or the workspace root's, since the task runs the installed binary. It is only an optional peer of `@gtbuchanan/cli`, so the install won't warn; `gtb verify` fails instead.
 
 tsdown inlines what the package's `devDependencies` reach and leaves its `dependencies` and `peerDependencies` as imports. List a private workspace package under `devDependencies`. A private package's own runtime dependencies go in the published package's `dependencies` too, or tsdown inlines them as well.
 

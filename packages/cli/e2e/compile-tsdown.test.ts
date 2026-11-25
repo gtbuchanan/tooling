@@ -174,3 +174,29 @@ describe('gtb task compile:tsdown', () => {
   });
 });
 /* eslint-enable vitest/max-expects */
+
+describe('gtb verify with a tsdown config', () => {
+  /*
+   * tsdown is an optional peer, so the install never mentions it. Verify is
+   * where a package configured to bundle without it is caught.
+   */
+  it('fails where the package cannot resolve tsdown', async ({ expect }) => {
+    using fixture = createProjectFixture({ packageName: '@gtbuchanan/cli' });
+    const dir = fixture.projectDir;
+    writeJson(dir, 'package.json', {
+      devDependencies: { '@gtbuchanan/cli': build.semverRange() },
+      name: build.packageName(),
+      packageManager: 'npm@11.0.0',
+      publishConfig: { directory: 'dist/source' },
+      type: 'module',
+      version: build.semverVersion(),
+    });
+    writeJson(dir, 'tsconfig.base.json', { compilerOptions: { strict: true } });
+    writeText(dir, 'tsdown.config.ts', 'export default {};\n');
+
+    const verify = await fixture.run('gtb', ['verify']);
+
+    expect(verify).toMatchObject({ exitCode: 1 });
+    expect(verify.stderr).toContain('tsdown.config.* needs tsdown');
+  });
+});
