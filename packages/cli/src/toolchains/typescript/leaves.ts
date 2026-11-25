@@ -8,7 +8,7 @@ import { Aggregate } from '#src/tasks/aggregates.js';
 import { codegenDeps, rootSourceDeps } from '#src/tasks/edges.js';
 import type { Leaf, TaskGraph } from '#src/tasks/leaf.js';
 import { toTurboGlobs } from '#src/tasks/turbo-globs.js';
-import { topo } from '#src/tasks/turbo-task.js';
+import { type TurboTask, topo } from '#src/tasks/turbo-task.js';
 import { published } from '#src/toolchains/npm/capabilities.js';
 import { deploySkillsLeaf } from '#src/toolchains/skills/leaves.js';
 import { typescript, typescriptSources } from '#src/toolchains/typescript/capabilities.js';
@@ -67,15 +67,33 @@ export const typecheckTsLeaf: Leaf = {
 /*
  * The compiled tree is everything in the output directory the sibling tasks
  * don't write. Subtracting theirs keeps each task's cache entry to what it
- * produced: a shared file captured here would be restored on a `compile:ts`
+ * produced: a shared file captured here would be restored on a compile
  * hit, replaying whatever the entry was written with — a stamped manifest
  * carrying a stale version, for instance.
  */
-const compileTsOutputs = (graph: TaskGraph): readonly string[] => [
+const compileOutputs = (graph: TaskGraph): readonly string[] => [
   `${buildOutDir}/**`,
   ...packNpmOutDirEntries.map(entry => `!${outDirGlob(entry)}`),
   ...(graph.applies(deploySkillsLeaf.name) ? [`!${outDirGlob(skillsOutDirEntry)}/**`] : []),
 ];
+
+/**
+ * A compile of the package's build sources into the build output directory:
+ * what tsc reads, plus whatever config the compiler reads of its own.
+ * Shared by `compile:ts` and every leaf superseding it, so whichever applies
+ * hashes the same sources and owns the same outputs.
+ */
+export const compileTask = (graph: TaskGraph, configInputs: readonly string[]): TurboTask => ({
+  dependsOn: [topo(compileTsLeaf.name), ...codegenDeps(graph)],
+  inputs: [
+    '$TURBO_ROOT$/tsconfig.base.json',
+    '$TURBO_ROOT$/tsconfig.build.json',
+    ...buildInclude.flatMap(toTurboGlobs),
+    'tsconfig.build.json',
+    ...configInputs,
+  ],
+  outputs: compileOutputs(graph),
+});
 
 /**
  * `tsc -p tsconfig.build.json` into the build output directory.
@@ -84,14 +102,5 @@ export const compileTsLeaf: Leaf = {
   aggregate: Aggregate.compile,
   appliesTo: pkg => pkg.capabilities.has(published),
   name: 'compile:ts',
-  task: graph => ({
-    dependsOn: [topo(compileTsLeaf.name), ...codegenDeps(graph)],
-    inputs: [
-      '$TURBO_ROOT$/tsconfig.base.json',
-      '$TURBO_ROOT$/tsconfig.build.json',
-      ...buildInclude.flatMap(toTurboGlobs),
-      'tsconfig.build.json',
-    ],
-    outputs: compileTsOutputs(graph),
-  }),
+  task: graph => compileTask(graph, []),
 };
