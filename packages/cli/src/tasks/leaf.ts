@@ -56,7 +56,8 @@ export interface RootLeaf {
  */
 export type Report =
   | { readonly format: 'junit'; readonly kind: 'test-results'; readonly path: string }
-  | { readonly format: 'lcov'; readonly kind: 'coverage'; readonly path: string };
+  | { readonly format: 'lcov'; readonly kind: 'coverage'; readonly path: string }
+  | { readonly format: 'sarif'; readonly kind: 'findings'; readonly path: string };
 
 /**
  * What a publishing leaf publishes.

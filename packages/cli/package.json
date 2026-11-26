@@ -44,10 +44,12 @@
     "@gtbuchanan/vitest-config": "workspace:*",
     "@types/cross-spawn": "catalog:",
     "@types/hosted-git-info": "catalog:",
+    "eslint": "catalog:",
     "tsdown": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
+    "eslint": ">=9.0.0",
     "skills": "^1.5.1",
     "skills-npm": "^4.0.0",
     "tsdown": ">=0.23.0",
@@ -55,6 +57,9 @@
     "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "skills-npm": {
       "optional": true
     },

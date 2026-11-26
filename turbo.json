@@ -19,7 +19,8 @@
         "!packages/*/**"
       ],
       "outputs": [
-        "dist/.eslintcache"
+        "dist/.eslintcache",
+        "dist/findings/eslint.sarif"
       ]
     },
     "//#typecheck:ts": {
@@ -168,7 +169,8 @@
         "eslint.config.*"
       ],
       "outputs": [
-        "dist/.eslintcache"
+        "dist/.eslintcache",
+        "dist/findings/eslint.sarif"
       ]
     },
     "pack": {

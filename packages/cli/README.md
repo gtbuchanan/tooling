@@ -85,7 +85,7 @@ generated `package.json` scripts (`"typecheck:ts": "gtb task typecheck:ts"`).
 | `coverage:vitest:merge`   | `vitest --merge-reports` (fast + slow)                                                       |
 | `deploy:skills`           | Symlink skills into project-local agent dirs via `skills add`                                |
 | `typecheck:ts`            | `tsc --noEmit`                                                                               |
-| `lint:eslint`             | `eslint --max-warnings=0`                                                                    |
+| `lint:eslint`             | `eslint --max-warnings=0`, writing findings to `dist/findings/eslint.sarif`                  |
 | `pack:npm`                | Generate manifest + `pnpm pack` (per-pkg)                                                    |
 | `test:vitest`             | `vitest run`                                                                                 |
 | `test:vitest:fast`        | `vitest run --tags-filter='!slow'`                                                           |
