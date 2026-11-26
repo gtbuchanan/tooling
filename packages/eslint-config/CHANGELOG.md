@@ -1,5 +1,61 @@
 # @gtbuchanan/eslint-config
 
+## 0.7.0
+
+### Minor Changes
+
+- 414a282: Require fenced code blocks in Markdown
+
+  markdownlint's MD046 (`code-block-style`) now requires fenced blocks instead of
+  its default `consistent` style, which only compared a file's blocks against its
+  first and so let a file of indented blocks pass. Expect a new warning on every
+  indented code block. MD046 has no autofix, so convert each one to a fence by
+  hand; Prettier keeps either style, so it won't undo the conversion.
+- deca292: Lint with `@stylistic/eslint-plugin` v6
+
+  Its `customize()` preset, which `configure()` builds the stylistic rules from,
+  now enables `@stylistic/list-style`: a list whose brackets sit on their own
+  lines must put each item on its own line too, so a wrapped list can no longer
+  pack several items per line. `@stylistic/indent` also indents a property value
+  that starts on the next line by one level instead of two. `--fix` rewrites both.
+- 2aa3288: Lint with eslint-plugin-unicorn v80
+
+  Its recommended preset, which `configure()` enables for script files, gains
+  `unicorn/prefer-options-parameter`, `unicorn/prefer-regexp-exec` and
+  `unicorn/require-spread-parentheses`, and drops
+  `unicorn/no-async-promise-finally`. Expect new warnings where a function takes
+  more than one optional positional parameter, where `String#match` could be
+  `RegExp#exec`, and where a spread argument such as `...await x` or `...a ?? b`
+  lacks parentheses. `--fix` rewrites the `match` calls and the spreads; an
+  optional positional parameter needs a hand edit or a suppression.
+- 86ce17c: Lint Markdown as GitHub Flavored Markdown
+
+  `configure()` parsed Markdown as CommonMark, which reads a table as a
+  paragraph, so nothing checked tables: markdownlint's MD056 was off in favor of
+  `markdown/table-column-count`, which `@eslint/markdown` v9 runs only on GFM. It
+  now parses GFM and warns on a table row whose cell count differs from its
+  header, which can surface new warnings in existing tables.
+
+  The Agent Skills configs parse skill files as GFM too. They override the
+  language of any earlier block for those files, so under CommonMark a GFM-only
+  rule enabled there made ESLint reject the config for every skill file.
+
+### Patch Changes
+
+- cfdfb0b: Describe the SARIF findings log in the `gtb-eslint-config` skill
+
+  The skill now says that `gtb task lint:eslint` also writes its findings to
+  `dist/findings/eslint.sarif`, beside the cache under each package's `dist/`.
+- 779bb6a: Lint Markdown with `@eslint/markdown` v9
+
+  `configure()` enables the same rules as before. v9 fixes several false
+  positives, among them `markdown/no-missing-link-fragments` on fragments that
+  target an HTML anchor. `eslint-plugin-agent-skills` accepts v9 as its peer
+  alongside v8.
+- Updated dependencies [779bb6a]
+- Updated dependencies [86ce17c]
+  - @gtbuchanan/eslint-plugin-agent-skills@1.0.1
+
 ## 0.6.1
 
 ### Patch Changes
