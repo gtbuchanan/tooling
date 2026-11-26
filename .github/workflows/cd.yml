@@ -38,7 +38,7 @@ jobs:
       # Asking for `workflows` fails token creation where the App lacks it,
       # so the App needs it even in a repository with no `.github` package.
       - id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ vars.APP_ID }}
           permission-contents: write
@@ -75,7 +75,7 @@ jobs:
       - uses: gtbuchanan/tooling/.github/actions/mise-setup@main
 
       - id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           # Input rename only — `client-id` replaces the deprecated `app-id`,
           # and the JWT `iss` claim it feeds accepts an App ID either way.
