@@ -36,6 +36,11 @@ export type LintResult = Omit<ESLint.LintResult, 'messages' | 'suppressedMessage
  */
 export interface SarifContext {
   /**
+   * The run left findings out, as `--quiet` or a run held to some files does,
+   * so a missing finding is no evidence it was fixed.
+   */
+  readonly partial: boolean;
+  /**
    * The repository root, which every location is made relative to.
    */
   readonly rootDir: string;
@@ -75,6 +80,7 @@ interface SarifRule {
 
 interface SarifRun {
   readonly columnKind: 'utf16CodeUnits';
+  readonly properties: { readonly partial: boolean };
   readonly results: readonly SarifResult[];
   readonly tool: {
     readonly driver: {
@@ -208,13 +214,14 @@ const resultsOf = (
  */
 export const toSarifLog = (
   results: readonly LintResult[],
-  { rootDir, rulesMeta }: SarifContext,
+  { partial, rootDir, rulesMeta }: SarifContext,
 ): SarifLog => ({
   $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
   runs: [{
     /* ESLint counts columns in a JavaScript string's units, so a character
        outside the Basic Multilingual Plane counts as two. */
     columnKind: 'utf16CodeUnits',
+    properties: { partial },
     results: results.flatMap(result => resultsOf(result, rootDir)),
     tool: {
       driver: {

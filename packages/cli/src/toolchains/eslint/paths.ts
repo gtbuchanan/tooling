@@ -31,3 +31,9 @@ export const findingsLog = 'dist/findings/eslint.sarif';
  * The findings log as a report another toolchain can read.
  */
 export const findingsReport: Report = { format: 'sarif', kind: 'findings', path: findingsLog };
+
+/**
+ * The environment variable through which `lint:eslint` tells its formatter
+ * that the run leaves findings out.
+ */
+export const partialRunEnv = 'GTB_FINDINGS_PARTIAL';

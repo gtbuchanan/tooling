@@ -9,7 +9,7 @@ import {
 } from '#src/toolchains/eslint/sarif.js';
 
 const rootDir = path.resolve('/repo');
-const context: SarifContext = { rootDir, rulesMeta: {} };
+const context: SarifContext = { partial: false, rootDir, rulesMeta: {} };
 
 const makeMessage = (overrides: Partial<LintMessage> = {}): LintMessage => ({
   column: faker.number.int({ max: 80, min: 1 }),
@@ -137,7 +137,7 @@ describe.concurrent(toSarifLog, () => {
 
     const log = toSarifLog(
       [makeResult({ messages: [message] })],
-      { rootDir, rulesMeta: { [ruleId]: { docs: { description, url } } } },
+      { ...context, rulesMeta: { [ruleId]: { docs: { description, url } } } },
     );
 
     expect(log.runs[0]?.tool.driver.rules).toStrictEqual([{
@@ -157,8 +157,14 @@ describe.concurrent(toSarifLog, () => {
     expect(log.runs[0]).toHaveProperty('columnKind', 'utf16CodeUnits');
   });
 
+  it.for([true, false])('records whether the run was partial (%s)', (partial, { expect }) => {
+    const log = toSarifLog([], { ...context, partial });
+
+    expect(log.runs[0]).toHaveProperty('properties.partial', partial);
+  });
+
   it('lists the rules sorted by id', ({ expect }) => {
-    const log = toSarifLog([], { rootDir, rulesMeta: { 'b/rule': {}, 'a/rule': {} } });
+    const log = toSarifLog([], { ...context, rulesMeta: { 'b/rule': {}, 'a/rule': {} } });
 
     expect(log.runs[0]?.tool.driver.rules.map(({ id }) => id)).toStrictEqual(['a/rule', 'b/rule']);
   });
@@ -169,7 +175,7 @@ describe.concurrent(toSarifLog, () => {
 
     const log = toSarifLog(
       [makeResult({ messages: [message] })],
-      { rootDir, rulesMeta: { [ruleId]: undefined } },
+      { ...context, rulesMeta: { [ruleId]: undefined } },
     );
 
     expect(log.runs[0]?.tool.driver.rules).toStrictEqual([{ id: ruleId }]);
