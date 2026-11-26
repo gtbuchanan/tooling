@@ -212,6 +212,25 @@ describe.concurrent(configure, () => {
     expect(ruleIds).toContain('markdown/no-empty-links');
   });
 
+  /*
+   * A lone indented block passes MD046's default `consistent` style,
+   * which only compares a file's blocks against its first one.
+   */
+  it('reports an indented code block', async ({ expect }) => {
+    const configs = await defaultConfigs;
+    const linter = new Linter();
+
+    const code = '# Heading\n\n    echo hello\n';
+    const messages = linter.verify(code, configs, 'foo.md');
+    const markdownlintMessages = messages
+      .filter(msg => msg.ruleId === 'markdownlint/lint')
+      .map(msg => msg.message);
+
+    expect(markdownlintMessages).toContainEqual(
+      expect.stringMatching(/^MD046\/code-block-style /v),
+    );
+  });
+
   it('includes format/prettier for all supported file types', async ({ expect }) => {
     const configs = await defaultConfigs;
 

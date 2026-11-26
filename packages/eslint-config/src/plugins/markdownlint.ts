@@ -35,7 +35,7 @@ const prettierConflicts = {
   'blanks-around-fences': false, // md031
   'blanks-around-headings': false, // md022
   'blanks-around-lists': false, // md032
-  'code-fence-style': false, // md046
+  'code-fence-style': false, // md048
   'emphasis-style': false, // md049
   'heading-start-left': false, // md023
   'heading-style': false, // md003
@@ -60,6 +60,16 @@ const prettierConflicts = {
   'ul-indent': false, // md007
 } as const;
 
+/*
+ * md046's default `consistent` style compares each file's blocks only
+ * against its first, so a file of indented blocks, which carry no
+ * language and get no highlighting, passes. Prettier keeps whichever
+ * block style it finds, so requiring fences can't fight it.
+ */
+const codeBlockStyle = {
+  'code-block-style': { style: 'fenced' }, // md046
+} as const;
+
 /**
  * markdownlint structural linting via `@gtbuchanan/eslint-plugin-markdownlint`.
  * No parser is set here — `@eslint/markdown` registers
@@ -74,6 +84,7 @@ const plugin: PluginFactory = () => [
     rules: {
       'markdownlint/lint': ['warn', {
         default: true,
+        ...codeBlockStyle,
         ...prettierConflicts,
         ...coveredByEslintMarkdown,
       }],
