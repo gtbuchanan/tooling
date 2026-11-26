@@ -6,7 +6,7 @@ import { describe, it } from 'vitest';
 import { fileReferences } from '#src/rules/file-references.js';
 
 const ruleTester = new RuleTester({
-  language: 'markdown/commonmark',
+  language: 'markdown/gfm',
   plugins: { markdown },
 });
 

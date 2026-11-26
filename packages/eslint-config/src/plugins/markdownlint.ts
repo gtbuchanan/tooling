@@ -73,7 +73,7 @@ const codeBlockStyle = {
 /**
  * markdownlint structural linting via `@gtbuchanan/eslint-plugin-markdownlint`.
  * No parser is set here — `@eslint/markdown` registers
- * `language: 'markdown/commonmark'` for the same files, and the
+ * `language: 'markdown/gfm'` for the same files, and the
  * markdownlint rule keys its visitor off the actual AST root.
  */
 const plugin: PluginFactory = () => [

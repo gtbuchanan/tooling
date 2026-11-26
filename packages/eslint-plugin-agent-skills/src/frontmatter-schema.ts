@@ -109,7 +109,7 @@ export const defineSkillFrontmatterConfig = (
 ): readonly Linter.Config[] => [
   {
     files: ['**/skills/*/SKILL.md'],
-    language: 'markdown/commonmark',
+    language: 'markdown/gfm',
     plugins: { markdown, 'md-frontmatter': frontmatter },
     rules: {
       'md-frontmatter/schema': [

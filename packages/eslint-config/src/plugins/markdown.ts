@@ -12,6 +12,7 @@ import type { PluginFactory } from '../index.ts';
 const extraRules = {
   'markdown/no-duplicate-headings': 'warn', // markdownlint MD024
   'markdown/no-html': 'warn', // markdownlint MD033
+  'markdown/table-column-count': 'warn', // markdownlint MD056
 } as const;
 
 /*
@@ -25,14 +26,19 @@ const prettierConflicts = {
 
 /**
  * Wires `\@eslint/markdown` alongside `eslint-plugin-markdownlint`. The
- * former enforces every rule in its `recommended` set against the
- * commonmark mdast; the latter fills the gap rules `\@eslint/markdown`
- * does not yet implement.
+ * former enforces every rule in its `recommended` set against the GFM
+ * mdast; the latter fills the gap rules `\@eslint/markdown` does not yet
+ * implement.
+ *
+ * `recommended` selects the commonmark language, which parses a GFM
+ * table as a paragraph, so `markdown/table-column-count` would never see
+ * one. GitHub renders the Markdown this lints, so GFM is what it parses.
  */
 const plugin: PluginFactory = () => [
   ...markdown.configs.recommended.map(cfg => ({
     ...cfg,
     ignores: [...markdownIgnores],
+    language: 'markdown/gfm',
     rules: { ...cfg.rules, ...extraRules, ...prettierConflicts },
   })),
   {

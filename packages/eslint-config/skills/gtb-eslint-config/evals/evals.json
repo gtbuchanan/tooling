@@ -79,10 +79,10 @@
     {
       "expectations": [
         "Confirms both plugins are used together (the answer is yes, both are needed/active)",
-        "Mentions @eslint/markdown runs its recommended rule set on the CommonMark AST",
+        "Mentions @eslint/markdown runs its recommended rule set on the GFM AST",
         "Mentions @gtbuchanan/eslint-plugin-markdownlint fills the structural gaps that @eslint/markdown does not yet cover (rules already enforced by @eslint/markdown are disabled in the markdownlint plugin to keep diagnostics single-sourced)"
       ],
-      "expected_output": "Activates skill. Explains the two-plugin split: `@eslint/markdown` runs its `recommended` rule set on the CommonMark AST; `@gtbuchanan/eslint-plugin-markdownlint` fills the structural gaps `@eslint/markdown` doesn't yet cover. Rules already enforced by `@eslint/markdown` are disabled in markdownlint to keep diagnostics single-sourced. As `@eslint/markdown` adds rules, the markdownlint counterparts retire.",
+      "expected_output": "Activates skill. Explains the two-plugin split: `@eslint/markdown` runs its `recommended` rule set on the GFM AST; `@gtbuchanan/eslint-plugin-markdownlint` fills the structural gaps `@eslint/markdown` doesn't yet cover. Rules already enforced by `@eslint/markdown` are disabled in markdownlint to keep diagnostics single-sourced. As `@eslint/markdown` adds rules, the markdownlint counterparts retire.",
       "files": [],
       "id": 8,
       "prompt": "What's the deal with @eslint/markdown vs @gtbuchanan/eslint-plugin-markdownlint — do I need both?"

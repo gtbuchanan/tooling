@@ -303,7 +303,7 @@ depth lives in that plugin's own skill (where one exists).
 - **`eslint-plugin-yml`** — YAML linting + key sorting
 - **`@gtbuchanan/eslint-plugin-yamllint`** — yamllint gap rules
   (truthy, octal-values, anchors, document-start/end)
-- **`@eslint/markdown`** — official Markdown plugin (commonmark AST,
+- **`@eslint/markdown`** — official Markdown plugin (GFM AST,
   recommended rule set)
 - **`@gtbuchanan/eslint-plugin-markdownlint`** — Markdown structural
   linting for the rules `@eslint/markdown` doesn't cover yet
@@ -351,7 +351,7 @@ under pnpm strict hoisting.
 
 Two plugins lint Markdown together:
 
-- `@eslint/markdown` runs its `recommended` rule set (CommonMark AST).
+- `@eslint/markdown` runs its `recommended` rule set (GFM AST).
 - `@gtbuchanan/eslint-plugin-markdownlint` fills the structural gaps
   `@eslint/markdown` doesn't cover yet. Rules `@eslint/markdown`
   already enforces are disabled in the markdownlint plugin to keep

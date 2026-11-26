@@ -187,15 +187,49 @@ describe.concurrent(configure, () => {
     expect(ruleConfig['fenced-code-language']).toBe(false);
   });
 
-  it('enables @eslint/markdown commonmark language for markdown files', async ({ expect }) => {
+  it('enables @eslint/markdown gfm language for markdown files', async ({ expect }) => {
     const configs = await defaultConfigs;
 
     const mdConfig = configs.find(
-      cfg => cfg.language === 'markdown/commonmark',
+      cfg => cfg.language === 'markdown/gfm',
     );
 
     expect(mdConfig?.files).toStrictEqual(['**/*.md']);
     expect(mdConfig?.ignores).toContain('.changeset/**');
+  });
+
+  it('reports a table row with more cells than its header', async ({ expect }) => {
+    const configs = await defaultConfigs;
+    const linter = new Linter();
+
+    const code = '# Heading\n\n| a | b |\n| - | - |\n| 1 | 2 | 3 |\n';
+    const messages = linter.verify(code, configs, 'foo.md');
+    const ruleIds = messages.map(msg => msg.ruleId);
+
+    expect(ruleIds).toContain('markdown/table-column-count');
+  });
+
+  it('reports a table row with more cells than its header in a skill', async ({ expect }) => {
+    const configs = await defaultConfigs;
+    const linter = new Linter();
+
+    const code = [
+      '---',
+      'name: demo',
+      'description: Demo skill.',
+      '---',
+      '',
+      '# Demo',
+      '',
+      '| a | b |',
+      '| - | - |',
+      '| 1 | 2 | 3 |',
+      '',
+    ].join('\n');
+    const messages = linter.verify(code, configs, 'skills/demo/SKILL.md');
+    const ruleIds = messages.map(msg => msg.ruleId);
+
+    expect(ruleIds).toContain('markdown/table-column-count');
   });
 
   it('fires both @eslint/markdown and markdownlint on the same .md file', async ({ expect }) => {

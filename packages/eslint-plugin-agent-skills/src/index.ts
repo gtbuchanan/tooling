@@ -61,9 +61,12 @@ const plugin: ESLint.Plugin = {
 };
 
 /**
- * Ready-to-spread flat-config blocks for Agent Skills files. The
- * `markdown/commonmark` language is required so `file-references`
- * can walk the markdown AST. The 300-line cap on `references/**` is
+ * Ready-to-spread flat-config blocks for Agent Skills files. A Markdown
+ * language is required so `file-references` can walk the markdown AST,
+ * and it is GFM because these blocks override whatever language an
+ * earlier block chose: under commonmark, a GFM-only rule such as
+ * `markdown/table-column-count` enabled there would make ESLint reject
+ * the config for every skill file. The 300-line cap on `references/**` is
  * tighter than the 500-line `SKILL.md` cap to mirror the spec's
  * [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
  * guidance that ancillary reference files stay focused and smaller
@@ -85,7 +88,7 @@ export const configs: {
   recommended: [
     {
       files: ['**/skills/*/SKILL.md'],
-      language: 'markdown/commonmark',
+      language: 'markdown/gfm',
       plugins: {
         'agent-skills': plugin,
         markdown,
@@ -110,7 +113,7 @@ export const configs: {
     },
     {
       files: ['**/skills/*/references/**/*.md'],
-      language: 'markdown/commonmark',
+      language: 'markdown/gfm',
       plugins: { 'agent-skills': plugin, markdown },
       rules: {
         /*
