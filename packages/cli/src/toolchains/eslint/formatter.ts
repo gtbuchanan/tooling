@@ -3,7 +3,7 @@ import path from 'node:path';
 import { ESLint } from 'eslint';
 import { jsonContent } from '#src/core/file-writer.js';
 import { execute } from '#src/core/process.js';
-import { findingsLog } from '#src/toolchains/eslint/paths.js';
+import { findingsLog, partialRunEnv } from '#src/toolchains/eslint/paths.js';
 import { toSarifLog } from '#src/toolchains/eslint/sarif.js';
 
 /*
@@ -47,28 +47,34 @@ export const repositoryRoot = async (
 const writeFindingsLog = async (
   results: readonly ESLint.LintResult[],
   { cwd, rulesMeta }: ESLint.LintResultData,
+  isPartial: boolean,
 ): Promise<void> => {
   const file = path.join(cwd, findingsLog);
-  const log = toSarifLog(results, { rootDir: await repositoryRoot(cwd), rulesMeta });
+  const log = toSarifLog(results, {
+    partial: isPartial,
+    rootDir: await repositoryRoot(cwd),
+    rulesMeta,
+  });
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, jsonContent(log));
 };
 
 /**
- * ESLint formatter writing the findings as a SARIF log and returning them for
- * the console in ESLint's own `stylish` layout.
+ * An ESLint formatter writing the findings as a SARIF log and returning them
+ * for the console in ESLint's own `stylish` layout. `lint:eslint` marks a run
+ * that leaves findings out in `env`, which the ESLint process inherits.
  *
  * ESLint accepts one `--format`, so this one formatter does both, keeping
  * `lint:eslint` on the ESLint CLI and every flag it accepts.
  */
-const format = async (
+export const formatFindings = (env: NodeJS.ProcessEnv) => async (
   results: ESLint.LintResult[],
   context: ESLint.LintResultData,
 ): Promise<string> => {
-  await writeFindingsLog(results, context);
+  await writeFindingsLog(results, context, env[partialRunEnv] === 'true');
   const stylish = await new ESLint({ cwd: context.cwd }).loadFormatter('stylish');
 
   return await stylish.format(results, context);
 };
 
-export default format;
+export default formatFindings(process.env);

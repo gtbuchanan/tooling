@@ -4,16 +4,17 @@ import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import { ESLint } from 'eslint';
 import { describe, it } from 'vitest';
-import format, { repositoryRoot } from '#src/toolchains/eslint/formatter.js';
-import { findingsLog, formatterPath } from '#src/toolchains/eslint/paths.js';
+import { formatFindings, repositoryRoot } from '#src/toolchains/eslint/formatter.js';
+import { findingsLog, formatterPath, partialRunEnv } from '#src/toolchains/eslint/paths.js';
 import { createTempDir } from '#test/helpers.js';
 
 interface LintedProject extends Disposable {
   readonly dir: string;
   /**
-   * Formats the findings through the formatter imported here.
+   * Formats the findings through the formatter imported here, in an ESLint
+   * process with `env`.
    */
-  readonly format: () => Promise<string>;
+  readonly format: (env?: NodeJS.ProcessEnv) => Promise<string>;
   /**
    * Formats the findings through the formatter ESLint loads from its path, as
    * `--format` loads it. That import bypasses Vitest, so its lines report no
@@ -42,10 +43,10 @@ const lintProject = (subdir?: string): LintedProject => {
 
   return {
     dir: lintDir,
-    format: async () => {
+    format: async (env = {}) => {
       const results = await eslint.lintFiles(['src']);
 
-      return await format(results, {
+      return await formatFindings(env)(results, {
         cwd: lintDir,
         rulesMeta: eslint.getRulesMetaForResults(results),
       });
@@ -115,6 +116,15 @@ describe.concurrent('formatter', () => {
       'runs.0.results.0.locations.0.physicalLocation.artifactLocation.uri',
       `${subdir}/src/index.js`,
     );
+  });
+
+  it('marks the log partial where lint:eslint narrowed the run', async ({ expect }) => {
+    using project = lintProject();
+
+    await project.format({ [partialRunEnv]: 'true' });
+    const log: unknown = JSON.parse(readFileSync(path.join(project.dir, findingsLog), 'utf8'));
+
+    expect(log).toHaveProperty('runs.0.properties.partial', true);
   });
 
   it('returns the findings for the console', async ({ expect }) => {
