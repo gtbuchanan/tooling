@@ -74,6 +74,7 @@ interface SarifRule {
 }
 
 interface SarifRun {
+  readonly columnKind: 'utf16CodeUnits';
   readonly results: readonly SarifResult[];
   readonly tool: {
     readonly driver: {
@@ -211,6 +212,9 @@ export const toSarifLog = (
 ): SarifLog => ({
   $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
   runs: [{
+    /* ESLint counts columns in a JavaScript string's units, so a character
+       outside the Basic Multilingual Plane counts as two. */
+    columnKind: 'utf16CodeUnits',
     results: results.flatMap(result => resultsOf(result, rootDir)),
     tool: {
       driver: {

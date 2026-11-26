@@ -147,6 +147,16 @@ describe.concurrent(toSarifLog, () => {
     }]);
   });
 
+  /*
+   * ESLint counts columns in a JavaScript string's units, so a character
+   * outside the Basic Multilingual Plane counts as two.
+   */
+  it('declares columns as UTF-16 code units', ({ expect }) => {
+    const log = toSarifLog([], context);
+
+    expect(log.runs[0]).toHaveProperty('columnKind', 'utf16CodeUnits');
+  });
+
   it('lists the rules sorted by id', ({ expect }) => {
     const log = toSarifLog([], { rootDir, rulesMeta: { 'b/rule': {}, 'a/rule': {} } });
 
