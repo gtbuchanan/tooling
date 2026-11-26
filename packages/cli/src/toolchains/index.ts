@@ -12,6 +12,7 @@ import { miseToolchain } from '#src/toolchains/mise/index.js';
 import { npmToolchain } from '#src/toolchains/npm/index.js';
 import { pklToolchain } from '#src/toolchains/pkl/index.js';
 import { skillsToolchain } from '#src/toolchains/skills/index.js';
+import { tsdownToolchain } from '#src/toolchains/tsdown/index.js';
 import { typescriptToolchain } from '#src/toolchains/typescript/index.js';
 import { vitestToolchain } from '#src/toolchains/vitest/index.js';
 
@@ -28,6 +29,7 @@ export const toolchains: readonly Toolchain[] = [
   npmToolchain,
   pklToolchain,
   skillsToolchain,
+  tsdownToolchain,
   typescriptToolchain,
   vitestToolchain,
 ];

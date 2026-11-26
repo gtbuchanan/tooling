@@ -4,6 +4,7 @@ import {
   forbiddenRootScripts,
   generatePackageScripts,
   generateRootScripts,
+  staleLeafScripts,
 } from '#src/codegen/turbo-config.js';
 import { type WorkspaceDiscovery, isGtbBuild } from '#src/core/discovery.js';
 import { jsonContent, readJsonFile, sortKeysDeep } from '#src/core/file-writer.js';
@@ -30,7 +31,7 @@ const scriptChange = (
 const planManifestScripts = (
   dir: string,
   expected: Readonly<Record<string, string>>,
-  { force, ignored }: PlanContext,
+  { discovery, force, ignored }: PlanContext,
 ): readonly Finding[] => {
   const filePath = path.join(dir, 'package.json');
   /*
@@ -45,12 +46,17 @@ const planManifestScripts = (
       const change = scriptChange(existing, name, value, force);
       return change === undefined ? [] : { change, name, value };
     });
-  const [first, ...rest] = changed.map(({ change }) => change);
+  const stale = new Set(staleLeafScripts(existing, expected, discovery.cli)
+    .filter(name => !ignored.has(name)));
+  const [first, ...rest] = [
+    ...changed.map(({ change }) => change),
+    ...[...stale].map(name => `script '${name}' runs a leaf that no longer applies`),
+  ];
   if (first === undefined) {
     return [];
   }
   const scripts = {
-    ...existing,
+    ...Object.fromEntries(Object.entries(existing).filter(([name]) => !stale.has(name))),
     ...Object.fromEntries(changed.map(({ name, value }) => [name, value])),
   };
 

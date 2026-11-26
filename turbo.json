@@ -95,7 +95,7 @@
     },
     "compile:ts": {
       "dependsOn": [
-        "^compile:ts"
+        "^compile"
       ],
       "inputs": [
         "$TURBO_ROOT$/tsconfig.base.json",

@@ -45,12 +45,14 @@
     "@types/cross-spawn": "catalog:",
     "@types/hosted-git-info": "catalog:",
     "eslint": "catalog:",
+    "tsdown": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
     "eslint": ">=9.0.0",
     "skills": "^1.5.1",
     "skills-npm": "^4.0.0",
+    "tsdown": ">=0.23.0",
     "turbo": ">=2.10.8",
     "typescript": ">=5.0.0"
   },
@@ -59,6 +61,9 @@
       "optional": true
     },
     "skills-npm": {
+      "optional": true
+    },
+    "tsdown": {
       "optional": true
     },
     "turbo": {

@@ -76,7 +76,7 @@ This is the maximal graph. Every node and edge above is capability-conditional �
 Leaf tasks, per-package, run via `gtb task <name>`:
 
 - `typecheck:ts` — TypeScript type checking
-- `compile:ts` — TypeScript compilation to `dist/source/`
+- `compile:ts` — TypeScript compilation to `dist/source/` ([`compile:tsdown`](references/tsdown.md) with a `tsdown.config.*`)
 - `lint:eslint` — ESLint with cache + zero-warning threshold
 - `pack:npm` — npm tarball creation (publishable packages only); also copies
   the package `README.md` and its `LICENSE` (the package's own, else the
@@ -136,7 +136,7 @@ Where the _leaf_ tasks get declared depends on the repo shape, because only the 
 
 - **`lint:eslint` depends on `typecheck:ts`** — prevents confusing linter output from type errors. ESLint (via `typescript-eslint`) runs its own type resolution, so the dep isn't strictly required; consumers who prefer parallelism over cleaner output can remove it. Cross-package invalidation doesn't ride on this edge — `lint:eslint` declares its own `transit` dep — so dropping it costs only the output ordering.
 - **`typecheck:ts`, `lint:eslint`, and every vitest task depend on `transit`** — see [The `transit` node](#the-transit-node). This includes `test:vitest:e2e`: it reads packed tarballs, but its own sources import fixture helpers from source-only workspace packages.
-- **Test tasks gate on `^compile`, not `^compile:ts`** — the aggregate covers every compile flavour a dependency publishes from (`compile:skills` today), where the leaf names one toolchain. It still resolves to a no-op for a dependency that compiles nothing.
+- **Compile and test tasks gate on `^compile`, not `^compile:ts`** — the aggregate covers every compile flavour a dependency uses, where a leaf names one toolchain. It resolves to a no-op for a dependency that compiles nothing.
 - **Test tasks don't depend on `typecheck:ts`** — parallelism wins.
 - **`deploy:skills` depends on `lint:eslint` same-package (no `^`)** — catches broken frontmatter and markdown in `SKILL.md` before deploy. Skills are authored independently per package; there's no topological chain.
 - **`build:ci` excludes `test:slow`, `test:e2e`, `deploy:skills`** — CI runs fast tests; slow/e2e run on full builds; CI has no agents to serve skills to.
