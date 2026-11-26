@@ -125,6 +125,13 @@ const regionOf = (
       },
     });
 
+/*
+ * SARIF reads `{n}` in message text as a placeholder for an argument, and the
+ * log passes none, so a literal brace is doubled.
+ */
+const escapeBraces = (text: string): string =>
+  text.replaceAll('{', '{{').replaceAll('}', '}}');
+
 const toResult = (uri: string, message: LintMessage): SarifResult => ({
   level: message.severity === errorSeverity ? 'error' : 'warning',
   locations: [{
@@ -133,7 +140,7 @@ const toResult = (uri: string, message: LintMessage): SarifResult => ({
       ...regionOf(message),
     },
   }],
-  message: { text: message.message },
+  message: { text: escapeBraces(message.message) },
   ...(message.ruleId !== null && { ruleId: message.ruleId }),
 });
 

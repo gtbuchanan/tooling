@@ -110,6 +110,17 @@ describe.concurrent(toSarifLog, () => {
     });
   });
 
+  /*
+   * SARIF reads `{n}` in message text as a placeholder for an argument, so
+   * literal braces, as in `no-regex-spaces`'s "Use {2}.", have to be doubled.
+   */
+  it('escapes literal braces in the message text', ({ expect }) => {
+    const message = makeMessage({ message: 'Spaces are hard to count. Use {2}.' });
+
+    expect(findingOf(makeResult({ messages: [message] })))
+      .toHaveProperty('message.text', 'Spaces are hard to count. Use {{2}}.');
+  });
+
   it('omits the rule of a finding no rule raised', ({ expect }) => {
     /* eslint-disable-next-line unicorn/no-null --
        ESLint reports a finding no rule raised with a null ruleId */
