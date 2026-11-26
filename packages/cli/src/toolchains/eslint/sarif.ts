@@ -152,6 +152,17 @@ const toSuppression = (
   { justification, kind }: SuppressedLintMessage['suppressions'][number],
 ): SarifSuppression => ({ justification, kind: kind === 'directive' ? 'inSource' : 'external' });
 
+/*
+ * Identical directives over one line each suppress the finding, and SARIF
+ * requires a result's suppressions to be unique, so a repeat is dropped.
+ */
+const uniqueSuppressions = (
+  suppressions: readonly SarifSuppression[],
+): readonly SarifSuppression[] =>
+  new Map(suppressions.map(suppression => [JSON.stringify(suppression), suppression]))
+    .values()
+    .toArray();
+
 const toRule = (id: string, meta: Rule.RuleMetaData | undefined): SarifRule => ({
   ...(meta?.docs?.url !== undefined && { helpUri: meta.docs.url }),
   id,
@@ -186,7 +197,7 @@ const resultsOf = (
     ...messages.map(message => toResult(uri, message)),
     ...suppressedMessages.map(message => ({
       ...toResult(uri, message),
-      suppressions: message.suppressions.map(toSuppression),
+      suppressions: uniqueSuppressions(message.suppressions.map(toSuppression)),
     })),
   ];
 };

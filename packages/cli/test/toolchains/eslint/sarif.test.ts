@@ -165,6 +165,29 @@ describe.concurrent(toSarifLog, () => {
     expect(log.runs[0]?.tool.driver.rules).toStrictEqual([{ id: ruleId }]);
   });
 
+  /*
+   * Two identical directives over one line suppress the finding twice, while
+   * SARIF requires a result's suppressions to be unique.
+   */
+  it('records identical suppressions of a finding once', ({ expect }) => {
+    const justification = faker.lorem.sentence();
+    const other = faker.lorem.sentence();
+    const suppressed = {
+      ...makeMessage(),
+      suppressions: [
+        { justification, kind: 'directive' },
+        { justification, kind: 'directive' },
+        { justification: other, kind: 'directive' },
+      ],
+    };
+
+    expect(findingOf(makeResult({ suppressedMessages: [suppressed] })))
+      .toHaveProperty('suppressions', [
+        { justification, kind: 'inSource' },
+        { justification: other, kind: 'inSource' },
+      ]);
+  });
+
   it.for([
     ['directive', 'inSource'],
     ['file', 'external'],
