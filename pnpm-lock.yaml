@@ -257,7 +257,7 @@ catalogs:
       version: 65.5.3
     eslint-plugin-n:
       specifier: ^18.2.2
-      version: 18.5.0
+      version: 18.6.0
     eslint-plugin-only-warn:
       specifier: ^1.2.1
       version: 1.2.1
@@ -535,7 +535,7 @@ importers:
         version: 65.5.3(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-n:
         specifier: 'catalog:'
-        version: 18.5.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
+        version: 18.6.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
       eslint-plugin-only-warn:
         specifier: 'catalog:'
         version: 1.2.1
@@ -2258,8 +2258,8 @@ packages:
       typescript:
         optional: true
 
-  eslint-plugin-n@18.5.0:
-    resolution: {integrity: sha512-M7uF6MTN/An+AXqvyIbXq7npJIZOkd5eKo8iMMvWrcDVNyZVdA6TF2lw01aKQfCEidRfpnR78GhAjZorlXNHiw==}
+  eslint-plugin-n@18.6.0:
+    resolution: {integrity: sha512-/UcgYfzZhQ6E/b/j4B9gMt6PotgTrF9lT/qMYnPzXYax5UR127J60I1BoF1R1Oa0Kq7LGhY0JUEm93JucJIbWA==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
       eslint: '>=8.57.1'
@@ -4698,7 +4698,7 @@ snapshots:
       - '@typescript/native'
       - supports-color
 
-  eslint-plugin-n@18.5.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3):
+  eslint-plugin-n@18.6.0(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3):
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))
       enhanced-resolve: 5.24.5
